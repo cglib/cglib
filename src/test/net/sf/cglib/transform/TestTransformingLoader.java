@@ -58,9 +58,10 @@ import net.sf.cglib.beans.*;
 import java.util.*;
 import java.lang.reflect.Method;
 import junit.framework.*;
+import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.4 2003/09/21 08:13:16 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.5 2003/09/21 20:27:27 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -75,7 +76,6 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         return new ExampleTransformer(new String[]{ name }, new Class[]{ type });
     }
 
-    /*
     public void testExample() throws Exception {
         ClassTransformer t1 = getExampleTransformer("herby", String.class);
         ClassTransformer t2 = getExampleTransformer("derby", Double.TYPE);
@@ -90,7 +90,6 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
         loaded.getMethod("setDerby", new Class[]{ Double.TYPE }).invoke(obj, new Object[]{ new Double(1.23456789d) });
     }
-    */
 
     private static Class inited;
 
@@ -102,6 +101,20 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         Method m = ReflectUtils.findMethod("net.sf.cglib.transform.TestTransformingLoader.initStatic(Class)");
         Class loaded = loadHelper(new AddStaticInitTransformer(m), Example.class);
         Object obj = loaded.newInstance();
+        // TODO
+    }
+
+    public void testInterceptField() throws Exception {
+        ClassTransformer t = new InterceptFieldTransformer(new InterceptFieldFilter() {
+            public boolean acceptRead(Type owner, String name) {
+                return true;
+            }
+            public boolean acceptWrite(Type owner, String name) {
+                return true;
+            }
+        });
+        Class loaded = loadHelper(t, Example.class);
+        // TODO
     }
 
     private static Class loadHelper(ClassTransformer t, Class target) throws ClassNotFoundException {
