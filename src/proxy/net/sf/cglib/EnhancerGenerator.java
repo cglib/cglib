@@ -97,7 +97,17 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
+    private boolean jdkCompatible = false;
         
+    /* package */ EnhancerGenerator( String className, Class clazz, 
+                                     Class[] interfaces,
+                                     ClassLoader loader, 
+                                     Method wreplace, boolean delegating,
+                                     MethodFilter filter, boolean jdkCompatible) {
+        this(className, clazz, interfaces, loader, wreplace, delegating, filter);
+        this.jdkCompatible = jdkCompatible;
+    }
+
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
                                      ClassLoader loader, 
@@ -457,12 +467,19 @@ import java.util.*;
             }
             // e -> eo -> oeo -> ooe -> o
             handle_exception(handler, Throwable.class);
-            new_instance(UndeclaredThrowableException.class);
+            new_instance(getUndeclaredThrowableExceptionClassName());
             dup_x1();
             swap();
-            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
+            invoke_constructor(getUndeclaredThrowableExceptionClassName(), Constants.TYPES_THROWABLE);
             athrow();
         }
+    }
+
+    protected String getUndeclaredThrowableExceptionClassName() {
+        if (jdkCompatible)
+            return "java.lang.reflect.UndeclaredThrowableException";
+        else
+            return "net.sf.cglib.UndeclaredThrowableException";
     }
 
     private void generateClInit(List methodList) throws NoSuchMethodException {
