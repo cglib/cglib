@@ -57,31 +57,30 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
     
-class FastClassEmitter extends Emitter {
-    private static final Method METHOD_GET_INDEX =
-      ReflectUtils.findMethod("FastClass.getIndex(String, Class[])");
-    private static final Method SIGNATURE_GET_INDEX =
-      ReflectUtils.findMethod("FastClass.getIndex(String)");
-    private static final Method CONSTRUCTOR_GET_INDEX =
-      ReflectUtils.findMethod("FastClass.getIndex(Class[])");
-    private static final Method INVOKE =
-      ReflectUtils.findMethod("FastClass.invoke(int, Object, Object[])");
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("FastClass.newInstance(int, Object[])");
-    private static final Class[] CONSTRUCTOR_TYPES = { Class.class };
+class FastClassEmitter extends Emitter2 {
+    private static final Signature METHOD_GET_INDEX =
+      Signature.parse("int getIndex(String, Class[])");
+    private static final Signature SIGNATURE_GET_INDEX =
+      Signature.parse("int getIndex(String)");
+    private static final Signature CONSTRUCTOR_GET_INDEX =
+      Signature.parse("int getIndex(Class[])");
+    private static final Signature INVOKE =
+      Signature.parse("Object invoke(int, Object, Object[])");
+    private static final Signature NEW_INSTANCE =
+      Signature.parse("Object newInstance(int, Object[])");
 
     public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, FastClass.class, null, Constants.SOURCE_FILE);
+        super(v);
+        Ops.begin_class(this, Modifier.PUBLIC, className, FastClass.class, null, Constants.SOURCE_FILE);
 
         // constructor
-        begin_constructor(CONSTRUCTOR_TYPES);
+        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_CLASS, null);
         load_this();
         load_args();
-        super_invoke_constructor(CONSTRUCTOR_TYPES);
+        super_invoke_constructor(Signatures.CSTRUCT_CLASS);
         return_value();
-        end_method();
 
         VisibilityPredicate vp = new VisibilityPredicate(type, false);
         List methodList = ReflectUtils.addAllMethods(type, new ArrayList());
@@ -91,7 +90,7 @@ class FastClassEmitter extends Emitter {
         final Constructor[] constructors = (Constructor[])CollectionUtils.filter(type.getDeclaredConstructors(), vp);
 
         // getIndex(String)
-        begin_method(SIGNATURE_GET_INDEX);
+        begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
         final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
                 Method m = (Method)obj;
@@ -99,11 +98,11 @@ class FastClassEmitter extends Emitter {
             }
         });
         load_arg(0);
-        Virt.string_switch(this,
+        Ops.string_switch(this,
                            (String[])signatures.toArray(new String[0]),
-                           Virt.SWITCH_STYLE_HASH,
-                           new Virt.ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
+                           Ops.SWITCH_STYLE_HASH,
+                           new ObjectSwitchCallback() {
+            public void processCase(Object key, org.objectweb.asm.Label end) {
                 // TODO: remove linear indexOf
                 push(signatures.indexOf(key));
                 return_value();
@@ -113,66 +112,61 @@ class FastClassEmitter extends Emitter {
                 return_value();
             }
         });
-        end_method();
 
         // getIndex(String, Class[])
-        begin_method(METHOD_GET_INDEX);
+        begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
         load_args();
-        Virt.method_switch(this, methods, new GetIndexCallback(methods));
-        end_method();
+        Ops.method_switch(this, methods, new GetIndexCallback(methods));
 
         // getIndex(Class[])
-        begin_method(CONSTRUCTOR_GET_INDEX);
+        begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
         load_args();
-        Virt.constructor_switch(this, constructors, new GetIndexCallback(constructors));
-        end_method();
+        Ops.constructor_switch(this, constructors, new GetIndexCallback(constructors));
 
         // invoke(int, Object, Object[])
-        begin_method(INVOKE);
+        begin_method(Constants.ACC_PUBLIC, INVOKE, null);
         load_arg(1);
-        checkcast(type);
+        checkcast(Type.getType(type));
         load_arg(0);
         invokeSwitchHelper(methods, 2);
-        end_method();
 
         // newInstance(int, Object[])
-        begin_method(NEW_INSTANCE);
-        new_instance(type);
+        begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+        new_instance(Type.getType(type));
         dup();
         load_arg(0);
         invokeSwitchHelper(constructors, 1);
-        end_method();
 
         end_class();
     }
 
     private void invokeSwitchHelper(final Object[] members, final int arg) throws Exception {
         process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
-            public void processCase(int key, Label end) {
+            public void processCase(int key, org.objectweb.asm.Label end) {
                 Member member = (Member)members[key];
                 Class[] types = ReflectUtils.getParameterTypes(member);
                 for (int i = 0; i < types.length; i++) {
                     load_arg(arg);
                     aaload(i);
-                    Virt.unbox(FastClassEmitter.this, types[i]);
+                    Ops.unbox(FastClassEmitter.this, Type.getType(types[i]));
                 }
                 if (member instanceof Method) {
-                    invoke((Method)member);
-                    Virt.box(FastClassEmitter.this, ((Method)member).getReturnType());
+                    Ops.invoke(FastClassEmitter.this, (Method)member);
+                    Ops.box(FastClassEmitter.this, Type.getType(((Method)member).getReturnType()));
                 } else {
-                    invoke((Constructor)member);
+                    Ops.invoke(FastClassEmitter.this, (Constructor)member);
                 }
                 return_value();
             }
             public void processDefault() {
-                Virt.throw_exception(FastClassEmitter.this,
-                                     NoSuchMethodError.class,
-                                     "Cannot find matching method/constructor");
+                Ops.throw_exception(FastClassEmitter.this,
+                                    Types.NO_SUCH_METHOD_ERROR,
+                                    "Cannot find matching method/constructor");
             }
         });
     }
 
-    private class GetIndexCallback implements Virt.ObjectSwitchCallback {
+    private class GetIndexCallback implements ObjectSwitchCallback {
         private Map indexes = new HashMap();
 
         public GetIndexCallback(Object[] members) {
@@ -181,7 +175,7 @@ class FastClassEmitter extends Emitter {
             }
         }
             
-        public void processCase(Object key, Label end) {
+        public void processCase(Object key, org.objectweb.asm.Label end) {
             push(((Integer)indexes.get(key)).intValue());
             return_value();
         }

@@ -113,6 +113,10 @@ public class Emitter2 {
         return superType;
     }
 
+    public Type getReturnType() {
+        return returnType;
+    }
+    
     public Type[] getArgumentTypes() {
         return (Type[])argumentTypes.clone();
     }
@@ -224,7 +228,6 @@ public class Emitter2 {
         Local2 local = (Local2)remap.get(key);
         if (local == null) {
             local = make_local(type);
-            remap.put(key, local);
         }
         if (!local.getType().equals(type)) {
             throw new IllegalStateException("Remapped local has different type");
@@ -266,6 +269,10 @@ public class Emitter2 {
                      argumentTypes,
                      exceptions);
     }
+
+//     public void begin_constructor(int access, Signature sig, Type[] exceptions) {
+//         begin_method(access, sig.getArgumentTypes(), exceptions);
+//     }
 
     private static String[] toInternalNames(Type[] types) {
         if (types == null) {
@@ -518,7 +525,7 @@ public class Emitter2 {
 
     private void store_local(Type t, int pos) {
         // TODO: t == null ok?
-        codev.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
+        codev.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
     }
     
     public void iinc(Local2 local, int amount) {
@@ -785,6 +792,7 @@ public class Emitter2 {
     
     public Local2 make_local(Type type) {
         Local2 local = new Local2(nextLocal, type);
+        remap.put(new Integer(nextLocal), local);
         nextLocal += type.getSize();
         return local;
     }
