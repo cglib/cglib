@@ -52,7 +52,6 @@
  * <http://www.apache.org/>.
  */
 package net.sf.cglib;
-
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -62,17 +61,15 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.10 2002/12/21 08:37:28 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.11 2002/12/22 00:21:17 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
 
-    private static final String CLASS_NAME = "net.sf.cglib.Delegator$$CreatedByCGLIB$$";
-    private static int index = 0;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
     private static final Map infoCache = new HashMap();
-
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
     private static final DelegatorKey keyFactory =
       (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
 
@@ -81,10 +78,6 @@ public class Delegator {
         public Object newInstance(Class[] classes);
     }
 
-    private static String getNextName() {
-        return CLASS_NAME + index++;
-    }
-    
     private Delegator() { }
     
     // Inner and private because if the makeDelegator(Object[]) constructor
@@ -197,7 +190,8 @@ public class Delegator {
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
-                Class result = new DelegatorGenerator(getNextName(), classes, loader, bean).define();
+                String className = nameFactory.getNextName(TYPE);
+                Class result = new DelegatorGenerator(className, classes, loader, bean).define();
                 factory = (Factory)FactoryCache.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
                 cache.put(loader, key, factory);
             }

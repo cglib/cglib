@@ -58,17 +58,13 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.6 2002/12/21 23:55:11 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.7 2002/12/22 00:21:17 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
-
-    private static final String CLASS_PREFIX = "net.sf.cglib";
-    private static final String CLASS_SUFFIX = "$$ClosuredByCGLIB$$";
-    private static int index = 0;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("ClosuredByCGLIB");
     private static final MethodClosureKey keyFactory =
       (MethodClosureKey)KeyFactory.makeFactory(MethodClosureKey.class, null);
 
@@ -113,7 +109,8 @@ abstract public class MethodClosure {
             factory = (MethodClosure)cache.get(loader, key);
             if (factory == null) {
                 Method method = findProxiedMethod(delegateClass, methodName, iface);
-                Class result = new Generator(getNextName(delegateClass), method, iface, loader).define();
+                String className = nameFactory.getNextName(delegateClass);
+                Class result = new Generator(className, method, iface, loader).define();
                 factory = (MethodClosure)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);
                 cache.put(loader, key, factory);
             }
@@ -142,16 +139,6 @@ abstract public class MethodClosure {
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
-    }
-
-    // TODO: move to helper class
-    private static String getNextName(Class cls) {
-        String class_name = cls.getName() + CLASS_SUFFIX;
-        if (class_name.startsWith("java")) {
-            class_name = CLASS_PREFIX + class_name;
-        }
-        class_name += index++;
-        return class_name;
     }
 
     private static class Generator extends CodeGenerator {

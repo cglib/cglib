@@ -53,77 +53,24 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.7 2002/12/22 00:21:17 herbyderby Exp $
+ * @version $Id: ClassNameFactory.java,v 1.1 2002/12/22 00:21:17 herbyderby Exp $
  */
-abstract public class MethodProxy {
-    private static/* final */Method INVOKE_SUPER = null;//bug in jdk1.2 javac
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("ProxiedByCGLIB");
+/* package */ class ClassNameFactory {
+    private final String suffix;
+    private int index = 0;
 
-    static {
-        try {
-            Class[] types = new Class[]{ Object.class, Object[].class };
-            INVOKE_SUPER = MethodProxy.class.getDeclaredMethod("invokeSuper", types);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
+    public ClassNameFactory(String suffix) {
+        this.suffix = suffix;
     }
 
-    abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
-
-    protected MethodProxy() { }
-
-    public static MethodProxy generate(Method method) {
-        return generate(method, null);
-    }
-
-    public static MethodProxy generate(Method method, ClassLoader loader) {
-        try {
-            Class methodClass = method.getDeclaringClass();
-            if (loader == null) {
-                loader = methodClass.getClassLoader();
-                if (loader == null) {
-                    loader = MethodProxy.class.getClassLoader();
-                }
-            }
-            String className = nameFactory.getNextName(methodClass);
-            Class gen = new Generator(className, method, loader).define();
-            return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
+    public String getNextName(Class cls) {
+        String className = cls.getName() + "$$" + suffix + "$$";
+        if (className.startsWith("java")) {
+            className = "net.sf.cglib" + className;
         }
-    }
-
-    private static class Generator extends CodeGenerator {
-        private Method method;
-        
-        public Generator(String className, Method method, ClassLoader loader) {
-            super(className, MethodProxy.class, loader);
-            this.method = method;
-        }
-
-        protected void generate() {
-            generateNullConstructor();
-            begin_method(INVOKE_SUPER);
-            load_arg(0);
-            checkcast(method.getDeclaringClass());
-            Class[] types = method.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
-                load_arg(1);
-                push(i);
-                aaload();
-                unbox(types[i]);
-            }
-            invoke(method);
-            box(method.getReturnType());
-            return_value();
-            end_method();
-        }
+        className += index++;
+        return className;
     }
 }

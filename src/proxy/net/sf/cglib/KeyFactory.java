@@ -94,14 +94,13 @@ import java.util.*;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.7 2002/12/07 15:36:49 baliuka Exp $
+ * @version $Id: KeyFactory.java,v 1.8 2002/12/22 00:21:17 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
-    
-    private static final String CLASS_SUFFIX = "KeyFactory$$CreatedByCGLIB$$";
-    private static int index = 0;
+
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
 
     protected int hashConstant;
     protected int hashMultiplier;
@@ -114,18 +113,11 @@ abstract public class KeyFactory {
         if (loader == null) {
             loader = defaultLoader;
         }
-        
-       
-       Class  result = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
-                                               keyInterface,
-                                               loader).define();
+        String className = nameFactory.getNextName(keyInterface);
+        Class result = new KeyFactoryGenerator(className, keyInterface, loader).define();
         return (KeyFactory)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);
     }
     
-    private static String getNextName(Package pkg) {
-        return ((pkg == null) ? "" : (pkg.getName() + ".")) + CLASS_SUFFIX + index++;
-    }
-
     public int hashCode() {
         return hash;
     }
