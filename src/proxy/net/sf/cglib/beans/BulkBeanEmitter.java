@@ -96,18 +96,20 @@ class BulkBeanEmitter extends ClassEmitter {
 
     private void generateGet(final Class target, final Method[] getters) {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
-        e.load_arg(0);
-        e.checkcast(Type.getType(target));
-        Local bean = e.make_local();
-        e.store_local(bean);
-        for (int i = 0; i < getters.length; i++) {
-            if (getters[i] != null) {
-                e.load_arg(1);
-                e.push(i);
-                e.load_local(bean);
-                e.invoke(getters[i]);
-                e.box(Type.getType(getters[i].getReturnType()));
-                e.aastore();
+        if (getters.length >= 0) {
+            e.load_arg(0);
+            e.checkcast(Type.getType(target));
+            Local bean = e.make_local();
+            e.store_local(bean);
+            for (int i = 0; i < getters.length; i++) {
+                if (getters[i] != null) {
+                    e.load_arg(1);
+                    e.push(i);
+                    e.load_local(bean);
+                    e.invoke(getters[i]);
+                    e.box(Type.getType(getters[i].getReturnType()));
+                    e.aastore();
+                }
             }
         }
         e.return_value();
@@ -117,36 +119,40 @@ class BulkBeanEmitter extends ClassEmitter {
     private void generateSet(final Class target, final Method[] setters) {
         // setPropertyValues
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
-        Local index = e.make_local(Type.INT_TYPE);
-        e.push(0);
-        e.store_local(index);
-        e.load_arg(0);
-        e.checkcast(Type.getType(target));
-        e.load_arg(1);
-        Block handler = e.begin_block();
-        int lastIndex = 0;
-        for (int i = 0; i < setters.length; i++) {
-            if (setters[i] != null) {
-                int diff = i - lastIndex;
-                if (diff > 0) {
-                    e.iinc(index, diff);
-                    lastIndex = i;
+        if (setters.length > 0) {
+            Local index = e.make_local(Type.INT_TYPE);
+            e.push(0);
+            e.store_local(index);
+            e.load_arg(0);
+            e.checkcast(Type.getType(target));
+            e.load_arg(1);
+            Block handler = e.begin_block();
+            int lastIndex = 0;
+            for (int i = 0; i < setters.length; i++) {
+                if (setters[i] != null) {
+                    int diff = i - lastIndex;
+                    if (diff > 0) {
+                        e.iinc(index, diff);
+                        lastIndex = i;
+                    }
+                    e.dup2();
+                    e.aaload(i);
+                    e.unbox(Type.getType(setters[i].getParameterTypes()[0]));
+                    e.invoke(setters[i]);
                 }
-                e.dup2();
-                e.aaload(i);
-                e.unbox(Type.getType(setters[i].getParameterTypes()[0]));
-                e.invoke(setters[i]);
             }
+            handler.end();
+            e.return_value();
+            e.catch_exception(handler, CLASS_CAST_EXCEPTION);
+            e.new_instance(BULK_BEAN_EXCEPTION);
+            e.dup_x1();
+            e.swap();
+            e.load_local(index);
+            e.invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
+            e.athrow();
+        } else {
+            e.return_value();
         }
-        handler.end();
-        e.return_value();
-        e.catch_exception(handler, CLASS_CAST_EXCEPTION);
-        e.new_instance(BULK_BEAN_EXCEPTION);
-        e.dup_x1();
-        e.swap();
-        e.load_local(index);
-        e.invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
-        e.athrow();
         e.end_method();
     }
     
