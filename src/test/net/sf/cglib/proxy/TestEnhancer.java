@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.33 2003/11/26 02:15:08 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.34 2003/12/02 07:54:17 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -333,7 +333,6 @@ public class TestEnhancer extends CodeGenTestCase {
                 public Object intercept(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
                     if (method.getName().equals("getFirstName")) {
-                        assertTrue(MethodProxy.getSuperName(obj.getClass(), method).equals("CGLIB$$ACCESS_getFirstName_0"));
                         return "Christopher";
                     }
                     return proxy.invokeSuper(obj, args);
@@ -556,4 +555,8 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue(instance instanceof ClassOnlyX);
         assertTrue(instance.getClass().equals(type));
     }
+
+     public void testSql() {
+         Enhancer.create(null, new Class[]{ java.sql.PreparedStatement.class }, TEST_INTERCEPTOR);
+     }
 }

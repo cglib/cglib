@@ -362,16 +362,27 @@ public class EmitUtils {
             e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
         } else {
             ClassEmitter ce = e.getClassEmitter();
-            String fieldName = "CGLIB$load_class$" + type.getClassName().replace('.', '_');
+            String typeName = TypeUtils.emulateClassGetName(type);
+            String fieldName = getFieldName(typeName);
             if (!ce.isFieldDeclared(fieldName)) {
                 ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null, null);
                 CodeEmitter hook = ce.getStaticHook();
-                hook.push(TypeUtils.emulateClassGetName(type));
+                hook.push(typeName);
                 hook.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
                 hook.putstatic(ce.getClassType(), fieldName, Constants.TYPE_CLASS);
             }
             e.getfield(fieldName);
         }
+    }
+
+    private static String getFieldName(String typeName) {
+        int arrayCount = typeName.lastIndexOf('[');
+        typeName = typeName.replace('.', '_'); // TODO?
+        if (arrayCount >= 0) {
+            typeName = "ARRAY" + arrayCount + "$" + typeName;
+        }
+        typeName = typeName.replace('[', '_');
+        return "CGLIB$load_class$" + typeName;
     }
 
     public static void push_array(CodeEmitter e, Object[] array) {
