@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.15 2003/06/24 21:00:10 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.16 2003/07/16 18:27:57 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryGenerator extends CodeGenerator {
@@ -156,10 +156,10 @@ class KeyFactoryGenerator extends CodeGenerator {
             } else {
                 hash_object();
             }
-            iadd();
+            add(Integer.TYPE);
             swap();
             dup_x1();
-            imul();
+            mul(Integer.TYPE);
         }
     }
 
@@ -193,7 +193,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         if (clazz.equals(Boolean.TYPE)) {
             // f ? 0 : 1
             push(1);
-            ixor();
+            xor(Integer.TYPE);
         } else if (clazz.equals(Double.TYPE)) {
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
             invoke(MethodConstants.DOUBLE_TO_LONG_BITS);
@@ -211,9 +211,9 @@ class KeyFactoryGenerator extends CodeGenerator {
     private void hash_long() {
         // (int)(f ^ (f >>> 32))
         push(32);
-        lushr();
-        lxor();
-        l2i();
+        ushr(Long.TYPE);
+        xor(Long.TYPE);
+        cast_numeric(Long.TYPE, Integer.TYPE);
     }
 
     // generates pseudo random prime number

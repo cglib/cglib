@@ -388,13 +388,6 @@ abstract public class BasicCodeGenerator {
     protected void if_icmpeq(Label label) { backend.emit(Opcodes.IF_ICMPEQ, label); }
     protected void if_acmpeq(Label label) { backend.emit(Opcodes.IF_ACMPEQ, label); }
     protected void if_acmpne(Label label) { backend.emit(Opcodes.IF_ACMPNE, label); }
-
-    protected void imul() { backend.emit(Opcodes.IMUL); }
-    protected void iadd() { backend.emit(Opcodes.IADD); }
-    protected void lushr() { backend.emit(Opcodes.LUSHR); }
-    protected void lxor() { backend.emit(Opcodes.LXOR); }
-    protected void ixor() { backend.emit(Opcodes.IXOR); }
-    protected void l2i() { backend.emit(Opcodes.L2I); }
     protected void dcmpg() { backend.emit(Opcodes.DCMPG); }
     protected void fcmpg() { backend.emit(Opcodes.FCMPG); }
     protected void lcmp() { backend.emit(Opcodes.LCMP); }
@@ -406,7 +399,121 @@ abstract public class BasicCodeGenerator {
     protected void dup_x2() { backend.emit(Opcodes.DUP_X2); }
     protected void swap() { backend.emit(Opcodes.SWAP); }
     protected void aconst_null() { backend.emit(Opcodes.ACONST_NULL); }
-    
+
+    protected void add(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LADD);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DADD);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FADD);
+        } else if (type == Integer.TYPE) {
+            backend.emit(Opcodes.IADD);
+        }
+    }
+
+    protected void mul(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LMUL);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DMUL);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FMUL);
+        } else {
+            backend.emit(Opcodes.IMUL);
+        }
+    }
+
+    protected void xor(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LXOR);
+        } else {
+            backend.emit(Opcodes.IXOR);
+        }
+    }
+
+    protected void ushr(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LUSHR);
+        } else {
+            backend.emit(Opcodes.IUSHR);
+        }
+    }
+
+    protected void sub(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LSUB);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DSUB);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FSUB);
+        } else {
+            backend.emit(Opcodes.ISUB);
+        }
+    }
+
+    protected void div(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LDIV);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DDIV);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FDIV);
+        } else {
+            backend.emit(Opcodes.IDIV);
+        }
+    }
+
+    /**
+     * Casts from one primitive numeric type to another
+     */
+    protected void cast_numeric(Class from, Class to) {
+        if (from != to) {
+            if (from == Double.TYPE) {
+                if (to == Float.TYPE) {
+                    backend.emit(Opcodes.D2F);
+                } else if (to == Long.TYPE) {
+                    backend.emit(Opcodes.D2L);
+                } else {
+                    backend.emit(Opcodes.D2I);
+                    cast_numeric(Integer.TYPE, to);
+                }
+            } else if (from == Float.TYPE) {
+                if (to == Double.TYPE) {
+                    backend.emit(Opcodes.F2D);
+                } else if (to == Long.TYPE) {
+                    backend.emit(Opcodes.F2L);
+                } else {
+                    backend.emit(Opcodes.F2I);
+                    cast_numeric(Integer.TYPE, to);
+                }
+            } else if (from == Long.TYPE) {
+                if (to == Double.TYPE) {
+                    backend.emit(Opcodes.L2D);
+                } else if (to == Float.TYPE) {
+                    backend.emit(Opcodes.L2F);
+                } else {
+                    backend.emit(Opcodes.L2I);
+                    cast_numeric(Integer.TYPE, to);
+                }
+            } else {
+                if (to == Byte.TYPE) {
+                    backend.emit(Opcodes.I2B);
+                } else if (to == Character.TYPE) {
+                    backend.emit(Opcodes.I2C);
+                } else if (to == Double.TYPE) {
+                    backend.emit(Opcodes.I2D);
+                } else if (to == Float.TYPE) {
+                    backend.emit(Opcodes.I2F);
+                } else if (to == Long.TYPE) {
+                    backend.emit(Opcodes.I2L);
+                } else if (to == Short.TYPE) {
+                    backend.emit(Opcodes.I2S);
+                }
+            }
+        }
+    }
+
     protected void push(int i) {
         if (i < -1) {
             backend.emit_ldc(new Integer(i));
