@@ -890,7 +890,6 @@ abstract class CodeGenerator {
     protected void unbox(Class clazz) {
         if (clazz.isPrimitive()) {
             if (!clazz.equals(Void.TYPE)) {
-                Class wrapper = (Class)primitiveToWrapper.get(clazz);
                 Method convert = (Method)primitiveMethods.get(clazz);
                 checkcast(convert.getDeclaringClass());
                 invoke(convert);
