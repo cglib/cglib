@@ -80,10 +80,6 @@ public class ComplexOps {
       TypeUtils.parseType("NoClassDefFoundError");
     private static final Type CLASS_NOT_FOUND_EXCEPTION =
       TypeUtils.parseType("ClassNotFoundException");
-    private static final Type BIG_INTEGER =
-      TypeUtils.parseType("java.math.BigInteger");
-    private static final Type BIG_DECIMAL =
-      TypeUtils.parseType("java.math.BigDecimal");
 
     private ComplexOps() {
     }
@@ -426,15 +422,15 @@ public class ComplexOps {
             } else if (obj instanceof Class) {
                 load_class(e, Type.getType((Class)obj));
             } else if (obj instanceof BigInteger) {
-                e.new_instance(BIG_INTEGER);
+                e.new_instance(Constants.TYPE_BIG_INTEGER);
                 e.dup();
                 e.push(obj.toString());
-                e.invoke_constructor(BIG_INTEGER);
+                e.invoke_constructor(Constants.TYPE_BIG_INTEGER);
             } else if (obj instanceof BigDecimal) {
-                e.new_instance(BIG_DECIMAL);
+                e.new_instance(Constants.TYPE_BIG_DECIMAL);
                 e.dup();
                 e.push(obj.toString());
-                e.invoke_constructor(BIG_DECIMAL);
+                e.invoke_constructor(Constants.TYPE_BIG_DECIMAL);
             } else {
                 throw new IllegalArgumentException("unknown type: " + obj.getClass());
             }
