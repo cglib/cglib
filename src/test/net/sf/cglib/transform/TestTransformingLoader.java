@@ -62,7 +62,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.7 2003/09/21 21:26:16 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.8 2003/09/22 03:59:19 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -114,6 +114,21 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         });
         Class loaded = loadHelper(t, Example.class);
         // TODO
+    }
+
+    public void testFieldProvider() throws Exception {
+        ClassTransformer t = new FieldProviderTransformer();
+        Class loaded = loadHelper(t, Example.class);
+        // TODO
+//         FieldProvider fp = (FieldProvider)loaded.newInstance();
+//         assertTrue(((Integer)fp.getField("example")).intValue() == 42);
+//         fp.setField("example", new Integer(6));
+//         assertTrue(((Integer)fp.getField("example")).intValue() == 6);
+//         assertTrue(fp.getField("example") == null);
+//         try {
+//             fp.getField("dsfjkl");
+//             fail("expected exception");
+//         } catch (IllegalArgumentException ignore) { }
     }
 
     private static Class loadHelper(ClassTransformer t, Class target) throws ClassNotFoundException {
