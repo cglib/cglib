@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.16 2003/10/03 23:20:30 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.17 2003/10/04 21:59:17 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -235,17 +235,11 @@ abstract public class MethodDelegate {
             return ((MethodDelegate)instance).newInstance(target);
         }
 
-        public void generateClass(ClassVisitor v) throws NoSuchFieldException {
-            Method proxy;
-            final Method method;
-            try {
-                proxy = ReflectUtils.findInterfaceMethod(iface);
-                method = targetClass.getMethod(methodName, proxy.getParameterTypes());
-                if (!proxy.getReturnType().isAssignableFrom(method.getReturnType())) {
-                    throw new IllegalArgumentException("incompatible return types");
-                }
-            } catch (NoSuchMethodException e) {
-                throw new CodeGenerationException(e);
+        public void generateClass(ClassVisitor v) throws NoSuchMethodException {
+            Method proxy = ReflectUtils.findInterfaceMethod(iface);
+            final Method method = targetClass.getMethod(methodName, proxy.getParameterTypes());
+            if (!proxy.getReturnType().isAssignableFrom(method.getReturnType())) {
+                throw new IllegalArgumentException("incompatible return types");
             }
 
             boolean isStatic = Modifier.isStatic(method.getModifiers());

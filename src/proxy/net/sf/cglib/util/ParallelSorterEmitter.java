@@ -69,7 +69,7 @@ class ParallelSorterEmitter extends ClassEmitter {
     private static final Type PARALLEL_SORTER =
       TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
 
-    public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
+    public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) {
         super(v);
         begin_class(Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
         ComplexOps.null_constructor(this);
@@ -83,7 +83,7 @@ class ParallelSorterEmitter extends ClassEmitter {
         return "FIELD_" + index;
     }
 
-    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
+    private void generateConstructor(Object[] arrays) {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
         e.load_this();
         e.super_invoke_constructor();

@@ -61,6 +61,16 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class ComplexOps {
+    private static final Type NO_CLASS_DEF_FOUND_ERROR =
+      TypeUtils.parseType("NoClassDefFoundError");
+    private static final Type CLASS_NOT_FOUND_EXCEPTION =
+      TypeUtils.parseType("ClassNotFoundException");
+
+    private static final Signature CSTRUCT_STRING =
+      TypeUtils.parseConstructor("String");
+    private static final Signature CSTRUCT_NULL =
+      TypeUtils.parseConstructor("");
+
     private static final Signature FIND_CLASS =
       TypeUtils.parseSignature("Class CGLIB$findClass(String)");
     private static final Signature HASH_CODE =
@@ -75,14 +85,6 @@ public class ComplexOps {
       TypeUtils.parseSignature("Class forName(String)");
     private static final Signature GET_MESSAGE =
       TypeUtils.parseSignature("String getMessage()");
-    private static final Signature CSTRUCT_STRING =
-      TypeUtils.parseSignature("void <init>(String)");
-    private static final Type NO_CLASS_DEF_FOUND_ERROR =
-      TypeUtils.parseType("NoClassDefFoundError");
-    private static final Type CLASS_NOT_FOUND_EXCEPTION =
-      TypeUtils.parseType("ClassNotFoundException");
-    private static final Signature CSTRUCT_NULL =
-      TypeUtils.parseConstructor("");
     private static final Signature DOUBLE_TO_LONG_BITS =
       TypeUtils.parseSignature("long doubleToLongBits(double)");
     private static final Signature FLOAT_TO_INT_BITS =
@@ -202,23 +204,30 @@ public class ComplexOps {
         e.if_icmp(e.LT, loopbody);
     }
     
-    public static void string_switch(CodeEmitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
-    throws Exception {
-        switch (switchStyle) {
-        case Constants.SWITCH_STYLE_TRIE:
-            string_switch_trie(e, strings, callback);
-            break;
-        case Constants.SWITCH_STYLE_HASH:
-            string_switch_hash(e, strings, callback);
-            break;
-        default:
-            throw new IllegalArgumentException("unknown switch style " + switchStyle);
+    public static void string_switch(CodeEmitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback) {
+        try {
+            switch (switchStyle) {
+            case Constants.SWITCH_STYLE_TRIE:
+                string_switch_trie(e, strings, callback);
+                break;
+            case Constants.SWITCH_STYLE_HASH:
+                string_switch_hash(e, strings, callback);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown switch style " + switchStyle);
+            }
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Error ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new CodeGenerationException(ex);
         }
     }
 
-    static void string_switch_trie(final CodeEmitter e,
-                                   String[] strings,
-                                   final ObjectSwitchCallback callback) throws Exception {
+    private static void string_switch_trie(final CodeEmitter e,
+                                           String[] strings,
+                                           final ObjectSwitchCallback callback) throws Exception {
         final Label def = e.make_label();
         final Label end = e.make_label();
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
@@ -284,9 +293,9 @@ public class ComplexOps {
         return keys;
     }
 
-    static void string_switch_hash(final CodeEmitter e,
-                                   final String[] strings,
-                                   final ObjectSwitchCallback callback) throws Exception {
+    private static void string_switch_hash(final CodeEmitter e,
+                                           final String[] strings,
+                                           final ObjectSwitchCallback callback) throws Exception {
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
             public Object transform(Object value) {
                 return new Integer(value.hashCode());
@@ -344,7 +353,7 @@ public class ComplexOps {
     }
 
     private static void load_class_helper(CodeEmitter e, Type type) {
-//         e.register(FIND_CLASS, new Emitter.EndClassCallback() {
+//         e.register(FIND_CLASS, new ClassEmitter.EndClassCallback() {
 //             public void process() {
 //                 generateFindClass(e);
 //             }

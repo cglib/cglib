@@ -20,7 +20,7 @@ public class ReflectOps {
 
     public static void method_switch(CodeEmitter e,
                                      Method[] methods,
-                                     ObjectSwitchCallback callback) throws Exception {
+                                     ObjectSwitchCallback callback) {
         member_switch_helper(e, Arrays.asList(methods), callback, true, new ParameterTyper() {
             public Class[] getParameterTypes(Object member) {
                 return ((Method)member).getParameterTypes();
@@ -30,7 +30,7 @@ public class ReflectOps {
 
     public static void constructor_switch(CodeEmitter e,
                                           Constructor[] cstructs,
-                                          ObjectSwitchCallback callback) throws Exception {
+                                          ObjectSwitchCallback callback) {
         member_switch_helper(e, Arrays.asList(cstructs), callback, false, new ParameterTyper() {
             public Class[] getParameterTypes(Object member) {
                 return ((Constructor)member).getParameterTypes();
@@ -42,42 +42,50 @@ public class ReflectOps {
                                              List members,
                                              final ObjectSwitchCallback callback,
                                              boolean useName,
-                                             final ParameterTyper typer) throws Exception {
-        final Map cache = new HashMap();
-        final ParameterTyper cached = new ParameterTyper() {
-            public Class[] getParameterTypes(Object member) {
-                Class[] types = (Class[])cache.get(member);
-                if (types == null) {
-                    cache.put(member, types = typer.getParameterTypes(member));
-                }
-                return types;
+                                             final ParameterTyper typer) {
+        try {
+            final Map cache = new HashMap();
+            final ParameterTyper cached = new ParameterTyper() {
+                    public Class[] getParameterTypes(Object member) {
+                        Class[] types = (Class[])cache.get(member);
+                        if (types == null) {
+                            cache.put(member, types = typer.getParameterTypes(member));
+                        }
+                        return types;
+                    }
+                };
+            final Label def = e.make_label();
+            final Label end = e.make_label();
+            if (useName) {
+                e.swap();
+                final Map buckets = CollectionUtils.bucket(members, new Transformer() {
+                        public Object transform(Object value) {
+                            return ((Member)value).getName();
+                        }
+                    });
+                String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+                        public void processCase(Object key, Label dontUseEnd) throws Exception {
+                            member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
+                        }
+                        public void processDefault() throws Exception {
+                            e.goTo(def);
+                        }
+                    });
+            } else {
+                member_helper_size(e, members, callback, cached, def, end);
             }
-        };
-        final Label def = e.make_label();
-        final Label end = e.make_label();
-        if (useName) {
-            e.swap();
-            final Map buckets = CollectionUtils.bucket(members, new Transformer() {
-                public Object transform(Object value) {
-                    return ((Member)value).getName();
-                }
-            });
-            String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-            ComplexOps.string_switch_hash(e, names, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label dontUseEnd) throws Exception {
-                    member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
-                }
-                public void processDefault() throws Exception {
-                    e.goTo(def);
-                }
-            });
-        } else {
-            member_helper_size(e, members, callback, cached, def, end);
+            e.mark(def);
+            e.pop();
+            callback.processDefault();
+            e.mark(end);
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Error ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new CodeGenerationException(ex);
         }
-        e.mark(def);
-        e.pop();
-        callback.processDefault();
-        e.mark(end);
     }
 
     private static void member_helper_size(final CodeEmitter e,
@@ -158,7 +166,7 @@ public class ReflectOps {
 
                 final Map fbuckets = buckets;
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-                ComplexOps.string_switch_hash(e, names, new ObjectSwitchCallback() {
+                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label dontUseEnd) throws Exception {
                         member_helper_type(e, (List)fbuckets.get(key), callback, typer, def, end, checked);
                     }
