@@ -4,8 +4,10 @@ import java.io.*;
 
 
 import net.sf.cglib.util.Opcodes;
+import net.sf.cglib.util.ReflectUtils;
 import org.objectweb.asm.*;
 
+import java.util.*;
 import java.lang.reflect.Modifier;
 
 
@@ -17,9 +19,10 @@ public class TransformClassVisitor implements ClassVisitor{
     
     ReadWriteFieldFilter filter;
     ClassWriter cw = new ClassWriter(true);
+    Set interfaces = new HashSet();
     ClassReader cr;
     String className;
-    boolean addedCallback = false;
+   
     static String callbackDesc = Type.getType( ReadWriteFieldCallback.class ).getDescriptor();
     static String callbackName = ReadWriteFieldCallback.class.getName().replace('.','/');
     
@@ -29,18 +32,31 @@ public class TransformClassVisitor implements ClassVisitor{
       
        this.filter = filter;
        cr = new ClassReader(is);
-       
+       interfaces.add(Signature.getInternalName(Transformed.class));
     }
+    
+    
     
     public byte[] transform(){
          cr.accept(this, false);
          return cw.toByteArray();
     }
     
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
+    
+    
+    
+    public void visit(int access, String name, String superName, String[] ifaces, String sourceFile) {
         className = name;
-        //TODO: generate get/set callback
-        cw.visit(access,name,superName, interfaces, sourceFile  );
+        interfaces.addAll(Arrays.asList(ifaces));
+        cw.visit(
+        access,
+        name,
+        superName, 
+        (String[])interfaces.toArray( new String[]{}),
+        sourceFile  
+        );
+        addCallbackField();
+        implemetTransform();
     }
     
     public void visitEnd() {
@@ -180,18 +196,58 @@ public class TransformClassVisitor implements ClassVisitor{
         
   }
    
+    private void implemetTransform(){
+   
+      CodeVisitor cv =  cw.visitMethod(Modifier.PUBLIC, "setReadWriteFieldCallback",
+         Type.getMethodDescriptor(
+          ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." + 
+                                  "setReadWriteFieldCallback(net.sf.cglib.transform." + 
+                                  "ReadWriteFieldCallback)") ) , new String[]{} );  
+                                  
+          cv.visitVarInsn(Opcodes.ALOAD, 0 );
+          cv.visitVarInsn(Opcodes.ALOAD, 1 );
+          cv.visitFieldInsn(
+                  Opcodes.PUTFIELD,
+                  className,
+                  Signature.READ_WRITE_CALLBACK,
+                  callbackDesc
+                 );
+          cv.visitInsn(Opcodes.RETURN);                        
+          cv.visitMaxs(0,0);
+          
+          
+          cv =  cw.visitMethod(Modifier.PUBLIC, "getReadWriteFieldCallback",
+         Type.getMethodDescriptor(
+          ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." + 
+                                  "getReadWriteFieldCallback()") ) , new String[]{} );  
+                                  
+          cv.visitVarInsn(Opcodes.ALOAD, 0 );
+          cv.visitFieldInsn(
+                  Opcodes.GETFIELD,
+                  className,
+                  Signature.READ_WRITE_CALLBACK,
+                  callbackDesc
+                 );
+          cv.visitInsn(Opcodes.ARETURN);                        
+          cv.visitMaxs(0,0);
+          
+          
+          
+        
+        
+    }
     
     private void addCallbackField(){
         
-        if(!addedCallback){
+
             cw.visitField(
                Modifier.PRIVATE|Modifier.TRANSIENT,
                Signature.READ_WRITE_CALLBACK,
                callbackDesc , 
                null 
                );
-             addedCallback = true;
-          }
+
+          
     }
     
     public void visitField(int access, String name, String desc, Object value) {
@@ -199,15 +255,13 @@ public class TransformClassVisitor implements ClassVisitor{
        
         
         if( filter.acceptRead( Type.getType("L" + className + ";").getClassName(), name)){
-          
-          addCallbackField();   
+
           addReadMethod(name, desc);
         
         }
         
         if( filter.acceptWrite(  Type.getType("L" + className + ";").getClassName(), name)){
             
-           addCallbackField(); 
            addWriteMethod(name, desc);
         }
         

@@ -55,7 +55,7 @@ package net.sf.cglib.beans;
 
 import java.util.*;
 
-class FixedKeySet extends AbstractSet {
+public /* need it for class loading  */ class FixedKeySet extends AbstractSet {
     private Set set;
     private int size;
 

@@ -5,7 +5,7 @@ package net.sf.cglib.transform;
  *
  * @author  baliuka
  */
-public interface Tranformed {
+public interface Transformed {
     
     void setReadWriteFieldCallback(ReadWriteFieldCallback callback);
     
