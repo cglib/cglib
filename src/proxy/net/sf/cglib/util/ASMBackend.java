@@ -83,7 +83,6 @@ public class ASMBackend implements CodeGeneratorBackend {
 
     public void emit(Label label) {
         cv.visitLabel(((ASMLabel)label).label);
-        cv.visitInsn(Opcodes.NOP);
     }
 
     public void emit(int opcode, Label label) {
