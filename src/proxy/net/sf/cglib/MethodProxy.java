@@ -54,10 +54,11 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.1 2002/11/27 21:29:53 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.2 2002/11/29 23:50:48 herbyderby Exp $
  */
 abstract public class MethodProxy implements ClassFileConstants {
     private static final Method INVOKE_SUPER;
@@ -108,17 +109,23 @@ abstract public class MethodProxy implements ClassFileConstants {
             generateNullConstructor();
 
             begin_method(INVOKE_SUPER);
-            load_arg(0);
-            checkcast(method.getDeclaringClass());
-            Class[] types = method.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
-                load_arg(1);
-                push(i);
-                aaload();
-                unbox(types[i]);
+            if (Modifier.isAbstract(method.getModifiers())) {
+                if (!method.getReturnType().equals(Void.TYPE)) {
+                    push(0);
+                }
+            } else {
+                load_arg(0);
+                checkcast(method.getDeclaringClass());
+                Class[] types = method.getParameterTypes();
+                for (int i = 0; i < types.length; i++) {
+                    load_arg(1);
+                    push(i);
+                    aaload();
+                    unbox(types[i]);
+                }
+                invoke(method);
+                box(method.getReturnType());
             }
-            invoke(method);
-            box(method.getReturnType());
             return_value();
             end_method();
         }
