@@ -52,33 +52,63 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.proxy;
 
-import junit.framework.*;
-import net.sf.cglib.proxy.*;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.4 2002/11/02 12:02:25 baliuka Exp $
+ *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
+ *      baliuka@mwm.lt</a>
+ *@version    $Id: NoOpInterceptor.java,v 1.1 2002/11/02 12:02:25 baliuka Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+ public class NoOpInterceptor implements MethodInterceptor , java.io.Serializable{
+ 
+    String value; 
+    
+     public String getValue(){
+        return  value;
+     }
+     
+     public NoOpInterceptor( String ser) {
+         value = ser;
+     }
+   
+    /** Creates a new instance of NoOpInterceptor */
+    public NoOpInterceptor() {
     }
-
-    public static Test suite() {
+    
+    /** this method is invoked after execution
+     * @param obj this
+     * @param method Method
+     * @param args Arg array
+     * @param invokedSuper value returned from invoke super
+     * @param retValFromSuper value returner from super
+     * @param e Exception thrown by super
+     * @throws Throwable any exeption
+     * @return value to return from generated method
+     */
+    public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
+       
+        if(e != null )
+            throw e.fillInStackTrace();
         
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-           
-        return suite;
+       return retValFromSuper;   
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    /** Generated code calls this method before invoking super
+     * @param obj this
+     * @param method Method
+     * @param args Arg array
+     * @throws Throwable any exeption to stop execution
+     * @return true if need to invoke super
+     */
+    public boolean invokeSuper(Object obj, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+        
+        return true;
     }
+    
 }
-

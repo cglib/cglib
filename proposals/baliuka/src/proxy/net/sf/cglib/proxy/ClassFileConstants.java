@@ -52,33 +52,34 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.proxy;
 
-import junit.framework.*;
-import net.sf.cglib.proxy.*;
-
+import org.apache.bcel.classfile.*;
+import org.apache.bcel.generic.*;
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.4 2002/11/02 12:02:25 baliuka Exp $
+ * private utility
+ * @author  baliuka
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
+ interface ClassFileConstants extends org.apache.bcel.Constants{
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-           
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-    }
+    static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
+    static final ObjectType BOOLEAN_OBJECT =
+    new ObjectType(Boolean.class.getName());
+    static final ObjectType INTEGER_OBJECT =
+    new ObjectType(Integer.class.getName());
+    static final ObjectType CHARACTER_OBJECT =
+    new ObjectType(Character.class.getName());
+    static final ObjectType BYTE_OBJECT = new ObjectType(Byte.class.getName());
+    static final ObjectType SHORT_OBJECT = new ObjectType(Short.class.getName());
+    static final ObjectType LONG_OBJECT = new ObjectType(Long.class.getName());
+    static final ObjectType DOUBLE_OBJECT = new ObjectType(Double.class.getName());
+    static final ObjectType FLOAT_OBJECT = new ObjectType(Float.class.getName());
+    static final ObjectType METHOD_OBJECT =
+    new ObjectType(java.lang.reflect.Method.class.getName());
+    static final ObjectType CLASS_OBJECT = new ObjectType(Class.class.getName());
+    static final ObjectType NUMBER_OBJECT = new ObjectType(Number.class.getName());
+    static final String CONSTRUCTOR_NAME = "<init>";
+    static final String SOURCE_FILE = "<generated>";
+  
+     
 }
-
