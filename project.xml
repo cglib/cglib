@@ -21,9 +21,16 @@
 
 
   <issueTrackingUrl>http://sourceforge.net/tracker/?group_id=56933</issueTrackingUrl>
-  <siteAddress>cglib.sf.net</siteAddress>
+  <siteAddress>cglib.sourceforge.net</siteAddress>
   <siteDirectory>/home/groups/c/cg/cglib/htdocs/</siteDirectory>
   <distributionDirectory>/home/groups/c/cg/cglib/htdocs/</distributionDirectory>
+
+
+ <repository>
+  <connection>scm:cvs:pserver:anonymous@cvs.cglib.sourceforge.net:/cvsroot/cglib:cglib</connection> 
+  <url>http://cvs.cglib.sourceforge.net/cgi-bin/viewcvs.cgi/cglib/cglib/</url> 
+ </repository>
+  
 
 
 
