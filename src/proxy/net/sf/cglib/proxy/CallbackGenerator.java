@@ -15,21 +15,20 @@
  */
 package net.sf.cglib.proxy;
 
-import java.util.Iterator;
+import java.util.List;
 import net.sf.cglib.core.*;
 
 interface CallbackGenerator
 {
-    void generate(ClassEmitter e, Context context) throws Exception;
-    void generateStatic(CodeEmitter e, Context context) throws Exception;
+    void generate(ClassEmitter ce, Context context, List methods) throws Exception;
+    void generateStatic(CodeEmitter e, Context context, List methods) throws Exception;
 
     interface Context
     {
-        Iterator getMethods();
+        CodeEmitter beginMethod(ClassEmitter ce, MethodInfo method);
         int getOriginalModifiers(MethodInfo method);
         int getIndex(MethodInfo method);
-        void emitCallback(CodeEmitter e, int index);
+        void emitCallback(CodeEmitter ce, int index);
         Signature getImplSignature(MethodInfo method);
-        boolean isTransforming();
     }
 }
