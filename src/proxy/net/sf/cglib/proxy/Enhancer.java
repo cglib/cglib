@@ -437,15 +437,11 @@ public class Enhancer extends AbstractClassGenerator
 
     public void generateClass(ClassVisitor v) throws Exception {
         Class sc = (superclass == null) ? Object.class : superclass;
-        
+
         if (TypeUtils.isFinal(sc.getModifiers()))
             throw new IllegalArgumentException("Cannot subclass final class " + sc);
-
         List constructors = new ArrayList(Arrays.asList(sc.getDeclaredConstructors()));
-        CollectionUtils.filter(constructors, new VisibilityPredicate(sc, true));
-        if (constructors.size() == 0) {
-            throw new IllegalArgumentException("No visible constructors in " + sc);
-        }
+        filterConstructors(sc, constructors);
 
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
@@ -511,6 +507,22 @@ public class Enhancer extends AbstractClassGenerator
         }
 
         e.end_class();
+    }
+
+    /**
+     * Filter the list of constructors from the superclass. The
+     * constructors which remain will be included in the generated
+     * class. The default implementation is to filter out all private
+     * constructors, but subclasses may extend Enhancer to override this
+     * behavior.
+     * @param sc the superclass
+     * @param constructors the list of all declared constructors from the superclass
+     * @throws IllegalArgumentException if there are no non-private constructors
+     */
+    protected void filterConstructors(Class sc, List constructors) {
+        CollectionUtils.filter(constructors, new VisibilityPredicate(sc, true));
+        if (constructors.size() == 0)
+            throw new IllegalArgumentException("No visible constructors in " + sc);
     }
 
     protected Object firstInstance(Class type) throws Exception {
