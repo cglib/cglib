@@ -64,6 +64,12 @@ abstract public class BeanMap implements Map {
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
     private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
+    private static final BeanMapKey keyFactory =
+      (BeanMapKey)KeyFactory.create(BeanMapKey.class, null);
+
+    interface BeanMapKey {
+        public Object newInstance(Class type, boolean hash);
+    }
 
     abstract protected BeanMap cglib_newInstance(Object bean);
     protected Object bean;
@@ -76,16 +82,21 @@ abstract public class BeanMap implements Map {
     }
 
     public static BeanMap create(Object bean, ClassLoader loader) {
+        return create(bean, false, loader);
+    }
+
+    public static BeanMap create(Object bean, boolean hash, ClassLoader loader) {
         if (loader == null) {
             loader = defaultLoader;
         }
-        Class key = bean.getClass();
+        Class type = bean.getClass();
+        Object key = keyFactory.newInstance(type, hash);
         BeanMap factory;
         synchronized (cache) {
             factory = (BeanMap)cache.get(loader, key);
             if (factory == null) {
-                String className = nameFactory.getNextName(key);
-                Class result = new BeanMapGenerator(className, key, loader).define();
+                String className = nameFactory.getNextName(type);
+                Class result = new BeanMapGenerator(className, type, hash, loader).define();
                 factory = (BeanMap)ReflectUtils.newInstance(result);
                 cache.put(loader, key, factory);
             }

@@ -64,10 +64,12 @@ class BeanMapGenerator extends CodeGenerator {
       ReflectUtils.findMethod("BeanMap.cglib_newInstance(Object)");
 
     private Class type;
+    private boolean hash;
 
-    public BeanMapGenerator(String className, Class type, ClassLoader loader) {
+    public BeanMapGenerator(String className, Class type, boolean hash, ClassLoader loader) {
         super(className, BeanMap.class, loader);
         this.type = type;
+        this.hash = hash;
     }
 
     private Map makePropertyMap(PropertyDescriptor[] props) {
@@ -110,10 +112,9 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(getters), new StringSwitchCallback() {
+        string_switch(getNames(getters), hash, new StringSwitchCallback() {
                 public void processCase(String key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                    pop();
                     invoke(pd.getReadMethod());
                     box(pd.getReadMethod().getReturnType());
                     return_value();
@@ -133,10 +134,9 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(setters), new StringSwitchCallback() {
+        string_switch(getNames(setters), hash, new StringSwitchCallback() {
                 public void processCase(String key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
-                    pop();
                     if (pd.getReadMethod() == null) {
                         aconst_null();
                     } else {

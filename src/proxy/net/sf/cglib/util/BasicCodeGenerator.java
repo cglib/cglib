@@ -337,6 +337,8 @@ abstract public class BasicCodeGenerator {
     protected void if_icmplt(Label label) { backend.emit(Opcodes.IF_ICMPLT, label); }
     protected void if_icmpne(Label label) { backend.emit(Opcodes.IF_ICMPNE, label); }
     protected void if_icmpeq(Label label) { backend.emit(Opcodes.IF_ICMPEQ, label); }
+    protected void if_acmpeq(Label label) { backend.emit(Opcodes.IF_ACMPEQ, label); }
+    protected void if_acmpne(Label label) { backend.emit(Opcodes.IF_ACMPNE, label); }
 
     protected void imul() { backend.emit(Opcodes.IMUL); }
     protected void iadd() { backend.emit(Opcodes.IADD); }
