@@ -56,13 +56,22 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: BeforeAfterAdapter.java,v 1.3 2003/01/24 19:53:48 herbyderby Exp $
+ * A concrete implementation of BeforeAfterInterceptor that does nothing except
+ * call the original method. For extension by implementors who want to only
+ * override either invokeSuper or afterReturn.
+ * @version $Id: BeforeAfterAdapter.java,v 1.4 2003/05/13 06:17:09 herbyderby Exp $
  */
 public class BeforeAfterAdapter extends BeforeAfterInterceptor {
+    /**
+     * @return true
+     */
     public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
         return true;
     }
-    
+
+    /**
+     * @return the supplied retValFromSuper (original method return value)
+     */
     public Object afterReturn(Object obj, Method method, Object[] args,
                               boolean invokedSuper, Object retValFromSuper,
                               Throwable e) throws Throwable {

@@ -59,27 +59,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- * this code returns Enhanced Vector to intercept  all methods for tracing
- *   <pre>
- *         java.util.Vector vector = (java.util.Vector)Enhancer.enhance(
- *        java.util.Vector.<b>class</b>,
- *        new Class[]{java.util.List.<b>class</b>},
- *
- *        new BeforeAfterAdapter(){
- *        <b>public</b> Object <b>afterReturn</b>(  Object obj,     java.lang.reflect.Method method,
- *        Object args[],
- *        boolean invokedSuper, Object retValFromSuper,
- *        java.lang.Throwable e )throws java.lang.Throwable{
- *            System.out.println(method);
- *            return retValFromSuper;//return the same as supper
- *        }
- *
- *    });
+ * Provides methods to create dynamic proxies of any class, not just interfaces.
+ * <p>
+ * This code enhances a Vector object for tracing, by intercepting all methods:
+ * <pre>
+ *   java.util.Vector vector = (java.util.Vector)Enhancer.enhance(
+ *     java.util.Vector.class,                      // extend Vector
+ *     new Class[]{ java.util.List.class },         // implement List
+ *     new MethodInterceptor() {
+ *         public Object intercept(Object obj, java.lang.reflect.Method method,
+ *                                 Object[] args, MethodProxy proxy) throws Throwable {
+ *             System.out.println(method);
+ *             return proxy.invokeSuper(obj, args); // invoke original method
+ *         }
+ *     });
  * </pre>
- *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
- *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.37 2003/03/06 19:05:59 baliuka Exp $
+ * <p>
+ * Enhancer is comparable to the standard <a
+ * href="http://java.sun.com/j2se/1.4.1/docs/api/java/lang/reflect/Proxy.html">Dynamic
+ * Proxy</a> feature built into Java, but with some important
+ * differences, including:
+ * <ul>
+ * <li>Runs on JDK 1.2.
+ * <li>Can proxy (almost) any class, not just interfaces.
+ * <li>Less overhead on intercepted calls (due to the use of less reflection).
+ * </ul>
+ * <p>
+ * All enhanced objects implement the Factory interface. 
+ *
+ * @see MethodInterceptor
+ * @see Factory
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: Enhancer.java,v 1.38 2003/05/13 06:17:09 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -98,12 +109,14 @@ public class Enhancer {
     
     private Enhancer() {}
 
-    public static MethodInterceptor getMethodInterceptor(Object enhanced){
-      
-            return ((Factory)enhanced).interceptor();
-        
+    /**
+     * Helper method to get the current interceptor for an enhanced object.
+     * @throws ClassCastException If the object is not an enhanced object (i.e. does not implement Factory).
+     * @see Factory#interceptor()
+     */
+    public static MethodInterceptor getMethodInterceptor(Object enhanced) {
+        return ((Factory)enhanced).interceptor();
     }
-    
     
     /**
      *  overrides Class methods and implements all abstract methods.  
@@ -113,65 +126,68 @@ public class Enhancer {
      *  @param interceptor interceptor used to handle implemented methods
      *  @return instanse of clazz class, new Class is defined in the same class loader
      */
-    
-     
-      public static Factory enhance(Class clazz, MethodInterceptor interceptor ){
-          
-         return (Factory)enhanceHelper( clazz.isInterface() ? null : clazz,
+    public static Factory enhance(Class clazz, MethodInterceptor interceptor) {
+        return (Factory)enhanceHelper( clazz.isInterface() ? null : clazz,
                                        clazz.isInterface() ? new Class[]{clazz} : null ,
                                        interceptor, clazz.getClassLoader(), null, null );
-     }
-    
-     
+    }
      
     /**
-     *  implemented as
-     * return enhance(cls,interfaces,ih, null,null,false);
+     * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, null, null, null);</pre>
+     * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
      */
-    public static Object enhance( Class cls, Class interfaces[], MethodInterceptor ih) {
-        
-        return enhance( cls, interfaces, ih, null, null);
+    public static Object enhance(Class cls, Class interfaces[], MethodInterceptor ih) {
+        return enhanceHelper(cls, interfaces, ih, null, null, null);
     }
-    
-     public static Object enhance( Class cls, Class interfaces[],
-                                   MethodInterceptor ih,
-                                   ClassLoader loader ) {
-        return enhance(cls, interfaces, ih, loader, null);
+
+    /**
+     * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, loader, null, null);</pre>
+     * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
+     */
+    public static Object enhance(Class cls, Class interfaces[], MethodInterceptor ih,
+                                 ClassLoader loader) {
+        return enhanceHelper(cls, interfaces, ih, loader, null, null);
    
-     } 
-    /** enhances public not final class,
-     * source class must have public or protected no args constructor.
-     * Code is generated for protected and public not final methods,
-     * package scope methods supported from source class package.
-     * Defines new class in  source class package, if it not java*.
-     * @param cls class to extend, uses Object.class if null
-     * @param interfaces interfaces to implement, can be null
-     * @param ih valid interceptor implementation
-     * @param loader classloater for enhanced class, uses "current" if null
-     * @param wreplace  static method to implement writeReplace, must have
-     * single Object type parameter(to replace) and return object, 
-     * default implementation from InternalReplace is used if
-     * parameter is null : static public Object InternalReplace.writeReplace( 
-     *                                                       Object enhanced )
-     *                 throws ObjectStreamException;
-     * @return instanse of enhanced  class
+    } 
+
+    /**
+     * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, loader, wreplace, null);</pre>
+     * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
      */
     public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
                                  ClassLoader loader, Method wreplace) {
-        return enhanceHelper( cls, interfaces,
-                              ih, loader, wreplace, null);
-    }
-
-    
-   public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
-                                 ClassLoader loader, Method wreplace, MethodFilter filter) {
-        return enhanceHelper(  cls, interfaces,
-                              ih, loader, wreplace, filter );
+        return enhanceHelper(cls, interfaces, ih, loader, wreplace, null);
     }
 
     /**
-     * This method can be used to enhance class without "default" constructor.
-     *
+     * Enhances a public non-final class. Source class must have a public or protected
+     * no-args constructor. Code is generated for protected and public non-final methods,
+     * and package methods if the source class is not in a the java.* hierarchy.
+     * @param cls class to extend, uses Object.class if null
+     * @param interfaces interfaces to implement, can be null or empty
+     * @param ih valid interceptor implementation
+     * @param loader ClassLoader for enhanced class, uses "current" if null
+     * @param wreplace static method to implement writeReplace, must have
+     * a single Object type parameter (to replace) and return type of Object.
+     * If null, a default implementation is used.
+     * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
+     * @return an instance of the enhanced class. Will extend the source class and implement the given
+     * interfaces, plus the CGLIB Factory interface.
+     * @see InternalReplace#writeReplace(Object)
+     * @see Factory
+     */
+    public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
+                                 ClassLoader loader, Method wreplace, MethodFilter filter) {
+        return enhanceHelper(cls, interfaces, ih, loader, wreplace, filter);
+    }
+
+    /**
+     * This method can be used to enhance a class that does not have a no-args constructor.
+     * @return the generated class; you must use reflection to create new object instances.
+     * @param cls class to extend, uses Object.class if null
+     * @param interfaces interfaces to implement, can be null or empty
+     * @param loader ClassLoader for enhanced class, uses "current" if null
+     * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
      */
     public static Class enhanceClass(Class cls, Class[] interfaces,
                                      ClassLoader loader, MethodFilter filter) {
@@ -229,6 +245,10 @@ public class Enhancer {
         return result;
     }
 
+    /**
+     * Class containing the default implementation of the <code>writeReplace</code> method.
+     * TODO: document what I do
+     */
     public static class InternalReplace implements Serializable {
         private String parentClassName;
         private String [] interfaceNames;
@@ -243,7 +263,7 @@ public class Enhancer {
             this.interfaceNames   = interfaceNames;
             this.mi = mi;
         }
-        
+
         public static Object writeReplace(Object enhanced) throws ObjectStreamException {
             MethodInterceptor mi = Enhancer.getMethodInterceptor(enhanced);
             String parentClassName = enhanced.getClass().getSuperclass().getName();

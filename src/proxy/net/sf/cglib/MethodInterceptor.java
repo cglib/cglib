@@ -56,18 +56,22 @@ package net.sf.cglib;
 /**
  * Callback that can be registered with an enhanced class.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.5 2003/02/02 07:00:48 baliuka Exp $
+ * @version $Id: MethodInterceptor.java,v 1.6 2003/05/13 06:17:08 herbyderby Exp $
  */
 public interface MethodInterceptor {
     
     /**
-     * Generated code calls this method before invoking super
+     * All generated proxied methods call this method instead of the original method.
+     * The original method may either be invoked by normal reflection using the Method object,
+     * or by using the MethodProxy (faster).
      * @param obj "this", the enhanced object
      * @param method intercepted Method
      * @param args argument array; primitive types are wrapped
      * @param proxy used to invoke super (non-intercepted method); may be called
-     * as many times as needed.
-     * @throws Throwable any exception may be thrown; super method will not be invoked
+     * as many times as needed
+     * @throws Throwable any exception may be thrown; if so, super method will not be invoked
+     * @return any value compatible with the signature of the proxied method. Method returning void will ignore this value.
+     * @see MethodProxy
      */    
     public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
                                MethodProxy proxy) throws Throwable;

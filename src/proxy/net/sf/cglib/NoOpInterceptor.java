@@ -56,7 +56,8 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: NoOpInterceptor.java,v 1.5 2003/02/02 07:00:48 baliuka Exp $
+ * An implementation of MethodInterceptor that does nothing except call the original method.
+ * @version $Id: NoOpInterceptor.java,v 1.6 2003/05/13 06:17:08 herbyderby Exp $
  */
 public class NoOpInterceptor implements MethodInterceptor {
     public Object intercept(Object obj, Method method, Object[] args,
