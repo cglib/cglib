@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.36 2003/12/06 22:45:42 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.37 2003/12/19 16:32:17 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -633,5 +633,16 @@ public class TestEnhancer extends CodeGenTestCase {
         try { et.throwsNothing(2); } catch (Exception t) { assertTrue(t instanceof MyException); }
         try { et.throwsNothing(3); } catch (MyRuntimeException t) { } catch (Throwable t) { fail(); }
         try { et.throwsNothing(4); } catch (Throwable t) { fail(); }
+    }
+
+    public void testUnusedCallback() {
+        Enhancer e = new Enhancer();
+        e.setCallbackTypes(new Class[]{ MethodInterceptor.class, NoOp.class });
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return 0;
+            }
+        });
+        e.createClass();
     }
 }
