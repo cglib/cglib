@@ -217,14 +217,12 @@ class EnhancerEmitter extends ClassEmitter {
             e.push(1);
             e.putfield(CONSTRUCTED_FIELD);
             for (int j = 0; j < callbackTypes.length; j++) {
-                if (callbackTypes[j] != null) {
-                    e.load_this();
-                    e.dup();
-                    e.getfield(getThreadLocal(j));
-                    e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
-                    e.checkcast(Type.getType(callbackTypes[j]));
-                    e.putfield(getCallbackField(j));
-                }
+                e.load_this();
+                e.dup();
+                e.getfield(getThreadLocal(j));
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
+                e.checkcast(Type.getType(callbackTypes[j]));
+                e.putfield(getCallbackField(j));
             }
             e.return_value();
             e.end_method();
@@ -245,11 +243,7 @@ class EnhancerEmitter extends ClassEmitter {
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                if (callbackTypes[key] != null) {
-                    e.getfield(getCallbackField(key));
-                } else {
-                    processDefault();
-                }
+                e.getfield(getCallbackField(key));
                 e.goTo(end);
             }
             public void processDefault() {
@@ -269,16 +263,12 @@ class EnhancerEmitter extends ClassEmitter {
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                if (callbackTypes[key] != null) {
-                    // we set thread locals too in case this method is called from within constructor (as Proxy does)
-                    e.getfield(getThreadLocal(key));
-                    e.swap();
-                    e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-                    e.checkcast(Type.getType(callbackTypes[key]));
-                    e.putfield(getCallbackField(key));
-                } else {
-                    processDefault();
-                }
+                // we set thread locals too in case this method is called from within constructor (as Proxy does)
+                e.getfield(getThreadLocal(key));
+                e.swap();
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+                e.checkcast(Type.getType(callbackTypes[key]));
+                e.putfield(getCallbackField(key));
                 e.goTo(end);
             }
             public void processDefault() {
@@ -297,12 +287,10 @@ class EnhancerEmitter extends ClassEmitter {
         e.load_this();
         e.load_arg(0);
         for (int i = 0; i < callbackTypes.length; i++) {
-            if (callbackTypes[i] != null) {
-                e.dup2();
-                e.aaload(i);
-                e.checkcast(Type.getType(callbackTypes[i]));
-                e.putfield(getCallbackField(i));
-            }
+            e.dup2();
+            e.aaload(i);
+            e.checkcast(Type.getType(callbackTypes[i]));
+            e.putfield(getCallbackField(i));
         }
         e.return_value();
         e.end_method();
@@ -323,12 +311,10 @@ class EnhancerEmitter extends ClassEmitter {
 
     private void emitCopyCallbacks(CodeEmitter e) {
         for (int i = 0; i < callbackTypes.length; i++) {
-            if (callbackTypes[i] != null) {
-                e.getfield(getThreadLocal(i));
-                e.load_this();
-                e.getfield(getCallbackField(i));
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-            }
+            e.getfield(getThreadLocal(i));
+            e.load_this();
+            e.getfield(getCallbackField(i));
+            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
         }
     }
 
@@ -347,13 +333,10 @@ class EnhancerEmitter extends ClassEmitter {
             // TODO: make sure Callback is null
             break;
         case 1:
-            if (callbackTypes[0] != null) {
-                e.getfield(getThreadLocal(0));
-                e.load_arg(0);
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-            } else {
-                // TODO: make sure Callback is null
-            }
+            e.getfield(getThreadLocal(0));
+            e.load_arg(0);
+            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            break;
         default:
             e.throw_exception(ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
         }
@@ -400,22 +383,18 @@ class EnhancerEmitter extends ClassEmitter {
 
     private void emitMethods(Map groups, final Map indexes, final Set forcePublic) throws Exception {
         for (int i = 0; i < callbackTypes.length; i++) {
-            if (callbackTypes[i] != null) {
-                declare_field(Constants.ACC_PRIVATE, getCallbackField(i), Type.getType(callbackTypes[i]), null, null);
-                declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
-            }
+            declare_field(Constants.ACC_PRIVATE, getCallbackField(i), Type.getType(callbackTypes[i]), null, null);
+            declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
         }
 
         Set seenGen = new HashSet();
         CodeEmitter e = begin_static();
         for (int i = 0; i < callbackTypes.length; i++) {
-            if (callbackTypes[i] != null) {
-                e.new_instance(THREAD_LOCAL);
-                e.dup();
-                e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
-                e.putfield(getThreadLocal(i));
-            }
-            
+            e.new_instance(THREAD_LOCAL);
+            e.dup();
+            e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
+            e.putfield(getThreadLocal(i));
+
             CallbackGenerator gen = CallbackUtils.getGenerator(callbackTypes[i]);
             if (!seenGen.contains(gen)) {
                 seenGen.add(gen);
@@ -466,12 +445,10 @@ class EnhancerEmitter extends ClassEmitter {
 
     private void emitSetThreadCallbacks(CodeEmitter e) {
         for (int i = 0; i < callbackTypes.length; i++) {
-            if (callbackTypes[i] != null) {
-                e.getfield(getThreadLocal(i));
-                e.load_arg(0);
-                e.aaload(i);
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-            }
+            e.getfield(getThreadLocal(i));
+            e.load_arg(0);
+            e.aaload(i);
+            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
         }
     }
 

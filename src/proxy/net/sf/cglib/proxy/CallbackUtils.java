@@ -58,26 +58,35 @@ import org.objectweb.asm.Type;
 class CallbackUtils {
     private CallbackUtils() { }
 
-    // TODO: ensure that callback doesn't implement more than one interface?
     static Class determineType(Callback callback) {
+        Class test = typeHelper(callback, null, NoOp.class);
+        test = typeHelper(callback, test, MethodInterceptor.class);
+        test = typeHelper(callback, test, InvocationHandler.class);
+        test = typeHelper(callback, test, LazyLoader.class);
+        test = typeHelper(callback, test, Dispatcher.class);
+        if (test == null) {
+            throw new IllegalStateException("Unknown callback " + callback.getClass());
+        }
+        return test;
+    }
+
+    private static Class typeHelper(Callback callback, Class cur, Class callbackType) {
         if (callback == null) {
-            return null;
-        } else if (callback instanceof MethodInterceptor) {
-            return MethodInterceptor.class;
-        } else if (callback instanceof InvocationHandler) {
-            return InvocationHandler.class;
-        } else if (callback instanceof LazyLoader) {
-            return LazyLoader.class;
-        } else if (callback instanceof Dispatcher) {
-            return Dispatcher.class;
+            throw new IllegalStateException("Callback is null");
+        }
+        if (callbackType.isAssignableFrom(callback.getClass())) {
+            if (cur != null) {
+                throw new IllegalStateException("Callback implements both " + cur + " and " + callbackType + "; use setCallbackTypes to distinguish");
+            }
+            return callbackType;
         } else {
-            throw new IllegalArgumentException("Unknown callback " + callback.getClass());
+            return cur;
         }
     }
 
     static CallbackGenerator getGenerator(Class type) {
-        if (type == null) {
-            return NoOpGenerator.INSTANCE;
+        if (type.equals(NoOp.class)) {
+           return NoOpGenerator.INSTANCE;
         } else if (type.equals(MethodInterceptor.class)) {
             return MethodInterceptorGenerator.INSTANCE;
         } else if (type.equals(InvocationHandler.class)) {
@@ -87,7 +96,7 @@ class CallbackUtils {
         } else if (type.equals(Dispatcher.class)) {
             return DispatcherGenerator.INSTANCE;
         } else {
-            throw new IllegalArgumentException("Unknown callback " + type);
+            throw new IllegalStateException("Unknown callback " + type);
         }
     }
 }
