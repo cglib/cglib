@@ -72,9 +72,6 @@ public class InvocationHandlerSample implements InvocationHandler {
         this.o = o;
     }
 
-    /**
-     * @see org.apache.bcel.proxy.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object)
-     */
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable {
         System.out.println("invoke() start");

@@ -59,16 +59,10 @@ package net.sf.cglib.proxysample;
  */
 public class SampleImpl implements ProxySampleInterface_ReturnsObject, ProxySampleInterface_ReturnsBasic {
 
-    /**
-     * @see org.apache.bcel.proxy.sample.ProxySampleInterface_ReturnsObject#getKala(java.lang.String)
-     */
     public String getKala(String kalamees) throws Exception {
         return "kala " + kalamees;
     }
 
-    /**
-     * @see org.apache.bcel.proxy.sample.ProxySampleInterface_ReturnsBasic#getKala(float)
-     */
     public int getKala(float kalamees) {
         return (int) (100 + kalamees);
     }
