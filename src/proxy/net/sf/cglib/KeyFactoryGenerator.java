@@ -58,13 +58,30 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.7 2002/12/21 20:21:54 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.8 2003/01/05 12:54:13 baliuka Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private Class keyInterface;
     private Method newInstance;
     private Class[] parameterTypes;
     private int numArgs;
+    
+    //generated numbers: 
+    private final static int PRIMES[] = {
+               11,         73,        179,       331,
+              521,        787,       1213,      1823,
+             2609,       3691,       5189,      7247,
+            10037,      13931,      19289,     26627,
+            36683,      50441,      69403,     95401,
+           131129,     180179,     247501,    340057,
+           467063,     641371,     880603,   1209107,
+          1660097,    2279161,    3129011,   4295723,
+          5897291,    8095873,   11114263,  15257791,
+         20946017,   28754629,   39474179,  54189869,
+         74391461,  102123817,  140194277, 192456917,
+        264202273,  362693231,  497900099, 683510293,
+        938313161, 1288102441, 1768288259  };
+
 
     private final ProcessArrayCallback hashCallback = new ProcessArrayCallback() {
             public void processElement(Class type) {
@@ -207,9 +224,9 @@ class KeyFactoryGenerator extends CodeGenerator {
         l2i();
     }
 
-    // TODO: use prime number?
+    // generates pseudo random prime number
     private int pickHashConstant() {
-        return 2 * (int)(Math.random() * 100) + 1;
+      return  PRIMES[ (int)(PRIMES.length*Math.random()) ];
     }
 
     private void generateFactory() throws NoSuchMethodException {
