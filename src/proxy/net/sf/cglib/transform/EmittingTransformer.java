@@ -9,8 +9,8 @@ abstract public class EmittingTransformer extends ClassTransformer {
     
     abstract protected Emitter2 getEmitter(ClassVisitor cv);
 
-    public void wire(ClassVisitor cv) {
-        super.wire(cv);
+    public void setTarget(ClassVisitor cv) {
+        super.setTarget(cv);
         e = getEmitter(cv);
     }
 

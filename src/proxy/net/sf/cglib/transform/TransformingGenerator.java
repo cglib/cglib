@@ -13,7 +13,7 @@ public class TransformingGenerator implements ClassGenerator {
     }
     
     public void generateClass(ClassVisitor v) throws Exception {
-        t.wire(v);
+        t.setTarget(v);
         gen.generateClass(t);
     }
 }

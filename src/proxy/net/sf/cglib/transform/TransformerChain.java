@@ -3,28 +3,44 @@ package net.sf.cglib.transform;
 import org.objectweb.asm.*;
 
 public class TransformerChain extends ClassTransformer {
-    private ClassTransformer last;
-    private int size;
+    private ClassTransformer[] chain;
     
-    public TransformerChain(ClassTransformer[] transformers) {
-        size = transformers.length;
-        last = transformers[size - 1];
-        for (int i = size - 1; i >= 0; i--) {
-            transformers[i].wire(cv);
-            cv = transformers[i];
-        }
+    public TransformerChain(ClassTransformer[] chain) {
+        this.chain = cloneAndLink(chain);
     }
 
-    public void wire(ClassVisitor v) {
-        last.wire(v);
+    private static ClassTransformer[] cloneAndLink(ClassTransformer[] chain) {
+        ClassTransformer[] copy = new ClassTransformer[chain.length];
+        ClassVisitor cv = null;
+        for (int i = chain.length - 1; i >= 0; i--) {
+            copy[i] = (ClassTransformer)chain[i].clone();
+            copy[i].setTarget(cv);
+            cv = copy[i];
+        }
+        return copy;
+    }
+
+    public void setTarget(ClassVisitor v) {
+        super.setTarget(chain[0]);
+        chain[chain.length - 1].setTarget(v);
     }
 
     public Object clone() {
         TransformerChain t = (TransformerChain)super.clone();
-        t.last = t;
-        for (int i = 0; i < size; i++) {
-            t.last = (ClassTransformer)t.last.cv;
-        }
+        t.chain = cloneAndLink(chain);
         return t;
+    }
+
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("TransformerChain{");
+        for (int i = 0; i < chain.length; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(chain[i].toString());
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }
