@@ -54,7 +54,7 @@
 package net.sf.cglib;
 
 public class SimpleCallbacks
-extends Callbacks
+implements Callbacks
 {
     private Callback[] callbacks = new Callback[Callbacks.MAX_VALUE + 1];
 
@@ -66,7 +66,7 @@ extends Callbacks
         if (callback == null) {
             throw new IllegalArgumentException("Callback cannot be null");
         }
-        if (!getType(type).isAssignableFrom(callback.getClass())) {
+        if (!CallbackUtils.getType(type).isAssignableFrom(callback.getClass())) {
             throw new IllegalArgumentException("Callback " + callback + " has incorrect type " + type);
         }
         callbacks[type] = callback;

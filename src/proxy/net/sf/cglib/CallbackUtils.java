@@ -53,14 +53,52 @@
  */
 package net.sf.cglib;
 
-public interface Callbacks
-{
-    public static final int NO_OP = 0;
-    public static final int INTERCEPT = 1;
-    public static final int JDK_PROXY = 2;
-    public static final int LAZY_LOAD = 3;
-    public static final int DISPATCH = 4;
-    public static final int MAX_VALUE = 4; // should be set to current max index
-    
-    Callback get(int type);
+class CallbackUtils {
+    private CallbackUtils() { }
+
+    static Class getType(int type) {
+        switch (type) {
+        case Callbacks.INTERCEPT:
+            return MethodInterceptor.class;
+        case Callbacks.JDK_PROXY:
+            return InvocationHandler.class;
+        case Callbacks.LAZY_LOAD:
+            return LazyLoader.class;
+        case Callbacks.DISPATCH:
+            return Dispatcher.class;
+        default:
+            return null;
+        }
+    }
+
+    static CallbackGenerator getGenerator(int type) {
+        switch (type) {
+        case Callbacks.INTERCEPT:
+            return MethodInterceptorGenerator.INSTANCE;
+        case Callbacks.NO_OP:
+            return NoOpGenerator.INSTANCE;
+        case Callbacks.JDK_PROXY:
+            return InvocationHandlerGenerator.INSTANCE;
+        case Callbacks.LAZY_LOAD:
+            return LazyLoaderGenerator.INSTANCE;
+        case Callbacks.DISPATCH:
+            return DispatcherGenerator.INSTANCE;
+        default:
+            return null;
+        }
+    }
+
+    static int determineType(Callback callback) {
+        int best = Callbacks.NO_OP;
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            Class type = getType(i);
+            if (type != null && type.isAssignableFrom(callback.getClass())) {
+                if (best != Callbacks.NO_OP) {
+                    throw new IllegalStateException("Callback implements more than one interceptor interface--use a CallbackFilter");
+                }
+                best = i;
+            }
+        }
+        return best;
+    }
 }
