@@ -279,7 +279,7 @@ class EnhancerEmitter extends Emitter {
                     load_arg(1);
                     push(i);
                     aaload();
-                    Ops.unbox(EnhancerEmitter.this, types[i]);
+                    unbox(types[i]);
                 }
                 invoke_constructor_this(types);
                 goTo(end);

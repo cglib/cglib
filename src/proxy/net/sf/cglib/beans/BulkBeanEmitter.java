@@ -103,7 +103,7 @@ class BulkBeanEmitter extends Emitter {
                 push(i);
                 load_local(bean);
                 ReflectOps.invoke(this, getters[i]);
-                Ops.box(this, Type.getType(getters[i].getReturnType()));
+                box(Type.getType(getters[i].getReturnType()));
                 aastore();
             }
         }
@@ -130,7 +130,7 @@ class BulkBeanEmitter extends Emitter {
                 }
                 dup2();
                 aaload(i);
-                Ops.unbox(this, Type.getType(setters[i].getParameterTypes()[0]));
+                unbox(Type.getType(setters[i].getParameterTypes()[0]));
                 ReflectOps.invoke(this, setters[i]);
             }
         }

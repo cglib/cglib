@@ -35,9 +35,9 @@ implements CallbackGenerator
             context.emitCallback();
             e.load_this();
             e.getfield(fieldName);
-            Ops.create_arg_array(e);
+            e.create_arg_array();
             e.invoke_interface(INVOCATION_HANDLER, INVOKE);
-            Ops.unbox(e, Type.getType(method.getReturnType()));
+            e.unbox(Type.getType(method.getReturnType()));
             e.return_value();
             e.end_block();
             handle_undeclared(e, method.getExceptionTypes(), handler);

@@ -153,11 +153,11 @@ class FastClassEmitter extends Emitter {
                 for (int i = 0; i < types.length; i++) {
                     load_arg(arg);
                     aaload(i);
-                    Ops.unbox(FastClassEmitter.this, Type.getType(types[i]));
+                    unbox(Type.getType(types[i]));
                 }
                 if (member instanceof Method) {
                     ReflectOps.invoke(FastClassEmitter.this, (Method)member);
-                    Ops.box(FastClassEmitter.this, Type.getType(((Method)member).getReturnType()));
+                    box(Type.getType(((Method)member).getReturnType()));
                 } else {
                     ReflectOps.invoke(FastClassEmitter.this, (Constructor)member);
                 }
