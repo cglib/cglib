@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2003 The Apache Software Foundation.  All rights
+ * Copyright (c) 2002 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,86 +51,24 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.util.*;
+import java.util.*;
 
-class ParallelSorterGenerator extends CodeGenerator {
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
-    private static final Method SWAP_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
+class FixedKeySet extends AbstractSet {
+    private Set set;
+    private int size;
 
-    private Object[] objects;
-        
-    public ParallelSorterGenerator(Object[] objects) {
-        setSuperclass(ParallelSorter.class);
-        this.objects = objects;
+    public FixedKeySet(String[] keys) {
+        size = keys.length;
+        set = Collections.unmodifiableSet(new HashSet(Arrays.asList(keys)));
     }
 
-    private String getFieldName(int index) {
-        return "FIELD_" + index;
+    public Iterator iterator() {
+        return set.iterator();
     }
 
-    protected void generate() throws NoSuchFieldException {
-        null_constructor();
-        factory_method(NEW_INSTANCE);
-        generateConstructor();
-        generateSwap();
-    }
-
-    private void generateConstructor() throws NoSuchFieldException {
-        begin_constructor(Constants.TYPES_OBJECT_ARRAY);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        super_putfield("a");
-        for (int i = 0; i < objects.length; i++) {
-            Class type = objects[i].getClass();
-            declare_field(Modifier.PRIVATE, type, getFieldName(i));
-            load_this();
-            load_arg(0);
-            push(i);
-            aaload();
-            checkcast(type);
-            putfield(getFieldName(i));
-        }
-        return_value();
-        end_method();
-    }
-
-    private void generateSwap() {
-        begin_method(SWAP_METHOD);
-        for (int i = 0; i < objects.length; i++) {
-            Class type = objects[i].getClass();
-            Class component = type.getComponentType();
-            Local T = make_local(type);
-
-            load_this();
-            getfield(getFieldName(i));
-            store_local(T);
-
-            load_local(T);
-            load_arg(0);
-
-            load_local(T);
-            load_arg(1);
-            array_load(component);
-                
-            load_local(T);
-            load_arg(1);
-
-            load_local(T);
-            load_arg(0);
-            array_load(component);
-
-            array_store(component);
-            array_store(component);
-        }
-        return_value();
-        end_method();
+    public int size() {
+        return size;
     }
 }

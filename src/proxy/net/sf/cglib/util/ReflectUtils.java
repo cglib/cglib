@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.5 2003/07/21 15:51:42 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.6 2003/09/04 18:53:45 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -68,8 +68,13 @@ public class ReflectUtils {
     private static final Map primitiveToWrapper = new HashMap();
     private static final Map wrapperToPrimitive = new HashMap();
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
-    private static final String[] CGLIB_PACKAGES = { "java.lang", "java.lang.reflect", "net.sf.cglib" };
-
+    private static final String[] CGLIB_PACKAGES = {
+        "java.lang",
+        "java.lang.reflect",
+        "net.sf.cglib",
+        "net.sf.cglib.beans",
+        "net.sf.cglib.algorithm"
+    };
     static {
         primitives.put("byte", Byte.TYPE);
         primitives.put("char", Character.TYPE);

@@ -53,26 +53,41 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import net.sf.cglib.util.ReflectUtils;
+import java.util.*;
+import net.sf.cglib.util.*;
 
-class VisibilityFilter implements MethodFilter {
-    private String pkg;
-    
-    public VisibilityFilter(Class source) {
-        pkg = ReflectUtils.getPackageName(source);
-    }
-    
-    public boolean accept(Member member) {
-        int mod = member.getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-            return false;
+class DispatcherGenerator
+implements CallbackGenerator
+{
+    public static final DispatcherGenerator INSTANCE = new DispatcherGenerator();
+
+    private static final Method LOAD_OBJECT =
+      ReflectUtils.findMethod("Dispatcher.loadObject(String)");
+
+    public void generate(CodeGenerator cg, Context context) {
+        for (Iterator it = context.getMethods(); it.hasNext();) {
+            Method method = (Method)it.next();
+            if (Modifier.isProtected(method.getModifiers())) {
+                // ignore protected methods
+            } else {
+                cg.begin_method(method, context.getModifiers(method));
+                Block handler = cg.begin_block();
+                context.emitCallback();
+                cg.checkcast(Dispatcher.class);
+                cg.push(method.getDeclaringClass().getName());
+                cg.invoke(LOAD_OBJECT);
+                cg.checkcast(method.getDeclaringClass());
+                cg.load_args();
+                cg.invoke(method);
+                cg.return_value();
+                cg.end_block();
+                cg.handle_undeclared(method.getExceptionTypes(), handler);
+                cg.end_method();
+            }
         }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
-        }
-        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
     }
+
+    public void generateStatic(CodeGenerator cg, Context context) { }
 }
-

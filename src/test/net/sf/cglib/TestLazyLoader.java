@@ -66,15 +66,7 @@ public class TestLazyLoader extends CodeGenTestCase {
                     return "foo";
                 }
             };
-        CallbackFilter filter = new CallbackFilter() {
-                public int accept(Member member) {
-                    return Callbacks.LAZY_LOAD;
-                }
-            };
-        Callbacks callbacks = new Callbacks();
-        callbacks.set(Callbacks.LAZY_LOAD, loader);
-
-        Object obj = Enhancer.enhance(Object.class, null, callbacks, null, null, filter);
+        Object obj = Enhancer.enhance(Object.class, loader);
         assertTrue("foo".equals(obj.toString()));
     }
 

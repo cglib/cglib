@@ -54,12 +54,14 @@
 package net.sf.cglib;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- *@version $Id: TestInterceptor.java,v 1.2 2003/01/23 11:19:02 nemecec Exp $
+ *@version $Id: TestInterceptor.java,v 1.3 2003/09/04 18:53:45 herbyderby Exp $
  */
-public class TestInterceptor extends BeforeAfterAdapter implements Serializable {
+public class TestInterceptor implements MethodInterceptor, Serializable {
     String value;
     
     public String getValue() {
@@ -71,5 +73,33 @@ public class TestInterceptor extends BeforeAfterAdapter implements Serializable 
     }
    
     public TestInterceptor() {
+    }
+
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        Throwable e = null;                                                                            
+        boolean invokedSuper = false;                                                                  
+        Object retValFromSuper = null;
+        if (!Modifier.isAbstract(method.getModifiers()) && 
+            invokeSuper(obj, method, args)) {
+            invokedSuper = true;                                                                        
+            try {
+                retValFromSuper = proxy.invokeSuper(obj, args);
+            } catch (Throwable t) {
+                e = t;
+            }
+        }
+        return afterReturn(obj, method, args, invokedSuper, retValFromSuper, e);
+    }
+    
+    public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
+        return true;
+    }
+
+    public Object afterReturn(Object obj, Method method, Object[] args,
+                              boolean invokedSuper, Object retValFromSuper,
+                              Throwable e) throws Throwable {
+        if (e != null)
+            throw e.fillInStackTrace();
+        return retValFromSuper;
     }
 }

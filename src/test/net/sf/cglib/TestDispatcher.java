@@ -60,26 +60,27 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestLookupDelegator.java,v 1.1 2003/07/08 05:56:45 herbyderby Exp $
+ * @version $Id: TestDispatcher.java,v 1.1 2003/09/04 18:53:45 herbyderby Exp $
  */
-public class TestLookupDelegator extends CodeGenTestCase {
+public class TestDispatcher extends CodeGenTestCase {
     public void testSimple() throws Exception {
         final Map map = new HashMap();
         map.put(DI1.class.getName(), new D1());
         map.put(DI2.class.getName(), new D2());
-        LookupDelegator.Callback callback = new LookupDelegator.Callback() {
-            public Object lookupDelegate(String className) {
+
+        Dispatcher callback = new Dispatcher() {
+            public Object loadObject(String className) {
                 return map.get(className);
             }
         };
-        Object obj = LookupDelegator.create(new Class[]{ DI1.class, DI2.class },
-                                            callback,
-                                            null);
+        Object obj = Enhancer.enhance(Object.class,
+                                      new Class[]{ DI1.class, DI2.class },
+                                      callback);
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
     }
 
-    public TestLookupDelegator(String testName) {
+    public TestDispatcher(String testName) {
         super(testName);
     }
     
@@ -88,6 +89,6 @@ public class TestLookupDelegator extends CodeGenTestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestLookupDelegator.class);
+        return new TestSuite(TestDispatcher.class);
     }
 }

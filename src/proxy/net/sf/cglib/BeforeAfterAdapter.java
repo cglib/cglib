@@ -59,9 +59,9 @@ import java.lang.reflect.Method;
  * A concrete implementation of BeforeAfterInterceptor that does nothing except
  * call the original method. For extension by implementors who want to only
  * override either invokeSuper or afterReturn.
- * @version $Id: BeforeAfterAdapter.java,v 1.4 2003/05/13 06:17:09 herbyderby Exp $
+ * @version $Id: BeforeAfterAdapter.java,v 1.5 2003/09/04 18:53:46 herbyderby Exp $
  */
-public class BeforeAfterAdapter extends BeforeAfterInterceptor {
+public class BeforeAfterAdapter implements BeforeAfterInterceptor {
     /**
      * @return true
      */

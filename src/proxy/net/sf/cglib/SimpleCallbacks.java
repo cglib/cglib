@@ -53,26 +53,22 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Member;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.util.ReflectUtils;
+public class SimpleCallbacks
+extends Callbacks
+{
+    private Callback[] callbacks = new Callback[Callbacks.MAX_VALUE + 1];
 
-class VisibilityFilter implements MethodFilter {
-    private String pkg;
-    
-    public VisibilityFilter(Class source) {
-        pkg = ReflectUtils.getPackageName(source);
+    public Callback get(int type) {
+        return callbacks[type];
     }
-    
-    public boolean accept(Member member) {
-        int mod = member.getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-            return false;
+
+    public void set(int type, Callback callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("Callback cannot be null");
         }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
+        if (!getType(type).isAssignableFrom(callback.getClass())) {
+            throw new IllegalArgumentException("Callback " + callback + " has incorrect type " + type);
         }
-        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
+        callbacks[type] = callback;
     }
 }
-

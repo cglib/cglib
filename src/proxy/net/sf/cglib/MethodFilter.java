@@ -52,11 +52,13 @@
  * <http://www.apache.org/>.
  */
 package net.sf.cglib;
+
+import java.lang.reflect.Member;
+
 /**
- *
  *@author  baliuka
- *@version $Id: MethodFilter.java,v 1.5 2003/02/03 22:45:12 herbyderby Exp $
+ *@version $Id: MethodFilter.java,v 1.6 2003/09/04 18:53:46 herbyderby Exp $
 */
-public interface MethodFilter {
-    public boolean accept( java.lang.reflect.Member method );
+interface MethodFilter {
+    boolean accept(Member method);
 }

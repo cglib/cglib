@@ -54,9 +54,12 @@
 package net.sf.cglib.util;
 
 import java.io.*;
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.*;
 import java.util.*;
+import net.sf.cglib.UndeclaredThrowableException;
 
 /**
  * Extends BasicCodeGenerator to provide higher-level generation functions
@@ -650,5 +653,42 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(def);
         callback.processDefault();
         mark(end);
+    }
+
+    public void handle_undeclared(Class[] exceptionTypes, Block handler) {
+        /* generates:
+           } catch (RuntimeException e) {
+               throw e;
+           } catch (Error e) {
+               throw e;
+           } catch (<DeclaredException> e) {
+               throw e;
+           } catch (Throwable e) {
+               throw new UndeclaredThrowableException(e);
+           }
+        */
+        Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
+        if (!(exceptionSet.contains(Exception.class) ||
+              exceptionSet.contains(Throwable.class))) {
+            if (!exceptionSet.contains(RuntimeException.class)) {
+                catch_exception(handler, RuntimeException.class);
+                athrow();
+            }
+            if (!exceptionSet.contains(Error.class)) {
+                catch_exception(handler, Error.class);
+                athrow();
+            }
+            for (int i = 0; i < exceptionTypes.length; i++) {
+                catch_exception(handler, exceptionTypes[i]);
+                athrow();
+            }
+            // e -> eo -> oeo -> ooe -> o
+            catch_exception(handler, Throwable.class);
+            new_instance(UndeclaredThrowableException.class);
+            dup_x1();
+            swap();
+            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
+            athrow();
+        }
     }
 }

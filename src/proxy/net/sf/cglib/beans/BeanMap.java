@@ -51,12 +51,13 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
 import java.beans.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
+import net.sf.cglib.KeyFactory;
 import net.sf.cglib.util.*;
 
 abstract public class BeanMap implements Map {

@@ -63,7 +63,7 @@ import net.sf.cglib.util.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.23 2003/07/15 16:38:46 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.24 2003/09/04 18:53:46 herbyderby Exp $
  */
 abstract public class MethodProxy {
     private static final FactoryCache cache = new FactoryCache(MethodProxy.class);
@@ -130,7 +130,12 @@ abstract public class MethodProxy {
         
         public Generator(Method method, Method superMethod) {
             setSuperclass(MethodProxy.class);
-            setNamePrefix(superMethod.getDeclaringClass().getName());
+
+            Method nonNull = (superMethod != null) ? superMethod : method;
+            if (nonNull == null) {
+                throw new IllegalArgumentException("Both method and superMethod cannot be null");
+            }
+            setNamePrefix(nonNull.getDeclaringClass().getName());
             this.superMethod = superMethod;
             this.method = method;
         }
@@ -143,7 +148,9 @@ abstract public class MethodProxy {
 
         private void generate(Method proxyMethod, Method method) {
             begin_method(proxyMethod);
-            if (Modifier.isProtected(method.getModifiers())) {
+            if (method == null) {
+                zero_or_null(proxyMethod.getReturnType());
+            } else if (Modifier.isProtected(method.getModifiers())) {
                 throw_exception(IllegalAccessException.class, "protected method: " + method);
             } else {
                 load_arg(0);

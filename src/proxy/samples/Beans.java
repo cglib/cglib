@@ -9,7 +9,7 @@ import net.sf.cglib.*;
  *
  * @author  baliuka
  */
-public class Beans extends BeforeAfterInterceptor {
+public class Beans implements BeforeAfterInterceptor {
     
     private PropertyChangeSupport propertySupport;
    
