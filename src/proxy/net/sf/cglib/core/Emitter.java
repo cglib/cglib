@@ -136,8 +136,13 @@ public class Emitter {
     public Type getReturnType() {
         return returnType;
     }
+
+    protected void init() {
+        // no-op
+    }
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        init();
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
         this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
         classv.visit(access,

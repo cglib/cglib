@@ -1,8 +1,10 @@
 package net.sf.cglib.transform;
 
+import org.objectweb.asm.Type;
+
 public class ExampleTask extends AbstractTransformTask {
     protected ClassTransformer getClassTransformer() {
-        return new AddPropertiesTransformer(new String[]{ "chris" }, new Class[]{ Long.class });
+        return new AddPropertyTransformer(new String[]{ "chris" }, new Type[]{ Type.LONG_TYPE });
     }
 
     public boolean accept(String name) {

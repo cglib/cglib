@@ -33,8 +33,7 @@ public class AddStaticInitTransformer extends EmittingTransformer {
 
     protected Emitter getEmitter(ClassVisitor cv) {
         return new Emitter(cv) {
-            public void begin_class(int access, String name, Type superType, Type[] interfaces, String sourceFile) {
-                super.begin_class(access, name, superType, interfaces, sourceFile);
+            protected void init() {
                 generated = false; // transformers can be cloned, need to reset
             }
                 

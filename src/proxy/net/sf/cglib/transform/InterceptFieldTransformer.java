@@ -180,7 +180,6 @@ public class InterceptFieldTransformer extends EmittingTransformer {
         }
     }
 
-        
     private static String callbackName(Type type) {
         return (type == Constants.TYPE_OBJECT) ?
             "Object" :
