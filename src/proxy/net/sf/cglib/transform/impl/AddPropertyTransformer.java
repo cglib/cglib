@@ -5,7 +5,7 @@ import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Type;
 
-public class AddPropertyTransformer extends EmittingTransformer {
+public class AddPropertyTransformer extends ClassEmitterTransformer {
     private final String[] names;
     private final Type[] types;
 

@@ -8,7 +8,7 @@ import net.sf.cglib.core.*;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class AddStaticInitTransformer extends EmittingTransformer {
+public class AddStaticInitTransformer extends ClassEmitterTransformer {
     private Method classInit;
 
     public AddStaticInitTransformer(Method classInit) {

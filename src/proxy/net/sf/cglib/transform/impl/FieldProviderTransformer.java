@@ -7,7 +7,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-public class FieldProviderTransformer extends EmittingTransformer {
+public class FieldProviderTransformer extends ClassEmitterTransformer {
     
     private static final String FIELD_NAMES = "CGLIB$FIELD_NAMES";
     private static final String FIELD_TYPES = "CGLIB$FIELD_TYPES";

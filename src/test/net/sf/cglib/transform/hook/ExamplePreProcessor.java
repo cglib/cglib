@@ -12,7 +12,7 @@ public class ExamplePreProcessor extends AbstractPreProcessor {
       TypeUtils.parseSignature("void println(String)");
     
     protected ClassTransformer getClassTransformer(String name) {
-        return new EmittingTransformer() {
+        return new ClassEmitterTransformer() {
             public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
                 CodeEmitter e = super.begin_method(access, sig, exceptions, attrs);
                 if (!TypeUtils.isAbstract(access)) {

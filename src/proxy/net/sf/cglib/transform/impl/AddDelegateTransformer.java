@@ -10,7 +10,7 @@ import org.objectweb.asm.Type;
 /**
  * @author Juozas Baliuka
  */
-public class AddDelegateTransformer extends EmittingTransformer {
+public class AddDelegateTransformer extends ClassEmitterTransformer {
     private static final String DELEGATE = "$CGLIB_DELEGATE";
     private static final Signature CSTRUCT_OBJECT =
       TypeUtils.parseSignature("void <init>(Object)");
