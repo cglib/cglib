@@ -64,7 +64,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestProxy.java,v 1.1 2003/10/29 03:45:38 herbyderby Exp $
+ * @version $Id: TestProxy.java,v 1.2 2003/11/30 18:23:46 herbyderby Exp $
  */
 public class TestProxy extends CodeGenTestCase {
 
@@ -167,6 +167,22 @@ public class TestProxy extends CodeGenTestCase {
         } catch (Exception e) {
             fail("proxy exception handling not correct, threw wrong exception: " + e);
         }
+    }
+
+    public void testEquals() throws Exception {
+        final Object k1 = new Object();
+        final Object k2 = new Object();
+        InvocationHandler handler = new InvocationHandler() {
+            public Object invoke(Object o, Method method, Object[] args) throws Exception {
+                if (method.getName().equals("equals")) {
+                    return (args[0] == k1) ? Boolean.TRUE : Boolean.FALSE;
+                }
+                return null;
+            }
+        };
+        Object proxy = Proxy.newProxyInstance(TestProxy.class.getClassLoader(), new Class[] { Map.class }, handler);
+        assertTrue(proxy.equals(k1));
+        assertTrue(!proxy.equals(k2));
     }
 
     public TestProxy(String testName) {
