@@ -65,7 +65,7 @@ import java.lang.reflect.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.3 2002/09/22 16:45:56 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.4 2002/09/22 17:49:56 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -174,8 +174,8 @@ public class TestEnhancer extends TestCase {
       
      TestCase.assertTrue("intType",   1   == source.intType(1));
      TestCase.assertTrue("longType",  1L  == source.longType(1L));
-     TestCase.assertTrue("floatType", 1f  == source.floatType(1f));
-     TestCase.assertTrue("doubleType",1.0 == source.doubleType(1.0));
+     TestCase.assertTrue("floatType", 1.1f  == source.floatType(1.1f));
+     TestCase.assertTrue("doubleType",1.1 == source.doubleType(1.1));
      TestCase.assertEquals("objectType","1", source.objectType("1") );
      
     
