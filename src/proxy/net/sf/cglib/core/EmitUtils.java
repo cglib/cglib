@@ -106,6 +106,10 @@ public class EmitUtils {
       TypeUtils.parseSignature("void setLength(int)");
     private static final Signature GET_DECLARED_METHOD =
       TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
+    private static final Signature GET_DECLARED_METHOD_PRIVILEGED =
+      TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethodPrivileged(Class,String, Class[])");
+     
+    
 
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
@@ -707,7 +711,7 @@ public class EmitUtils {
         load_class(e, Type.getType(method.getDeclaringClass()));
         e.push(method.getName());
         push_object(e, method.getParameterTypes());
-        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
+        e.invoke_static( Type.getType(ReflectUtils.class) ,GET_DECLARED_METHOD_PRIVILEGED);
     }
 
     private interface ParameterTyper {

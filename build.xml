@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.39 2003/12/13 18:49:20 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.40 2004/02/08 12:37:39 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -222,7 +222,7 @@
   <target depends="init,build-test" 
           description="runs (junit) unit tests" 
           name="test">
-    <java classname="${test.runner}" 
+    <java classname="net.sf.cglib.TestAll" 
           failonerror="${test.failonerror}"
           fork="yes" 
           >
@@ -233,6 +233,9 @@
   <!-- <jvmarg value="-Xprof"/> -->
   <!-- <jvmarg value="-server"/> -->
   <!-- <sysproperty key="cglib.debugLocation" value="debug"/> -->
+  <jvmarg value="-Djava.security.policy==java.policy" /> 
+  <jvmarg value="-Djava.security.manager" /> 
+ 
       <arg value="${test.entry}"/>
         <classpath>
           <pathelement path="${build.home}/classes"/>
