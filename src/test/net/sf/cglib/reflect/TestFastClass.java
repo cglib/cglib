@@ -613,15 +613,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public void testReallyBigClass() throws IOException {
         FastClass.Generator gen = new FastClass.Generator();
         gen.setType(ReallyBigClass.class);
-      /*  final PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream("/home/cjn/cvs/cglib/Dump.java")));
-        gen.setStrategy(new DefaultGeneratorStrategy() {
-                protected ClassGenerator transform(ClassGenerator cg) throws Exception {
-                    return new TransformingClassGenerator(cg, new ClassTransformerTee(new DumpClassVisitor(out)));
-                }
-            });
-       */
         FastClass fc = gen.create();
-       // out.close();
     }
 
     public TestFastClass(String testName) {
