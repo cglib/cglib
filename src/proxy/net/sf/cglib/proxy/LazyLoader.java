@@ -55,7 +55,6 @@ package net.sf.cglib.proxy;
 
 /**
  * Lazy-loading {@link Enhancer} callback.
- * @see Callbacks#LAZY_LOAD
  */
 public interface LazyLoader extends Callback {
     /**
@@ -63,7 +62,6 @@ public interface LazyLoader extends Callback {
      * be dispatched to now and into the future. Called as soon as the
      * first lazily-loaded method in the enhanced instance is invoked.
      * @return an object that can invoke the method
-     * @throws ClassCastException if the object is incompatible with the method being invoked
      */
     Object loadObject() throws Exception;
 }
