@@ -752,6 +752,10 @@ import java.util.*;
         invoke_constructor(type, Constants.TYPES_EMPTY);
     }
 
+    protected void invoke(Constructor constructor) {
+        invoke_constructor(constructor.getDeclaringClass(), constructor.getParameterTypes());
+    }
+
     protected void invoke_constructor(Class type, Class[] parameterTypes) {
         invoke_constructor_helper(type.getName(), parameterTypes);
     }
@@ -768,7 +772,7 @@ import java.util.*;
         return size;
     }
 
-    protected void super_invoke_constructor(Constructor constructor) {
+    protected void super_invoke(Constructor constructor) {
         super_invoke_constructor(constructor.getParameterTypes());
     }
 
