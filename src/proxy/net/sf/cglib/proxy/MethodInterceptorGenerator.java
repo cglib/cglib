@@ -64,7 +64,13 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
-    static final String ACCESS_PREFIX = "CGLIB$$ACCESS_";
+    static final String FIND_PROXY_NAME = "CGLIB$findMethodProxy";
+    static final Class[] FIND_PROXY_TYPES = { Signature.class };
+
+    private static final Signature FIND_PROXY =
+      new Signature(FIND_PROXY_NAME,
+                    TypeUtils.parseType("net.sf.cglib.proxy.MethodProxy"),
+                    TypeUtils.getTypes(FIND_PROXY_TYPES));
 
     private static final Type ABSTRACT_METHOD_ERROR =
       TypeUtils.parseType("AbstractMethodError");
@@ -79,15 +85,19 @@ implements CallbackGenerator
     private static final Signature GET_CLASS_LOADER =
       TypeUtils.parseSignature("ClassLoader getClassLoader()");
     private static final Signature MAKE_PROXY =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.MethodProxy create(ClassLoader, Class, String, Class, String)");
+      TypeUtils.parseSignature("net.sf.cglib.proxy.MethodProxy create(ClassLoader, Class, Class, String, String, String)");
     private static final Signature INTERCEPT =
       TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.proxy.MethodProxy)");
+    private static final Signature TO_STRING =
+      TypeUtils.parseSignature("String toString()");
 
     public void generate(ClassEmitter ce, Context context) {
+        Map sigMap = new HashMap();
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             String accessName = getAccessName(context, method);
             String fieldName = getFieldName(context, method);
+            sigMap.put(ReflectUtils.getSignature(method).toString(), accessName);
 
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null, null);
@@ -134,6 +144,7 @@ implements CallbackGenerator
             e.return_value();
             e.end_method();
         }
+        generateFindProxy(ce, sigMap);
     }
 
     private String getFieldName(Context context, Method method) {
@@ -141,7 +152,7 @@ implements CallbackGenerator
     }
     
     private String getAccessName(Context context, Method method) {
-        return ACCESS_PREFIX + context.getUniqueName(method);
+        return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
     public void generateStatic(CodeEmitter e, final Context context) {
@@ -151,9 +162,7 @@ implements CallbackGenerator
              METHOD_1 = cls.getDeclaredMethod("toString", new Class[0]);
 
              Class thisClass = findClass("NameOfThisClass");
-             CGLIB$ACCESS_0 = MethodProxy.create(thisClass.getClassLoader(),
-                                                 cls, "toString()Ljava.lang.String;",
-                                                 thisClass, "CGLIB$ACCESS_0()Ljava.lang.String;");
+             CGLIB$ACCESS_0 = MethodProxy.create(thisClass.getClassLoader(), cls, thisClass, "()Ljava/lang/String;", "toString", "CGLIB$ACCESS_0");
            }
         */
 
@@ -173,12 +182,36 @@ implements CallbackGenerator
             String accessName = getAccessName(context, method);
             Signature sig = ReflectUtils.getSignature(method);
             e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
-            e.push(method.getName() + sig.getDescriptor());
-
             e.load_local(thisclass);
-            e.push(accessName + sig.getDescriptor());
+            e.push(sig.getDescriptor());
+            e.push(sig.getName());
+            e.push(accessName);
             e.invoke_static(METHOD_PROXY, MAKE_PROXY);
             e.putfield(accessName);
         }
+    }
+
+    public void generateFindProxy(ClassEmitter ce, final Map sigMap) {
+        final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC | Constants.ACC_STATIC,
+                                              FIND_PROXY,
+                                              null,
+                                              null);
+        e.load_arg(0);
+        e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
+        ObjectSwitchCallback callback = new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                e.getfield((String)sigMap.get(key));
+                e.return_value();
+            }
+            public void processDefault() {
+                e.aconst_null();
+                e.return_value();
+            }
+        };
+        EmitUtils.string_switch(e,
+                                (String[])sigMap.keySet().toArray(new String[0]),
+                                Constants.SWITCH_STYLE_HASH,
+                                callback);
+        e.end_method();
     }
 }
