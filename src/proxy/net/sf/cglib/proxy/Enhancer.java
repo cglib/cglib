@@ -591,14 +591,15 @@ public class Enhancer extends AbstractClassGenerator
 
     private class EnhancerTransformer extends ClassEmitterTransformer {
         private ClassInfo classInfo;
-        private List constructors = new ArrayList();
+        private List constructors;
         private List methods;
-        private boolean collect = true;
+        private boolean collect;
 
         public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
             if (TypeUtils.isInterface(access)) {
                 collect = false;
             } else {
+                collect = true;
                 classInfo = new ClassInfo(access, className, superType, interfaces);
                 Class superclass;
                 if (superType == null) {
@@ -615,6 +616,7 @@ public class Enhancer extends AbstractClassGenerator
                 CollectionUtils.filter(superMethods, new RejectModifierPredicate(Constants.ACC_PRIVATE | Constants.ACC_STATIC));
                 methods = CollectionUtils.transform(superMethods, MethodInfoTransformer.getInstance());
                 methods = new ArrayList();
+                constructors = new ArrayList();
                 if (useFactory) {
                     interfaces = TypeUtils.add(interfaces, FACTORY);
                 }
