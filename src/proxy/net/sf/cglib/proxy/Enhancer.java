@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.15 2002/09/28 16:32:35 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.16 2002/09/30 06:11:51 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -416,7 +416,11 @@ public class Enhancer implements org.apache.bcel.Constants {
     private static String getPackageName( String className  )
     throws Throwable{
         
-        return className.substring( 0, className.lastIndexOf('.') );
+        int index = className.lastIndexOf('.');
+        if( index == -1 ){
+          return "";
+        }
+        return className.substring( 0, index );
         
     }
     
