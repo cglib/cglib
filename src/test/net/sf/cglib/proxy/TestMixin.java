@@ -61,7 +61,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestMixin.java,v 1.2 2004/01/25 22:19:48 herbyderby Exp $
+ * @version $Id: TestMixin.java,v 1.3 2004/01/25 22:28:01 herbyderby Exp $
  */
 public class TestMixin extends CodeGenTestCase {
     public void testSimple() throws Exception {
@@ -114,6 +114,14 @@ public class TestMixin extends CodeGenTestCase {
         assertTrue(getters.size() == 3); // name, age, class
         assertTrue(obj instanceof DI1);
         assertTrue(new DBean1().herby().equals(((DI1)obj).herby()));
+    }
+
+    public void testNullDelegates() throws Exception {
+        Mixin.Generator gen = new Mixin.Generator();
+        gen.setStyle(Mixin.STYLE_BEANS);
+        gen.setClasses(new Class[]{ DBean1.class, DBean2.class });
+        Mixin mixin = gen.create();
+        Object obj = mixin.newInstance(new Object[]{ new DBean1(), new DBean2() });
     }
 
     private static Set getGetters(Class beanClass) throws Exception {
