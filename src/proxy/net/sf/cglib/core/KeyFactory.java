@@ -96,11 +96,9 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.7 2003/09/29 23:08:52 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.8 2003/09/30 18:21:50 herbyderby Exp $
  */
 abstract public class KeyFactory {
-    protected int hashConstant;
-    protected int hashMultiplier;
     protected int hash;
 
     private static final Signature GET_NAME =

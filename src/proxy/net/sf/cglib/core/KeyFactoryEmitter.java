@@ -60,7 +60,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.8 2003/09/29 22:56:27 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.9 2003/09/30 18:21:50 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -68,12 +68,32 @@ class KeyFactoryEmitter extends Emitter {
       TypeUtils.parseSignature("int hashCode()");
     private static final Signature EQUALS =
       TypeUtils.parseSignature("boolean equals(Object)");
+    private static final Signature TO_STRING =
+      TypeUtils.parseSignature("String toString()");
     private static final Signature DOUBLE_TO_LONG_BITS =
       TypeUtils.parseSignature("long doubleToLongBits(double)");
     private static final Signature FLOAT_TO_INT_BITS =
       TypeUtils.parseSignature("int floatToIntBits(float)");
     private static final Type KEY_FACTORY =
       TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
+    private static final Signature APPEND_STRING =
+      TypeUtils.parseSignature("StringBuffer append(String)");
+    private static final Signature APPEND_INT =
+      TypeUtils.parseSignature("StringBuffer append(int)");
+    private static final Signature APPEND_DOUBLE =
+      TypeUtils.parseSignature("StringBuffer append(double)");
+    private static final Signature APPEND_FLOAT =
+      TypeUtils.parseSignature("StringBuffer append(float)");
+    private static final Signature APPEND_CHAR =
+      TypeUtils.parseSignature("StringBuffer append(char)");
+    private static final Signature APPEND_LONG =
+      TypeUtils.parseSignature("StringBuffer append(long)");
+    private static final Signature APPEND_BOOLEAN =
+      TypeUtils.parseSignature("StringBuffer append(boolean)");
+    private static final Signature LENGTH =
+      TypeUtils.parseSignature("int length()");
+    private static final Signature SET_LENGTH =
+      TypeUtils.parseSignature("void setLength(int)");
     
     //generated numbers: 
     private final static int PRIMES[] = {
@@ -124,6 +144,7 @@ class KeyFactoryEmitter extends Emitter {
         factory_method(ReflectUtils.getSignature(newInstance));
         generateConstructor();
         generateEquals();
+        generateToString();
         end_class();
     }
 
@@ -145,8 +166,8 @@ class KeyFactoryEmitter extends Emitter {
             load_arg(i);
             putfield(getFieldName(i));
         }
-        loadAndStoreConstant("hashMultiplier", seed);
-        loadAndStoreConstant("hashConstant", seed * 13);
+        push(PRIMES[(int)(seed % PRIMES.length)]);
+        push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
         for (int i = 0; i < parameterTypes.length; i++) {
             load_arg(i);
             hash_code(parameterTypes[i]);
@@ -155,14 +176,6 @@ class KeyFactoryEmitter extends Emitter {
         pop();
         super_putfield("hash", Type.INT_TYPE);
         return_value();
-    }
-
-    private void loadAndStoreConstant(String fieldName, int seed) {
-        push(PRIMES[(int)(seed % PRIMES.length)]);
-        load_this();
-        swap();
-        dup_x1();
-        super_putfield(fieldName, Type.INT_TYPE);
     }
 
     private void hash_code(Type type) {
@@ -313,7 +326,6 @@ class KeyFactoryEmitter extends Emitter {
         }
     }
 
-    ///// TODO: get rid of this
     /**
      * If both objects on the top of the stack are non-null, does nothing.
      * If one is null, or both are null, both are popped off and execution
@@ -340,5 +352,92 @@ class KeyFactoryEmitter extends Emitter {
         goTo(oneNull);
         
         mark(end);
+    }
+
+    private void generateToString() {
+        Label fail = make_label();
+        begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
+        new_instance(Constants.TYPE_STRING_BUFFER);
+        dup();
+        invoke_constructor(Constants.TYPE_STRING_BUFFER);
+        for (int i = 0; i < parameterTypes.length; i++) {
+            load_this();
+            getfield(getFieldName(i));
+            (new ProcessArrayCallback() {
+                public void processElement(Type type) {
+                    toStringHelper(type, this);
+                }
+            }).processElement(parameterTypes[i]);
+        }
+        if (parameterTypes.length > 0) {
+            shrinkStringBuffer(2);
+        }
+        invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
+        return_value();
+    }
+
+    private void toStringHelper(Type type, ProcessArrayCallback callback) {
+        Label skip = make_label();
+        Label end = make_label();
+        if (TypeUtils.isPrimitive(type)) {
+            switch (type.getSort()) {
+            case Type.INT:
+            case Type.SHORT:
+            case Type.BYTE:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_INT);
+                break;
+            case Type.DOUBLE:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                break;
+            case Type.FLOAT:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                break;
+            case Type.LONG:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_LONG);
+                break;
+            case Type.BOOLEAN:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_BOOLEAN);
+                break;
+            case Type.CHAR:
+                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_CHAR);
+                break;
+            }
+        } else if (TypeUtils.isArray(type)) {
+            dup();
+            ifnull(skip);
+            swap();
+            push("{");
+            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            swap();
+            ComplexOps.process_array(this, type, callback);
+            shrinkStringBuffer(2);
+            push("}");
+            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        } else {
+            dup();
+            ifnull(skip);
+            if (customizer != null) {
+                customizer.customize(this, type);
+            }
+            invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
+            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        }
+        goTo(end);
+        mark(skip);
+        pop();
+        push("null");
+        invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        mark(end);
+        push(", ");
+        invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+    }
+
+    private void shrinkStringBuffer(int amt) {
+        dup();
+        dup();
+        invoke_virtual(Constants.TYPE_STRING_BUFFER, LENGTH);
+        push(amt);
+        math(SUB, Type.INT_TYPE);
+        invoke_virtual(Constants.TYPE_STRING_BUFFER, SET_LENGTH);
     }
 }

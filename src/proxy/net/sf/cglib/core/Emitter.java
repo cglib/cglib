@@ -426,7 +426,7 @@ public class Emitter {
         if (i < -1) {
             codev.visitLdcInsn(new Integer(i));
         } else if (i <= 5) {
-            codev.visitInsn(Constants.ICONST(i));
+            codev.visitInsn(TypeUtils.ICONST(i));
         } else if (i <= Byte.MAX_VALUE) {
             codev.visitIntInsn(Constants.BIPUSH, i);
         } else if (i <= Short.MAX_VALUE) {
@@ -438,7 +438,7 @@ public class Emitter {
     
     public void push(long value) {
         if (value == 0L || value == 1L) {
-            codev.visitInsn(Constants.LCONST(value));
+            codev.visitInsn(TypeUtils.LCONST(value));
         } else {
             codev.visitLdcInsn(new Long(value));
         }
@@ -446,14 +446,14 @@ public class Emitter {
     
     public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            codev.visitInsn(Constants.FCONST(value));
+            codev.visitInsn(TypeUtils.FCONST(value));
         } else {
             codev.visitLdcInsn(new Float(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
-            codev.visitInsn(Constants.DCONST(value));
+            codev.visitInsn(TypeUtils.DCONST(value));
         } else {
             codev.visitLdcInsn(new Double(value));
         }
@@ -469,7 +469,7 @@ public class Emitter {
 
     public void newarray(Type type) {
         if (TypeUtils.isPrimitive(type)) {
-            codev.visitIntInsn(Constants.NEWARRAY, Constants.NEWARRAY(type));
+            codev.visitIntInsn(Constants.NEWARRAY, TypeUtils.NEWARRAY(type));
         } else {
             emit_type(Constants.ANEWARRAY, type);
         }

@@ -57,11 +57,9 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.11 2003/09/29 16:25:29 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.12 2003/09/30 18:21:50 herbyderby Exp $
  */
-public class Constants implements org.objectweb.asm.Constants {
-    private Constants() { }
-
+public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
     public static final Type[] TYPES_EMPTY = {};
     
@@ -81,6 +79,7 @@ public class Constants implements org.objectweb.asm.Constants {
     public static final Type TYPE_THROWABLE = TypeUtils.parseType("Throwable");
     public static final Type TYPE_BIG_INTEGER = TypeUtils.parseType("java.math.BigInteger");
     public static final Type TYPE_BIG_DECIMAL = TypeUtils.parseType("java.math.BigDecimal");
+    public static final Type TYPE_STRING_BUFFER = TypeUtils.parseType("StringBuffer");
     
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";
@@ -90,72 +89,4 @@ public class Constants implements org.objectweb.asm.Constants {
 
     public static final int SWITCH_STYLE_TRIE = 0;
     public static final int SWITCH_STYLE_HASH = 1;
-
-    public static int ICONST(int value) {
-        switch (value) {
-        case -1: return ICONST_M1;
-        case 0: return ICONST_0;
-        case 1: return ICONST_1;
-        case 2: return ICONST_2;
-        case 3: return ICONST_3;
-        case 4: return ICONST_4;
-        case 5: return ICONST_5;
-        }
-        return -1; // error
-    }
-
-    public static int LCONST(long value) {
-        if (value == 0L) {
-            return LCONST_0;
-        } else if (value == 1L) {
-            return LCONST_1;
-        } else {
-            return -1; // error
-        }
-    }
-
-    public static int FCONST(float value) {
-        if (value == 0f) {
-            return FCONST_0;
-        } else if (value == 1f) {
-            return FCONST_1;
-        } else if (value == 2f) {
-            return FCONST_2;
-        } else {
-            return -1; // error
-        }
-    }
-
-    public static int DCONST(double value) {
-        if (value == 0d) {
-            return DCONST_0;
-        } else if (value == 1d) {
-            return DCONST_1;
-        } else {
-            return -1; // error
-        }
-    }
-
-    public static int NEWARRAY(Type type) {
-        switch (type.getSort()) {
-        case Type.BYTE:
-            return T_BYTE;
-        case Type.CHAR:
-            return T_CHAR;
-        case Type.DOUBLE:
-            return T_DOUBLE;
-        case Type.FLOAT:
-            return T_FLOAT;
-        case Type.INT:
-            return T_INT;
-        case Type.LONG:
-            return T_LONG;
-        case Type.SHORT:
-            return T_SHORT;
-        case Type.BOOLEAN:
-            return T_BOOLEAN;
-        default:
-            return -1; // error
-        }
-    }
 }

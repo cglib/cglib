@@ -251,4 +251,72 @@ public class TypeUtils {
         }
         return types;
     }
+
+    public static int ICONST(int value) {
+        switch (value) {
+        case -1: return Constants.ICONST_M1;
+        case 0: return Constants.ICONST_0;
+        case 1: return Constants.ICONST_1;
+        case 2: return Constants.ICONST_2;
+        case 3: return Constants.ICONST_3;
+        case 4: return Constants.ICONST_4;
+        case 5: return Constants.ICONST_5;
+        }
+        return -1; // error
+    }
+
+    public static int LCONST(long value) {
+        if (value == 0L) {
+            return Constants.LCONST_0;
+        } else if (value == 1L) {
+            return Constants.LCONST_1;
+        } else {
+            return -1; // error
+        }
+    }
+
+    public static int FCONST(float value) {
+        if (value == 0f) {
+            return Constants.FCONST_0;
+        } else if (value == 1f) {
+            return Constants.FCONST_1;
+        } else if (value == 2f) {
+            return Constants.FCONST_2;
+        } else {
+            return -1; // error
+        }
+    }
+
+    public static int DCONST(double value) {
+        if (value == 0d) {
+            return Constants.DCONST_0;
+        } else if (value == 1d) {
+            return Constants.DCONST_1;
+        } else {
+            return -1; // error
+        }
+    }
+
+    public static int NEWARRAY(Type type) {
+        switch (type.getSort()) {
+        case Type.BYTE:
+            return Constants.T_BYTE;
+        case Type.CHAR:
+            return Constants.T_CHAR;
+        case Type.DOUBLE:
+            return Constants.T_DOUBLE;
+        case Type.FLOAT:
+            return Constants.T_FLOAT;
+        case Type.INT:
+            return Constants.T_INT;
+        case Type.LONG:
+            return Constants.T_LONG;
+        case Type.SHORT:
+            return Constants.T_SHORT;
+        case Type.BOOLEAN:
+            return Constants.T_BOOLEAN;
+        default:
+            return -1; // error
+        }
+    }
 }
