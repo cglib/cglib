@@ -66,7 +66,9 @@ class FastClassEmitter extends ClassEmitter {
     private static final Signature METHOD_GET_INDEX =
       TypeUtils.parseSignature("int getIndex(String, Class[])");
     private static final Signature SIGNATURE_GET_INDEX =
-      TypeUtils.parseSignature("int getIndex(String)");
+      TypeUtils.parseSignature("int getIndex(net.sf.cglib.core.Signature)");
+    private static final Signature TO_STRING =
+      TypeUtils.parseSignature("String toString()");
     private static final Signature CONSTRUCTOR_GET_INDEX =
       TypeUtils.parseSignature("int getIndex(Class[])");
     private static final Signature INVOKE =
@@ -146,11 +148,11 @@ class FastClassEmitter extends ClassEmitter {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
         final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
-                Signature sig = ReflectUtils.getSignature((Method)obj);
-                return sig.getName() + sig.getDescriptor();
+                return ReflectUtils.getSignature((Method)obj).toString();
             }
         });
         e.load_arg(0);
+        e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
         ObjectSwitchCallback callback = new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf
@@ -163,9 +165,9 @@ class FastClassEmitter extends ClassEmitter {
             }
         };
         EmitUtils.string_switch(e,
-                                 (String[])signatures.toArray(new String[0]),
-                                 Constants.SWITCH_STYLE_HASH,
-                                 callback);
+                                (String[])signatures.toArray(new String[0]),
+                                Constants.SWITCH_STYLE_HASH,
+                                callback);
         e.end_method();
     }
 
