@@ -276,7 +276,7 @@ public abstract class MetaClass  {
             }
             
             load_alocal(2);
-            invoke_virtual(getters[i]);
+            invoke(getters[i]);
             
             if( wrapped ){
              init(getters[i].getReturnType());
@@ -310,7 +310,7 @@ public abstract class MetaClass  {
                 load_arg(2);
                 aload(i); // arg2[i]
                 cast(setters[i].getParameterTypes()[0]); 
-                invoke_virtual( setters[i] );
+                invoke( setters[i] );
                 
                }//read only
            }  

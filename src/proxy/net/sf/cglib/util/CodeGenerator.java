@@ -433,11 +433,11 @@ public abstract class CodeGenerator implements ClassFileConstants {
     }
   
     protected void getfield(String name) {
-        il.append(new GETFIELD(getFieldref(name)));
+        append(new GETFIELD(getFieldref(name)));
     }
 
     protected void putfield(String name) {
-        il.append(new PUTFIELD(getFieldref(name)));
+        append(new PUTFIELD(getFieldref(name)));
     } 
   
   //super class
@@ -456,13 +456,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
   
    protected void invoke(Method method) {
        Class clazz = method.getDeclaringClass();
-       int methodRef = cp.addInterfaceMethodref(clazz.getName(),
-                                                method.getName(),
-                                                ClassFileUtils.getSignature(method));
-       if (clazz.isInterface()) {
-           il.append(new INVOKEINTERFACE(methodRef, pos));
+       if (method.getDeclaringClass().isInterface()) {
+           invoke_interface(method);
        } else {
-           il.append(new INVOKEVIRTUAL(methodRef));
+           invoke_virtual(method);
        }
    }
   
@@ -482,18 +479,21 @@ public abstract class CodeGenerator implements ClassFileConstants {
    
    }
 
- protected  void invoke_virtual(Method method){
-  append( new INVOKEVIRTUAL( cp.addMethodref( 
-                              method.getDeclaringClass().getName() ,
-                                  method.getName(),Type.getMethodSignature(
-                                   ClassFileUtils.toType(method.getReturnType()),
-                                   ClassFileUtils.toType(method.getParameterTypes())
-                                          )
-                                        ) 
-                                     ) 
-                                  ); 
-                     
- }          
+    private void invoke_interface(Method method) {
+        int ref =
+            cp.addInterfaceMethodref(method.getDeclaringClass().getName(),
+                                     method.getName(),
+                                     ClassFileUtils.getSignature(method));
+        append(new INVOKEINTERFACE(ref, pos));
+    }
+
+    private void invoke_virtual(Method method) {
+        int ref =
+            cp.addMethodref(method.getDeclaringClass().getName(),
+                            method.getName(),
+                            ClassFileUtils.getSignature(method));
+        append(new INVOKEVIRTUAL(ref));
+    }
 
     protected void super_invoke(Constructor constructor) {
         super_invoke_constructor(constructor.getParameterTypes());

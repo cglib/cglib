@@ -70,15 +70,10 @@ implements ClassFileConstants
     private static final Class OBJECT_CLASS = Object.class;
     private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
     private static final String PARENT_CLASS = "java.lang.Object";
-    // private static final String PARENT_SIGNATURE = Type.getMethodSignature(Type.VOID, null);
     private static final Class[] EMPTY_CLASS_ARRAY = {};
-    // private static final Type[] EMPTY_TYPE_ARRAY = {};
     private static final String FIELD_NAME = "delegates";
     private static final Class ARG_CLASS = Object[].class;
     private static final Class[] ARG_CLASS_ARRAY = { ARG_CLASS };
-    // private static final Type ARG_TYPE = Type.getType(ARG_CLASS.getName());
-    // private static final Type[] ARG_TYPE_ARRAY = { ARG_TYPE };
-    // private static final String ARG_SIGNATURE = ARG_TYPE.getSignature();
     private static int index = 0;
 
     private static final Map loaders = new WeakHashMap();
