@@ -1098,6 +1098,7 @@ abstract class CodeGenerator {
         push(msg);
         invoke_constructor(type, new Class[]{ String.class });
         athrow();
+        
     }
     
     /**

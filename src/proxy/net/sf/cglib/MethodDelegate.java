@@ -137,7 +137,7 @@ import java.lang.reflect.Modifier;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.6 2003/01/31 01:18:50 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.7 2003/02/03 17:47:20 baliuka Exp $
  */
 abstract public class MethodDelegate {
      static final Class TYPE = MethodDelegate.class;
@@ -151,8 +151,8 @@ abstract public class MethodDelegate {
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("MethodDelegate.cglib_newInstance(Object)");
 
-    // should be package-protected but causes problems on jdk1.2
-    public interface MethodDelegateKey {
+    
+     interface MethodDelegateKey {
         public Object newInstance(Class delegateClass, String methodName, Class iface);
     }
 

@@ -75,6 +75,7 @@ class VisibilityFilter implements MethodFilter {
         if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
             return true;
         }
+        
         Package other = member.getDeclaringClass().getPackage();
         return (null == pkg) ? (other == null) : pkg.equals(other);
     }

@@ -79,13 +79,13 @@ public abstract class MetaClass  {
     protected Class[] types;
     protected Map memebers = Collections.synchronizedMap(new HashMap());
     
-    /*package doe's not work on jdk1.2 */
-    public interface MetaClassKey {
+    
+     interface MetaClassKey {
         public Object newInstance(Class target, String[] getters,
         String[] setters, Class[] types);
     }
     
-    public interface MemberKey {
+     interface MemberKey {
         public Object newInstance( Class target, String name, Class types[]  );
     }
     

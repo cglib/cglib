@@ -72,8 +72,8 @@ abstract public class ParallelSorter extends SorterTemplate {
     protected Object[] a;
     private Comparer comparer;
 
-    // should be package-protected but causes problems on jdk1.2
-    public interface ParallelSorterKey {
+    
+     interface ParallelSorterKey {
         public Object newInstance(Class[] classes);
     }
 
