@@ -54,9 +54,7 @@
 package net.sf.cglib.util;
 
 import java.io.*;
-import java.lang.reflect.Method;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.math.*;
 import java.util.*;
 import net.sf.cglib.UndeclaredThrowableException;
@@ -533,7 +531,11 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     private void string_switch_trie(String[] strings, final StringSwitchCallback callback) throws Exception {
         final Label def = make_label();
         final Label end = make_label();
-        final Map buckets = bucketByLength(Arrays.asList(strings));
+        final Map buckets = bucket(Arrays.asList(strings), new Indexer() {
+            public int index(Object value) {
+                return ((String)value).length();
+            }
+        });
         dup();
         invoke(MethodConstants.STRING_LENGTH);
         process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
@@ -557,7 +559,11 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                                     final Label end,
                                     final int index) throws Exception {
         final int len = ((String)strings.get(0)).length();
-        final Map buckets = bucketByChar(strings, index);
+        final Map buckets = bucket(strings, new Indexer() {
+            public int index(Object value) {
+                return ((String)value).charAt(index);
+            }
+        });
         dup();
         push(index);
         invoke(MethodConstants.STRING_CHAR_AT);
@@ -578,29 +584,13 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     }        
 
     private interface Indexer {
-        int index(String value);
+        int index(Object value);
     }
-
-    private static Map bucketByLength(List strings) {
-        return bucketHelper(strings, new Indexer() {
-                public int index(String value) {
-                    return value.length();
-                }
-            });
-    }
-
-    private static Map bucketByChar(List strings, final int index) {
-        return bucketHelper(strings, new Indexer() {
-                public int index(String value) {
-                    return value.charAt(index);
-                }
-            });
-    }
-
-    private static Map bucketHelper(List strings, Indexer t) {
+    
+    private static Map bucket(List values, Indexer t) {
         Map buckets = new HashMap();
-        for (Iterator it = strings.iterator(); it.hasNext();) {
-            String value = (String)it.next();
+        for (Iterator it = values.iterator(); it.hasNext();) {
+            Object value = (Object)it.next();
             Integer key = new Integer(t.index(value));
             List bucket = (List)buckets.get(key);
             if (bucket == null) {
@@ -623,36 +613,44 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
 
     private void string_switch_hash(final String[] strings,
                                     final StringSwitchCallback callback) throws Exception {
+        final Map buckets = bucket(Arrays.asList(strings), new Indexer() {
+            public int index(Object value) {
+                return value.hashCode();
+            }
+        });
+        int[] hashCodes = getSwitchKeys(buckets);
+
         final Label def = make_label();
         final Label end = make_label();
-        int[] hashCodes = new int[strings.length];
-        final Map indexes = new HashMap();
-        for (int i = 0; i < strings.length; i++) {
-            hashCodes[i] = strings[i].hashCode();
-            Integer key = new Integer(hashCodes[i]);
-            if (indexes.containsKey(key)) {
-                // TODO: allow duplicate hash codes, differentiate using == in leaves
-                throw new IllegalArgumentException("strings have duplicate hash codes");
-            }
-            indexes.put(key, new Integer(i));
-        }
-        Arrays.sort(hashCodes);
-
         dup();
         invoke(MethodConstants.HASH_CODE);
         process_switch(hashCodes, new ProcessSwitchCallback() {
-                public void processCase(int key, Label ignore_end) throws Exception {
-                    int index = ((Integer)indexes.get(new Integer(key))).intValue();
-                    String string = strings[index];
+            public void processCase(int key, Label ignore_end) throws Exception {
+                List bucket = (List)buckets.get(new Integer(key));
+                Label next = null;
+                for (Iterator it = bucket.iterator(); it.hasNext();) {
+                    String string = (String)it.next();
+                    if (next != null) {
+                        mark(next);
+                    }
+                    if (it.hasNext()) {
+                        dup();
+                    }
                     push(string);
                     invoke(MethodConstants.EQUALS);
-                    ifeq(def);
+                    if (it.hasNext()) {
+                        ifeq(next = make_label());
+                        pop();
+                    } else {
+                        ifeq(def);
+                    }
                     callback.processCase(string, end);
                 }
-                public void processDefault() {
-                    pop();
-                }
-            });
+            }
+            public void processDefault() {
+                pop();
+            }
+        });
         mark(def);
         callback.processDefault();
         mark(end);

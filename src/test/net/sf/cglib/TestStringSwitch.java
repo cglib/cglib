@@ -89,6 +89,17 @@ public class TestStringSwitch extends CodeGenTestCase {
         assertTrue(test.getIndex("") == 0);
     }
 
+    public void testEqualHashCodes() {
+        String[] keys = new String[]{ "ABC", "AAb", "foo" };
+        assertTrue("ABC".hashCode() == "AAb".hashCode());
+        assertTrue("ABC".hashCode() != "foo".hashCode());
+        Class created = new Generator(keys, CodeGenerator.SWITCH_STYLE_HASH).define();
+        Indexed test = (Indexed)ReflectUtils.newInstance(created);
+        assertTrue(test.getIndex("foo") == 'o');
+        assertTrue(test.getIndex("ABC") == 'C');
+        assertTrue(test.getIndex("AAb") == 'b');
+    }
+
     private static class Generator extends CodeGenerator {
         private String[] keys;
         private int switchStyle;
