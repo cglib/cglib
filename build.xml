@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.11 2002/11/29 18:36:00 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.12 2002/12/06 19:06:16 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="beta2"/>
+    <property name="component.version" value="beta3"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -98,31 +98,28 @@
   </target>
 
 
+  <target depends="jar" name="proxy"/>
 
-  <target depends="compile" description="Create binary distribution"
-    name="proxy">
+  <target depends="compile" description="Create binary distribution" name="jar">
     <mkdir dir="${dist.home}"/>
     <mkdir dir="${build.home}/src"/>
     
 
     <copy file="LICENSE" todir="${dist.home}"/>
 
-    <unzip src="lib/bcel.jar" dest="${build.home}/classes" />
-
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
       <exclude name="**/BeanGenerator*" />
     </jar> 
-    <jar basedir="./" jarfile="${dist.home}/${component.name}-src-${component.version}.jar" >
-      <include name="build.xml"/>
-      <include name="LICENSE*"/>
-      <include name="README*"/>
-      <include name="src/**/*.java"/>
-      <include name="src/**/*.properties"/>
-      <include name="src/**/*.xml"/>  
-      <include name="lib/**"/>  
-    </jar>   
 
+    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
+      <zipfileset src="lib/bcel.jar"/>
+      <include name="**/*"/>
+      <exclude name="**/BeanGenerator*" />
+    </jar> 
+  </target>
+
+  <target depends="compile,javadoc" description="Create docs and source distribution" name="srcjar">
     <jar basedir="docs" jarfile="${dist.home}/${component.name}-docs-${component.version}.jar" >
       <include name="**/*.html"/>
       <include name="**/*.css"/> 
@@ -132,14 +129,18 @@
       <include name="**/*.gif"/>
     </jar> 
     
-
+    <jar basedir="./" jarfile="${dist.home}/${component.name}-src-${component.version}.jar" >
+      <include name="build.xml"/>
+      <include name="LICENSE*"/>
+      <include name="README*"/>
+      <include name="src/**/*.java"/>
+      <include name="src/**/*.properties"/>
+      <include name="src/**/*.xml"/>  
+      <include name="lib/**"/>  
+    </jar>   
   </target>
 
- 
-
-  <target depends="clean,javadoc,proxy" description="Create binary distribution" 
-         name="dist">
-  </target>
+  <target depends="clean,jar,srcjar" description="Create binary, docs and source distributions" name="dist"/>
  
    <target depends="compile" name="compile-samples">
      <javac debug="${compile.debug}" 
@@ -149,8 +150,6 @@
             srcdir="${samples.source.home}">
        <classpath refid="compile.classpath"/>
      </javac>
-   
-
    </target>  
 
 
@@ -228,6 +227,7 @@
   <!-- jvmarg value="-Xrunhprof:cpu=times,file=debug.txt" / -->
   <!-- jvmarg value="-verbose:gc" / --> 
   <!-- jvmarg value="-verbose:class" / --> 
+      <sysproperty key="cglib.debugLocation" value="/tmp"/>
       <arg value="${test.entry}"/>
         <classpath>
           <pathelement path="${build.home}/classes"/>
