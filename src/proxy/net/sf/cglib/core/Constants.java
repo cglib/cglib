@@ -57,7 +57,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.7 2003/09/21 01:49:49 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.8 2003/09/21 08:13:19 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
@@ -80,6 +80,7 @@ public class Constants implements org.objectweb.asm.Constants {
     public static final Type TYPE_THROWABLE = TypeUtils.parseType("Throwable");
 
     public static final String CONSTRUCTOR_NAME = "<init>";
+    public static final String STATIC_NAME = "<clinit>";
     public static final String SOURCE_FILE = "<generated>";
 
     public static final int PRIVATE_FINAL_STATIC = ACC_PRIVATE | ACC_FINAL | ACC_STATIC;
