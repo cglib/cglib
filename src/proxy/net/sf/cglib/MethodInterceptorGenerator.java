@@ -62,10 +62,8 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
-    protected static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
-
     private static final Method MAKE_PROXY =
-      ReflectUtils.findMethod("MethodProxy.create(Method,Method)");
+      ReflectUtils.findMethod("MethodProxy.create(Method, Method)");
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
 
@@ -75,22 +73,22 @@ implements CallbackGenerator
             String accessName = getAccessName(context, method);
             String fieldName = getFieldName(context, method);
 
-            cg.declare_field(PRIVATE_FINAL_STATIC, Method.class, fieldName);
-            cg.declare_field(PRIVATE_FINAL_STATIC, MethodProxy.class, accessName);
+            cg.declare_field(Constants.PRIVATE_FINAL_STATIC, Method.class, fieldName);
+            cg.declare_field(Constants.PRIVATE_FINAL_STATIC, MethodProxy.class, accessName);
             generateAccessMethod(cg, context, method);
             generateAroundMethod(cg, context, method);
         }
     }
 
-    protected String getFieldName(Context context, Method method) {
+    private String getFieldName(Context context, Method method) {
         return "CGLIB$$METHOD_" + context.getUniqueName(method);
     }
     
-    protected String getAccessName(Context context, Method method) {
+    private String getAccessName(Context context, Method method) {
         return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
-    protected void generateAccessMethod(CodeGenerator cg, Context context, Method method) {
+    private void generateAccessMethod(CodeGenerator cg, Context context, Method method) {
         cg.begin_method(Modifier.FINAL,
                         method.getReturnType(),
                         getAccessName(context, method),
@@ -107,9 +105,9 @@ implements CallbackGenerator
         cg.end_method();
     }
 
-    protected void generateAroundMethod(CodeGenerator cg,
-                                        Context context,
-                                        Method method) {
+    private void generateAroundMethod(CodeGenerator cg,
+                                      Context context,
+                                      Method method) {
         cg.begin_method(method, context.getModifiers(method));
         Block handler = cg.begin_block();
         Label nullInterceptor = cg.make_label();
@@ -150,31 +148,23 @@ implements CallbackGenerator
            }
         */
 
-        Local args = cg.make_local();
+        Local m = cg.make_local();
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            cg.load_class(method.getDeclaringClass());
-            cg.push(method.getName());
-            cg.push_object(method.getParameterTypes());
-            cg.dup();
-            cg.store_local(args);
-            cg.invoke(MethodConstants.GET_DECLARED_METHOD);
+            cg.load_method(method);
             cg.dup();
             cg.putfield(getFieldName(context, method));
-
+            cg.dup();
+            cg.store_local(m);
+                                       
             String accessName = getAccessName(context, method);
-            if (needsMethodProxy()) {
-                cg.load_class_this();
-                cg.push(accessName);
-                cg.load_local(args);
-                cg.invoke(MethodConstants.GET_DECLARED_METHOD);
-                cg.invoke(MAKE_PROXY);
-                cg.putfield(accessName);
-            }
+            cg.load_class_this();
+            cg.push(accessName);
+            cg.load_local(m);
+            cg.invoke(MethodConstants.GET_PARAMETER_TYPES);
+            cg.invoke(MethodConstants.GET_DECLARED_METHOD);
+            cg.invoke(MAKE_PROXY);
+            cg.putfield(accessName);
         }
-    }
-
-    protected boolean needsMethodProxy() {
-        return true;
     }
 }

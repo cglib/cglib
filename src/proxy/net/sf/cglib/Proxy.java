@@ -71,13 +71,11 @@ import net.sf.cglib.util.CodeGenerationException;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.10 2003/09/04 18:53:46 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.11 2003/09/05 22:59:21 herbyderby Exp $
  */
 public class Proxy implements Serializable {
-    private static final Class IMPL_TYPE = ProxyImpl.class;
-
     protected Proxy(InvocationHandler h) {
-        ((Factory)this).setCallback(Callbacks.JDK_PROXY, new HandlerAdapter(h));
+        ((Factory)this).setCallback(Callbacks.JDK_PROXY, h);
     }
 
     // private for security of isProxyClass
@@ -88,18 +86,20 @@ public class Proxy implements Serializable {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((HandlerAdapter)((Factory)proxy).getCallback(Callbacks.JDK_PROXY)).handler;
+        return (InvocationHandler)((Factory)proxy).getCallback(Callbacks.JDK_PROXY);
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, new SimpleFilter(Callbacks.JDK_PROXY));
+        return Enhancer.enhanceClass(ProxyImpl.class,
+                                     interfaces,
+                                     loader,
+                                     new SimpleFilter(Callbacks.JDK_PROXY));
     }
 
     public static boolean isProxyClass(Class cl) {
-        return cl.getSuperclass().equals(IMPL_TYPE);
+        return cl.getSuperclass().equals(ProxyImpl.class);
     }
 
-    // TODO: optimize away reflection via ConstructorProxy? (maybe not necessary)
     public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
         try {
             Class clazz = getProxyClass(loader, interfaces);

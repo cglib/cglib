@@ -61,7 +61,6 @@ import net.sf.cglib.util.*;
 class EnhancerGenerator
 extends CodeGenerator
 {
-    private static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
     private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
     private static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
@@ -72,8 +71,6 @@ extends CodeGenerator
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
     private static final Method NEW_CLASS_KEY = 
       ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
-//     private static final Method INTERNAL_WRITE_REPLACE =
-//       ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Factory.newInstance(Callbacks)");
     private static final Method MULTIARG_NEW_INSTANCE = 
@@ -157,7 +154,7 @@ extends CodeGenerator
             group[ctype].add(method);
         }
 
-        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
+        declare_field(Constants.PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
         generateConstructors(constructors);
 
@@ -433,7 +430,7 @@ extends CodeGenerator
     private void generateCurrentCallback(int type) {
         if (!usedCallbacks.get(type)) {
             declare_field(Modifier.PRIVATE, Callbacks.getType(type), getCallbackField(type));
-            declare_field(PRIVATE_FINAL_STATIC, ThreadLocal.class, getThreadLocal(type));
+            declare_field(Constants.PRIVATE_FINAL_STATIC, ThreadLocal.class, getThreadLocal(type));
             usedCallbacks.set(type);
         }
         load_this();

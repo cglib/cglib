@@ -53,19 +53,18 @@
  */
 package net.sf.cglib.util;
 
+import java.lang.reflect.Modifier;
+
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.1 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.2 2003/09/05 22:59:20 herbyderby Exp $
  */
 public class Constants {
     private Constants() { }
-    
-    public static final Class[] TYPES_OBJECT = { Object.class };
+
     public static final Class[] TYPES_EMPTY = {};
-    public static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
-    public static final Class[] TYPES_STRING = { String.class };
-    public static final Class[] TYPES_THROWABLE = { Throwable.class };
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String SOURCE_FILE = "<generated>";
     public static final String STATIC_NAME = "<clinit>";
+    public static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
 }

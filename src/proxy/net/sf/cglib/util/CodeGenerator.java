@@ -72,6 +72,9 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
 
+    private static final Class[] TYPES_STRING = { String.class };
+    private static final Class[] TYPES_THROWABLE = { Throwable.class };
+
     private boolean needsFindClass;
 
     static {
@@ -116,7 +119,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     private void load_class_helper(String className) {
         needsFindClass = true;
         push(className);
-        invoke_static_this(FIND_CLASS, Class.class, Constants.TYPES_STRING);
+        invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
     }
 
     /**
@@ -328,7 +331,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         begin_method(Modifier.PRIVATE | Modifier.STATIC,
         Class.class,
         FIND_CLASS,
-        Constants.TYPES_STRING,
+        TYPES_STRING,
         null);
 
         Block block = begin_block();
@@ -342,7 +345,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         new_instance(NoClassDefFoundError.class);
         dup_x1();
         swap();
-        invoke_constructor(NoClassDefFoundError.class, Constants.TYPES_STRING);
+        invoke_constructor(NoClassDefFoundError.class, TYPES_STRING);
         athrow();
         end_method();
     }
@@ -687,8 +690,15 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             new_instance(UndeclaredThrowableException.class);
             dup_x1();
             swap();
-            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
+            invoke_constructor(UndeclaredThrowableException.class, TYPES_THROWABLE);
             athrow();
         }
+    }
+
+    public void load_method(Method method) {
+        load_class(method.getDeclaringClass());
+        push(method.getName());
+        push_object(method.getParameterTypes());
+        invoke(MethodConstants.GET_DECLARED_METHOD);
     }
 }

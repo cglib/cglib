@@ -3,13 +3,14 @@
 package samples;
 
 import java.beans.*;
+import java.lang.reflect.*;
 import net.sf.cglib.*;
 
 /**
  *
  * @author  baliuka
  */
-public class Beans implements BeforeAfterInterceptor {
+public class Beans implements MethodInterceptor {
     
     private PropertyChangeSupport propertySupport;
    
@@ -38,39 +39,33 @@ public class Beans implements BeforeAfterInterceptor {
     
     static final Class C[] = new Class[0];
     static final Object emptyArgs [] = new Object[0];
-    
-    public Object afterReturn( Object obj, java.lang.reflect.Method method,
-    Object[] args, boolean invokedSuper,
-    Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
-        
-        String name = method.getName();
-        if( name.equals("addPropertyChangeListener")) {
-            addPropertyChangeListener((PropertyChangeListener)args[0]);
-        }else if ( name.equals( "removePropertyChangeListener" ) ){
-            removePropertyChangeListener((PropertyChangeListener)args[0]);
+
+
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        Object retValFromSuper = null;
+        try {
+            if (!Modifier.isAbstract(method.getModifiers())) {
+                retValFromSuper = proxy.invokeSuper(obj, args);
+            }
+        } finally {
+            String name = method.getName();
+            if( name.equals("addPropertyChangeListener")) {
+                addPropertyChangeListener((PropertyChangeListener)args[0]);
+            }else if ( name.equals( "removePropertyChangeListener" ) ){
+                removePropertyChangeListener((PropertyChangeListener)args[0]);
+            }
+            if( name.startsWith("set") &&
+                args.length == 1 &&
+                method.getReturnType() == Void.TYPE ){
+            
+                char propName[] = name.substring("set".length()).toCharArray();
+            
+                propName[0] = Character.toLowerCase( propName[0] );
+                propertySupport.firePropertyChange( new String( propName ) , null , args[0]);
+            
+            }
         }
-        
-        
-        if( name.startsWith("set") &&
-        args.length == 1 &&
-        method.getReturnType() == Void.TYPE ){
-            
-            char propName[] = name.substring("set".length()).toCharArray();
-            
-            propName[0] = Character.toLowerCase( propName[0] );
-            propertySupport.firePropertyChange( new String( propName ) , null , args[0]);
-            
-        }
-        
-        
-        
         return retValFromSuper;
-    }
-    
-    
-    public boolean invokeSuper(Object obj, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
-        // validation and security can be implemented in this method
-        return true;
     }
     
     public static void main( String args[] ){
