@@ -67,7 +67,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
-    private static final Map primitiveToWrapper = new HashMap();
 
     private boolean needsFindClass;
 
@@ -80,15 +79,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         primitiveMethods.put(Short.TYPE, MethodConstants.INT_VALUE);
         primitiveMethods.put(Integer.TYPE, MethodConstants.INT_VALUE);
         primitiveMethods.put(Byte.TYPE, MethodConstants.INT_VALUE);
-
-        primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
-        primitiveToWrapper.put(Character.TYPE, Character.class);
-        primitiveToWrapper.put(Long.TYPE, Long.class);
-        primitiveToWrapper.put(Double.TYPE, Double.class);
-        primitiveToWrapper.put(Float.TYPE, Float.class);
-        primitiveToWrapper.put(Short.TYPE, Short.class);
-        primitiveToWrapper.put(Integer.TYPE, Integer.class);
-        primitiveToWrapper.put(Byte.TYPE, Byte.class);
     }
 
     protected CodeGenerator() {
@@ -110,7 +100,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 throw new IllegalArgumentException("cannot load void type");
             }
             try {
-                getfield(((Class)primitiveToWrapper.get(type)).getDeclaredField("TYPE"));
+                getfield(ReflectUtils.getBoxedType(type).getDeclaredField("TYPE"));
             } catch (NoSuchFieldException e) {
                 throw new CodeGenerationException(e);
             }
@@ -232,7 +222,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             if (type.equals(Void.TYPE)) {
                 aconst_null();
             } else {
-                Class wrapper = (Class)primitiveToWrapper.get(type);
+                Class wrapper = ReflectUtils.getBoxedType(type);
                 new_instance(wrapper);
                 if (getStackSize(type) == 2) {
                     // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o

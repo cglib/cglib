@@ -58,13 +58,15 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.3 2003/06/24 20:57:26 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.4 2003/07/16 18:27:28 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
     
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
+    private static final Map primitiveToWrapper = new HashMap();
+    private static final Map wrapperToPrimitive = new HashMap();
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
     private static final String[] CGLIB_PACKAGES = { "java.lang", "java.lang.reflect", "net.sf.cglib" };
 
@@ -76,6 +78,7 @@ public class ReflectUtils {
         primitives.put("long", Long.TYPE);
         primitives.put("short", Short.TYPE);
         primitives.put("boolean", Boolean.TYPE);
+
         transforms.put("byte", "B");
         transforms.put("char", "C");
         transforms.put("double", "D");
@@ -84,8 +87,36 @@ public class ReflectUtils {
         transforms.put("long", "J");
         transforms.put("short", "S");
         transforms.put("boolean", "Z");
+
+        primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
+        primitiveToWrapper.put(Character.TYPE, Character.class);
+        primitiveToWrapper.put(Long.TYPE, Long.class);
+        primitiveToWrapper.put(Double.TYPE, Double.class);
+        primitiveToWrapper.put(Float.TYPE, Float.class);
+        primitiveToWrapper.put(Short.TYPE, Short.class);
+        primitiveToWrapper.put(Integer.TYPE, Integer.class);
+        primitiveToWrapper.put(Byte.TYPE, Byte.class);
+
+        wrapperToPrimitive.put(Boolean.class, Boolean.TYPE);
+        wrapperToPrimitive.put(Character.class, Character.TYPE);
+        wrapperToPrimitive.put(Long.class, Long.TYPE);
+        wrapperToPrimitive.put(Double.class, Double.TYPE);
+        wrapperToPrimitive.put(Float.class, Float.TYPE);
+        wrapperToPrimitive.put(Short.class, Short.TYPE);
+        wrapperToPrimitive.put(Integer.class, Integer.TYPE);
+        wrapperToPrimitive.put(Byte.class, Byte.TYPE);
     }
 
+    public static Class getBoxedType(Class type) {
+        Class boxed = (Class)primitiveToWrapper.get(type);
+        return (boxed != null) ? boxed : type;
+    }
+
+    public static Class getUnboxedType(Class type) {
+        Class unboxed = (Class)wrapperToPrimitive.get(type);
+        return (unboxed != null) ? unboxed : type;
+    }
+    
     public static Constructor findConstructor(String desc) {
         return findConstructor(desc, defaultLoader);
     }
