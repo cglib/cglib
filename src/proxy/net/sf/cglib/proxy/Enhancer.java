@@ -92,8 +92,6 @@ import org.objectweb.asm.ClassVisitor;
  */
 public class Enhancer extends AbstractClassGenerator
 {
-    private static final Class[] NULL_CLASS_ARRAY = { null };
-    private static final Callback[] NULL_CALLBACK_ARRAY = { null };
     private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.CLASS_BY_NAME);
@@ -179,14 +177,10 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     public void setCallbacks(Callback[] callbacks) {
-        if (callbacks == null || callbacks.length == 0) {
-            callbacks = NULL_CALLBACK_ARRAY;
+        if (callbacks != null && callbacks.length == 0) {
+            throw new IllegalArgumentException("Array cannot be empty");
         }
         this.callbacks = callbacks;
-        callbackTypes = new Class[callbacks.length];
-        for (int i = 0; i < callbacks.length; i++) {
-            callbackTypes[i] = CallbackUtils.determineType(callbacks[i]);
-        }
     }
 
     /**
@@ -206,11 +200,8 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     public void setCallbackTypes(Class[] callbackTypes) {
-        if (callbacks != null) {
-            throw new IllegalStateException("Cannot call both setCallbacks and setCallbackTypes");
-        }
-        if (callbackTypes == null || callbackTypes.length == 0) {
-            callbackTypes = NULL_CLASS_ARRAY;
+        if (callbackTypes != null && callbackTypes.length == 0) {
+            throw new IllegalArgumentException("Array cannot be empty");
         }
         this.callbackTypes = callbackTypes;
     }
@@ -260,16 +251,52 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private Object createHelper() {
+        if (classOnly ^ (callbacks == null)) {
+            if (classOnly) {
+                throw new IllegalStateException("createClass does not accept callbacks");
+            } else {
+                throw new IllegalStateException("callbacks are required unless using createClass");
+            }
+        }
+        if (callbacks == null && callbackTypes == null) {
+            throw new IllegalStateException("Either callbacks or callback types are always required");
+        }
+        if (callbacks != null && callbackTypes != null) {
+            if (callbacks.length != callbackTypes.length) {
+                throw new IllegalStateException("Lengths of callback and callback types array must be the same");
+            }
+            for (int i = 0; i < callbacks.length; i++) {
+                // make sure all classes are callbacks
+                CallbackUtils.getGenerator(callbackTypes[i]);
+                if (callbacks[i] == null) {
+                    throw new IllegalStateException("Callback cannot be null");
+                }
+                if (!callbackTypes[i].isAssignableFrom(callbacks[i].getClass())) {
+                    throw new IllegalStateException("Callback " + callbacks[i] + " is not assignable to " + callbackTypes[i]);
+                }
+            }
+        } else if (callbacks != null) {
+            callbackTypes = new Class[callbacks.length];
+            for (int i = 0; i < callbacks.length; i++) {
+                callbackTypes[i] = CallbackUtils.determineType(callbacks[i]);
+            }
+        } else {
+            for (int i = 0; i < callbackTypes.length; i++) {
+                // make sure all classes are callbacks
+                CallbackUtils.getGenerator(callbackTypes[i]);
+            }
+        }
+        if (filter == null) {
+            if (callbackTypes.length > 1) {
+                throw new IllegalStateException("Multiple callback types possible but no filter specified");
+            }
+            filter = CallbackFilter.ALL_ZERO;
+        }
+        
         if (superclass != null) {
             setNamePrefix(superclass.getName());
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
-        }
-        if (callbackTypes == null) {
-            callbackTypes = NULL_CLASS_ARRAY;
-        }
-        if (filter == null) {
-            filter = CallbackFilter.ALL_ZERO;
         }
         Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, classOnly, useFactory);
         return super.create(key);

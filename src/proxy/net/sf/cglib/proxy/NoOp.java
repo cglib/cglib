@@ -53,33 +53,12 @@
  */
 package net.sf.cglib.proxy;
 
-import net.sf.cglib.CodeGenTestCase;
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-
-public class TestNoOp extends CodeGenTestCase {
-    private static class Foo {
-        public Foo() { }
-        public String toString() {
-            return "foo";
-        }
-    }
-    
-    public void testNoOp() {
-        Object obj = Enhancer.create(Foo.class, NoOp.INSTANCE);
-        assertTrue("foo".equals(obj.toString()));
-    }
-
-    public TestNoOp(String testName) {
-        super(testName);
-    }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestNoOp.class);
-    }
+/**
+ * Methods using this {@link Enhancer} callback will not have any code
+ * in the generated subclass--the default (super) implementation will
+ * be used instead.
+ */
+public interface NoOp extends Callback
+{
+    public static final NoOp INSTANCE = new NoOp() { };
 }

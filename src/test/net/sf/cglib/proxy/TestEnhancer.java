@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.30 2003/11/10 23:43:07 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.31 2003/11/11 17:43:17 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -410,8 +410,11 @@ public class TestEnhancer extends CodeGenTestCase {
     }
     
      public void testArgInit() throws Throwable{
-    
-         Class f = createClass(ArgInit.class, null, null);
+
+         Enhancer e = new Enhancer();
+         e.setSuperclass(ArgInit.class);
+         e.setCallbackType(MethodInterceptor.class);
+         Class f = e.createClass();
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
@@ -485,14 +488,6 @@ public class TestEnhancer extends CodeGenTestCase {
         return e.create();
     }
 
-    public static Class createClass(Class superclass, Class[] interfaces, CallbackFilter filter) {
-        Enhancer e = new Enhancer();
-        e.setSuperclass(superclass);
-        e.setInterfaces(interfaces);
-        e.setCallbackFilter(filter);
-        return e.createClass();
-    }
-
     public interface PublicClone extends Cloneable {
         Object clone() throws CloneNotSupportedException;
     }
@@ -500,6 +495,7 @@ public class TestEnhancer extends CodeGenTestCase {
     public void testNoOpClone() throws Exception {
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(PublicClone.class);
+        enhancer.setCallback(NoOp.INSTANCE);
         ((PublicClone)enhancer.create()).clone();
     }
 
