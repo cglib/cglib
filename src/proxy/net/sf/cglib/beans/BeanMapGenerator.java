@@ -113,8 +113,8 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(getters), switchStyle, new StringSwitchCallback() {
-                public void processCase(String key, Label end) {
+        string_switch(getNames(getters), switchStyle, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                     invoke(pd.getReadMethod());
                     box(pd.getReadMethod().getReturnType());
@@ -135,8 +135,8 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(setters), switchStyle, new StringSwitchCallback() {
-                public void processCase(String key, Label end) {
+        string_switch(getNames(setters), switchStyle, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                     if (pd.getReadMethod() == null) {
                         aconst_null();

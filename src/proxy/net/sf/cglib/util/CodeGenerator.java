@@ -509,12 +509,12 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         end_method();
     }
 
-    public interface StringSwitchCallback {
-        void processCase(String key, Label end) throws Exception;
+    public interface ObjectSwitchCallback {
+        void processCase(Object key, Label end) throws Exception;
         void processDefault() throws Exception;
     }
 
-    public void string_switch(String[] strings, int switchStyle, StringSwitchCallback callback)
+    public void string_switch(String[] strings, int switchStyle, ObjectSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {
         case SWITCH_STYLE_TRIE:
@@ -528,12 +528,12 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
 
-    private void string_switch_trie(String[] strings, final StringSwitchCallback callback) throws Exception {
+    private void string_switch_trie(String[] strings, final ObjectSwitchCallback callback) throws Exception {
         final Label def = make_label();
         final Label end = make_label();
-        final Map buckets = bucket(Arrays.asList(strings), new Indexer() {
-            public int index(Object value) {
-                return ((String)value).length();
+        final Map buckets = bucket(Arrays.asList(strings), new Transformer() {
+            public Object transform(Object value) {
+                return new Integer(((String)value).length());
             }
         });
         dup();
@@ -554,14 +554,14 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     }
 
     private void stringSwitchHelper(List strings,
-                                    final StringSwitchCallback callback,
+                                    final ObjectSwitchCallback callback,
                                     final Label def,
                                     final Label end,
                                     final int index) throws Exception {
         final int len = ((String)strings.get(0)).length();
-        final Map buckets = bucket(strings, new Indexer() {
-            public int index(Object value) {
-                return ((String)value).charAt(index);
+        final Map buckets = bucket(strings, new Transformer() {
+            public Object transform(Object value) {
+                return new Integer(((String)value).charAt(index));
             }
         });
         dup();
@@ -572,7 +572,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     List bucket = (List)buckets.get(new Integer(key));
                     if (index + 1 == len) {
                         pop();
-                        callback.processCase((String)bucket.get(0), end);
+                        callback.processCase(bucket.get(0), end);
                     } else {
                         stringSwitchHelper(bucket, callback, def, end, index + 1);
                     }
@@ -583,15 +583,15 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             });
     }        
 
-    private interface Indexer {
-        int index(Object value);
+    private interface Transformer {
+        Object transform(Object value);
     }
     
-    private static Map bucket(List values, Indexer t) {
+    private static Map bucket(List values, Transformer t) {
         Map buckets = new HashMap();
         for (Iterator it = values.iterator(); it.hasNext();) {
             Object value = (Object)it.next();
-            Integer key = new Integer(t.index(value));
+            Object key = t.transform(value);
             List bucket = (List)buckets.get(key);
             if (bucket == null) {
                 buckets.put(key, bucket = new LinkedList());
@@ -600,7 +600,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
         return buckets;
     }
-
+    
     private static int[] getSwitchKeys(Map buckets) {
         int[] keys = new int[buckets.size()];
         int index = 0;
@@ -612,19 +612,17 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     }
 
     private void string_switch_hash(final String[] strings,
-                                    final StringSwitchCallback callback) throws Exception {
-        final Map buckets = bucket(Arrays.asList(strings), new Indexer() {
-            public int index(Object value) {
-                return value.hashCode();
+                                    final ObjectSwitchCallback callback) throws Exception {
+        final Map buckets = bucket(Arrays.asList(strings), new Transformer() {
+            public Object transform(Object value) {
+                return new Integer(value.hashCode());
             }
         });
-        int[] hashCodes = getSwitchKeys(buckets);
-
         final Label def = make_label();
         final Label end = make_label();
         dup();
         invoke(MethodConstants.HASH_CODE);
-        process_switch(hashCodes, new ProcessSwitchCallback() {
+        process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
             public void processCase(int key, Label ignore_end) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
                 Label next = null;
@@ -698,5 +696,162 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         push(method.getName());
         push_object(method.getParameterTypes());
         invoke(MethodConstants.GET_DECLARED_METHOD);
+    }
+
+    private interface ParameterTyper {
+        Class[] getParameterTypes(Object member);
+    }
+
+    public void method_switch(Method[] methods, ObjectSwitchCallback callback) throws Exception {
+        member_switch_helper(Arrays.asList(methods), callback, true, new ParameterTyper() {
+            public Class[] getParameterTypes(Object member) {
+                return ((Method)member).getParameterTypes();
+            }
+        });
+    }
+
+    public void constructor_switch(Constructor[] cstructs, ObjectSwitchCallback callback) throws Exception {
+        member_switch_helper(Arrays.asList(cstructs), callback, false, new ParameterTyper() {
+            public Class[] getParameterTypes(Object member) {
+                return ((Constructor)member).getParameterTypes();
+            }
+        });
+    }
+
+    private void member_switch_helper(List members,
+                                      final ObjectSwitchCallback callback,
+                                      boolean useName,
+                                      final ParameterTyper typer) throws Exception {
+        final Map cache = new HashMap();
+        final ParameterTyper cached = new ParameterTyper() {
+            public Class[] getParameterTypes(Object member) {
+                Class[] types = (Class[])cache.get(member);
+                if (types == null) {
+                    cache.put(member, types = typer.getParameterTypes(member));
+                }
+                return types;
+            }
+        };
+        final Label def = make_label();
+        final Label end = make_label();
+        if (useName) {
+            swap();
+            final Map buckets = bucket(members, new Transformer() {
+                public Object transform(Object value) {
+                    return ((Member)value).getName();
+                }
+            });
+            String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+            string_switch_hash(names, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label dontUseEnd) throws Exception {
+                    member_helper_size((List)buckets.get(key), callback, cached, def, end);
+                }
+                public void processDefault() throws Exception {
+                    goTo(def);
+                }
+            });
+        } else {
+            member_helper_size(members, callback, cached, def, end);
+        }
+        mark(def);
+        pop();
+        callback.processDefault();
+        mark(end);
+    }
+
+    private void member_helper_size(List members,
+                                    final ObjectSwitchCallback callback,
+                                    final ParameterTyper typer,
+                                    final Label def,
+                                    final Label end) throws Exception {
+        if (members.size() == 1) {
+            member_helper_finish((Member)members.get(0), callback, typer, def, end, null);
+            return;
+        }
+        final Map buckets = bucket(members, new Transformer() {
+            public Object transform(Object value) {
+                return new Integer(typer.getParameterTypes(value).length);
+            }
+        });
+        dup();
+        arraylength();
+        process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
+            public void processCase(int key, Label dontUseEnd) throws Exception {
+                List bucket = (List)buckets.get(new Integer(key));
+                Class[] types = typer.getParameterTypes(bucket.get(0));
+                member_helper_type(bucket, callback, typer, def, end, new BitSet(types.length));
+            }
+            public void processDefault() throws Exception {
+                goTo(def);
+            }
+        });
+    }
+    
+    private void member_helper_type(List members,
+                                    final ObjectSwitchCallback callback,
+                                    final ParameterTyper typer,
+                                    final Label def,
+                                    final Label end,
+                                    final BitSet checked) throws Exception {
+        if (members.size() == 1) {
+            member_helper_finish((Member)members.get(0), callback, typer, def, end, checked);
+            return;
+        }
+
+        // choose the index that has the best chance of uniquely identifying member
+        Class[] example = typer.getParameterTypes(members.get(0));
+        Map buckets = null;
+        int index = -1;
+        for (int i = 0; i < example.length; i++) {
+            final int j = i;
+            Map test = bucket(members, new Transformer() {
+                public Object transform(Object value) {
+                    return typer.getParameterTypes(value)[j].getName();
+                }
+            });
+            if (buckets == null || test.size() > buckets.size()) {
+                buckets = test;
+                index = i;
+            }
+        }
+        checked.set(index);
+        // TODO: assert unique > 1
+
+        dup();
+        aaload(index);
+        invoke(MethodConstants.CLASS_GET_NAME);
+
+        final Map fbuckets = buckets;
+        String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+        string_switch_hash(names, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label dontUseEnd) throws Exception {
+                member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
+            }
+            public void processDefault() throws Exception {
+                goTo(def);
+            }
+        });
+    }
+
+    private void member_helper_finish(Member member,
+                                      ObjectSwitchCallback callback,
+                                      ParameterTyper typer,
+                                      Label def,
+                                      Label end,
+                                      BitSet checked) throws Exception {
+        Class[] types = typer.getParameterTypes(member);
+
+        for (int i = 0; i < types.length; i++) {
+            if (checked == null || !checked.get(i)) {
+                dup();
+                aaload(i);
+                invoke(MethodConstants.CLASS_GET_NAME);
+                push(types[i].getName());
+                invoke(MethodConstants.EQUALS);
+                ifeq(def);
+            }
+        }
+        pop();
+        callback.processCase(member, end);
     }
 }
