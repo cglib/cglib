@@ -57,50 +57,82 @@ import java.beans.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.core.KeyFactory;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 abstract public class BeanMap implements Map {
-    public static final int SWITCH_STYLE_TRIE = CodeGenerator.SWITCH_STYLE_TRIE;
-    public static final int SWITCH_STYLE_HASH = CodeGenerator.SWITCH_STYLE_HASH;
-    
-    private static final FactoryCache cache = new FactoryCache(BeanMap.class);
+    public static final int SWITCH_STYLE_TRIE = Virt.SWITCH_STYLE_TRIE;
+    public static final int SWITCH_STYLE_HASH = Virt.SWITCH_STYLE_HASH;
+
     private static final BeanMapKey KEY_FACTORY =
       (BeanMapKey)KeyFactory.create(BeanMapKey.class);
-
     interface BeanMapKey {
         public Object newInstance(Class type, int switchStyle);
     }
 
+    public static BeanMap create(Object bean) {
+        Generator gen = new Generator();
+        gen.setBean(bean);
+        return gen.create();
+    }
+
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(BeanMap.class, true);
+
+        private Object bean;
+        private int switchStyle;
+        
+        public Generator() {
+            super(SOURCE);
+            setSuperclass(BeanMap.class);
+        }
+
+        public void setBean(Object bean) {
+            this.bean = bean;
+        }
+
+        public void setSwitchStyle(int switchStyle) {
+            this.switchStyle = switchStyle;
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return bean.getClass().getClassLoader();
+        }
+
+        public BeanMap create() {
+            return (BeanMap)super.create(KEY_FACTORY.newInstance(bean.getClass(), switchStyle));
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            new BeanMapEmitter(v, getClassName(), bean.getClass(), switchStyle);
+        }
+
+        protected Object firstInstance(Class type) {
+            return ((BeanMap)ReflectUtils.newInstance(type)).newInstance(bean);
+        }
+
+        protected Object nextInstance(Object instance) {
+            return ((BeanMap)instance).newInstance(bean);
+        }
+    }
+    
     abstract protected BeanMap newInstance(Object bean);
+
     protected Object bean;
 
     protected BeanMap() {
     }
 
     protected BeanMap(Object bean) {
+        setBean(bean);
+    }
+
+    public void setBean(Object bean) {
         this.bean = bean;
     }
 
-    public static BeanMap create(Object bean, ClassLoader loader) {
-        return createHelper(bean, SWITCH_STYLE_TRIE, loader);
-    }
-
-    public static BeanMap create(Object bean, int switchStyle, ClassLoader loader) {
-        return createHelper(bean, switchStyle, loader);
-    }
-
-    private static BeanMap createHelper(final Object bean, final int switchStyle, ClassLoader loader) {
-        final Class type = bean.getClass();
-        Object key = KEY_FACTORY.newInstance(type, switchStyle);
-        return (BeanMap)cache.get(loader, key, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new BeanMapGenerator(type, switchStyle);
-                }
-                public Object newInstance(Object factory, boolean isNew) {
-                    return ((BeanMap)factory).newInstance(bean);
-                }
-            });
+    public Object getBean() {
+        return bean;
     }
 
     public void clear() {

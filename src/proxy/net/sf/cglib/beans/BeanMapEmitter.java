@@ -57,20 +57,28 @@ import java.beans.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
-class BeanMapGenerator extends CodeGenerator {
+class BeanMapEmitter extends Emitter {
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("BeanMap.newInstance(Object)");
     private static final Class[] TYPES_OBJECT = { Object.class };
 
-    private Class type;
-    private int switchStyle;
+    public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
+        setClassVisitor(v);
 
-    public BeanMapGenerator(Class type, int switchStyle) {
-        setSuperclass(BeanMap.class);
-        this.type = type;
-        this.switchStyle = switchStyle;
+        begin_class(Modifier.PUBLIC, className, BeanMap.class, null);
+        Virt.null_constructor(this);
+        Virt.factory_method(this, NEW_INSTANCE);
+        generateConstructor();
+            
+        Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
+        Map setters = makePropertyMap(ReflectUtils.getBeanSetters(type));
+        generateGet(type, switchStyle, getters);
+        generatePut(type, switchStyle, setters);
+        generateKeySet(getters, setters);
+        end_class();
     }
 
     private Map makePropertyMap(PropertyDescriptor[] props) {
@@ -85,18 +93,6 @@ class BeanMapGenerator extends CodeGenerator {
         return (String[])propertyMap.keySet().toArray(new String[propertyMap.size()]);
     }
 
-    protected void generate() throws Exception {
-        null_constructor();
-        factory_method(NEW_INSTANCE);
-        generateConstructor();
-            
-        Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
-        Map setters = makePropertyMap(ReflectUtils.getBeanSetters(type));
-        generateGet(getters);
-        generatePut(setters);
-        generateKeySet(getters, setters);
-    }
-
     private void generateConstructor() {
         begin_constructor(TYPES_OBJECT);
         load_this();
@@ -106,55 +102,55 @@ class BeanMapGenerator extends CodeGenerator {
         end_method();
     }
         
-    private void generateGet(final Map getters) throws Exception {
+    private void generateGet(Class type, int switchStyle, final Map getters) throws Exception {
         begin_method(MethodConstants.MAP_GET);
         load_this();
         super_getfield("bean");
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(getters), switchStyle, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                    invoke(pd.getReadMethod());
-                    box(pd.getReadMethod().getReturnType());
-                    return_value();
-                }
-                public void processDefault() {
-                    aconst_null();
-                    return_value();
-                }
-            });
+        Virt.string_switch(this, getNames(getters), switchStyle, new Virt.ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
+                invoke(pd.getReadMethod());
+                Virt.box(BeanMapEmitter.this, pd.getReadMethod().getReturnType());
+                return_value();
+            }
+            public void processDefault() {
+                aconst_null();
+                return_value();
+            }
+        });
         end_method();
     }
 
-    private void generatePut(final Map setters) throws Exception {
+    private void generatePut(Class type, int switchStyle, final Map setters) throws Exception {
         begin_method(MethodConstants.MAP_PUT);
         load_this();
         super_getfield("bean");
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(setters), switchStyle, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
-                    if (pd.getReadMethod() == null) {
-                        aconst_null();
-                    } else {
-                        dup();
-                        invoke(pd.getReadMethod());
-                        box(pd.getReadMethod().getReturnType());
-                    }
-                    swap(); // move old value behind bean
-                    load_arg(1); // new value
-                    unbox(pd.getWriteMethod().getParameterTypes()[0]);
-                    invoke(pd.getWriteMethod());
-                    return_value();
+        Virt.string_switch(this, getNames(setters), switchStyle, new Virt.ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
+                if (pd.getReadMethod() == null) {
+                    aconst_null();
+                } else {
+                    dup();
+                    invoke(pd.getReadMethod());
+                    Virt.box(BeanMapEmitter.this, pd.getReadMethod().getReturnType());
                 }
-                public void processDefault() {
-                    // fall-through
-                }
-            });
+                swap(); // move old value behind bean
+                load_arg(1); // new value
+                Virt.unbox(BeanMapEmitter.this, pd.getWriteMethod().getParameterTypes()[0]);
+                invoke(pd.getWriteMethod());
+                return_value();
+            }
+            public void processDefault() {
+                // fall-through
+            }
+        });
         aconst_null();
         return_value();
         end_method();
@@ -169,7 +165,7 @@ class BeanMapGenerator extends CodeGenerator {
         begin_static();
         new_instance(FixedKeySet.class);
         dup();
-        push(allNames.toArray(new String[allNames.size()]));
+        Virt.push(this, allNames.toArray(new String[allNames.size()]));
         invoke_constructor(FixedKeySet.class, new Class[]{ String[].class });
         putfield("keys");
         return_value();
