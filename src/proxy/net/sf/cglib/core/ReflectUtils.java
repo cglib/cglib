@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.15 2004/01/25 22:21:18 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.16 2004/02/08 12:37:40 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -68,7 +68,7 @@ public class ReflectUtils {
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
     private static final Method DEFINE_CLASS;
-
+    
     static {
         try {
             
@@ -79,11 +79,11 @@ public class ReflectUtils {
             throw new CodeGenerationException(e);
         }
     }
-
+    
     private static final String[] CGLIB_PACKAGES = {
         "java.lang",
     };
-
+    
     static {
         primitives.put("byte", Byte.TYPE);
         primitives.put("char", Character.TYPE);
@@ -93,7 +93,7 @@ public class ReflectUtils {
         primitives.put("long", Long.TYPE);
         primitives.put("short", Short.TYPE);
         primitives.put("boolean", Boolean.TYPE);
-
+        
         transforms.put("byte", "B");
         transforms.put("char", "C");
         transforms.put("double", "D");
@@ -103,7 +103,7 @@ public class ReflectUtils {
         transforms.put("short", "S");
         transforms.put("boolean", "Z");
     }
-
+    
     public static Type[] getExceptionTypes(Member member) {
         if (member instanceof Method) {
             return TypeUtils.getTypes(((Method)member).getExceptionTypes());
@@ -113,24 +113,24 @@ public class ReflectUtils {
             throw new IllegalArgumentException("Cannot get exception types of a field");
         }
     }
-
+    
     public static Signature getSignature(Member member) {
         if (member instanceof Method) {
             return new Signature(member.getName(), Type.getMethodDescriptor((Method)member));
         } else if (member instanceof Constructor) {
             Type[] types = TypeUtils.getTypes(((Constructor)member).getParameterTypes());
             return new Signature(Constants.CONSTRUCTOR_NAME,
-                                 Type.getMethodDescriptor(Type.VOID_TYPE, types));
-                                                          
+            Type.getMethodDescriptor(Type.VOID_TYPE, types));
+            
         } else {
             throw new IllegalArgumentException("Cannot get signature of a field");
         }
     }
-
+    
     public static Constructor findConstructor(String desc) {
-         return findConstructor(desc, defaultLoader);
+        return findConstructor(desc, defaultLoader);
     }
-
+    
     public static Constructor findConstructor(String desc, ClassLoader loader) {
         try {
             int lparen = desc.indexOf('(');
@@ -142,11 +142,11 @@ public class ReflectUtils {
             throw new CodeGenerationException(e);
         }
     }
-
+    
     public static Method findMethod(String desc) {
-        return findMethod(desc, defaultLoader); 
+        return findMethod(desc, defaultLoader);
     }
-
+    
     public static Method findMethod(String desc, ClassLoader loader) {
         try {
             int lparen = desc.indexOf('(');
@@ -160,7 +160,7 @@ public class ReflectUtils {
             throw new CodeGenerationException(e);
         }
     }
-
+    
     private static Class[] parseTypes(String desc, ClassLoader loader) throws ClassNotFoundException {
         int lparen = desc.indexOf('(');
         int rparen = desc.indexOf(')', lparen);
@@ -183,7 +183,7 @@ public class ReflectUtils {
         }
         return types;
     }
-
+    
     private static Class getClass(String className, ClassLoader loader) throws ClassNotFoundException {
         return getClass(className, loader, CGLIB_PACKAGES);
     }
@@ -200,7 +200,7 @@ public class ReflectUtils {
             brackets.append('[');
         }
         className = className.substring(0, className.length() - 2 * dimensions);
-
+        
         String prefix = (dimensions > 0) ? brackets + "L" : "";
         String suffix = (dimensions > 0) ? ";" : "";
         try {
@@ -220,39 +220,45 @@ public class ReflectUtils {
             String transform = (String)transforms.get(className);
             if (transform != null) {
                 try {
-                    return Class.forName(brackets + transform, false, loader); 
+                    return Class.forName(brackets + transform, false, loader);
                 } catch (ClassNotFoundException ignore) { }
             }
         }
         throw new ClassNotFoundException(save);
     }
-
-
+    
+    
     public static Object newInstance(Class type) {
         return newInstance(type, Constants.EMPTY_CLASS_ARRAY, null);
     }
-
+    
     public static Object newInstance(Class type, Class[] parameterTypes, Object[] args) {
         return newInstance(getConstructor(type, parameterTypes), args);
     }
-
-    public static Object newInstance(Constructor cstruct, Object[] args) {
-        boolean flag = cstruct.isAccessible();
-        try {
-            cstruct.setAccessible(true);
-            Object result = cstruct.newInstance(args);
-            return result;
-        } catch (InstantiationException e) {
-            throw new CodeGenerationException(e);
-        } catch (IllegalAccessException e) {
-            throw new CodeGenerationException(e);
-        } catch (InvocationTargetException e) {
-            throw new CodeGenerationException(e.getTargetException());
-        } finally {
-            cstruct.setAccessible(flag);
-        }
+    
+    public static Object newInstance(final Constructor cstruct, final Object[] args) {
+        
+        return  java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedAction() {
+            public Object run() {
+                
+                boolean flag = cstruct.isAccessible();
+                try {
+                    cstruct.setAccessible(true);
+                    Object result = cstruct.newInstance(args);
+                    return result;
+                } catch (InstantiationException e) {
+                    throw new CodeGenerationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new CodeGenerationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new CodeGenerationException(e.getTargetException());
+                } finally {
+                    cstruct.setAccessible(flag);
+                }
+            }});
     }
-
+    
     public static Constructor getConstructor(Class type, Class[] parameterTypes) {
         try {
             return type.getConstructor(parameterTypes);
@@ -260,7 +266,7 @@ public class ReflectUtils {
             throw new CodeGenerationException(e);
         }
     }
-
+    
     public static Class[] getClasses(Object[] objects) {
         Class[] classes = new Class[objects.length];
         for (int i = 0; i < objects.length; i++) {
@@ -268,7 +274,7 @@ public class ReflectUtils {
         }
         return classes;
     }
-
+    
     public static Method findNewInstance(Class iface) {
         Method m = findInterfaceMethod(iface);
         if (!m.getName().equals("newInstance")) {
@@ -276,7 +282,7 @@ public class ReflectUtils {
         }
         return m;
     }
-
+    
     public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
         Set methods = new HashSet();
         for (int i = 0; i < properties.length; i++) {
@@ -291,19 +297,19 @@ public class ReflectUtils {
         methods.remove(null);
         return (Method[])methods.toArray(new Method[methods.size()]);
     }
-
+    
     public static PropertyDescriptor[] getBeanProperties(Class type) {
         return getPropertiesHelper(type, true, true);
     }
-
+    
     public static PropertyDescriptor[] getBeanGetters(Class type) {
         return getPropertiesHelper(type, true, false);
     }
-
+    
     public static PropertyDescriptor[] getBeanSetters(Class type) {
         return getPropertiesHelper(type, false, true);
     }
-
+    
     private static PropertyDescriptor[] getPropertiesHelper(Class type, boolean read, boolean write) {
         try {
             BeanInfo info = Introspector.getBeanInfo(type, Object.class);
@@ -315,7 +321,7 @@ public class ReflectUtils {
             for (int i = 0; i < all.length; i++) {
                 PropertyDescriptor pd = all[i];
                 if ((read && pd.getReadMethod() != null) ||
-                    (write && pd.getWriteMethod() != null)) {
+                (write && pd.getWriteMethod() != null)) {
                     properties.add(pd);
                 }
             }
@@ -324,30 +330,80 @@ public class ReflectUtils {
             throw new CodeGenerationException(e);
         }
     }
-
-    public static Method findDeclaredMethod(Class type, String methodName, Class[] parameterTypes)
-    throws NoSuchMethodException {
-        Class cl = type;
-        while (cl != null) {
-            try {
-                return cl.getDeclaredMethod(methodName, parameterTypes);
-            } catch (NoSuchMethodException e) {
-                cl = cl.getSuperclass();
+    
+    public static Method getDeclaredMethodPrivileged(final Class type, 
+                                           final String methodName,
+                                           final Class[] parameterTypes)throws Exception{
+    
+     return  (Method)java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedExceptionAction() {
+            public Object run() throws Exception{
+                        return type.getDeclaredMethod(methodName, parameterTypes);
+                
             }
-        }
-        throw new NoSuchMethodException(methodName);
+       }
+     );
+     
     }
-
-    public static List addAllMethods(Class type, List list) {
-        list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
-        Class superclass = type.getSuperclass();
-        if (superclass != null) {
-            addAllMethods(superclass, list);
+    
+    public static Constructor[] getDeclaredConstructorsPrivileged(final Class type ){
+    
+     return  (Constructor[])java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedAction() {
+            public Object run() {
+                        return type.getDeclaredConstructors();
+                
+            }
+       }
+     );
+     
+    }
+    
+    
+    public static Method findDeclaredMethod(final Class type, 
+                                   final String methodName, final Class[] parameterTypes)
+    throws Exception {
+        try{
+        return  (Method)java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedExceptionAction() {
+            public Object run() throws Exception{
+                
+                Class cl = type;
+                while (cl != null) {
+                    try {
+                        return cl.getDeclaredMethod(methodName, parameterTypes);
+                    } catch (NoSuchMethodException e) {
+                        cl = cl.getSuperclass();
+                    }
+                }
+                throw new NoSuchMethodException(methodName);
+            }});
+        }catch(java.security.PrivilegedActionException pae){
+           
+             throw pae.getException();
+           
         }
-        Class[] interfaces = type.getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            addAllMethods(interfaces[i], list);
-        }
+    }
+    
+    public static List addAllMethods(final Class type, final List list) {
+        
+        java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedAction() {
+            public Object run() {
+                
+                list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
+                Class superclass = type.getSuperclass();
+                if (superclass != null) {
+                    addAllMethods(superclass, list);
+                }
+                Class[] interfaces = type.getInterfaces();
+                for (int i = 0; i < interfaces.length; i++) {
+                    addAllMethods(interfaces[i], list);
+                }
+                return null;
+            }
+            
+        });
         return list;
     }
 
@@ -360,6 +416,7 @@ public class ReflectUtils {
         return list;
     }
 
+
     public static Method findInterfaceMethod(Class iface) {
         if (!iface.isInterface()) {
             throw new IllegalArgumentException(iface + " is not an interface");
@@ -370,12 +427,12 @@ public class ReflectUtils {
         }
         return methods[0];
     }
-
+    
     public static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
         Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length) };
         return (Class)DEFINE_CLASS.invoke(loader, args);
     }
-
+    
     public static int findPackageProtected(Class[] classes) {
         for (int i = 0; i < classes.length; i++) {
             if (!Modifier.isPublic(classes[i].getModifiers())) {

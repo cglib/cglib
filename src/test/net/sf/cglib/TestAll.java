@@ -65,7 +65,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.56 2003/11/26 02:15:35 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.57 2004/02/08 12:37:40 baliuka Exp $
  */
 public class TestAll extends TestCase {
     
@@ -78,11 +78,15 @@ public class TestAll extends TestCase {
 
     public static Test suite() throws Exception{
        
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
+      
         
         System.getProperties().list(System.out);
         TestSuite suite = new TestSuite();
 
+        //security
+        
+       
+        
         // root
         suite.addTest(TestEnhancer.suite());
         suite.addTest(TestProxy.suite());
@@ -124,11 +128,26 @@ public class TestAll extends TestCase {
     }
 
     public static void main(String args[])throws Exception {
+        
+       java.security.AccessController.doPrivileged(
+          new java.security.PrivilegedAction() {
+            public Object run() {
+             
+       //begin privileged
+        
         if(System.getProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY) ==  null){
          System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,DEFAULT_DEBUG_LOACATION);
         }
         String[] testCaseName = {TestAll.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
+        
+        return null;
+        //end privileged
+    
+            }
+          }
+        );
+     
        
     }
 }

@@ -89,6 +89,9 @@ class FastClassEmitter extends ClassEmitter {
     
     public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
+      
+        
+        
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
@@ -104,7 +107,11 @@ class FastClassEmitter extends ClassEmitter {
         CollectionUtils.filter(methodList, vp);
         CollectionUtils.filter(methodList, new DuplicatesPredicate());
         final Method[] methods = (Method[])methodList.toArray(new Method[methodList.size()]);
-        final Constructor[] constructors = (Constructor[])CollectionUtils.filter(type.getDeclaredConstructors(), vp);
+        final Constructor[] constructors = (Constructor[])
+          CollectionUtils.filter(
+               ReflectUtils.getDeclaredConstructorsPrivileged( type ),
+               vp
+             );
         
         // getIndex(String)
         emitIndexBySignature(methods);
