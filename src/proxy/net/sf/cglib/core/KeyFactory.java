@@ -96,7 +96,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.16 2003/11/05 23:04:00 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.17 2003/11/06 01:56:58 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -239,14 +239,11 @@ abstract public class KeyFactory {
             }
             e.return_value();
             e.end_method();
-            if (seed < 0) {
-                seed = -seed;
-            }
             
             // hash code
             e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
-            int hc = (constant != 0) ? constant : PRIMES[(int)(seed % PRIMES.length)];
-            int hm = (multiplier != 0) ? multiplier : PRIMES[(int)((seed * 13) % PRIMES.length)];
+            int hc = (constant != 0) ? constant : PRIMES[(int)(Math.abs(seed) % PRIMES.length)];
+            int hm = (multiplier != 0) ? multiplier : PRIMES[(int)(Math.abs(seed * 13) % PRIMES.length)];
             e.push(hc);
             for (int i = 0; i < parameterTypes.length; i++) {
                 e.load_this();
