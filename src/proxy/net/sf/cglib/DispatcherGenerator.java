@@ -73,7 +73,6 @@ implements CallbackGenerator
                 // ignore protected methods
             } else {
                 cg.begin_method(method, context.getModifiers(method));
-                Block handler = cg.begin_block();
                 context.emitCallback();
                 cg.checkcast(Dispatcher.class);
                 cg.push(method.getDeclaringClass().getName());
@@ -82,8 +81,6 @@ implements CallbackGenerator
                 cg.load_args();
                 cg.invoke(method);
                 cg.return_value();
-                cg.end_block();
-                Virt.handle_undeclared(cg, method.getExceptionTypes(), handler);
                 cg.end_method();
             }
         }

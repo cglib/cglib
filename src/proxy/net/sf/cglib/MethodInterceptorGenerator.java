@@ -109,7 +109,6 @@ implements CallbackGenerator
                                       Context context,
                                       Method method) {
         cg.begin_method(method, context.getModifiers(method));
-        Block handler = cg.begin_block();
         Label nullInterceptor = cg.make_label();
         context.emitCallback();
         cg.dup();
@@ -128,9 +127,6 @@ implements CallbackGenerator
         cg.load_args();
         cg.super_invoke(method);
         cg.return_value();
-
-        cg.end_block();
-        Virt.handle_undeclared(cg, method.getExceptionTypes(), handler);
         cg.end_method();
     }
 

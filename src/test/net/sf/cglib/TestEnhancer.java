@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.39 2003/09/11 17:40:48 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.40 2003/09/12 19:47:07 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -284,41 +284,6 @@ public class TestEnhancer extends CodeGenTestCase {
     
     }
     
-    public void testUndeclaredException()throws Throwable{
-        
-        MethodInterceptor interceptor =
-        new TestInterceptor(){
-            
-            public Object afterReturn(  Object obj, Method method,
-            Object args[],
-            boolean invokedSuper, Object retValFromSuper,
-            java.lang.Throwable e )throws java.lang.Throwable{
-                throw new Source.UndeclaredException();
-            }
-        };
-        
-        Source source =  (Source)Helpers.enhance(
-        Source.class,
-        null, interceptor );
-        
-        try{
-            
-            source.throwChecked();
-            fail("must throw an exception");
-            
-        } catch(Throwable cnse) {
-            
-            if (!(cnse instanceof UndeclaredThrowableException)) {
-                fail("invalid exception type: " + cnse);
-            }
-
-            cnse = ((UndeclaredThrowableException)cnse).getUndeclaredThrowable();
-            if (!(cnse instanceof Source.UndeclaredException)) {
-                fail("invalid exception type: " + cnse);
-            }
-        }
-    }
-
   static abstract class CastTest{
      CastTest(){} 
     abstract int getInt();
