@@ -41,7 +41,7 @@ import net.sf.cglib.util.*;
                 
             if (!(Modifier.isPublic(mod) ||
                   Modifier.isProtected(mod) ||
-                  isVisible(construct, clazz.getPackage().getName()))) {
+                  isVisible( construct, clazz.getPackage() ))) {
                 throw new IllegalArgumentException( clazz.getName() );
             }
 
@@ -93,7 +93,7 @@ import net.sf.cglib.util.*;
         }
 
         boolean declaresWriteReplace = false;
-        String packageName = getSuperclass().getPackage().getName();
+        Package packageName = getSuperclass().getPackage();
         Map methodMap = new HashMap();
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();

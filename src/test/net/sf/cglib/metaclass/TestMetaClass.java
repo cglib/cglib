@@ -119,7 +119,7 @@ public class TestMetaClass extends TestCase {
     
     public void testMetaClassPerformance()throws Throwable{
     
-       int iterations = 10000;
+       int iterations = 100000;
        
        System.out.println(); 
        System.out.println("iteration count: " + iterations);
