@@ -53,47 +53,26 @@
  */
 package net.sf.cglib;
 
-import net.sf.cglib.beans.*;
-import net.sf.cglib.algorithm.*;
-import junit.framework.*;
+public class MemberSwitchBean {
+    public int init = -1;
+    
+    public MemberSwitchBean() { init = 0; }
+    public MemberSwitchBean(double foo) { init = 1; }
+    public MemberSwitchBean(int foo) { init = 2; }
+    public MemberSwitchBean(int foo, String bar, String baz) { init = 3; }
+    public MemberSwitchBean(int foo, String bar, double baz) { init = 4; }
+    public MemberSwitchBean(int foo, short bar, long baz) { init = 5; }
+    public MemberSwitchBean(int foo, String bar) { init = 6; }
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.24 2003/09/08 20:37:46 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
+    public int foo() { return 0; }
+    public int foo(double foo) { return 1; }
+    public int foo(int foo) { return 2; }
+    public int foo(int foo, String bar, String baz) { return 3; }
+    public int foo(int foo, String bar, double baz) { return 4; }
+    public int foo(int foo, short bar, long baz) { return 5; }
+    public int foo(int foo, String bar) { return 6; }
 
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-        suite.addTest(TestMemberSwitch.suite());
-        suite.addTest(TestFastClass.suite());
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-    }
+    public int bar() { return 7; }
+    public int bar(double foo) { return 1; }
 }
 

@@ -56,78 +56,31 @@ package net.sf.cglib;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
+import net.sf.cglib.reflect.*;
 import net.sf.cglib.util.*;
 import junit.framework.*;
 
-public class TestMemberSwitch extends CodeGenTestCase {
-    private static int index = 0;
-
-    private static final Constructor C0 =
-      ReflectUtils.findConstructor("MemberSwitchBean()");
-    private static final Constructor C1 =
-      ReflectUtils.findConstructor("MemberSwitchBean(double)");
-    private static final Constructor C2 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int)");
-    private static final Constructor C3 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String, String)");
-    private static final Constructor C4 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String, double)");
-    private static final Constructor C5 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, short, long)");
-    private static final Constructor C6 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String)");
-
-    public static interface Indexed {
-        int getIndex(Class[] types);
+public class TestFastClass extends CodeGenTestCase {
+    public static class Simple {
     }
-
+    
     public void testSimple() {
-        Class created = new Generator(new Constructor[]{ C0, C1, C2, C3, C4, C5, C6 }).define();
-        Indexed test = (Indexed)ReflectUtils.newInstance(created);
-        assertTrue(test.getIndex(C0.getParameterTypes()) == 0);
-        assertTrue(test.getIndex(C1.getParameterTypes()) == 1);
-        assertTrue(test.getIndex(C2.getParameterTypes()) == 2);
-        assertTrue(test.getIndex(C3.getParameterTypes()) == 3);
-        assertTrue(test.getIndex(C4.getParameterTypes()) == 4);
-        assertTrue(test.getIndex(C5.getParameterTypes()) == 5);
-        assertTrue(test.getIndex(C6.getParameterTypes()) == 6);
-        assertTrue(test.getIndex(new Class[]{ Integer.TYPE, Integer.TYPE }) == -1);
+        FastClass.create(Simple.class).newInstance();
     }
 
-    private static class Generator extends CodeGenerator {
-        private Constructor[] constructors;
-        private List clist;
+    public void testComplex() {
+        FastClass fc = FastClass.create(MemberSwitchBean.class);
+        MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
+        assertTrue(bean.init == 0);
+        
+        FastConstructor c1 = fc.getConstructor(new Class[0]);
+        assertTrue(((MemberSwitchBean)c1.newInstance()).init == 0);
 
-        public Generator(Constructor[] constructors) {
-            setNamePrefix("TestMemberSwitch");
-            setNameSuffix(String.valueOf(index++));
-            setClassLoader(TestMemberSwitch.class.getClassLoader());
-            this.constructors = constructors;
-            clist = Arrays.asList(constructors);
-            addInterface(Indexed.class);
-        }
-
-        protected void generate() throws Exception {
-            null_constructor();
-
-            Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
-            begin_method(method);
-            load_arg(0);
-            constructor_switch(constructors, new ObjectSwitchCallback() {
-                    public void processCase(Object key, Label end) {
-                        push(clist.indexOf(key));
-                        goTo(end);
-                    }
-                    public void processDefault() {
-                        push(-1);
-                    }
-                });
-            return_value();
-            end_method();
-        }
+        FastMethod m1 = fc.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
+        assertTrue(m1.invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
     }
-
-    public TestMemberSwitch(String testName) {
+    
+    public TestFastClass(String testName) {
         super(testName);
     }
     
@@ -136,6 +89,6 @@ public class TestMemberSwitch extends CodeGenTestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestMemberSwitch.class);
+        return new TestSuite(TestFastClass.class);
     }
 }
