@@ -199,8 +199,12 @@ abstract public class BeanMap implements Map {
         return false;
     }
 
+    public int size() {
+        return keySet().size();
+    }
+
     public boolean isEmpty() {
-        return keySet().size() == 0;
+        return size() == 0;
     }
 
     public Object remove(Object key) {

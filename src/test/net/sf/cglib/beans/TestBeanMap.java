@@ -104,6 +104,7 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     public void testBeanMap() {
         TestBean bean = new TestBean();
         BeanMap map = BeanMap.create(bean);
+        assertTrue(map.size() == 6);
         assertTrue(map.get("foo") == null);
         map.put("foo", "FOO");
         assertTrue("FOO".equals(map.get("foo")));
