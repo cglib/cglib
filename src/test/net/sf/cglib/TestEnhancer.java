@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.15 2003/01/06 21:34:30 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.16 2003/01/14 16:40:04 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -430,7 +430,6 @@ public class TestEnhancer extends CodeGenTestCase {
     public static interface ConflictB {
         String foo();
     }
-
     public void testConflict() throws Throwable {
         try {
             Enhancer.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
@@ -439,4 +438,12 @@ public class TestEnhancer extends CodeGenTestCase {
         }
         fail("conflicting interface return types should throw exception");
     }
+    
+     public void test() throws Throwable{
+    
+         Factory f = (Factory)Enhancer.enhance(ArgInit.class, null, TEST_INTERCEPTOR );
+         ArgInit a = (ArgInit)f.newInstance( new Class[]{  String.class }, new Object[]{"test"}, TEST_INTERCEPTOR );
+         assertEquals("test", a.toString() );
+    }
+   
 }
