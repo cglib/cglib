@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.10 2003/09/22 01:02:11 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.11 2003/09/22 02:03:32 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -249,13 +249,13 @@ public class ReflectUtils {
         }
     }
 
-//     public static Class[] getClasses(Object[] objects) {
-//         Class[] classes = new Class[objects.length];
-//         for (int i = 0; i < objects.length; i++) {
-//             classes[i] = objects[i].getClass();
-//         }
-//         return classes;
-//     }
+    public static Class[] getClasses(Object[] objects) {
+        Class[] classes = new Class[objects.length];
+        for (int i = 0; i < objects.length; i++) {
+            classes[i] = objects[i].getClass();
+        }
+        return classes;
+    }
 
     public static Method findNewInstance(Class iface) {
         Method m = findInterfaceMethod(iface);
@@ -265,9 +265,24 @@ public class ReflectUtils {
         return m;
     }
 
-//     public static PropertyDescriptor[] getBeanProperties(Class type) {
-//         return getPropertiesHelper(type, true, true);
-//     }
+    public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
+        Set methods = new HashSet();
+        for (int i = 0; i < properties.length; i++) {
+            PropertyDescriptor pd = properties[i];
+            if (read) {
+                methods.add(pd.getReadMethod());
+            }
+            if (write) {
+                methods.add(pd.getWriteMethod());
+            }
+        }
+        methods.remove(null);
+        return (Method[])methods.toArray(new Method[methods.size()]);
+    }
+
+    public static PropertyDescriptor[] getBeanProperties(Class type) {
+        return getPropertiesHelper(type, true, true);
+    }
 
     public static PropertyDescriptor[] getBeanGetters(Class type) {
         return getPropertiesHelper(type, true, false);
