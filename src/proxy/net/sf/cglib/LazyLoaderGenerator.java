@@ -84,7 +84,6 @@ class LazyLoaderGenerator implements CallbackGenerator {
         e.pop();
         e.load_this();
         context.emitCallback();
-        e.checkcast(LAZY_LOADER);
         e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
         e.dup_x1();
         e.putfield(DELEGATE);
