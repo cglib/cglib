@@ -51,49 +51,31 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
-import net.sf.cglib.beans.*;
-import net.sf.cglib.algorithm.*;
-import junit.framework.*;
+import net.sf.cglib.util.CodeGenerationException;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.29 2003/09/10 00:36:10 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+public class BulkBeanException extends RuntimeException
+{
+    private int index;
+    private Throwable cause;
+    
+    public BulkBeanException(String message, int index) {
+        super(message);
+        this.index = index;
     }
 
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-//         suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestBulkBean.suite());
-//         suite.addTest(TestMixin.suite());
-//         suite.addTest(TestKeyFactory.suite());
-//         suite.addTest(TestProxy.suite());
-//         suite.addTest(TestMethodProxy.suite());
-//         suite.addTest(TestParallelSorter.suite());
-//         suite.addTest(TestSwitch.suite());
-//         suite.addTest(TestStringSwitch.suite());
-//         suite.addTest(TestBeanMap.suite());
-//         suite.addTest(TestDispatcher.suite());
-//         suite.addTest(TestLazyLoader.suite());
-//         suite.addTest(TestNoOp.suite());
-//         suite.addTest(TestMemberSwitch.suite());
-//         suite.addTest(TestFastClass.suite());
-        return suite;
+    public BulkBeanException(Throwable cause, int index) {
+        super(cause.getMessage());
+        this.index = index;
+        this.cause = cause;
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public int getIndex() {
+        return index;
+    }
+    
+    public Throwable getCause() {
+        return cause;
     }
 }
-

@@ -149,7 +149,51 @@ public class TestBulkBean extends TestCase {
             assertEquals(" property " + getters[i] + "/" + setters[i] , values[i] , values1[i] );
         }  
     }
-    
+
+    public void testBadTypes() throws Throwable {
+        Class[] types2 = (Class[])types.clone();
+        types2[2] = String.class;
+        try {
+            BulkBean.getInstance(MA.class, getters, setters, types2);
+            fail("expected exception");
+        } catch (BulkBeanException e) {
+            assertTrue(e.getIndex() == 2);
+        }
+    }
+
+    public void testMismatchedLengths() throws Throwable {
+        try {
+            BulkBean.getInstance(MA.class, getters, setters, new Class[0]);
+            fail("expected exception");
+        } catch (BulkBeanException e) {
+            assertTrue(e.getIndex() == -1);
+        }
+    }
+
+    public void testMissingProperty() throws Throwable {
+        String[] getters2 = (String[])getters.clone();
+        getters2[3] = "getChris";
+        try {
+            BulkBean.getInstance(MA.class, getters2, setters, types);
+            fail("expected exception");
+        } catch (BulkBeanException e) {
+            assertTrue(e.getIndex() == 3);
+        }
+    }
+
+    public void testSetWrongType() throws Throwable {
+        BulkBean mClass = BulkBean.getInstance(MA.class, getters, setters, types);
+        MA bean = new MA();
+        Object[] values2 = (Object[])values.clone();
+        values2[4] = new Object();
+        try {
+            mClass.setPropertyValues(bean, values2);
+            fail("expected exception");
+        } catch (BulkBeanException e) {
+            assertTrue(e.getIndex() == 4);
+        }
+    }
+
     public void testBulkBeanPerformance() throws Throwable{
     
         int iterations = 100000;
