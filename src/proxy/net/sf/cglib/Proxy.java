@@ -66,14 +66,11 @@ import java.lang.reflect.Method;
  * on the <code>Method</code> passed to the <code>invoke</code> method
  * <b>are</b> the exact set that can be thrown without resulting in an
  * <code>UndeclaredThrowableException</code> being thrown.
- * <li>There is no protected constructor which accepts an
- * <code>InvocationHandler</code>. Instead, use the more convenient
- * <code>newProxyInstance</code> static method.
  * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.3 2003/01/28 20:25:39 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.4 2003/01/28 21:57:40 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
