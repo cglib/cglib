@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="all" name="simplestore">
 
-<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.1 2002/07/03 19:03:20 baliuka Exp $ -->
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.2 2002/07/03 19:25:58 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="1.0-dev"/>
+    <property name="component.version" value="pre-alpha"/>
 
     <property name="build.home" value="build/proxy"/>
 
@@ -90,7 +90,7 @@
 
     <unzip src="lib/bcel.jar" dest="${build.home}/classes" />
 
-    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}.jar" >
+    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
     </jar>    
 
