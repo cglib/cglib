@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 
 /* package */ class MethodWrapper {
     private static final MethodWrapperKey keyFactory =
-      (MethodWrapperKey)KeyFactory.makeFactory(MethodWrapperKey.class, null);
+      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 
     // should be package-protected but causes problems on jdk1.2
     public interface MethodWrapperKey {
