@@ -54,6 +54,7 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
@@ -64,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.7 2003/09/15 18:41:32 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.8 2003/09/19 23:31:04 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -140,7 +141,7 @@ abstract public class Mixin {
         }
 
         public void generateClass(ClassVisitor v) {
-            setNamePrefix("net.sf.cglib.Object");
+            setNamePrefix(interfaces[findPackageProtected(interfaces)].getName());
             new MixinEmitter(v, getClassName(), interfaces, route);
         }
 
@@ -151,6 +152,15 @@ abstract public class Mixin {
         protected Object nextInstance(Object instance) {
             return ((Mixin)instance).newInstance(delegates);
         }
+    }
+
+    private static int findPackageProtected(Class[] interfaces) {
+        for (int i = 0; i < interfaces.length; i++) {
+            if (!Modifier.isPublic(interfaces[i].getModifiers())) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     public static Class[] getInterfaces(Object[] delegates) {

@@ -57,34 +57,33 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Type;
 
-class DispatcherGenerator
-implements CallbackGenerator
-{
+class DispatcherGenerator implements CallbackGenerator {
     public static final DispatcherGenerator INSTANCE = new DispatcherGenerator();
 
-    private static final Method LOAD_OBJECT =
-      ReflectUtils.findMethod("Dispatcher.loadObject(String)");
+    private static final Type DISPATCHER = Type.getType(Dispatcher.class);
+    private static final Signature LOAD_OBJECT =
+      Signature.parse("Object loadObject(String)");
 
-    public void generate(Emitter cg, Context context) {
+    public void generate(Emitter2 e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                cg.begin_method(method, context.getModifiers(method));
+                Ops.begin_method(e, method, context.getModifiers(method));
                 context.emitCallback();
-                cg.checkcast(Dispatcher.class);
-                cg.push(method.getDeclaringClass().getName());
-                cg.invoke(LOAD_OBJECT);
-                cg.checkcast(method.getDeclaringClass());
-                cg.load_args();
-                cg.invoke(method);
-                cg.return_value();
-                cg.end_method();
+                e.checkcast(DISPATCHER);
+                e.push(method.getDeclaringClass().getName());
+                e.invoke_interface(DISPATCHER, LOAD_OBJECT);
+                e.checkcast(Type.getType(method.getDeclaringClass()));
+                e.load_args();
+                Ops.invoke(e, method);
+                e.return_value();
             }
         }
     }
 
-    public void generateStatic(Emitter cg, Context context) { }
+    public void generateStatic(Emitter2 e, Context context) { }
 }

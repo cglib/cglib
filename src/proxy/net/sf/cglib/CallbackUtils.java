@@ -53,6 +53,8 @@
  */
 package net.sf.cglib;
 
+import org.objectweb.asm.Type;
+
 class CallbackUtils {
     private CallbackUtils() { }
 
@@ -71,6 +73,22 @@ class CallbackUtils {
         }
     }
 
+    // TODO
+    static Type getType2(int type) {
+        switch (type) {
+        case Callbacks.INTERCEPT:
+            return Type.getType(MethodInterceptor.class);
+        case Callbacks.JDK_PROXY:
+            return Type.getType(InvocationHandler.class);
+        case Callbacks.LAZY_LOAD:
+            return Type.getType(LazyLoader.class);
+        case Callbacks.DISPATCH:
+            return Type.getType(Dispatcher.class);
+        default:
+            return null;
+        }
+    }
+    
     static CallbackGenerator getGenerator(int type) {
         switch (type) {
         case Callbacks.INTERCEPT:

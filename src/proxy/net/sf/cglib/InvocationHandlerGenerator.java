@@ -3,51 +3,54 @@ package net.sf.cglib;
 import net.sf.cglib.core.*;
 import java.lang.reflect.Method;
 import java.util.*;
+import org.objectweb.asm.Type;
 
 class InvocationHandlerGenerator
 implements CallbackGenerator
 {
     public static final InvocationHandlerGenerator INSTANCE = new InvocationHandlerGenerator();
 
-    private static final Class[] TYPES_THROWABLE = { Throwable.class };
-    private static final Method INVOKE =
-      ReflectUtils.findMethod("net.sf.cglib.InvocationHandler.invoke(Object, Method, Object[])");
+    private static final Type INVOCATION_HANDLER =
+      Signature.parseType("net.sf.cglib.InvocationHandler");
+    public static final Type UNDECLARED_THROWABLE_EXCEPTION =
+      Signature.parseType("net.sf.cglib.UndeclaredThrowableException");
+    private static final Signature INVOKE =
+      Signature.parse("Object invoke(Object, java.lang.reflect.Method, Object[])");
 
     private String getFieldName(Context context, Method method) {
         return "CGLIB$$METHOD_" + context.getUniqueName(method);
     }
 
-    public void generate(Emitter cg, Context context) {
+    public void generate(Emitter2 e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
 
             String fieldName = getFieldName(context, method);
-            cg.declare_field(Constants.PRIVATE_FINAL_STATIC, Method.class, fieldName);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Types.METHOD, null);
 
-            cg.begin_method(method, context.getModifiers(method));
-            Block handler = cg.begin_block();
+            Ops.begin_method(e, method, context.getModifiers(method));
+            Block2 handler = e.begin_block();
             context.emitCallback();
-            cg.load_this();
-            cg.getfield(fieldName);
-            Virt.create_arg_array(cg);
-            cg.invoke(INVOKE);
-            Virt.unbox(cg, method.getReturnType());
-            cg.return_value();
-            cg.end_block();
-            handle_undeclared(cg, method.getExceptionTypes(), handler);
-            cg.end_method();
+            e.load_this();
+            e.getfield(fieldName);
+            Ops.create_arg_array(e);
+            e.invoke_interface(INVOCATION_HANDLER, INVOKE);
+            Ops.unbox(e, Type.getType(method.getReturnType()));
+            e.return_value();
+            e.end_block();
+            handle_undeclared(e, method.getExceptionTypes(), handler);
         }
     }
 
-    public void generateStatic(Emitter cg, Context context) {
+    public void generateStatic(Emitter2 e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            Virt.load_method(cg, method);
-            cg.putfield(getFieldName(context, method));
+            Ops.load_method(e, method);
+            e.putfield(getFieldName(context, method));
         }
     }
 
-    private static void handle_undeclared(Emitter cg, Class[] exceptionTypes, Block handler) {
+    private static void handle_undeclared(Emitter2 e, Class[] exceptionTypes, Block2 handler) {
         /* generates:
            } catch (RuntimeException e) {
                throw e;
@@ -63,24 +66,24 @@ implements CallbackGenerator
         if (!(exceptionSet.contains(Exception.class) ||
               exceptionSet.contains(Throwable.class))) {
             if (!exceptionSet.contains(RuntimeException.class)) {
-                cg.catch_exception(handler, RuntimeException.class);
-                cg.athrow();
+                e.catch_exception(handler, Types.RUNTIME_EXCEPTION);
+                e.athrow();
             }
             if (!exceptionSet.contains(Error.class)) {
-                cg.catch_exception(handler, Error.class);
-                cg.athrow();
+                e.catch_exception(handler, Types.ERROR);
+                e.athrow();
             }
             for (int i = 0; i < exceptionTypes.length; i++) {
-                cg.catch_exception(handler, exceptionTypes[i]);
-                cg.athrow();
+                e.catch_exception(handler, Type.getType(exceptionTypes[i]));
+                e.athrow();
             }
             // e -> eo -> oeo -> ooe -> o
-            cg.catch_exception(handler, Throwable.class);
-            cg.new_instance(UndeclaredThrowableException.class);
-            cg.dup_x1();
-            cg.swap();
-            cg.invoke_constructor(UndeclaredThrowableException.class, TYPES_THROWABLE);
-            cg.athrow();
+            e.catch_exception(handler, Types.THROWABLE);
+            e.new_instance(UNDECLARED_THROWABLE_EXCEPTION);
+            e.dup_x1();
+            e.swap();
+            e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, Signatures.CSTRUCT_THROWABLE);
+            e.athrow();
         }
     }
 }

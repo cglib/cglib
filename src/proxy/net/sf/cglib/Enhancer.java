@@ -147,8 +147,7 @@ public class Enhancer extends AbstractClassGenerator
         }
         
         ////// this is a hack //////
-        Method setter = type.getDeclaredMethod(EnhancerEmitter.SET_THREAD_CALLBACKS,
-                                               new Class[]{ Callbacks.class });
+        Method setter = type.getDeclaredMethod("CGLIB$SET_THREAD_CALLBACKS", new Class[]{ Callbacks.class });
         setter.invoke(null, new Object[]{ callbacks });
         ////////////////////////////
 

@@ -80,7 +80,6 @@ implements ClassGenerator
     private NamingPolicy namingPolicy;
     private Source source;
     private ClassLoader classLoader;
-    private String className;
     private String namePrefix;
     private int counter;
 
@@ -108,13 +107,8 @@ implements ClassGenerator
     }
 
     protected String getClassName() {
-        if (className == null) {
-            if (namingPolicy == null) {
-                namingPolicy = DEFAULT_NAMING_POLICY;
-            }
-            return namingPolicy.getClassName(namePrefix, source.type, counter);
-        }
-        return className;
+        NamingPolicy np = (namingPolicy != null) ? namingPolicy : DEFAULT_NAMING_POLICY;
+        return np.getClassName(namePrefix, source.type, counter);
     }
 
     public void setClassLoader(ClassLoader classLoader) {
@@ -158,7 +152,7 @@ implements ClassGenerator
                     }
                 }
                 if (instance == null) {
-                    ClassWriter w = new DebuggingClassWriter(true);
+                    DebuggingClassWriter w = new DebuggingClassWriter(true);
                     generateClass(transform(w));
                     byte[] b = w.toByteArray();
                     Class gen = defineClass(source.defineClass, getClassName(), b, loader);

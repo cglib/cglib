@@ -63,7 +63,7 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.37 2003/09/18 17:23:30 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.38 2003/09/19 23:31:03 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -98,13 +98,13 @@ public class TestAll extends TestCase {
         suite.addTest(TestSwitch.suite());
         suite.addTest(TestStringSwitch.suite());
         suite.addTest(TestMemberSwitch.suite());
-        suite.addTest(TestTransformVisistor.suite());
         suite.addTest(TestTinyBitSet.suite());
         
         // util
         suite.addTest(TestParallelSorter.suite());
 
         // transform
+        // suite.addTest(TestTransformVisistor.suite());
         suite.addTest(TestTransformingLoader.suite());
 
         return suite;

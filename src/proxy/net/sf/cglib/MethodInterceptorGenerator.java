@@ -56,27 +56,28 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Type;
 
 class MethodInterceptorGenerator
 implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
-     private static final Method MAKE_PROXY =
-       ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
+    private static final Method MAKE_PROXY =
+      ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
 
-    public void generate(Emitter cg, Context context) {
+    public void generate(Emitter2 e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             String accessName = getAccessName(context, method);
             String fieldName = getFieldName(context, method);
 
-            cg.declare_field(Constants.PRIVATE_FINAL_STATIC, Method.class, fieldName);
-            cg.declare_field(Constants.PRIVATE_FINAL_STATIC, MethodProxy.class, accessName);
-            generateAccessMethod(cg, context, method);
-            generateAroundMethod(cg, context, method);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Type.getType(Method.class), null);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, Type.getType(MethodProxy.class), null);
+            generateAccessMethod(e, context, method);
+            generateAroundMethod(e, context, method);
         }
     }
 
@@ -88,49 +89,48 @@ implements CallbackGenerator
         return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
-    private void generateAccessMethod(Emitter cg, Context context, Method method) {
-        cg.begin_method(Modifier.FINAL,
-                        method.getReturnType(),
-                        getAccessName(context, method),
-                        method.getParameterTypes(),
-                        method.getExceptionTypes());
+    private void generateAccessMethod(Emitter2 e, Context context, Method method) {
+        Ops.begin_method(e,
+                         Constants.ACC_FINAL,
+                         getAccessName(context, method),
+                         method.getReturnType(),
+                         method.getParameterTypes(),
+                         method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            Virt.throw_exception(cg, AbstractMethodError.class, method.toString() + " is abstract" );
+            Ops.throw_exception(e, Types.ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
-            cg.load_this();
-            cg.load_args();
-            cg.super_invoke(method);
+            e.load_this();
+            e.load_args();
+            Ops.super_invoke(e, method);
         }
-        cg.return_value();
-        cg.end_method();
+        e.return_value();
     }
 
-    private void generateAroundMethod(Emitter cg,
+    private void generateAroundMethod(Emitter2 e,
                                       Context context,
                                       Method method) {
-        cg.begin_method(method, context.getModifiers(method));
-        Label nullInterceptor = cg.make_label();
+        Ops.begin_method(e, method, context.getModifiers(method));
+        org.objectweb.asm.Label nullInterceptor = e.make_label();
         context.emitCallback();
-        cg.dup();
-        cg.ifnull(nullInterceptor);
+        e.dup();
+        e.ifnull(nullInterceptor);
 
-        cg.load_this();
-        cg.getfield(getFieldName(context, method));
-        Virt.create_arg_array(cg);
-        cg.getfield(getAccessName(context, method));
-        cg.invoke(AROUND_ADVICE);
-        Virt.unbox_or_zero(cg, method.getReturnType());
-        cg.return_value();
+        e.load_this();
+        e.getfield(getFieldName(context, method));
+        Ops.create_arg_array(e);
+        e.getfield(getAccessName(context, method));
+        Ops.invoke(e, AROUND_ADVICE);
+        Ops.unbox_or_zero(e, Type.getType(method.getReturnType()));
+        e.return_value();
 
-        cg.mark(nullInterceptor);
-        cg.load_this();
-        cg.load_args();
-        cg.super_invoke(method);
-        cg.return_value();
-        cg.end_method();
+        e.mark(nullInterceptor);
+        e.load_this();
+        e.load_args();
+        Ops.super_invoke(e, method);
+        e.return_value();
     }
 
-    public void generateStatic(Emitter cg, Context context) {
+    public void generateStatic(Emitter2 e, Context context) {
         /* generates:
            static {
              Class [] args;
@@ -146,18 +146,18 @@ implements CallbackGenerator
 
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            Virt.load_method(cg, method);
-            cg.dup();
-            cg.putfield(getFieldName(context, method));
+            Ops.load_method(e, method);
+            e.dup();
+            e.putfield(getFieldName(context, method));
 
             String accessName = getAccessName(context, method);
             String desc = ReflectUtils.getMethodDescriptor(method);
-            cg.invoke(MethodConstants.GET_DECLARING_CLASS);
-            cg.push(method.getName() + desc);
-            Virt.load_class_this(cg);
-            cg.push(accessName + desc);
-            cg.invoke(MAKE_PROXY);
-            cg.putfield(accessName);
+            Ops.invoke(e, MethodConstants.GET_DECLARING_CLASS);
+            e.push(method.getName() + desc);
+            Ops.load_class_this(e);
+            e.push(accessName + desc);
+            Ops.invoke(e, MAKE_PROXY);
+            e.putfield(accessName);
         }
     }
 }

@@ -57,58 +57,55 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Type;
 
-class LazyLoaderGenerator
-implements CallbackGenerator
-{
+class LazyLoaderGenerator implements CallbackGenerator {
     public static final LazyLoaderGenerator INSTANCE = new LazyLoaderGenerator();
 
     private static final String DELEGATE = "CGLIB$LAZY_LOADER";
-    private static final String LOAD_PRIVATE = "CGLIB$LOAD_PRIVATE";
-    private static final Method LOAD_OBJECT =
-      ReflectUtils.findMethod("LazyLoader.loadObject()");
+    private static final Signature LOAD_PRIVATE =
+      Signature.parse("Object CGLIB$LOAD_PRIVATE()");
+    private static final Signature LOAD_OBJECT = 
+      Signature.parse("Object loadObject()");
+    private static final Type LAZY_LOADER = Type.getType(LazyLoader.class);
 
-    public void generate(Emitter cg, Context context) {
-        cg.declare_field(Modifier.PRIVATE, Object.class, DELEGATE);
+    public void generate(Emitter2 e, Context context) {
+        e.declare_field(Modifier.PRIVATE, DELEGATE, Types.OBJECT, null);
 
-        cg.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
-                        Object.class,
+        e.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
                         LOAD_PRIVATE,
-                        null,
                         null);
-        cg.load_this();
-        cg.getfield(DELEGATE);
-        cg.dup();
-        Label end = cg.make_label();
-        cg.ifnonnull(end);
-        cg.pop();
-        cg.load_this();
+        e.load_this();
+        e.getfield(DELEGATE);
+        e.dup();
+        org.objectweb.asm.Label end = e.make_label();
+        e.ifnonnull(end);
+        e.pop();
+        e.load_this();
         context.emitCallback();
-        cg.checkcast(LazyLoader.class);
-        cg.invoke(LOAD_OBJECT);
-        cg.dup_x1();
-        cg.putfield(DELEGATE);
-        cg.mark(end);
-        cg.return_value();
-        cg.end_method();
+        e.checkcast(LAZY_LOADER);
+        e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
+        e.dup_x1();
+        e.putfield(DELEGATE);
+        e.mark(end);
+        e.return_value();
 
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                cg.begin_method(method, context.getModifiers(method));
-                cg.load_this();
-                cg.dup();
-                cg.invoke_virtual_this(LOAD_PRIVATE, Object.class, null);
-                cg.checkcast(method.getDeclaringClass());
-                cg.load_args();
-                cg.invoke(method);
-                cg.return_value();
-                cg.end_method();
+                Ops.begin_method(e, method, context.getModifiers(method));
+                e.load_this();
+                e.dup();
+                e.invoke_virtual_this(LOAD_PRIVATE);
+                e.checkcast(Type.getType(method.getDeclaringClass()));
+                e.load_args();
+                Ops.invoke(e, method);
+                e.return_value();
             }
         }
     }
 
-    public void generateStatic(Emitter cg, Context context) { }
+    public void generateStatic(Emitter2 e, Context context) { }
 }

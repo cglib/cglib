@@ -2,7 +2,6 @@ package net.sf.cglib.transform;
 
 import net.sf.cglib.core.Constants;
 import net.sf.cglib.core.Emitter2;
-import net.sf.cglib.core.ReflectEmitter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
