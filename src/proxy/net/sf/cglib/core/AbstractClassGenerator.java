@@ -222,7 +222,6 @@ implements ClassGenerator
     abstract protected ClassLoader getDefaultClassLoader();
 
     protected Object create(Object key) {
-        Object save = CURRENT.get();
         try {
             Object instance = null;
             synchronized (source) {
@@ -238,27 +237,32 @@ implements ClassGenerator
                     instance = ( ref == null ) ? null : ref.get(); 
                 }
                 if (instance == null) {
+                    Object save = CURRENT.get();
                     CURRENT.set(this);
-                    this.key = key;
-                    Class gen = null;
-                    if (attemptLoad) {
-                        try {
-                            gen = loader.loadClass(getClassName());
-                        } catch (ClassNotFoundException e) {
-                            // ignore
+                    try {
+                        this.key = key;
+                        Class gen = null;
+                        if (attemptLoad) {
+                            try {
+                                gen = loader.loadClass(getClassName());
+                            } catch (ClassNotFoundException e) {
+                                // ignore
+                            }
                         }
+                        if (gen == null) {
+                            byte[] b = strategy.generate(this);
+                            String className = ClassNameReader.getClassName(new ClassReader(b));
+                            getClassNameCache(loader).add(className);
+                            gen = ReflectUtils.defineClass(className, b, loader);
+                        }
+                        instance = firstInstance(gen);
+                        if (useCache) {
+                            cache2.put(key, new SoftReference(instance));
+                        }
+                        return instance;
+                    } finally {
+                        CURRENT.set(save);
                     }
-                    if (gen == null) {
-                        byte[] b = strategy.generate(this);
-                        String className = ClassNameReader.getClassName(new ClassReader(b));
-                        getClassNameCache(loader).add(className);
-                        gen = ReflectUtils.defineClass(className, b, loader);
-                    }
-                    instance = firstInstance(gen);
-                    if (useCache) {
-                        cache2.put(key, new SoftReference(instance));
-                    }
-                    return instance;
                 }
             }
             return nextInstance(instance);
@@ -268,8 +272,6 @@ implements ClassGenerator
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
-        } finally {
-            CURRENT.set(save);
         }
     }
 
