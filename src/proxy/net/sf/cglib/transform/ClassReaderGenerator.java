@@ -16,19 +16,28 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.ClassGenerator;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 
 public class ClassReaderGenerator implements ClassGenerator {
     private ClassReader r;
+    private Attribute[] attrs;
     private boolean skipDebug;
     
     public ClassReaderGenerator(ClassReader r, boolean skipDebug) {
+        this(r, null, skipDebug);
+    }
+
+    public ClassReaderGenerator(ClassReader r, Attribute[] attrs, boolean skipDebug) {
         this.r = r;
+        if (attrs == null)
+            attrs = new Attribute[0];
+        this.attrs = attrs;
         this.skipDebug = skipDebug;
     }
     
     public void generateClass(ClassVisitor v) {
-        r.accept(v, skipDebug);
+        r.accept(v, attrs, skipDebug);
     }
 }

@@ -46,6 +46,10 @@ public class DebuggingClassWriter extends ClassWriter {
     public DebuggingClassWriter(boolean computeMaxs) {
         super(computeMaxs);
     }
+
+    public DebuggingClassWriter(boolean computeMaxs, int major, int minor) {
+        super(computeMaxs, major, minor);
+    }
     
     public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
         className = name.replace('/', '.');

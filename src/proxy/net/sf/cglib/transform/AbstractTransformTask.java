@@ -19,9 +19,7 @@ import java.io.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.apache.tools.ant.BuildException;
-import org.objectweb.asm.ClassAdapter;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.*;
 
 abstract public class AbstractTransformTask extends AbstractProcessTask {
     private boolean verbose;
@@ -32,12 +30,18 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
     abstract protected ClassTransformer getClassTransformer(String name);
 
+    protected Attribute[] attributes() {
+        return null;
+    }
+
     protected void processFile(File file) throws Exception {
-        ClassWriter w = new DebuggingClassWriter(true);
-        String name = ClassNameReader.getClassName(getClassReader(file));
+        ClassReader reader = getClassReader(file);
+        String name = ClassNameReader.getClassName(reader);
+        int[] version = reader.getVersion();
+        ClassWriter w = new DebuggingClassWriter(true, version[0], version[1]);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
-            new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), skipDebug()), t).generateClass(w);
+            new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), attributes(), skipDebug()), t).generateClass(w);
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(w.toByteArray());
             fos.close();
