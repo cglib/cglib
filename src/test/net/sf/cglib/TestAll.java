@@ -58,7 +58,7 @@ import junit.framework.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.16 2003/06/14 00:45:55 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.17 2003/06/16 17:06:58 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -71,15 +71,16 @@ public class TestAll extends TestCase {
         
         System.getProperties().list(System.out);
         TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestInterface.suite());
-        suite.addTest(TestSwitch.suite());
+//         suite.addTest(TestEnhancer.suite());
+//         suite.addTest(TestMetaClass.suite());
+//         suite.addTest(TestDelegator.suite());
+//         suite.addTest(TestKeyFactory.suite());
+//         suite.addTest(TestProxy.suite());
+//         suite.addTest(TestMethodProxy.suite());
+//         suite.addTest(TestParallelSorter.suite());
+//         suite.addTest(TestInterface.suite());
+//         suite.addTest(TestSwitch.suite());
+        suite.addTest(TestStringSwitch.suite());
            
         return suite;
     }

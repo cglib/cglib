@@ -60,7 +60,7 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.12 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.13 2003/06/16 17:06:59 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -86,12 +86,12 @@ class DelegatorGenerator extends CodeGenerator {
     protected void generate() throws NoSuchMethodException {
         Map methodMap = new HashMap();
         for (int i = 0; i < classes.length; i++) {
-            Class clazz = classes[i];
+            Class type = classes[i];
             Method[] methods;
             if (bean) {
-                methods = getBeanMethods(clazz);
+                methods = ReflectUtils.getPropertyMethods(ReflectUtils.getBeanProperties(type), true, true);
             } else {
-                methods = clazz.getMethods();
+                methods = type.getMethods();
             }
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
@@ -131,28 +131,6 @@ class DelegatorGenerator extends CodeGenerator {
 
         public int getArrayRef() {
             return arrayref;
-        }
-    }
-
-    private static Method[] getBeanMethods(Class clazz) {
-        try {
-            BeanInfo info = Introspector.getBeanInfo(clazz, Object.class);
-            PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-            List methods = new ArrayList(descriptors.length * 2);
-            for (int i = 0; i < descriptors.length; i++) {
-                PropertyDescriptor pd = descriptors[i];
-                Method read = pd.getReadMethod();
-                if (read != null) {
-                    methods.add(read);
-                }
-                Method write = pd.getWriteMethod();
-                if (write != null) {
-                    methods.add(write);
-                }
-            }
-            return (Method[])methods.toArray(new Method[methods.size()]);
-        } catch (IntrospectionException e) {
-            throw new CodeGenerationException(e);
         }
     }
 

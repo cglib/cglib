@@ -483,18 +483,18 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     }
 
     public interface ProcessSwitchCallback {
-        void processCase(int index, Label end);
-        void processDefault();
+        void processCase(int key, Label end) throws Exception;
+        void processDefault() throws Exception;
     }
 
     // TODO: verify sorted
     // TODO: provide switch capabilities in BasicCodeGenerator?
-    protected void process_switch(int[] keys, ProcessSwitchCallback callback) {
+    protected void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
         float density = (float)keys.length / (keys[keys.length - 1] - keys[0] + 1);
         process_switch(keys, callback, density >= 0.5f);
     }
 
-    protected void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) {
+    protected void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
         int len = keys.length;
         int min = keys[0];
         int max = keys[len - 1];
@@ -521,10 +521,11 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         } else {
             labels = new Label[len];
             for (int i = 0; i < len; i++) {
-                mark(labels[i] = make_label());
+                labels[i] = make_label();
             }
             getBackend().emit_switch(keys, labels, def);
             for (int i = 0; i < len; i++) {
+                mark(labels[i]);
                 callback.processCase(keys[i], end);
             }
         }
@@ -532,5 +533,99 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(def);
         callback.processDefault();
         mark(end);
+    }
+
+    public interface StringSwitchCallback {
+        void processCase(String key, Label end) throws Exception;
+        void processDefault() throws Exception;
+    }
+
+    protected void string_switch(String[] strings, final StringSwitchCallback callback) throws Exception {
+        final Label def = make_label();
+        final Label end = make_label();
+        final Map buckets = bucketByLength(Arrays.asList(strings));
+        dup();
+        invoke(MethodConstants.STRING_LENGTH);
+        process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
+                public void processCase(int key, Label ignore_end) throws Exception {
+                    List bucket = (List)buckets.get(new Integer(key));
+                    stringSwitchHelper(bucket, callback, def, end, 0);
+                }
+                public void processDefault() {
+                    goTo(def);
+                }
+            });
+        mark(def);
+        callback.processDefault();
+        mark(end);
+    }
+
+    protected void stringSwitchHelper(List strings,
+                                      final StringSwitchCallback callback,
+                                      final Label def,
+                                      final Label end,
+                                      final int index) throws Exception {
+        final int len = ((String)strings.get(0)).length();
+        final Map buckets = bucketByChar(strings, index);
+        dup();
+        push(index);
+        invoke(MethodConstants.STRING_CHAR_AT);
+        process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
+                public void processCase(int key, Label ignore_end) throws Exception {
+                    List bucket = (List)buckets.get(new Integer(key));
+                    if (index + 1 == len) {
+                        callback.processCase((String)bucket.get(0), end);
+                    } else {
+                        stringSwitchHelper(bucket, callback, def, end, index + 1);
+                    }
+                }
+                public void processDefault() {
+                    goTo(def);
+                }
+            });
+    }        
+
+    private interface Indexer {
+        int index(String value);
+    }
+
+    private static Map bucketByLength(List strings) {
+        return bucketHelper(strings, new Indexer() {
+                public int index(String value) {
+                    return value.length();
+                }
+            });
+    }
+
+    private static Map bucketByChar(List strings, final int index) {
+        return bucketHelper(strings, new Indexer() {
+                public int index(String value) {
+                    return value.charAt(index);
+                }
+            });
+    }
+
+    private static Map bucketHelper(List strings, Indexer t) {
+        Map buckets = new HashMap();
+        for (Iterator it = strings.iterator(); it.hasNext();) {
+            String value = (String)it.next();
+            Integer key = new Integer(t.index(value));
+            List bucket = (List)buckets.get(key);
+            if (bucket == null) {
+                buckets.put(key, bucket = new LinkedList());
+            }
+            bucket.add(value);
+        }
+        return buckets;
+    }
+
+    private static int[] getSwitchKeys(Map buckets) {
+        int[] keys = new int[buckets.size()];
+        int index = 0;
+        for (Iterator it = buckets.keySet().iterator(); it.hasNext();) {
+            keys[index++] = ((Integer)it.next()).intValue();
+        }
+        Arrays.sort(keys);
+        return keys;
     }
 }

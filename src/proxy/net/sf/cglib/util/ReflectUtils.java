@@ -53,11 +53,12 @@
  */
 package net.sf.cglib.util;
 
+import java.beans.*;
 import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.1 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.2 2003/06/16 17:06:59 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -174,13 +175,13 @@ public class ReflectUtils {
         }
     }
 
-    public static Object newInstance(Class clazz) {
-        return newInstance(clazz, Constants.TYPES_EMPTY, null);
+    public static Object newInstance(Class type) {
+        return newInstance(type, Constants.TYPES_EMPTY, null);
     }
 
-    public static Object newInstance(Class clazz, Class[] parameterTypes, Object[] args) {
+    public static Object newInstance(Class type, Class[] parameterTypes, Object[] args) {
         try {
-            return newInstance(clazz.getConstructor(parameterTypes), args);
+            return newInstance(type.getConstructor(parameterTypes), args);
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
@@ -227,9 +228,57 @@ public class ReflectUtils {
     }
 
     // getPackage returns null on JDK 1.2
-    public static String getPackageName(Class clazz) {
-        String name = clazz.getName();
+    public static String getPackageName(Class type) {
+        String name = type.getName();
         int idx = name.lastIndexOf('.');
         return (idx < 0) ? "" : name.substring(0, idx);
+    }
+
+    public static PropertyDescriptor[] getBeanProperties(Class type) {
+        return getPropertiesHelper(type, true, true);
+    }
+
+    public static PropertyDescriptor[] getBeanGetters(Class type) {
+        return getPropertiesHelper(type, true, false);
+    }
+
+    public static PropertyDescriptor[] getBeanSetters(Class type) {
+        return getPropertiesHelper(type, false, true);
+    }
+
+    private static PropertyDescriptor[] getPropertiesHelper(Class type, boolean read, boolean write) {
+        try {
+            BeanInfo info = Introspector.getBeanInfo(type, Object.class);
+            PropertyDescriptor[] all = info.getPropertyDescriptors();
+            if (read && write) {
+                return all;
+            }
+            List properties = new ArrayList(all.length);
+            for (int i = 0; i < all.length; i++) {
+                PropertyDescriptor pd = all[i];
+                if ((read && pd.getReadMethod() != null) ||
+                    (write && pd.getWriteMethod() != null)) {
+                    properties.add(pd);
+                }
+            }
+            return (PropertyDescriptor[])properties.toArray(new PropertyDescriptor[properties.size()]);
+        } catch (IntrospectionException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
+    public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
+        Set methods = new HashSet();
+        for (int i = 0; i < properties.length; i++) {
+            PropertyDescriptor pd = properties[i];
+            if (read) {
+                methods.add(pd.getReadMethod());
+            }
+            if (write) {
+                methods.add(pd.getWriteMethod());
+            }
+        }
+        methods.remove(null);
+        return (Method[])methods.toArray(new Method[methods.size()]);
     }
 }
