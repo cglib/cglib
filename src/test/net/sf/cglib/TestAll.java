@@ -64,7 +64,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.53 2003/10/29 03:45:39 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.54 2003/11/06 05:09:02 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     
@@ -102,9 +102,6 @@ public class TestAll extends TestCase {
 
         // core
         suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
         suite.addTest(TestTinyBitSet.suite());
         
         // util
