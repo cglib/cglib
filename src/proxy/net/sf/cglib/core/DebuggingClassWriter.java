@@ -54,6 +54,9 @@
 package net.sf.cglib.core;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
+
 import java.io.*;
 
 public class DebuggingClassWriter extends ClassWriter {
@@ -89,11 +92,33 @@ public class DebuggingClassWriter extends ClassWriter {
     public byte[] toByteArray() {
         byte[] b = super.toByteArray();
         if (debugLocation != null) {
+            
             try {
+                new File(debugLocation).mkdirs();
                 File file = new File(new File(debugLocation), className + ".class");
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-                out.write(b);
-                out.close();
+                try{
+                  out.write(b);
+                }finally{
+                  out.close();
+                }
+               
+                 file = new File(new File(debugLocation), className + ".asm");
+                 out = new BufferedOutputStream(new FileOutputStream(file));
+                try{
+                    
+                  ClassReader cr = new ClassReader(b);
+                  PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
+                  TraceClassVisitor tcv = new TraceClassVisitor(null, pw );
+                  cr.accept(tcv, false);
+                  pw.flush();
+                  
+                 }finally{
+                   out.close();
+                 }
+                
+             
+                
             } catch (IOException e) {
                 throw new CodeGenerationException(e);
             }
