@@ -58,11 +58,11 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.2 2003/09/17 20:44:27 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.3 2003/09/19 23:31:04 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
-
+    
     public static final Class[] TYPES_EMPTY = {};
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String SOURCE_FILE = "<generated>";

@@ -54,68 +54,60 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.4 2003/09/17 20:44:27 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.5 2003/09/19 23:31:04 herbyderby Exp $
  */
-class MixinEmitter extends Emitter {
+class MixinEmitter extends Emitter2 {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Mixin.newInstance(Object[])");
-    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
+    private static final Signature NEW_INSTANCE =
+      Signature.parse("net.sf.cglib.Mixin newInstance(Object[])");
 
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
-        setClassVisitor(v);
+        super(v);
 
-        begin_class(Modifier.PUBLIC, className, Mixin.class, classes, Constants.SOURCE_FILE);
+        Ops.begin_class(this,
+                        Constants.ACC_PUBLIC,
+                        className,
+                        Mixin.class,
+                        classes,
+                        Constants.SOURCE_FILE);
 
-        Virt.null_constructor(this);
-        generateConstructor();
-        Virt.factory_method(this, NEW_INSTANCE);
+        Ops.null_constructor(this);
+        Ops.factory_method(this, NEW_INSTANCE);
 
-        Set unique = new HashSet();
-        for (int i = 0; i < classes.length; i++) {
-            Method[] methods = getMethods(classes[i]);
-            for (int j = 0; j < methods.length; j++) {
-                if (unique.add(MethodWrapper.create(methods[j]))) {
-                    generateProxy(methods[j], (route != null) ? route[i] : i);
-                }
-            }
-        }
-
-        end_class();
-    }
-
-    protected Method[] getMethods(Class type) {
-        return type.getMethods();
-    }
-
-    private void generateConstructor() {
-        declare_field(Modifier.PRIVATE, Object[].class, FIELD_NAME);
-        begin_constructor(TYPES_OBJECT_ARRAY);
+        declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Types.OBJECT_ARRAY, null);
+        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT_ARRAY, null);
         load_this();
         super_invoke_constructor();
         load_this();
         load_arg(0);
         putfield(FIELD_NAME);
         return_value();
-        end_method();
-    }
 
-    private void generateProxy(Method method, int index) {
-        begin_method(method);
-        load_this();
-        getfield(FIELD_NAME);
-        aaload(index);
-        checkcast(method.getDeclaringClass());
-        load_args();
-        invoke(method);
-        return_value();
-        end_method();
+        Set unique = new HashSet();
+        for (int i = 0; i < classes.length; i++) {
+            Method[] methods = classes[i].getMethods();
+            for (int j = 0; j < methods.length; j++) {
+                if (unique.add(MethodWrapper.create(methods[j]))) {
+                    Method method = methods[j];
+                    Ops.begin_method(this, method);
+                    load_this();
+                    getfield(FIELD_NAME);
+                    aaload((route != null) ? route[i] : i);
+                    checkcast(Type.getType(method.getDeclaringClass()));
+                    load_args();
+                    Ops.invoke(this, method);
+                    return_value();
+                }
+            }
+        }
+
+        end_class();
     }
 }

@@ -5,7 +5,8 @@ import java.io.*;
 
 public class DebuggingClassWriter extends ClassWriter {
     private static String debugLocation;
-    private String debugName;
+    private String className;
+    private String superName;
 
     static {
         debugLocation = System.getProperty("cglib.debugLocation");
@@ -19,15 +20,24 @@ public class DebuggingClassWriter extends ClassWriter {
     }
 
     public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        debugName = name.replace('/', '.');
+        className = name.replace('/', '.');
+        this.superName = superName.replace('/', '.');
         super.visit(access, name, superName, interfaces, sourceFile);
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public String getSuperName() {
+        return superName;
     }
 
     public byte[] toByteArray() {
         byte[] b = super.toByteArray();
         if (debugLocation != null) {
             try {
-                File file = new File(new File(debugLocation), debugName + ".class");
+                File file = new File(new File(debugLocation), className + ".class");
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
                 out.write(b);
                 out.close();

@@ -72,7 +72,7 @@ public class Emitter2 {
     public static final int OP_AND = Constants.IAND;
     public static final int OP_OR = Constants.IOR;
 
-    private static final Type OBJECT_TYPE = Type.getType("Ljava.lang.Object;");
+    private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final Type[] EMPTY_PARAMS = {};
 
     // current class
@@ -88,7 +88,7 @@ public class Emitter2 {
     private int methodAccess;
     private String methodName;
     private Type returnType;
-    private Type[] parameterTypes;
+    private Type[] argumentTypes;
     private boolean isStatic;
     private Map remap = new HashMap();
     private int firstLocal;
@@ -105,8 +105,16 @@ public class Emitter2 {
         return codev;
     }
 
+    public Type getClassType() {
+        return classType;
+    }
+
     public Type getSuperType() {
         return superType;
+    }
+
+    public Type[] getArgumentTypes() {
+        return (Type[])argumentTypes.clone();
     }
 
     public void begin_class(int access, Type classType, Type superType, Type[] interfaces, String sourceFile) {
@@ -115,14 +123,8 @@ public class Emitter2 {
         classv.visit(access,
                      classType.getInternalName(),
                      superType.getInternalName(),
-                     getInternalNames(interfaces),
+                     toInternalNames(interfaces),
                      sourceFile);
-    }
-
-    public void begin_class(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        classType = Type.getType("L" + name + ";");
-        superType = Type.getType("L" + superName + ";");
-        classv.visit(access, name, superName, interfaces, sourceFile);
     }
 
     public void end_class() {
@@ -138,7 +140,7 @@ public class Emitter2 {
     public void register(Object key, FinalizeCallback callback) {
         finalizeCallbacks.put(key, callback);
     }
-
+    
     private static boolean isStatic(int access) {
         return (Constants.ACC_STATIC & access) != 0;
     }
@@ -147,25 +149,30 @@ public class Emitter2 {
         return (Constants.ACC_ABSTRACT & access) != 0;
     }
 
-    public void begin_method(int access, String name, Type returnType, Type[] parameterTypes, Type[] exceptions) {
+    public void begin_method(int access, Signature sig, Type[] exceptions) {
+        // System.err.println("SIGNATURE: " + sig.toString());
         begin_method(access,
-                     name,
-                     Type.getMethodDescriptor(returnType, parameterTypes),
-                     getInternalNames(exceptions));
+                     sig.getName(),
+                     sig.getReturnType(),
+                     sig.getArgumentTypes(),
+                     exceptions);
     }
 
-    public void begin_method(int access, String name, String desc, String[] exceptions) {
+    public void begin_method(int access, String name, Type returnType, Type[] argumentTypes, Type[] exceptions) {
         closeMethod();
 
         methodAccess = access;
         methodName = name;
-        returnType = Type.getReturnType(desc);
-        parameterTypes = Type.getArgumentTypes(desc);
+        this.returnType = returnType;
+        this.argumentTypes = argumentTypes;
         isStatic = isStatic(access);
         remap.clear();
-        firstLocal = nextLocal = getLocalOffset() + getStackSize(parameterTypes);
+        firstLocal = nextLocal = getLocalOffset() + getStackSize(argumentTypes);
 
-        rawcodev = classv.visitMethod(access, name, desc, exceptions);
+        rawcodev = classv.visitMethod(access,
+                                      name,
+                                      Type.getMethodDescriptor(returnType, argumentTypes),
+                                      toInternalNames(exceptions));
         codev = new CodeAdapter(rawcodev) {
             public void visitMaxs(int maxStack, int maxLocals) {
                 // ignore
@@ -252,14 +259,15 @@ public class Emitter2 {
         return size;
     }
 
-    public void begin_constructor(int access, Type[] parameterTypes, Type[] exceptions) {
+    public void begin_constructor(int access, Type[] argumentTypes, Type[] exceptions) {
         begin_method(access,
                      Constants.CONSTRUCTOR_NAME,
-                     Type.getMethodDescriptor(Type.VOID_TYPE, parameterTypes),
-                     getInternalNames(exceptions));
+                     Type.VOID_TYPE,
+                     argumentTypes,
+                     exceptions);
     }
 
-    private static String[] getInternalNames(Type[] types) {
+    private static String[] toInternalNames(Type[] types) {
         if (types == null) {
             return null;
         }
@@ -271,7 +279,7 @@ public class Emitter2 {
     }
 
     public void begin_static() {
-        begin_method(Constants.ACC_STATIC, Constants.STATIC_NAME, "()V", null);
+        begin_method(Constants.ACC_STATIC, Signatures.STATIC, null);
     }
 
     public Block2 begin_block() {
@@ -458,18 +466,7 @@ public class Emitter2 {
             emit_type(Constants.ANEWARRAY, type);
         }
     }
-
-    private static boolean isPrimitive(Type type) {
-        switch (type.getSort()) {
-        case Type.ARRAY:
-        case Type.OBJECT:
-        case Type.VOID:
-            return false;
-        default:
-            return true;
-        }
-    }
-
+    
     public void arraylength() {
         codev.visitInsn(Constants.ARRAYLENGTH);
     }
@@ -485,7 +482,7 @@ public class Emitter2 {
      * Pushes all of the arguments of the current method onto the stack.
      */
     public void load_args() {
-        load_args(0, parameterTypes.length);
+        load_args(0, argumentTypes.length);
     }
 
     /**
@@ -493,14 +490,14 @@ public class Emitter2 {
      * @param index the zero-based index into the argument list
      */
     public void load_arg(int index) {
-        load_local(parameterTypes[index], getLocalOffset() + skipArgs(index));
+        load_local(argumentTypes[index], getLocalOffset() + skipArgs(index));
     }
 
     // zero-based (see load_this)
     public void load_args(int fromArg, int count) {
         int pos = getLocalOffset() + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
-            Type t = parameterTypes[fromArg + i];
+            Type t = argumentTypes[fromArg + i];
             load_local(t, pos);
             pos += t.getSize();
         }
@@ -509,7 +506,7 @@ public class Emitter2 {
     private int skipArgs(int numArgs) {
         int amount = 0;
         for (int i = 0; i < numArgs; i++) {
-            amount += parameterTypes[i].getSize();
+            amount += argumentTypes[i].getSize();
         }
         return amount;
     }
@@ -541,17 +538,12 @@ public class Emitter2 {
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
-        declare_field(access, name, type.getDescriptor(), value);
-    }
-
-    public void declare_field(int access, String name, String desc, Object value) {
-        // System.err.println("DECLARING FIELD name=" + name + " desc=" + desc + " value=" + value);
         closeMethod();
         if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
-        fieldInfo.put(name, new FieldInfo(isStatic(access), Type.getType(desc)));
-        classv.visitField(access, name, desc, value);
+        fieldInfo.put(name, new FieldInfo(isStatic(access), type));
+        classv.visitField(access, name, type.getDescriptor(), value);
     }
 
     private FieldInfo getFieldInfo(String name) {
@@ -616,27 +608,31 @@ public class Emitter2 {
         emit_field(Constants.PUTSTATIC, owner, name, type);
     }
     
-    protected void emit_field(int opcode, Type ctype, String name, Type ftype) {
+    public void emit_field(int opcode, Type ctype, String name, Type ftype) {
         codev.visitFieldInsn(opcode,
                              ctype.getInternalName(),
                              name,
                              ftype.getDescriptor());
     }
 
-    public void invoke_virtual(Type owner, String methodName, Type returnType, Type[] parameterTypes) {
-        emit_invoke(Constants.INVOKEVIRTUAL, owner, methodName, returnType, parameterTypes);
+    public void invoke_interface(Type owner, String methodName, Type returnType, Type[] argumentTypes) {
+        emit_invoke(Constants.INVOKEINTERFACE, owner, methodName, returnType, argumentTypes);
     }
 
-    public void invoke_static(Type owner, String methodName, Type returnType, Type[] parameterTypes) {
-        emit_invoke(Constants.INVOKESTATIC, owner, methodName, returnType, parameterTypes);
+    public void invoke_virtual(Type owner, String methodName, Type returnType, Type[] argumentTypes) {
+        emit_invoke(Constants.INVOKEVIRTUAL, owner, methodName, returnType, argumentTypes);
     }
 
-    public void invoke_virtual_this(String methodName, Type returnType, Type[] parameterTypes) {
-        emit_invoke(Constants.INVOKEVIRTUAL, classType, methodName, returnType, parameterTypes);
+    public void invoke_static(Type owner, String methodName, Type returnType, Type[] argumentTypes) {
+        emit_invoke(Constants.INVOKESTATIC, owner, methodName, returnType, argumentTypes);
     }
 
-    public void invoke_static_this(String methodName, Type returnType, Type[] parameterTypes) {
-        emit_invoke(Constants.INVOKESTATIC, classType, methodName, returnType, parameterTypes);
+    public void invoke_virtual_this(String methodName, Type returnType, Type[] argumentTypes) {
+        emit_invoke(Constants.INVOKEVIRTUAL, classType, methodName, returnType, argumentTypes);
+    }
+
+    public void invoke_static_this(String methodName, Type returnType, Type[] argumentTypes) {
+        emit_invoke(Constants.INVOKESTATIC, classType, methodName, returnType, argumentTypes);
     }
 
     public void super_invoke() {
@@ -644,58 +640,130 @@ public class Emitter2 {
                     superType,
                     methodName,
                     returnType,
-                    parameterTypes);
+                    argumentTypes);
     }
     
-    public void invoke_constructor(Type type, Type[] parameterTypes) {
+    public void invoke_constructor(Type type, Type[] argumentTypes) {
         emit_invoke(Constants.INVOKESPECIAL,
-                    classType,
+                    type,
                     Constants.CONSTRUCTOR_NAME,
                     Type.VOID_TYPE,
-                    parameterTypes);
+                    argumentTypes);
     }
 
     public void invoke_constructor(Type type) {
         invoke_constructor(type, EMPTY_PARAMS);
     }
 
-    protected void emit_invoke(int opcode,
-                               Type type,
-                               String methodName,
-                               Type returnType,
-                               Type[] parameterTypes) {
+    // TODO: change to signature variant
+    public void emit_invoke(int opcode,
+                            Type type,
+                            String methodName,
+                            Type returnType,
+                            Type[] argumentTypes) {
         codev.visitMethodInsn(opcode,
                               type.getInternalName(),
                               methodName,
-                              Type.getMethodDescriptor(returnType, parameterTypes));
+                              Type.getMethodDescriptor(returnType, argumentTypes));
     }
 
     public void super_invoke_constructor() {
         invoke_constructor(superType, EMPTY_PARAMS);
     }
     
-    public void super_invoke_constructor(Type[] parameterTypes) {
-        invoke_constructor(superType, parameterTypes);
+    public void super_invoke_constructor(Type[] argumentTypes) {
+        invoke_constructor(superType, argumentTypes);
     }
     
     public void invoke_constructor_this() {
         invoke_constructor_this(EMPTY_PARAMS);
     }
     
-    public void invoke_constructor_this(Type[] parameterTypes) {
-        invoke_constructor(classType, parameterTypes);
+    public void invoke_constructor_this(Type[] argumentTypes) {
+        invoke_constructor(classType, argumentTypes);
+    }
+    
+    public void invoke_interface(Type owner, Signature sig) {
+        // TODO: ensure that signature is not constructor
+        invoke_interface(owner, sig.getName(), sig.getReturnType(), sig.getArgumentTypes());
+    }
+
+    public void invoke_virtual(Type owner, Signature sig) {
+        // TODO: ensure that signature is not constructor
+        invoke_virtual(owner, sig.getName(), sig.getReturnType(), sig.getArgumentTypes());
+    }
+
+    public void invoke_static(Type owner, Signature sig) {
+        // TODO: ensure that signature is not constructor
+        invoke_static(owner, sig.getName(), sig.getReturnType(), sig.getArgumentTypes());
+    }
+
+    public void invoke_virtual_this(Signature sig) {
+        // TODO: ensure that signature is not constructor
+        invoke_virtual(classType, sig);
+    }
+
+    public void invoke_static_this(Signature sig) {
+        // TODO: ensure that signature is not constructor
+        invoke_static(classType, sig);
+    }
+
+    public void invoke_constructor(Type type, Signature sig) {
+        // TODO: ensure that signature is constructor
+        invoke_constructor(type, sig.getArgumentTypes());
+    }
+
+    public void invoke_constructor_this(Signature sig) {
+        // TODO: ensure that signature is constructor
+        invoke_constructor(classType, sig);
+    }
+
+    public void super_invoke_constructor(Signature sig) {
+        // TODO: ensure that signature is constructor
+        invoke_constructor(superType, sig);
     }
     
     public void new_instance_this() {
-        emit_type(Constants.NEW, classType);
+        new_instance(classType);
     }
 
     public void new_instance(Type type) {
         emit_type(Constants.NEW, type);
     }
 
+    ///////////// MOVE THESE? /////////////////
+
+    public static boolean isArray(Type type) {
+        return type.getSort() == Type.ARRAY;
+    }
+
+    public static Type getComponentType(Type type) {
+        if (!isArray(type)) {
+            throw new IllegalArgumentException("Type " + type + " is not an array");
+        }
+        return Type.getType(type.getDescriptor().substring(1));
+    }
+
+    public static boolean isPrimitive(Type type) {
+        switch (type.getSort()) {
+        case Type.ARRAY:
+        case Type.OBJECT:
+            return false;
+        default:
+            return true;
+        }
+    }
+
+    //////////////////////////////
+
     private void emit_type(int opcode, Type type) {
-        codev.visitTypeInsn(opcode, type.getInternalName());
+        String desc;
+        if (isArray(type)) {
+            desc = type.getDescriptor();
+        } else {
+            desc = type.getInternalName();
+        }
+        codev.visitTypeInsn(opcode, desc);
     }
 
     public void aaload(int index) {
@@ -722,7 +790,7 @@ public class Emitter2 {
     }
 
     public void checkcast_this() {
-        emit_type(Constants.CHECKCAST, classType);
+        checkcast(classType);
     }
     
     public void checkcast(Type type) {
@@ -736,7 +804,7 @@ public class Emitter2 {
     }
     
     public void instance_of_this() {
-        emit_type(Constants.INSTANCEOF, classType);
+        instance_of(classType);
     }
 
     public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {

@@ -1,11 +1,14 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.CodeGenerationException;
+import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 
-abstract public class ClassTransformer implements ClassVisitor, Cloneable {
-    private ClassVisitor cv;
+abstract public class ClassTransformer extends ClassAdapter implements Cloneable {
+    protected ClassTransformer() {
+        super(null);
+    }
     
     public void setTarget(ClassVisitor target) {
         cv = target;
@@ -25,25 +28,5 @@ abstract public class ClassTransformer implements ClassVisitor, Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new CodeGenerationException(e); // should be impossible
         }
-    }
-
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        cv.visit(access, name, superName, interfaces, sourceFile);
-    }
-
-    public void visitInnerClass(String name, String outerName, String innerName, int access) {
-        cv.visitInnerClass(name, outerName, innerName, access);
-    }
-
-    public void visitField(int access, String name, String desc, Object value) {
-        cv.visitField(access, name, desc, value);
-    }
-
-    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        return cv.visitMethod(access, name, desc, exceptions);
-    }
-
-    public void visitEnd() {
-        cv.visitEnd();
     }
 }

@@ -54,13 +54,13 @@
 package net.sf.cglib.core;
 
 /**
- * @version $Id: CodeGenerationException.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: CodeGenerationException.java,v 1.2 2003/09/19 23:31:04 herbyderby Exp $
  */
 public class CodeGenerationException extends RuntimeException {
     private Throwable cause;
 
     public CodeGenerationException(Throwable cause) {
-        super(cause.getMessage());
+        super(cause.getClass().getName() + "-->" + cause.getMessage());
         this.cause = cause;
     }
 
