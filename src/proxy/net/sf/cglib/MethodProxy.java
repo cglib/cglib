@@ -58,10 +58,10 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.5 2002/12/07 15:36:49 baliuka Exp $
  */
 abstract public class MethodProxy {
-    private static final Method INVOKE_SUPER;
+    private static/* final */Method INVOKE_SUPER = null;//bug in jdk1.2 javac
     private static final String CLASS_SUFFIX = "$$ProxiedByCGLIB$$";
     private static int index = 0;
 
@@ -76,7 +76,7 @@ abstract public class MethodProxy {
 
     abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
 
-    protected MethodProxy() {}
+    protected MethodProxy() { }
 
     public static MethodProxy generate(Method method) {
         return generate(method, null);
