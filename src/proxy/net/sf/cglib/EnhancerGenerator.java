@@ -61,16 +61,9 @@ import net.sf.cglib.util.*;
 class EnhancerGenerator
 extends CodeGenerator
 {
-    private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
     private static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
 
-    private static final Method MAKE_CONSTRUCTOR_PROXY =
-      ReflectUtils.findMethod("ConstructorProxy.create(Constructor)");
-    private static final Method PROXY_NEW_INSTANCE = 
-      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
-    private static final Method NEW_CLASS_KEY = 
-      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Factory.newInstance(Callbacks)");
     private static final Method MULTIARG_NEW_INSTANCE = 
@@ -154,7 +147,6 @@ extends CodeGenerator
             group[ctype].add(method);
         }
 
-        declare_field(Constants.PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
         generateConstructors(constructors);
 
@@ -162,7 +154,7 @@ extends CodeGenerator
         generateMethods(generators, contexts);
         generateStatic(constructors, generators, contexts);
 
-        generateFactory();
+        generateFactory(constructors);
         generateSetThreadCallbacks();
     }
 
@@ -210,7 +202,7 @@ extends CodeGenerator
         }
     }
 
-    private void generateFactory() throws Exception {
+    private void generateFactory(List constructors) throws Exception {
         int[] keys = getCallbackKeys();
 
         // Factory.getCallback(int)
@@ -300,16 +292,26 @@ extends CodeGenerator
         begin_method(MULTIARG_NEW_INSTANCE);
         load_arg(2);
         invoke_static_this(SET_THREAD_CALLBACKS, Void.TYPE, new Class[]{ Callbacks.class });
-        getfield(CONSTRUCTOR_PROXY_MAP);
-        load_arg(0); // Class[] types
-        invoke(NEW_CLASS_KEY); // key
-        invoke(MethodConstants.MAP_GET); // PROXY_MAP.get(key(types))
-        checkcast(ConstructorProxy.class);
+        new_instance_this();
         dup();
-        ifnull(fail);
-        load_arg(1);
-        invoke(PROXY_NEW_INSTANCE);
-        checkcast_this();
+        load_arg(0);
+        constructor_switch((Constructor[])constructors.toArray(new Constructor[0]), new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) throws Exception {
+                Constructor constructor = (Constructor)key;
+                Class types[] = constructor.getParameterTypes();
+                for (int i = 0; i < types.length; i++) {
+                    load_arg(1);
+                    push(i);
+                    aaload();
+                    unbox(types[i]);
+                }
+                invoke_constructor_this(types);
+                goTo(end);
+            }
+            public void processDefault() {
+                throw_exception(IllegalArgumentException.class, "Constructor not found");
+            }
+        });
         load_arg(2);
         ifnull(skipSetCallbacks);
         dup();
@@ -317,8 +319,6 @@ extends CodeGenerator
         generateSetCallbacks();        
         mark(skipSetCallbacks);
         return_value();
-        mark(fail);
-        throw_exception(IllegalArgumentException.class, "Constructor not found");
         end_method();
     }
 
@@ -460,27 +460,6 @@ extends CodeGenerator
                                 CallbackGenerator[] generators,
                                 CallbackGenerator.Context[] contexts)  throws Exception {
         begin_static();
-
-        new_instance(HashMap.class);
-        dup();
-        invoke_constructor(HashMap.class);
-        dup();
-        putfield(CONSTRUCTOR_PROXY_MAP);
-        Local map = make_local();
-        store_local(map);
-        for (int i = 0, size = constructors.size(); i < size; i++) {
-            Constructor constructor = (Constructor)constructors.get(i);
-            Class[] types = constructor.getParameterTypes();
-            load_local(map);
-            push(types);
-            invoke(NEW_CLASS_KEY); // key
-            load_class_this();
-            push(types);
-            invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
-            invoke(MAKE_CONSTRUCTOR_PROXY); // value
-            invoke(MethodConstants.MAP_PUT); // put(key(agrgTypes[]), proxy)
-            pop();
-        }
 
         for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
             if (usedCallbacks.get(i)) {

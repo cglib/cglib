@@ -764,10 +764,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                                     final ParameterTyper typer,
                                     final Label def,
                                     final Label end) throws Exception {
-        if (members.size() == 1) {
-            member_helper_finish((Member)members.get(0), callback, typer, def, end, null);
-            return;
-        }
         final Map buckets = bucket(members, new Transformer() {
             public Object transform(Object value) {
                 return new Integer(typer.getParameterTypes(value).length);
@@ -794,64 +790,56 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                                     final Label end,
                                     final BitSet checked) throws Exception {
         if (members.size() == 1) {
-            member_helper_finish((Member)members.get(0), callback, typer, def, end, checked);
-            return;
-        }
+            // need to check classes that have not already been checked via switches
+            Member member = (Member)members.get(0);
+            Class[] types = typer.getParameterTypes(member);
+            for (int i = 0; i < types.length; i++) {
+                if (checked == null || !checked.get(i)) {
+                    dup();
+                    aaload(i);
+                    invoke(MethodConstants.CLASS_GET_NAME);
+                    push(types[i].getName());
+                    invoke(MethodConstants.EQUALS);
+                    ifeq(def);
+                }
+            }
+            pop();
+            callback.processCase(member, end);
+        } else {
+            // choose the index that has the best chance of uniquely identifying member
+            Class[] example = typer.getParameterTypes(members.get(0));
+            Map buckets = null;
+            int index = -1;
+            for (int i = 0; i < example.length; i++) {
+                final int j = i;
+                Map test = bucket(members, new Transformer() {
+                    public Object transform(Object value) {
+                        return typer.getParameterTypes(value)[j].getName();
+                    }
+                });
+                if (buckets == null || test.size() > buckets.size()) {
+                    buckets = test;
+                    index = i;
+                }
+            }
+            checked.set(index);
+            // TODO: assert unique > 1
 
-        // choose the index that has the best chance of uniquely identifying member
-        Class[] example = typer.getParameterTypes(members.get(0));
-        Map buckets = null;
-        int index = -1;
-        for (int i = 0; i < example.length; i++) {
-            final int j = i;
-            Map test = bucket(members, new Transformer() {
-                public Object transform(Object value) {
-                    return typer.getParameterTypes(value)[j].getName();
+            dup();
+            aaload(index);
+            invoke(MethodConstants.CLASS_GET_NAME);
+
+            final Map fbuckets = buckets;
+            String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+            string_switch_hash(names, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label dontUseEnd) throws Exception {
+                    // recurse
+                    member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
+                }
+                public void processDefault() throws Exception {
+                    goTo(def);
                 }
             });
-            if (buckets == null || test.size() > buckets.size()) {
-                buckets = test;
-                index = i;
-            }
         }
-        checked.set(index);
-        // TODO: assert unique > 1
-
-        dup();
-        aaload(index);
-        invoke(MethodConstants.CLASS_GET_NAME);
-
-        final Map fbuckets = buckets;
-        String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-        string_switch_hash(names, new ObjectSwitchCallback() {
-            public void processCase(Object key, Label dontUseEnd) throws Exception {
-                member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
-            }
-            public void processDefault() throws Exception {
-                goTo(def);
-            }
-        });
-    }
-
-    private void member_helper_finish(Member member,
-                                      ObjectSwitchCallback callback,
-                                      ParameterTyper typer,
-                                      Label def,
-                                      Label end,
-                                      BitSet checked) throws Exception {
-        Class[] types = typer.getParameterTypes(member);
-
-        for (int i = 0; i < types.length; i++) {
-            if (checked == null || !checked.get(i)) {
-                dup();
-                aaload(i);
-                invoke(MethodConstants.CLASS_GET_NAME);
-                push(types[i].getName());
-                invoke(MethodConstants.EQUALS);
-                ifeq(def);
-            }
-        }
-        pop();
-        callback.processCase(member, end);
     }
 }
