@@ -63,7 +63,7 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.35 2003/09/17 20:44:27 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.36 2003/09/18 11:40:09 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -90,17 +90,22 @@ public class TestAll extends TestCase {
         suite.addTest(TestBeanMap.suite());
 
         // reflect
+
         suite.addTest(TestDelegates.suite());
         suite.addTest(TestFastClass.suite());
 
         // core
+
         suite.addTest(TestKeyFactory.suite());
         suite.addTest(TestSwitch.suite());
         suite.addTest(TestStringSwitch.suite());
         suite.addTest(TestMemberSwitch.suite());
+        suite.addTest(TestTransformVisistor.suite());
+        suite.addTest(TestParallelSorter.suite());
 
         // util
         suite.addTest(TestParallelSorter.suite());
+
 
         // transform
         suite.addTest(TestTransformingLoader.suite());
@@ -108,9 +113,10 @@ public class TestAll extends TestCase {
         return suite;
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[])throws Exception {
         String[] testCaseName = {TestAll.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
+       
     }
 }
 

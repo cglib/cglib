@@ -40,20 +40,10 @@ public class TransformDemo {
     
     public static void main( String args [] )throws Exception{
     
-        TransformLoader loader = new TransformLoader(
-          TransformDemo.class.getClassLoader(),
-          new ClassFilter(){
-            public boolean accept(String name){
-                System.out.println("load : "  + name);
-              return MA.class.getName().equals(name) || 
-                     TransformDemo.class.getName().equals(name);
-            } 
-         }
-        );
         
-        ReadWriteFieldTransformation transformation = new ReadWriteFieldTransformation( new Filter() );
+        TransformClassVisitor transformation = new TransformClassVisitor( new Filter() );
         
-        loader.addTransformation(transformation);
+        
         
         transformation.setDelegate( 
                                     new Class[]{PersistenceCapable.class},
@@ -61,6 +51,25 @@ public class TransformDemo {
                            );
         
         transformation.setClassInit(TransformDemo.class.getMethod("register",new Class[]{Class.class}) );
+        
+        
+        TransformingLoader loader = new TransformingLoader(
+          TransformDemo.class.getClassLoader(),
+          new ClassFilter(){
+            public boolean accept(String name){
+                System.out.println("load : "  + name);
+                boolean f = 
+                  MA.class.getName().equals(name) || 
+                     TransformDemo.class.getName().equals(name);
+                if(f){
+                 System.out.println("transforming " + name);
+                }
+                return f;
+            } 
+         },
+         transformation
+        );
+        
         
         loader.loadClass(TransformDemo.class.getName()).getMethod("start",new Class[]{}).invoke(null,null);
         

@@ -17,20 +17,17 @@ import net.sf.cglib.core.Constants;
  *
  * @author  baliuka
  */
-class TransformClassVisitor implements ClassVisitor{
+public class TransformClassVisitor extends ClassTransformer{
     
     ReadWriteFieldFilter filter;
-    ClassWriter cw     = new ClassWriter(true);
+    String className;   
     Set interfaces     = new HashSet();
-    Class delegateIf[]   = null ;
+    Class delegateIf[] = null ;
     Class delegateImpl = null ;
     Map fields         = new HashMap();
-    Map types         = new HashMap();
+    Map types          = new HashMap();
     boolean  generateClinit = false;       
-    
-    
-    ClassReader cr;
-    String className;
+ 
     
     static String callbackDesc = Type.getType( ReadWriteFieldCallback.class ).getDescriptor();
     static String callbackName = ReadWriteFieldCallback.class.getName().replace('.','/');
@@ -39,10 +36,9 @@ class TransformClassVisitor implements ClassVisitor{
     private Method classInit;    
     
     /** Creates a new instance of TransformClassVisitor */
-    public TransformClassVisitor(InputStream is, ReadWriteFieldFilter filter)throws java.io.IOException {
+    public TransformClassVisitor( ReadWriteFieldFilter filter)throws java.io.IOException {
         
         this.filter = filter;
-        cr = new ClassReader(is);
         interfaces.add(Signature.getInternalName(Transformed.class));
         
     }
@@ -57,10 +53,6 @@ class TransformClassVisitor implements ClassVisitor{
         }
     }
     
-    public byte[] transform(){
-        cr.accept(this, false);
-        return cw.toByteArray();
-    }
     
     
     
@@ -79,7 +71,7 @@ class TransformClassVisitor implements ClassVisitor{
                 }
                 
             }
-            cw.visit(
+            getTarget().visit(
             access,
             name,
             superName,
@@ -107,7 +99,7 @@ class TransformClassVisitor implements ClassVisitor{
             List fields = getFields(null,types[i]);
                 
            
-            CodeVisitor cv = cw.visitMethod(
+            CodeVisitor cv = getTarget().visitMethod(
                               Modifier.PUBLIC,
                               Signature.fieldGetName( types[i] ),
                               Signature.fieldGetSignature(types[i]),
@@ -137,7 +129,7 @@ class TransformClassVisitor implements ClassVisitor{
            cv.visitMaxs(0, 0);     
            
            
-           cv = cw.visitMethod(
+           cv = getTarget().visitMethod(
                               Modifier.PUBLIC,
                               Signature.fieldSetName( types[i] ),
                               Signature.fieldSetSignature(types[i]),
@@ -182,14 +174,14 @@ class TransformClassVisitor implements ClassVisitor{
         
     
         if(generateClinit){
-          CodeVisitor cv = cw.visitMethod( Modifier.STATIC,
+          CodeVisitor cv = getTarget().visitMethod( Modifier.STATIC,
           "<clinit>", "()V" , new String[]{} );
             generateClassInit(cv);
           cv.visitInsn(Constants.RETURN);  
           cv.visitMaxs(0,0);
         }
         
-        cw.visitEnd();
+        getTarget().visitEnd();
     }
     
     private void addWriteMethod(String name, String desc){
@@ -197,7 +189,7 @@ class TransformClassVisitor implements ClassVisitor{
         
         Type type = Type.getType(desc);
         
-        CodeVisitor cv = cw.visitMethod(
+        CodeVisitor cv = getTarget().visitMethod(
         Modifier.PUBLIC,
         Signature.writeMethod( name ),
         Signature.writeMethodSignature(desc),
@@ -274,7 +266,7 @@ class TransformClassVisitor implements ClassVisitor{
         
         Type type = Type.getType(desc);
         
-        CodeVisitor cv = cw.visitMethod(
+        CodeVisitor cv = getTarget().visitMethod(
         Modifier.PUBLIC ,
         Signature.readMethod( name ),
         Signature.readMethodSignature(desc),
@@ -336,7 +328,7 @@ class TransformClassVisitor implements ClassVisitor{
     
     private void implemetTransform(){
         
-        CodeVisitor cv =  cw.visitMethod(Modifier.PUBLIC, "setReadWriteFieldCallback",
+        CodeVisitor cv =  getTarget().visitMethod(Modifier.PUBLIC, "setReadWriteFieldCallback",
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
         "setReadWriteFieldCallback(net.sf.cglib.transform." +
@@ -356,7 +348,7 @@ class TransformClassVisitor implements ClassVisitor{
         cv.visitMaxs(0,0);
         
         
-        cv =  cw.visitMethod(Modifier.PUBLIC, "getReadWriteFieldCallback",
+        cv =  getTarget().visitMethod(Modifier.PUBLIC, "getReadWriteFieldCallback",
         
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
@@ -374,7 +366,7 @@ class TransformClassVisitor implements ClassVisitor{
         cv.visitInsn(Constants.ARETURN);
         cv.visitMaxs(0,0);
         
-        cv =  cw.visitMethod(Modifier.PUBLIC, "getDelegate",
+        cv =  getTarget().visitMethod(Modifier.PUBLIC, "getDelegate",
         
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
@@ -393,7 +385,7 @@ class TransformClassVisitor implements ClassVisitor{
         cv.visitMaxs(0,0);
         
         
-        cv =  cw.visitMethod(Modifier.PUBLIC, "setDelegate",
+        cv =  getTarget().visitMethod(Modifier.PUBLIC, "setDelegate",
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
         "setDelegate(Object)") ) , new String[]{} );
@@ -448,7 +440,7 @@ class TransformClassVisitor implements ClassVisitor{
           throw  new IllegalArgumentException( "invalid  delegate signature  " + delegate);
         }
         
-        CodeVisitor cv =  cw.visitMethod( Modifier.PUBLIC,
+        CodeVisitor cv =  getTarget().visitMethod( Modifier.PUBLIC,
         m.getName(),
         Type.getMethodDescriptor(m),
         (String[])exeptions.toArray(new String[]{}) );
@@ -491,14 +483,14 @@ class TransformClassVisitor implements ClassVisitor{
     private void addCallbackField(){
         
         
-        cw.visitField(
+        getTarget().visitField(
         Modifier.PRIVATE|Modifier.TRANSIENT,
         Signature.READ_WRITE_CALLBACK,
         callbackDesc ,
         null
         );
         
-        cw.visitField(
+        getTarget().visitField(
         Modifier.PRIVATE|Modifier.TRANSIENT,
         Signature.DELEGATE,
         Type.getDescriptor(Object.class) ,
@@ -552,15 +544,13 @@ class TransformClassVisitor implements ClassVisitor{
         }
       }    
         
-        cw.visitField(access, name, desc, value );
+        getTarget().visitField(access, name, desc, value );
     }
     
-    public void visitInnerClass(String name, String outerName, String innerName, int access) {
-        cw.visitInnerClass( name, outerName, innerName,  access  );
-    }
+    
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        CodeVisitor cv = cw.visitMethod(access, name, desc, exceptions  );
+        CodeVisitor cv = getTarget().visitMethod(access, name, desc, exceptions  );
         if(name.equals("<clinit>")){
             generateClassInit(cv);
         }
