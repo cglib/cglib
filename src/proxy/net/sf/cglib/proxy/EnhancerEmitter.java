@@ -123,6 +123,9 @@ class EnhancerEmitter extends ClassEmitter {
                      TypeUtils.add(TypeUtils.getTypes(interfaces), FACTORY) :
                      TypeUtils.getTypes(interfaces)),
                     Constants.SOURCE_FILE);
+
+        if (Modifier.isFinal(superclass.getModifiers()))
+            throw new IllegalArgumentException("Cannot subclass final class " + superclass);
         
         List clist = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
         CollectionUtils.filter(clist, new VisibilityPredicate(superclass, true));
