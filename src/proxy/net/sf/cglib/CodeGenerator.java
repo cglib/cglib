@@ -728,7 +728,7 @@ import java.util.*;
         backend.invoke_special(superclass.getName(), methodName, returnType, parameterTypes);
     }
 
-    private void invoke_constructor_helper(String className, Class[] parameterTypes) {
+    protected void invoke_constructor(String className, Class[] parameterTypes) {
         backend.invoke_special(className, Constants.CONSTRUCTOR_NAME, Void.TYPE, parameterTypes);
     }
    
@@ -741,7 +741,7 @@ import java.util.*;
     }
 
     protected void invoke_constructor(Class type, Class[] parameterTypes) {
-        invoke_constructor_helper(type.getName(), parameterTypes);
+        invoke_constructor(type.getName(), parameterTypes);
     }
 
     private static int getStackSize(Class type) {
@@ -761,11 +761,11 @@ import java.util.*;
     }
 
     protected void super_invoke_constructor() {
-        invoke_constructor_helper(superclass.getName(), Constants.TYPES_EMPTY);
+        invoke_constructor(superclass.getName(), Constants.TYPES_EMPTY);
     }
 
     protected void super_invoke_constructor(Class[] parameterTypes) {
-        invoke_constructor_helper(superclass.getName(), parameterTypes);
+        invoke_constructor(superclass.getName(), parameterTypes);
     }
 
     protected void invoke_constructor_this() {
@@ -773,15 +773,19 @@ import java.util.*;
     }
 
     protected void invoke_constructor_this(Class[] parameterTypes) {
-        invoke_constructor_helper(className, parameterTypes);
+        invoke_constructor(className, parameterTypes);
     }
 
     protected void new_instance_this() {
         backend.new_instance(className);
     }
   
+    protected void new_instance(String className) {
+        backend.new_instance(className);
+    }
+
     protected void new_instance(Class clazz) {
-        backend.new_instance(clazz.getName());
+        new_instance(clazz.getName());
     }
  
     protected void aaload(int index) {
