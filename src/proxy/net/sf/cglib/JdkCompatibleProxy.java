@@ -53,14 +53,26 @@
  */
 package net.sf.cglib;
 
+import java.io.Serializable;
 import java.util.*;
 import java.lang.reflect.*;
 
 /**
+ * This class is meant to be used as a drop-in replacement for
+ * <code>java.lang.reflect.Proxy</code>. There are some known subtle differences:
+ * <ul>
+ * <li>The exceptions returned by invoking <code>getExceptionTypes</code>
+ * on the <code>Method</code> passed to the <code>invoke</code> method
+ * <b>are</b> the exact set that can be thrown without resulting in an
+ * <code>UndeclaredThrowableException</code> being thrown.
+ * <li>There is no protected constructor which accepts an
+ * <code>InvocationHandler</code>. Instead, use the more convenient
+ * <code>newProxyInstance</code> static method.
+ * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.1 2002/12/06 17:48:13 herbyderby Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.2 2002/12/06 18:28:46 herbyderby Exp $
  */
-public class JdkCompatibleProxy {
+public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
     private static final HandlerAdapter nullInterceptor = new HandlerAdapter(null);
 
@@ -93,7 +105,7 @@ public class JdkCompatibleProxy {
     }
 
     public static boolean isProxyClass(Class cl) {
-        return cl.getSuperclass().equals(thisClass);
+        return cl.getSuperclass().getName().equals(thisClass.getName());
     }
 
     public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
