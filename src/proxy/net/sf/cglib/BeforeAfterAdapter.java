@@ -55,8 +55,11 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 
-public class MethodInterceptorAdapter implements MethodInterceptor {
-
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: BeforeAfterAdapter.java,v 1.1 2002/11/27 03:38:07 herbyderby Exp $
+ */
+public class BeforeAfterAdapter implements BeforeAfterInterceptor {
     public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
         return true;
     }
@@ -65,7 +68,7 @@ public class MethodInterceptorAdapter implements MethodInterceptor {
                               boolean invokedSuper, Object retValFromSuper,
                               Throwable e) throws Throwable {
         if (e != null)
-            throw e;
+            throw e.fillInStackTrace();
         return retValFromSuper;
     }
 }

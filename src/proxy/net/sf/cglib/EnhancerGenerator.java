@@ -78,6 +78,10 @@ import java.util.*;
         this.wreplace = wreplace;
         this.delegating = delegating;
 
+        if (!(ih instanceof BeforeAfterInterceptor)) {
+            throw new IllegalArgumentException("Only BeforeAfterInterceptor is currently allowed");
+        }
+
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
              !Modifier.isPublic(wreplace.getModifiers()) ||
@@ -198,7 +202,7 @@ import java.util.*;
             Method.class,
             Object[].class,
         };
-        return MethodInterceptor.class.getDeclaredMethod("invokeSuper", types);
+        return BeforeAfterInterceptor.class.getDeclaredMethod("invokeSuper", types);
     }
 
     private Method getAfterReturn() throws NoSuchMethodException {
@@ -210,7 +214,7 @@ import java.util.*;
             Object.class,
             Throwable.class
         };
-        return MethodInterceptor.class.getDeclaredMethod("afterReturn", types);
+        return BeforeAfterInterceptor.class.getDeclaredMethod("afterReturn", types);
     }
 
     private void generateConstructor() {

@@ -56,6 +56,10 @@ package net.sf.cglib;
 import junit.framework.*;
 import java.util.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: TestKeyFactory.java,v 1.2 2002/11/27 03:38:06 herbyderby Exp $
+ */
 public class TestKeyFactory extends TestCase {    
     public void setUp() {
         // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");

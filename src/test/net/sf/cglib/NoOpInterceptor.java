@@ -54,56 +54,24 @@
 package net.sf.cglib;
 
 import junit.framework.*;
+import java.io.Serializable;
 
 /**
- *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
- *      baliuka@mwm.lt</a>
- *@version    $Id: NoOpInterceptor.java,v 1.1 2002/11/27 03:05:31 herbyderby Exp $
+ *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ *@version $Id: NoOpInterceptor.java,v 1.2 2002/11/27 03:38:06 herbyderby Exp $
  */
- public class NoOpInterceptor implements MethodInterceptor , java.io.Serializable{
- 
+public class NoOpInterceptor extends BeforeAfterAdapter implements Serializable {
     String value; 
     
-     public String getValue(){
-        return  value;
-     }
+    public String getValue() {
+        return value;
+    }
      
-     public NoOpInterceptor( String ser) {
-         value = ser;
-     }
+    public NoOpInterceptor(String ser) {
+        value = ser;
+    }
    
     /** Creates a new instance of NoOpInterceptor */
     public NoOpInterceptor() {
     }
-    
-    /** this method is invoked after execution
-     * @param obj this
-     * @param method Method
-     * @param args Arg array
-     * @param invokedSuper value returned from invoke super
-     * @param retValFromSuper value returner from super
-     * @param e Exception thrown by super
-     * @throws Throwable any exeption
-     * @return value to return from generated method
-     */
-    public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
-       
-        if(e != null )
-            throw e.fillInStackTrace();
-        
-       return retValFromSuper;   
-    }
-    
-    /** Generated code calls this method before invoking super
-     * @param obj this
-     * @param method Method
-     * @param args Arg array
-     * @throws Throwable any exeption to stop execution
-     * @return true if need to invoke super
-     */
-    public boolean invokeSuper(Object obj, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
-        
-        return true;
-    }
-    
 }

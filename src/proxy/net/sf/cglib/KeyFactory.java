@@ -56,6 +56,10 @@ package net.sf.cglib;
 
 import java.util.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: KeyFactory.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ */
 abstract public class KeyFactory {
     private static final String CLASS_SUFFIX = ".KeyFactory$$CreatedByCGLIB$$";
     private static int index = 0;
