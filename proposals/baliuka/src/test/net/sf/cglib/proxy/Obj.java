@@ -18,14 +18,51 @@ import org.apache.bcel.classfile.*;
 
 public class Obj implements Serializable{
     
-    public int ifStatement(){
-    int i = (int)System.currentTimeMillis();
-        if(  i > 0 ){
+     private static java.lang.reflect.Method  METHOD_0;
+     private static java.lang.reflect.Method  METHOD_1;
+     private static java.lang.reflect.Method  METHOD_2;
+      private static java.lang.reflect.Method METHOD_3;
+    
+     public Object invokePublic( Object src, 
+                                   java.lang.reflect.Method method,
+                                   Object[] args )
+                           throws java.lang.reflect.InvocationTargetException,
+                                  java.lang.NoSuchMethodException{
+     
+     Obj obj =  (Obj)src;                          
+                               
+     try{
+       
+      if( METHOD_3.equals( method ) ){
+            method( ((Number)args[0]).intValue() , ((Number)args[2]).longValue() );
+           return null;   
+       }   
         
-           i = (int)( i/50.0 );
-        }
-        return i;
-    }
+         
+         
+      if( METHOD_0.equals( method ) )
+          return new Integer( obj.hashCode() );
+      
+      if( METHOD_1.equals( method ) )
+          return new Boolean( obj.equals( args[0] ) );
+     
+       if( METHOD_2.equals( method ) )
+          return  obj.toString();
+     
+       
+      
+     }catch( Exception e ){
+       throw new java.lang.reflect.InvocationTargetException(e);
+     } 
+     
+        throw new java.lang.NoSuchMethodException( method.toString() );
+     
+     }
+       
+   public void method( int a1,long a2 ){
+   
+   } 
+    
     
     public static void main( String args[] ) throws Exception{
     
