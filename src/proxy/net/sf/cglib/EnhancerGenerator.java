@@ -87,15 +87,19 @@ import java.util.*;
     private Method wreplace;
     private MethodInterceptor ih;
     private boolean delegating;
+    private MethodFilter filter;
         
-    /* package */ EnhancerGenerator(String className, Class clazz, Class[] interfaces, MethodInterceptor ih,
-                                    ClassLoader loader, Method wreplace, boolean delegating) {
+    /* package */ EnhancerGenerator( String className, Class clazz, 
+                                     Class[] interfaces,
+                                     MethodInterceptor ih, ClassLoader loader, 
+                                     Method wreplace, boolean delegating,
+                                     MethodFilter filter) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
         this.ih = ih;
         this.wreplace = wreplace;
         this.delegating = delegating;
-
+        this.filter = filter;  
      
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
@@ -197,7 +201,8 @@ import java.util.*;
         int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
         for (int i = 0, j = 0, size = methodList.size(); j < size; j++) {
             Method method = (Method)methodList.get(j);
-            if( Modifier.isFinal(method.getModifiers()) ){
+            if( Modifier.isFinal(method.getModifiers()) || 
+                ( null != filter && !filter.accept(method))   ){
                 continue;
             }   
             String fieldName = getFieldName(method, i);

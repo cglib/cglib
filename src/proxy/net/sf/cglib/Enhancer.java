@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.6 2002/12/03 07:08:11 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.7 2002/12/03 19:24:26 baliuka Exp $
  */
 public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
@@ -116,7 +116,7 @@ public class Enhancer {
      public static Factory decorate(Object obj, MethodInterceptor interceptor ){
      
          return (Factory)enhanceHelper(true, obj, obj.getClass(), null , interceptor,
-                               obj.getClass().getClassLoader(), null );
+                               obj.getClass().getClassLoader(), null, null );
      }
     
     
@@ -124,16 +124,17 @@ public class Enhancer {
      *  overrides Class methods and implements all abstract methods.  
      *  returned instance extends clazz and implements Factory interface,
      *  MethodProxy delegates calls to supper Class (clazz) methods, if not abstract.
-     *  @param clazz Class to override
+     *  @param clazz Class or inteface to extend or implement
      *  @param interceptor interceptor used to handle implemented methods
      *  @return instanse of clazz class, new Class is defined in the same class loader
      */
     
      
       public static Factory override(Class clazz, MethodInterceptor interceptor ){
-     
-         return (Factory)enhanceHelper(false, null , clazz, null , interceptor,
-                               clazz.getClassLoader(), null );
+          
+         return (Factory)enhanceHelper(false, null , clazz.isInterface() ? null : clazz,
+                                       clazz.isInterface() ? new Class[]{clazz} : null ,
+                                       interceptor, clazz.getClassLoader(), null, null );
      }
     
      
@@ -142,29 +143,15 @@ public class Enhancer {
      *  implemented as
      * return enhance(cls,interfaces,ih, null,null,false);
      */
-    public static Object enhance(
-    Class cls,
-    Class interfaces[],
-    MethodInterceptor ih) {
+    public static Object enhance( Class cls, Class interfaces[], MethodInterceptor ih) {
         
-        return enhance(
-        cls,
-        interfaces,
-        ih,
-        null,
-        null);
+        return enhance( cls, interfaces, ih, null, null);
     }
-     public static Object enhance(
-    Class cls,
-    Class interfaces[],
-    MethodInterceptor ih,
-    ClassLoader loader ) {
-        return enhance(
-        cls,
-        interfaces,
-        ih,
-        loader,
-        null);
+    
+     public static Object enhance( Class cls, Class interfaces[],
+                                   MethodInterceptor ih,
+                                   ClassLoader loader ) {
+        return enhance(cls, interfaces, ih, loader, null);
    
      } 
     /** enhances public not final class,
@@ -185,31 +172,38 @@ public class Enhancer {
      * @throws Throwable on error
      * @return instanse of enhanced  class
      */
-    public static Object enhance(Class cls,
-                                 Class[] interfaces,
-                                 MethodInterceptor ih,
-                                 ClassLoader loader,
-                                 Method wreplace) {
-        return enhanceHelper(false, null, cls, interfaces, ih, loader, wreplace);
+    public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
+                                 ClassLoader loader, Method wreplace) {
+        return enhanceHelper( false, null, cls, interfaces,
+                              ih, loader, wreplace, null);
     }
 
-    public static Object enhance(Object obj,
-                                 Class cls,
-                                 Class[] interfaces,
-                                 MethodInterceptor ih,
-                                 ClassLoader loader,
+    public static Object enhance(Object obj, Class cls, Class[] interfaces,
+                                 MethodInterceptor ih, ClassLoader loader,
                                  Method wreplace) {
-        return enhanceHelper(true, obj, cls, interfaces, ih, loader, wreplace);
+        return enhanceHelper( true, obj, cls, interfaces, ih,
+                               loader, wreplace, null);
+    }
+
+   public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
+                                 ClassLoader loader, Method wreplace, MethodFilter filter) {
+        return enhanceHelper( false, null, cls, interfaces,
+                              ih, loader, wreplace, filter );
+    }
+
+    public static Object enhance(Object obj, Class cls, Class[] interfaces,
+                                 MethodInterceptor ih, ClassLoader loader,
+                                 Method wreplace, MethodFilter filter) {
+        return enhanceHelper( true, obj, cls, interfaces, ih,
+                               loader, wreplace, filter );
     }
 
     
-    private static Object enhanceHelper(boolean delegating,
-                                        Object obj,
-                                        Class cls,
-                                        Class[] interfaces,
-                                        MethodInterceptor ih,
-                                        ClassLoader loader,
-                                        Method wreplace) {
+    
+    private static Object enhanceHelper(boolean delegating, Object obj,Class cls,
+                                        Class[] interfaces, MethodInterceptor ih,
+                                        ClassLoader loader,Method wreplace,
+                                        MethodFilter filter) {
         if (ih == null) {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
@@ -240,7 +234,8 @@ public class Enhancer {
             factory = (Factory)factories.get(key);
             if (factory == null) {
                 Class result = new EnhancerGenerator(getNextName(cls), cls, interfaces,
-                                                     ih, loader, wreplace, delegating).define();
+                                                     ih, loader, wreplace,
+                                                     delegating, filter ).define();
                 try {
                     Class mi = Class.forName(methodInterceptorName, true, loader);
                     if (delegating) {
