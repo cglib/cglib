@@ -516,6 +516,87 @@ class ClassFileUtils implements ClassFileConstants {
     }
     
     
+    
+    static void castObject(
+                        ConstantPoolGen cp,InstructionList il,
+                        Type returnType ) {
+        
+        
+        if ( ( returnType instanceof ObjectType ) || 
+             ( returnType instanceof ArrayType ) ) {
+            
+            if (returnType instanceof ArrayType){
+                il.append( new CHECKCAST(cp.addArrayClass((ArrayType)returnType)));
+                
+            }
+            if (!returnType.equals(Type.OBJECT)){
+                
+              il.append (new CHECKCAST(cp.addClass((ObjectType) returnType)));
+                
+            }
+         
+        }else   if (returnType instanceof BasicType) {
+            if (returnType.equals(Type.BOOLEAN)) {
+                il.append (new CHECKCAST(cp.addClass(BOOLEAN_OBJECT)));
+                il.append( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Boolean.class.getName(),"booleanValue","()Z" )
+                          ) 
+                        );
+                
+            } else if (returnType.equals(Type.CHAR)) {
+                 il.append (new CHECKCAST(cp.addClass(CHARACTER_OBJECT)));
+                 il.append( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Character.class.getName(),"charValue","()C" )
+                          ) 
+                        );
+              
+            } else if (returnType.equals(Type.LONG)) {
+               il.append(new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
+               il.append( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"longValue","()J" )
+                          ) 
+                        );
+              
+            } else if (returnType.equals(Type.DOUBLE)) {
+                il.append( new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
+                il.append( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"doubleValue","()D" )
+                          ) 
+                        );
+                
+                
+            } else if (returnType.equals(Type.FLOAT)) {
+               il.append (new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
+               il.append( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"floatValue","()F" )
+                          ) 
+                        );
+                
+            } else if ( returnType.equals( Type.BYTE ) ) {
+               il.append ( new CHECKCAST(cp.addClass(NUMBER_OBJECT)) );
+               il.append ( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"byteValue","()B" )
+                          ) 
+                        );
+               
+             } else if ( returnType.equals( Type.SHORT ) ) {
+               il.append ( new CHECKCAST(cp.addClass(NUMBER_OBJECT)) );
+               il.append ( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"shortValue","()S" )
+                          ) 
+                        );
+             } else if ( returnType.equals( Type.INT ) ) {
+               il.append ( new CHECKCAST(cp.addClass(NUMBER_OBJECT)) );
+               il.append ( new INVOKEVIRTUAL( 
+                           cp.addMethodref( Number.class.getName(),"intValue","()I" )
+                          ) 
+                        );
+             }else throw new java.lang.InternalError(returnType.toString());
+        }else throw new java.lang.InternalError(returnType.toString());
+        
+    }
+    
+    
     static void loadClass(InstructionList  il, ClassGen cg, ConstantPoolGen cp,Class cls ){
         
         Instruction instruction = null;

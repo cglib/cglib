@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.2 2002/11/02 17:40:09 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.3 2002/11/03 13:00:55 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -490,7 +490,7 @@ public class Enhancer implements ClassFileConstants {
         
         
         generateClInit(cg, cp, methodTable);
-        generateInvoke(cg, cp, methodTable );
+//        generateInvoke(cg, cp, methodTable );
         
         JavaClass jcl = cg.getJavaClass();
         
@@ -810,7 +810,7 @@ public class Enhancer implements ClassFileConstants {
         cg.addMethod( ClassFileUtils.getMethod( cinit ) );
         
     }
-    
+    /*
     private static void generateInvoke( ClassGen cg, 
                                         ConstantPoolGen cp,
                                         java.util.Map methods )throws Throwable{
@@ -866,7 +866,7 @@ public class Enhancer implements ClassFileConstants {
                
       cg.addMethod( ClassFileUtils.getMethod(  invoke )  );  
     } 
-    
+ */   
     static public class InternalReplace implements java.io.Serializable{
         
         private String parentClassName;
