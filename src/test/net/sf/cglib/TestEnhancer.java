@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.18 2003/01/21 17:38:24 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.19 2003/01/23 13:03:18 nemecec Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -304,16 +304,16 @@ public class TestEnhancer extends CodeGenTestCase {
             }
         }
     }
-    
-    public void testSerializable()throws Throwable{
-        
+
+    public void testSerializable() throws Throwable {
+
         String testValue = "test";
         
         Source source =  (Source)Enhancer.enhance(
-        Source.class,
-        new Class []{} , new TestInterceptor(testValue),
-        this.getClass().getClassLoader(),
-         Enhancer.InternalReplace.class.getMethod("writeReplace",new Class[]{Object.class})
+            Source.class,
+            new Class []{} , new TestInterceptor(testValue),
+            this.getClass().getClassLoader(),
+            Enhancer.InternalReplace.class.getMethod("writeReplace",new Class[]{Object.class})
         );
         
         
@@ -335,7 +335,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
         assertEquals("testValue", testValue, interceptor.getValue()  );
     }
-    
+
    public void testABC() throws Throwable{
        Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR);
        Enhancer.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
