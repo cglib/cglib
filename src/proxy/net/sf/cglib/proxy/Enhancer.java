@@ -86,7 +86,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.2 2002/07/06 10:20:37 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.3 2002/07/13 10:25:19 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -110,8 +110,8 @@ public class Enhancer implements org.apache.bcel.Constants {
     static final String CONSTRUCTOR_NAME = "<init>";
     static final String FIELD_NAME = "h";
     static final String SOURCE_FILE = "<generated>";
-    static final String CLASS_SUFIX = "$$EnhancedBySimplestore$$";
-    static final String CLASS_PREFIX = "org.apache.";
+    static final String CLASS_SUFIX = "$$EnhancedByCGLIB$$";
+    static final String CLASS_PREFIX = "net.sf.cglib.proxy";
     static int index = 0;
     static java.util.Map factories = new java.util.HashMap();
     
@@ -148,16 +148,13 @@ public class Enhancer implements org.apache.bcel.Constants {
     /** Creates a new instance of Enchancer */
     
     protected Enhancer() {}
-    public static void setMethodInterceptor(Object enhanced, MethodInterceptor ih)
-    throws Throwable {
-        enhanced.getClass().getField(FIELD_NAME).set(enhanced, ih);
-    }
+    
     public static MethodInterceptor getMethodInterceptor(Object enhanced){
       try{      
         return (MethodInterceptor) enhanced.getClass().getField(FIELD_NAME).get(
             enhanced);
       }catch( NoSuchFieldException nsfe){
-        throw new NoSuchFieldError( enhanced.getClass().getName() + ":" + nsfe.getMessage());
+        throw new NoSuchFieldError(enhanced + " is not enhanced :" + nsfe.getMessage());
       }catch( java.lang.IllegalAccessException iae ){
         throw new IllegalAccessError(enhanced.getClass().getName() + ":" + iae.getMessage()); 
       }
@@ -622,7 +619,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 return il.append(new IRETURN());
             }
         }
-        throw new java.lang.InternalError();
+        throw new java.lang.InternalError(returnType.toString());
     }
     
     
@@ -647,7 +644,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 return new NEW(cp.addClass(FLOAT_OBJECT));
             }
         }
-        return null;
+         throw new InternalError(type.toString());
     }
     
     private static Instruction initWrapper(Type type, ConstantPoolGen cp) {
@@ -679,7 +676,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 cp.addMethodref(Float.class.getName(), CONSTRUCTOR_NAME, "(F)V"));
             }
         }
-        return null;
+         throw new InternalError(type.toString());
     }
     
     private static int loadArg(InstructionList il, Type t, int index, int pos) {
