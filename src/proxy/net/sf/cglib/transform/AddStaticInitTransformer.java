@@ -16,7 +16,6 @@ public class AddStaticInitTransformer extends EmittingTransformer {
 
     private Method classInit;
     private boolean generated;
-    private String className;
 
     public AddStaticInitTransformer(Method classInit) {
         if (!Modifier.isStatic(classInit.getModifiers())) {
@@ -36,15 +35,13 @@ public class AddStaticInitTransformer extends EmittingTransformer {
             public void begin_class(int access, String name, Type superType, Type[] interfaces, String sourceFile) {
                 super.begin_class(access, name, superType, interfaces, sourceFile);
                 generated = false; // transformers can be cloned, need to reset
-                className = name;
             }
                 
             public void begin_method(int access, Signature sig, Type[] exceptions) {
                 super.begin_method(access, sig, exceptions);
                 if (sig.getName().equals(Constants.STATIC_NAME)) {
                     generated = true;
-                    push(className);
-                    invoke_static(Constants.TYPE_CLASS, FOR_NAME);
+                    ComplexOps.load_class_this(this);
                     ReflectOps.invoke(this, classInit);
                 }
             }
