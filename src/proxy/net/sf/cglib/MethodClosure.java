@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.2 2002/12/21 20:21:54 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.3 2002/12/21 21:26:47 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
@@ -167,7 +167,6 @@ abstract public class MethodClosure {
             declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
             declare_interface(iface);
             generateNullConstructor();
-            generateFindClass();
 
             // generate proxied method
             begin_method(iface.getDeclaredMethods()[0]);
@@ -196,7 +195,7 @@ abstract public class MethodClosure {
 
             // static initializer
             begin_static();
-            push(getMethodSignature(method));
+            push(CodeGenerator.getMethodSignature(method));
             putstatic("eqMethod");
             return_value();
             end_static();
