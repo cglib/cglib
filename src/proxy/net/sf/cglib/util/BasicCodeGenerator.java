@@ -81,6 +81,7 @@ abstract public class BasicCodeGenerator {
     private Class returnType;
     private Class[] parameterTypes;
     private boolean inMethod;
+    private boolean isStatic;
     private int nextLocal;
 
     private Map fieldInfo = new HashMap();
@@ -197,6 +198,7 @@ abstract public class BasicCodeGenerator {
      */
     abstract protected void generate() throws Exception;
     protected void postGenerate() throws Exception { }
+    protected void postDefine(Class type) throws Exception { }
 
     public final Class define() {
         try {
@@ -210,7 +212,9 @@ abstract public class BasicCodeGenerator {
                 out.write(bytes);
                 out.close();
             }
-            return defineClass(className, bytes, classLoader);
+            Class type = defineClass(className, bytes, classLoader);
+            postDefine(type);
+            return type;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -277,6 +281,7 @@ abstract public class BasicCodeGenerator {
         this.methodName = methodName;
         this.returnType = returnType;
         this.parameterTypes = parameterTypes;
+        isStatic = Modifier.isStatic(modifiers);
         backend.begin_method(modifiers, returnType, methodName, parameterTypes, exceptionTypes);
         setNextLocal();
     }
@@ -331,7 +336,7 @@ abstract public class BasicCodeGenerator {
     }
     
     private void setNextLocal() {
-        nextLocal = 1 + getStackSize(parameterTypes);
+        nextLocal = getLocalOffset() + getStackSize(parameterTypes);
     }
     
     protected void end_method() {
@@ -504,6 +509,9 @@ abstract public class BasicCodeGenerator {
     }
     
     protected void load_this() {
+        if (isStatic) {
+            throw new IllegalStateException("no 'this' pointer within static method");
+        }
         backend.emit_var(Opcodes.ALOAD, 0);
     }
     
@@ -519,17 +527,21 @@ abstract public class BasicCodeGenerator {
      * @param index the zero-based index into the argument list
      */
     protected void load_arg(int index) {
-        load_local(parameterTypes[index], 1 + skipArgs(index));
+        load_local(parameterTypes[index], getLocalOffset() + skipArgs(index));
     }
     
     // zero-based (see load_this)
     protected void load_args(int fromArg, int count) {
-        int pos = 1 + skipArgs(fromArg);
+        int pos = getLocalOffset() + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
             Class t = parameterTypes[fromArg + i];
             load_local(t, pos);
             pos += getStackSize(t);
         }
+    }
+
+    private int getLocalOffset() {
+        return isStatic ? 0 : 1;
     }
     
     private int skipArgs(int numArgs) {
