@@ -63,7 +63,7 @@ import java.util.*;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.1 2003/05/23 23:18:45 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.2 2003/05/23 23:22:19 herbyderby Exp $
  */
 public class InterfaceMaker {
     private static final Class TYPE = InterfaceMaker.class;
@@ -115,8 +115,8 @@ public class InterfaceMaker {
     }
 
     /**
-     * Create a interface consisting of all the specified method. The access flags on the methods
-     * are ignored (all interface methods are abstract and public).
+     * Create a interface consisting of all the specified methods. The access flags on the methods
+     * are ignored (all interface methods are by definition abstract and public).
      * @param methods the methods to generate
      * @param loader ClassLoader for enhanced class, uses "current" if null
      */
