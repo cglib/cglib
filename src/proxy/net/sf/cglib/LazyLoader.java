@@ -53,8 +53,19 @@
  */
 package net.sf.cglib;
 
+/**
+ * Lazy-loading <code>Enhancer</code> callback.
+ * @see Callbacks#LAZY_LOAD
+ */
 public interface LazyLoader
 extends Callback
 {
+    /**
+     * Return the object which the original method invocation should
+     * be dispatched to now and into the future. Called as soon as the
+     * first lazily-loaded method in the enhanced instance is invoked.
+     * @return an object that can invoke the method
+     * @throws ClassCastException if the object is incompatible with the method being invoked
+     */
     Object loadObject() throws Exception;
 }
