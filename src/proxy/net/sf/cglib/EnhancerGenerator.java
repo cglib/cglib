@@ -472,10 +472,10 @@ extends CodeGenerator
         public boolean evaluate(Object arg);
     }
 
-    private static void filter(List list, Predicate predicate) {
-        Iterator it = list.iterator();
+    private static void filter(Collection c, Predicate p) {
+        Iterator it = c.iterator();
         while (it.hasNext()) {
-            if (!predicate.evaluate((Member)it.next())) {
+            if (!p.evaluate(it.next())) {
                 it.remove();
             }
         }
@@ -489,15 +489,6 @@ extends CodeGenerator
             }
         });
     }
-
-//     private void checkReturnTypesEqual(Method m1, Method m2) {
-//         if (!m1.getReturnType().equals(m2.getReturnType())) {
-//             throw new IllegalArgumentException("Can't implement:\n" + m1.getDeclaringClass().getName() +
-//                                                "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
-//                                                m1.toString() + "\n" + m2.toString());
-//         }
-//     }
-    
 
     private static void removeFinal(List list) {
         filter(list, new Predicate() {

@@ -60,7 +60,7 @@ import junit.framework.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.26 2003/09/09 16:55:57 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.27 2003/09/09 19:49:02 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -75,7 +75,8 @@ public class TestAll extends TestCase {
         TestSuite suite = new TestSuite();
         suite.addTest(TestEnhancer.suite());
         suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestDelegator.suite());
+        suite.addTest(TestMixin.suite());
+        suite.addTest(TestMixinBean.suite());
         suite.addTest(TestKeyFactory.suite());
         suite.addTest(TestProxy.suite());
         suite.addTest(TestMethodProxy.suite());

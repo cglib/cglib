@@ -60,29 +60,23 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.15 2003/09/05 22:59:21 herbyderby Exp $
+ * @author Chris Nokleberg
+ * @version $Id: MixinGenerator.java,v 1.1 2003/09/09 19:49:03 herbyderby Exp $
  */
-class DelegatorGenerator extends CodeGenerator {
+class MixinGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Delegator$Factory.newInstance(Object[])");
+      ReflectUtils.findMethod("Mixin.newInstance(Object[])");
     private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
 
     private Class[] classes;
-    private int[] routing;
-    private boolean bean;
+    private int[] route;
         
-    public DelegatorGenerator(Class type, Class[] classes, int[] routing) {
-        setSuperclass(type);
-        setNamePrefix(Delegator.class.getName());
+    public MixinGenerator(Class[] classes, int[] route) {
+        setSuperclass(Mixin.class);
         this.classes = classes;
-        this.routing = routing;
-        bean = !classes[0].isInterface();
-        
-        addInterface(Delegator.Factory.TYPE);
-        if (!bean) {
-            addInterfaces(classes);
-        }
+        this.route = route;
+        addInterfaces(classes);
     }
 
     protected void generate() throws NoSuchMethodException {
@@ -90,25 +84,15 @@ class DelegatorGenerator extends CodeGenerator {
         generateConstructor();
         factory_method(NEW_INSTANCE);
 
-        Set methodSet = new HashSet();
+        Set unique = new HashSet();
         for (int i = 0; i < classes.length; i++) {
-            Class type = classes[i];
-            Method[] methods;
-            if (bean) {
-                methods = ReflectUtils.getPropertyMethods(ReflectUtils.getBeanProperties(type), true, true);
-            } else {
-                methods = type.getMethods();
-            }
+            Method[] methods = classes[i].getMethods();
             for (int j = 0; j < methods.length; j++) {
-                Method method = methods[j];
-                Object key = MethodWrapper.create(method);
-                if (!methodSet.contains(key)) {
-                    methodSet.add(key);
-                    generateProxy(method, (routing != null) ? routing[i] : i);
+                if (unique.add(MethodWrapper.create(methods[j]))) {
+                    generateProxy(methods[j], (route != null) ? route[i] : i);
                 }
             }
         }
-
     }
 
     private void generateConstructor() {
