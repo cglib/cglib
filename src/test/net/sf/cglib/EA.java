@@ -25,5 +25,8 @@ public class EA {
     protected Object writeReplace() throws ObjectStreamException {
         return null;
     }
+    
+    protected void finalTest(){}
+    
 }
 

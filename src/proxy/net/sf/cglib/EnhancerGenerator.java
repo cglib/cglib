@@ -161,10 +161,12 @@ import java.util.*;
         boolean declaresWriteReplace = false;
         Package packageName = getSuperclass().getPackage();
         Map methodMap = new HashMap();
+        
+        
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
             int mod = method.getModifiers();
-            if (!Modifier.isStatic(mod) && !Modifier.isFinal(mod) &&
+            if (!Modifier.isStatic(mod) &&
                 (!delegating || !Modifier.isProtected(mod)) &&
                 isVisible(method, packageName)) {
                 if (method.getName().equals("writeReplace") &&
@@ -185,17 +187,24 @@ import java.util.*;
             }
         }
         List methodList = new ArrayList(methodMap.values());
+        List list = new ArrayList();
+        
         int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
-        for (int i = 0, size = methodList.size(); i < size; i++) {
-            Method method = (Method)methodList.get(i);
+        for (int i = 0, j = 0, size = methodList.size(); j < size; j++) {
+            Method method = (Method)methodList.get(j);
+            if( Modifier.isFinal(method.getModifiers()) ){
+                continue;
+            }   
             String fieldName = getFieldName(method, i);
             String accessName = getAccessName(method, i);
             declare_field(privateFinalStatic, Method.class, fieldName);
             declare_field(privateFinalStatic, MethodProxy.class, accessName);
             generateAccessMethod(method, accessName);
             generateAroundMethod(method, fieldName, accessName);
+            list.add(method);
+            i++;
         }
-        generateClInit(methodList);
+        generateClInit(list);
 
         if (!declaresWriteReplace) {
             generateWriteReplace();

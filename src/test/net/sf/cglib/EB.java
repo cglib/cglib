@@ -10,5 +10,6 @@ public class EB extends EA {
 	public void setCount(int count) {
 		this.count = count;
 	}
+        public final  void finalTest(){} 
 }
 
