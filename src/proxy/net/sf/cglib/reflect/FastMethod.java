@@ -63,12 +63,16 @@ public class FastMethod extends FastMember
     }
 
     private static int helper(FastClass fc, Method method) {
-        try {
-            return fc.getIndex(method.getName(), method.getParameterTypes());
-        } catch (Error e) {
-            System.err.println("Caught error " + e + " LOOKING UP INDEX name=" + method.getName() + " types=" + java.util.Arrays.asList(method.getParameterTypes()) + " in class " + fc.getClass().getName());
-            throw e;
+        int index = fc.getIndex(method.getName(), method.getParameterTypes());
+        if (index < 0) {
+            Class[] types = method.getParameterTypes();
+            System.err.println("hash=" + method.getName().hashCode() + " size=" + types.length);
+            for (int i = 0; i < types.length; i++) {
+                System.err.println("  types[" + i + "]=" + types[i].getName());
+            }
+            throw new IllegalArgumentException("Cannot find method " + method);
         }
+        return index;
     }
 
     public Class getReturnType() {

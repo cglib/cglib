@@ -287,10 +287,10 @@ public class TypeUtils {
     }
 
     public static String emulateClassGetName(Type type) {
-        if (isPrimitive(type) || isArray(type)) {
+        if (isArray(type)) {
             return type.getDescriptor().replace('/', '.');
         } else {
-            return type.getClassName();
+            return getClassName(type);
         }
     }
 
