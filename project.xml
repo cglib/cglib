@@ -70,6 +70,12 @@
       <id>junit</id>
       <version>3.7</version>
     </dependency>
+
+    <dependency>
+      <id>aspectwerkz-core</id>
+      <version>0.8.1</version>
+    </dependency>
+
     
   </dependencies>
   

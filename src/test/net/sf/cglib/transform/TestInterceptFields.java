@@ -18,6 +18,12 @@ public class TestInterceptFields extends AbstractTransformTest implements  Inter
     public TestInterceptFields() {
     }
     
+    /** Creates a new instance of TestInterceptFields */
+    public TestInterceptFields(String name) {
+        super(name);
+    }
+    
+    
     public  void test(){
         
         
