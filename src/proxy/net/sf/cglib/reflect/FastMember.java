@@ -55,15 +55,21 @@ package net.sf.cglib.reflect;
 
 abstract public class FastMember
 {
-    private String name;
+    protected FastClass fc;
+    protected String name;
+    protected Class[] parameterTypes;
 
-    protected FastMember(String name) {
+    protected FastMember(FastClass fc, String name, Class[] parameterTypes) {
+        this.fc = fc;
         this.name = name;
+        this.parameterTypes = parameterTypes;
     }
 
     public String getName() {
         return name;
     }
 
-    // TODO: add getParameterTypes
+    public Class[] getParameterTypes() {
+        return FastClass.copyTypes(parameterTypes);
+    }
 }

@@ -55,12 +55,10 @@ package net.sf.cglib.reflect;
 
 public class FastMethod extends FastMember
 {
-    private FastClass fc;
-     private int index;
+    private int index;
     
     FastMethod(FastClass fc, String name, Class[] parameterTypes) {
-        super(name);
-        this.fc = fc;
+        super(fc, name, parameterTypes);
         index = fc.getIndex(name, parameterTypes);
     }
 

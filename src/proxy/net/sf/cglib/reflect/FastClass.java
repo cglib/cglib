@@ -100,11 +100,11 @@ abstract public class FastClass
     }
 
     public FastMethod getMethod(String name, Class[] parameterTypes) {
-        return new FastMethod(this, name, parameterTypes);
+        return new FastMethod(this, name, copyTypes(parameterTypes));
     }
 
     public FastConstructor getConstructor(Class[] parameterTypes) {
-        return new FastConstructor(this, parameterTypes);
+        return new FastConstructor(this, copyTypes(parameterTypes));
     }
     
     public FastMethod getMethod(Method method) {
@@ -128,4 +128,10 @@ abstract public class FastClass
     abstract int getIndex(Class[] parameterTypes);
     abstract Object invoke(int index, Object obj, Object[] args);
     abstract Object newInstance(int index, Object[] args);
+
+    static Class[] copyTypes(Class[] types) {
+        Class[] copy = new Class[types.length];
+        System.arraycopy(types, 0, copy, 0, types.length);
+        return copy;
+    }
 }

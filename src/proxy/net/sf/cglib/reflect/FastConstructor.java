@@ -55,12 +55,10 @@ package net.sf.cglib.reflect;
 
 public class FastConstructor extends FastMember
 {
-    private FastClass fc;
     private int index;
     
     FastConstructor(FastClass fc, Class[] parameterTypes) {
-        super("<init>");
-        this.fc = fc;
+        super(fc, "<init>", parameterTypes);
         index = fc.getIndex(parameterTypes);
     }
 
