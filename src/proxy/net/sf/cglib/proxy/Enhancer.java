@@ -648,8 +648,6 @@ public class Enhancer extends AbstractClassGenerator
         }
 
         public void end_class() {
-            // System.err.println("collected methods " + methods);
-            // System.err.println("collected constructors " + constructors);
             if (collect) {
                 collect = false;
                 Enhancer.this.emit(this,

@@ -806,7 +806,7 @@ public class EmitUtils {
                     e.dup();
                     e.aaload(i);
                     e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
-                    e.push(types[i].getClassName());
+                    e.push(TypeUtils.emulateClassGetName(types[i]));
                     e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
                     e.if_jump(e.EQ, def);
                 }
@@ -822,7 +822,7 @@ public class EmitUtils {
                 final int j = i;
                 Map test = CollectionUtils.bucket(members, new Transformer() {
                     public Object transform(Object value) {
-                        return typer.getParameterTypes((MethodInfo)value)[j].getClassName();
+                        return TypeUtils.emulateClassGetName(typer.getParameterTypes((MethodInfo)value)[j]);
                     }
                 });
                 if (buckets == null || test.size() > buckets.size()) {

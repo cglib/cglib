@@ -51,6 +51,11 @@ public class TestEnhancerTransform extends AbstractTransformTest {
     }
     
     public static Test suite() throws Exception{
-        return new TestSuite(new TestEnhancerTransform().transform());
+        try {
+            return new TestSuite(new TestEnhancerTransform().transform());
+        } catch (Error e) {
+            e.printStackTrace(System.err);
+            throw e;
+        }
     }
 }
