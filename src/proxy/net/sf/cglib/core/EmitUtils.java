@@ -794,7 +794,7 @@ public class EmitUtils {
                     index = i;
                 }
             }
-            if (buckets == null) {
+            if (buckets == null || buckets.size() == 1) {
                 // TODO: switch by returnType
                 // must have two methods with same name, types, and different return types
                 e.goTo(def);
