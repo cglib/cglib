@@ -10,7 +10,7 @@
   <id>cglib</id>
   <logo>/images/cglib.png</logo>
   <url>http://sourceforge.net/projects/cglib/</url>
-  <currentVersion>2.0pre1</currentVersion>
+  <currentVersion>2.0beta2</currentVersion>
   <inceptionYear>2002</inceptionYear>
   <package>net.sf.cglib</package>
 
@@ -79,47 +79,6 @@
     
   </dependencies>
   
-  <build>
-
-
-
-    
-    <sourceDirectory>src/proxy</sourceDirectory>
- 
-    <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
-    
-    <!-- maven b5 onwards -->
-    <unitTest>
-      <includes>
-        <include>**/TestAll.java</include>
-      </includes>
-    </unitTest>
-    
-    <integrationUnitTestSourceDirectory/>
-    <integrationUnitTestPatterns/>
-    
-    <!-- J A R  R E S O U R C E S -->
-    <!-- Resources that are packaged up inside the JAR file -->
- <!--
-    <resources>
-      <includes>
-        <include>**/*.properties</include>
-      </includes>
-    </resources>
-
-    <jarResources>
-      <jarResource>**/*.properties</jarResource>
-    </jarResources>
-    <jars></jars>
- --> 
-
-
-
-</build>
-
-
-
-
   <developers>
 
     <developer>
@@ -173,22 +132,25 @@
 
   </developers>
 
-
-<!--
-  <contributors>
-    <contributor>
-      <name></name>
-      <email></email>
-      <organization></organization>
-      <roles>
-        <role></role>
-      </roles>
-    </contributor>
-  
-  </contributors>
--->
-
-
- 
+  <build>
+    <sourceDirectory>src/proxy</sourceDirectory>
+    <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
+    <unitTest>
+      <includes>
+        <include>**/TestAll.java</include>
+      </includes>
+      <excludes>
+        <exclude>**/Abstract*.java</exclude>
+      </excludes>
+      <resources>
+        <resource>
+          <directory>${basedir}/src/test</directory>
+          <includes>
+            <include>**/*.txt</include>
+          </includes>
+        </resource>
+      </resources>
+    </unitTest>
+  </build>
 
 </project>

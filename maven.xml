@@ -1,5 +1,11 @@
-<project default="java:jar" xmlns:j="jelly:core">
-
-  <!-- we can customize the Maven build here -->
-  	
+<project default="jar:jar" xmlns:j="jelly:core">
+  <postGoal name="jar:jar">
+    <jar jarfile="${maven.build.dir}/${pom.name}-full-${pom.currentVersion}.jar"
+        basedir="${maven.build.dest}"
+        >
+      <fileset dir="${maven.build.dir}/classes" excludes="samples/**"/>
+      <zipfileset dir="lib" includes="asm*.txt"/>
+      <zipfileset src="lib/asm.jar"/>
+    </jar>
+  </postGoal>
 </project>
