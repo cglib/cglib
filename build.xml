@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.21 2003/06/13 21:22:26 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.22 2003/06/13 21:22:47 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -112,11 +112,6 @@
       <include name="**/*"/>
       <exclude name="samples/**" />
     </jar> 
-
-<!--
-      <copy file="lib/asm-copyright.txt" todir="${build.home}/classes"/>  
-      <copy file="lib/asm-license.txt" todir="${build.home}/classes"/>   
--->
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
