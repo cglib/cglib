@@ -58,16 +58,9 @@ import net.sf.cglib.util.BasicCodeGenerator;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.2 2003/06/13 21:12:48 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.3 2003/09/08 17:42:23 herbyderby Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
-    public void setUp() {
-        String debugLocation = System.getProperty("cglib.debugLocation");
-        if (debugLocation != null) {
-            BasicCodeGenerator.setDebugLocation(debugLocation);
-        }
-    }
-
     public CodeGenTestCase(String testName) {
         super(testName);
     }

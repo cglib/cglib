@@ -53,80 +53,84 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.util.*;
 import junit.framework.*;
 
-public class TestStringSwitch extends CodeGenTestCase {
+public class TestMemberSwitch extends CodeGenTestCase {
     private static int index = 0;
 
+    private static final Constructor C0 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean()");
+    private static final Constructor C1 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(double)");
+    private static final Constructor C2 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(int)");
+    private static final Constructor C3 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(int, String, String)");
+    private static final Constructor C4 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(int, String, double)");
+    private static final Constructor C5 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(int, short, long)");
+    private static final Constructor C6 =
+      ReflectUtils.findConstructor("TestMemberSwitch$ConstructorBean(int, String)");
+
+    
+    static class ConstructorBean {
+        public ConstructorBean() { }
+        public ConstructorBean(double foo) { }
+        public ConstructorBean(int foo) { }
+        public ConstructorBean(int foo, String bar, String baz) { }
+        public ConstructorBean(int foo, String bar, double baz) { }
+        public ConstructorBean(int foo, short bar, long baz) { }
+        public ConstructorBean(int foo, String bar) { }
+    }
+
     public static interface Indexed {
-        int getIndex(String word);
+        int getIndex(Class[] types);
     }
 
     public void testSimple() {
-        simpleHelper(CodeGenerator.SWITCH_STYLE_HASH);
-        simpleHelper(CodeGenerator.SWITCH_STYLE_TRIE);
-    }
-
-    private void simpleHelper(int switchStyle) {
-        String[] keys = new String[]{ "foo", "bar", "baz", "quud", "quick", "quip" };
-        Class created = new Generator(keys, switchStyle).define();
+        Class created = new Generator(new Constructor[]{ C0, C1, C2, C3, C4, C5, C6 }).define();
         Indexed test = (Indexed)ReflectUtils.newInstance(created);
-        assertTrue(test.getIndex("foo") == 'o');
-        assertTrue(test.getIndex("bar") == 'r');
-        assertTrue(test.getIndex("baz") == 'z');
-        assertTrue(test.getIndex("quud") == 'd');
-        assertTrue(test.getIndex("quick") == 'k');
-        assertTrue(test.getIndex("quip") == 'p');
-        assertTrue(test.getIndex("q") == 0);
-        assertTrue(test.getIndex("qu") == 0);
-        assertTrue(test.getIndex("fop") == 0);
-        assertTrue(test.getIndex("quicker") == 0);
-        assertTrue(test.getIndex("herby") == 0);
-        assertTrue(test.getIndex("herbyderby") == 0);
-        assertTrue(test.getIndex("") == 0);
-    }
-
-    public void testEqualHashCodes() {
-        String[] keys = new String[]{ "ABC", "AAb", "foo" };
-        assertTrue("ABC".hashCode() == "AAb".hashCode());
-        assertTrue("ABC".hashCode() != "foo".hashCode());
-        Class created = new Generator(keys, CodeGenerator.SWITCH_STYLE_HASH).define();
-        Indexed test = (Indexed)ReflectUtils.newInstance(created);
-        assertTrue(test.getIndex("foo") == 'o');
-        assertTrue(test.getIndex("ABC") == 'C');
-        assertTrue(test.getIndex("AAb") == 'b');
+        assertTrue(test.getIndex(C0.getParameterTypes()) == 0);
+        assertTrue(test.getIndex(C1.getParameterTypes()) == 1);
+        assertTrue(test.getIndex(C2.getParameterTypes()) == 2);
+        assertTrue(test.getIndex(C3.getParameterTypes()) == 3);
+        assertTrue(test.getIndex(C4.getParameterTypes()) == 4);
+        assertTrue(test.getIndex(C5.getParameterTypes()) == 5);
+        assertTrue(test.getIndex(C6.getParameterTypes()) == 6);
+        assertTrue(test.getIndex(new Class[]{ Integer.TYPE, Integer.TYPE }) == -1);
     }
 
     private static class Generator extends CodeGenerator {
-        private String[] keys;
-        private int switchStyle;
+        private Constructor[] constructors;
+        private List clist;
 
-        public Generator(String[] keys, int switchStyle) {
-            setNamePrefix("TestStringSwitch");
+        public Generator(Constructor[] constructors) {
+            setNamePrefix("TestMemberSwitch");
             setNameSuffix(String.valueOf(index++));
-            setClassLoader(TestStringSwitch.class.getClassLoader());
-            this.keys = keys;
-            this.switchStyle = switchStyle;
+            setClassLoader(TestMemberSwitch.class.getClassLoader());
+            this.constructors = constructors;
+            clist = Arrays.asList(constructors);
             addInterface(Indexed.class);
         }
 
         protected void generate() throws Exception {
             null_constructor();
 
-            Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
+            Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
             begin_method(method);
             load_arg(0);
-            string_switch(keys, switchStyle, new ObjectSwitchCallback() {
+            constructor_switch(constructors, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
-                        String string = (String)key;
-                        push((int)string.charAt(string.length() - 1));
+                        push(clist.indexOf(key));
                         goTo(end);
                     }
                     public void processDefault() {
-                        push(0);
+                        push(-1);
                     }
                 });
             return_value();
@@ -134,7 +138,7 @@ public class TestStringSwitch extends CodeGenTestCase {
         }
     }
 
-    public TestStringSwitch(String testName) {
+    public TestMemberSwitch(String testName) {
         super(testName);
     }
     
@@ -143,6 +147,6 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestStringSwitch.class);
+        return new TestSuite(TestMemberSwitch.class);
     }
 }

@@ -87,8 +87,8 @@ abstract public class BasicCodeGenerator {
     private Map fieldInfo = new HashMap();
     private Block curBlock;
 
-    public static void setDebugLocation(String debugLocation) {
-        BasicCodeGenerator.debugLocation = debugLocation;
+    static {
+        debugLocation = System.getProperty("cglib.debugLocation");
     }
 
     protected BasicCodeGenerator() {
@@ -208,7 +208,9 @@ abstract public class BasicCodeGenerator {
             byte[] bytes = backend.getBytes();                
             
             if (debugLocation != null) {
-                OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".class"));
+                File file = new File(new File(debugLocation), className + ".class");
+                System.err.println("CGLIB writing " + file);
+                OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
                 out.write(bytes);
                 out.close();
             }

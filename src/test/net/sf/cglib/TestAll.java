@@ -60,7 +60,7 @@ import junit.framework.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.21 2003/09/04 18:53:45 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.22 2003/09/08 17:42:23 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -73,20 +73,21 @@ public class TestAll extends TestCase {
         
         System.getProperties().list(System.out);
         TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-           
+//         suite.addTest(TestEnhancer.suite());
+//         suite.addTest(TestMetaClass.suite());
+//         suite.addTest(TestDelegator.suite());
+//         suite.addTest(TestKeyFactory.suite());
+//         suite.addTest(TestProxy.suite());
+//         suite.addTest(TestMethodProxy.suite());
+//         suite.addTest(TestParallelSorter.suite());
+//         suite.addTest(TestSwitch.suite());
+//         suite.addTest(TestStringSwitch.suite());
+//         suite.addTest(TestBeanMap.suite());
+//         suite.addTest(TestDispatcher.suite());
+//         suite.addTest(TestLazyLoader.suite());
+//         suite.addTest(TestNoOp.suite());
+
+        suite.addTest(TestMemberSwitch.suite());
         return suite;
     }
 
