@@ -53,8 +53,7 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.util.*;
 
@@ -64,13 +63,13 @@ import net.sf.cglib.util.*;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.4 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.5 2003/06/24 21:00:10 herbyderby Exp $
  */
 public class InterfaceMaker {
-    private static final Class TYPE = InterfaceMaker.class;
-    private static final ClassLoader DEFAULT_LOADER = TYPE.getClassLoader();
-    private static final ClassNameFactory NAME_FACTORY = new ClassNameFactory("CreatedByCGLIB");
-
+    private static final FactoryCache cache = new FactoryCache(InterfaceMaker.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("InterfaceMaker$Generator(Method[])");
+                        
     private InterfaceMaker() { }
 
     /**
@@ -122,17 +121,15 @@ public class InterfaceMaker {
      * @param loader ClassLoader for enhanced class, uses "current" if null
      */
     public static Class create(Method[] methods, ClassLoader loader) {
-        if (loader == null)
-            loader = DEFAULT_LOADER;
-        String className = NAME_FACTORY.getNextName(TYPE);
-        return new Generator(className, methods, loader).define();
+        return cache.getClass(loader, null, GENERATOR, methods);
     }
 
     private static class Generator extends CodeGenerator {
         private Method[] methods;
 
-        public Generator(String className, Method[] methods, ClassLoader loader) {
-            super(className, Object.class, loader);
+        public Generator(Method[] methods) {
+            setSuperclass(Object.class);
+            setNamePrefix(InterfaceMaker.class.getName());
             setClassModifiers(getClassModifiers() | Modifier.INTERFACE);
             this.methods = methods;
         }

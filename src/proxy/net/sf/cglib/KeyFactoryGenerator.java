@@ -58,7 +58,8 @@ import java.lang.reflect.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.14 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.15 2003/06/24 21:00:10 herbyderby Exp $
+ * @author Chris Nokleberg
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
@@ -89,8 +90,9 @@ class KeyFactoryGenerator extends CodeGenerator {
             }
         };
 
-    public KeyFactoryGenerator(String className, Class keyInterface, ClassLoader loader) {
-        super(className, KeyFactory.TYPE, loader);
+    public KeyFactoryGenerator(Class keyInterface) {
+        setSuperclass(KeyFactory.class);
+        setNamePrefix(keyInterface.getName());
 
         newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
@@ -111,6 +113,8 @@ class KeyFactoryGenerator extends CodeGenerator {
         generateGetArgs();
     }
 
+    // TODO: this doesn't exactly follow Effective Java recommendations
+    // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
     private void generateConstructor() throws NoSuchFieldException {
         begin_constructor(parameterTypes);
         load_this();
@@ -216,6 +220,7 @@ class KeyFactoryGenerator extends CodeGenerator {
     private int pickHashConstant() {
       return  PRIMES[ (int)(PRIMES.length*Math.random()) ];
     }
+
     private String getFieldName(int arg) {
         return "FIELD_" + arg;
     }

@@ -91,24 +91,21 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.40 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.41 2003/06/24 21:00:10 herbyderby Exp $
  */
 public class Enhancer {
-    private static final FactoryCache cache = new FactoryCache();
-    private static final FactoryCache classCache = new FactoryCache();
-    private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
-    private static final EnhancerKey keyFactory =
+    private static final FactoryCache cache = new FactoryCache(Enhancer.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("EnhancerGenerator(Class, Class[], Method, MethodFilter)");
+    private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
-
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
-
    
-     interface EnhancerKey {
-        public Object newInstance( Class cls, Class[] interfaces, 
-                                   Method wreplace, MethodFilter filter);
+    interface EnhancerKey {
+        public Object newInstance(Class type, Class[] interfaces,
+                                  Method wreplace, MethodFilter filter);
     }
     
-    private Enhancer() {}
+    private Enhancer() { }
 
     /**
      * Helper method to get the current interceptor for an enhanced object.
@@ -195,10 +192,13 @@ public class Enhancer {
         if (cls == null) {
             cls = Object.class;
         }
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        return enhanceClassHelper( cls, interfaces, loader, null, filter);
+        return cache.getClass(loader,
+                              KEY_FACTORY.newInstance(cls, interfaces, null, filter),
+                              GENERATOR,
+                              cls,
+                              interfaces,
+                              null,
+                              filter);
     }
 
     private static Object enhanceHelper(Class cls,
@@ -211,39 +211,15 @@ public class Enhancer {
         if (cls == null) {
             cls = Object.class;
         }
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, filter);
-        Factory factory;
-        synchronized (cache) {
-            factory = (Factory)cache.get(loader, key);
-            if (factory == null) {
-                Class gen = enhanceClassHelper(cls, interfaces, loader, wreplace, filter);
-                factory = (Factory)ReflectUtils.newInstance(gen);
-                cache.put(loader, key, factory);
-            }
-        }
-            return factory.newInstance(ih);
-       
-    }
-
-    private static Class enhanceClassHelper(Class cls,
-                                            Class[] interfaces, ClassLoader loader, Method wreplace,
-                                            MethodFilter filter) {
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace,  filter);
-        Class result;
-        synchronized (classCache) {
-            result = (Class)classCache.get(loader, key);
-            if (result == null) {
-                String className = nameFactory.getNextName(cls);
-                result = new EnhancerGenerator(className, cls,
-                                               interfaces, loader, wreplace, 
-                                               filter).define();
-                classCache.put(loader, key, result);
-            }
-        }
-        return result;
+        Factory factory =
+            (Factory)cache.getFactory(loader,
+                                      KEY_FACTORY.newInstance(cls, interfaces, wreplace, filter),
+                                      GENERATOR,
+                                      cls,
+                                      interfaces,
+                                      wreplace,
+                                      filter);
+        return factory.newInstance(ih);
     }
 
     /**
@@ -313,7 +289,6 @@ public class Enhancer {
         public ReadResolveException(Throwable cause) {
             super(cause.getMessage());
             this.cause = cause;
-
         }
 
         public Throwable getCause() {
