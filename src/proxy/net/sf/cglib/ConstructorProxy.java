@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.3 2003/01/13 18:07:04 baliuka Exp $
+ * @version $Id: ConstructorProxy.java,v 1.4 2003/01/24 19:29:58 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     
@@ -67,11 +67,11 @@ public abstract class ConstructorProxy {
     private static final ClassNameFactory nameFactory = 
                                new ClassNameFactory("ConstructorProxiedByCGLIB");
    
-    private static final ClassKey CALSS_KEY_FACTORY =
+    private static final ClassKey CLASS_KEY_FACTORY =
       (ClassKey)KeyFactory.create(ClassKey.class, null);
   
     public static Object newClassKey(Class[] args){
-      return CALSS_KEY_FACTORY.newInstance(args);
+      return CLASS_KEY_FACTORY.newInstance(args);
     }
     
     public interface ClassKey{
