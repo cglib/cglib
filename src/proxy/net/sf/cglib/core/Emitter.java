@@ -889,4 +889,44 @@ public class Emitter {
         codev.visitLabel(label);
         return label;
     }
+
+    ////// MOVED FROM OPS //////
+
+    public void push(boolean value) {
+        push(value ? 1 : 0);
+    }
+
+    /**
+     * Toggles the integer on the top of the stack from 1 to 0 or vice versa
+     */
+    public void not() {
+        push(1);
+        math(OP_XOR, Type.INT_TYPE);
+    }
+
+    public void throw_exception(Type type, String msg) {
+        new_instance(type);
+        dup();
+        push(msg);
+        invoke_constructor(type, Signatures.CSTRUCT_STRING);
+        athrow();
+    }
+
+    public void factory_method(Signature sig) {
+        begin_method(Constants.ACC_PUBLIC, sig, null);
+        new_instance_this();
+        dup();
+        load_args();
+        invoke_constructor_this(sig.getArgumentTypes());
+        return_value();
+    }
+
+    public void null_constructor() {
+        begin_constructor(Constants.ACC_PUBLIC, Types.EMPTY, null);
+        load_this();
+        super_invoke_constructor();
+        return_value();
+    }
+
+    // TODO: box, unbox, unbox_or_zero, zero_or_null, create_arg_array
 }

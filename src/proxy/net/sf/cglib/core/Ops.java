@@ -1,3 +1,56 @@
+/*
+ * The Apache Software License, Version 1.1
+ *
+ * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ *
+ * 3. The end-user documentation included with the redistribution,
+ *    if any, must include the following acknowledgment:
+ *       "This product includes software developed by the
+ *        Apache Software Foundation (http://www.apache.org/)."
+ *    Alternately, this acknowledgment may appear in the software itself,
+ *    if and wherever such third-party acknowledgments normally appear.
+ *
+ * 4. The names "Apache" and "Apache Software Foundation" must
+ *    not be used to endorse or promote products derived from this
+ *    software without prior written permission. For written
+ *    permission, please contact apache@apache.org.
+ *
+ * 5. Products derived from this software may not be called "Apache",
+ *    nor may "Apache" appear in their name, without prior written
+ *    permission of the Apache Software Foundation.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
+ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ * ====================================================================
+ *
+ * This software consists of voluntary contributions made by many
+ * individuals on behalf of the Apache Software Foundation.  For more
+ * information on the Apache Software Foundation, please see
+ * <http://www.apache.org/>.
+ */
 package net.sf.cglib.core;
 
 import java.math.BigDecimal;
@@ -142,10 +195,6 @@ public class Ops {
         }
     }
 
-    public static void push(Emitter e, boolean value) {
-        e.push(value ? 1 : 0);
-    }
-
     /**
      * If the object is a Number, Boolean, or Character, pushes the equivalent primitive
      * value onto the stack. Otherwise, calls push_object(obj).
@@ -196,14 +245,6 @@ public class Ops {
         }
     }
 
-    /**
-     * Toggles the integer on the top of the stack from 1 to 0 or vice versa
-     */
-    public static void not(Emitter e) {
-        e.push(1);
-        e.math(e.OP_XOR, Type.INT_TYPE);
-    }
-    
     /**
      * Unboxes the object on the top of the stack. If the object is null, the
      * unboxed primitive value becomes zero.
@@ -323,13 +364,6 @@ public class Ops {
         }
     }
 
-    public static void null_constructor(Emitter e) {
-        e.begin_constructor(Constants.ACC_PUBLIC, Types.EMPTY, null);
-        e.load_this();
-        e.super_invoke_constructor();
-        e.return_value();
-    }
-
     /**
      * Process an array on the stack. Assumes the top item on the stack
      * is an array of the specified type. For each element in the array,
@@ -439,14 +473,6 @@ public class Ops {
         }
     }
     
-    public static void throw_exception(Emitter e, Type type, String msg) {
-        e.new_instance(type);
-        e.dup();
-        e.push(msg);
-        e.invoke_constructor(type, Signatures.CSTRUCT_STRING);
-        e.athrow();
-    }
-
     ///// TODO: get rid of this
     /**
      * If both objects on the top of the stack are non-null, does nothing.
@@ -476,15 +502,6 @@ public class Ops {
         e.mark(end);
     }
     
-    public static void factory_method(Emitter e, Signature sig) {
-        e.begin_method(Constants.ACC_PUBLIC | Constants.ACC_FINAL, sig, null);
-        e.new_instance_this();
-        e.dup();
-        e.load_args();
-        e.invoke_constructor_this(sig.getArgumentTypes());
-        e.return_value();
-    }
-
     public static void string_switch(Emitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {

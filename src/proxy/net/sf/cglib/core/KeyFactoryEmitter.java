@@ -60,7 +60,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.4 2003/09/20 09:01:26 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.5 2003/09/20 09:22:22 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -97,8 +97,8 @@ class KeyFactoryEmitter extends Emitter {
                         KeyFactory.class,
                         new Class[]{ keyInterface },
                         Constants.SOURCE_FILE);
-        Ops.null_constructor(this);
-        Ops.factory_method(this, new Signature(newInstance));
+        null_constructor();
+        factory_method(new Signature(newInstance));
         generateConstructor(parameterTypes);
         generateEquals(parameterTypes);
         end_class();

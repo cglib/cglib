@@ -109,7 +109,7 @@ public class TestMemberSwitch extends CodeGenTestCase {
             final List clist = Arrays.asList(constructors);
             final Emitter e = new Emitter(v);
             Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
-            Ops.null_constructor(e);
+            e.null_constructor();
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
             Ops.begin_method(e, method);
             e.load_arg(0);

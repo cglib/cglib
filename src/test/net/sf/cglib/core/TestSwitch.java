@@ -100,7 +100,7 @@ public class TestSwitch extends CodeGenTestCase {
         public void generateClass(ClassVisitor v) throws Exception {
             final Emitter e = new Emitter(v);
             Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Alphabet.class }, Constants.SOURCE_FILE);
-            Ops.null_constructor(e);
+            e.null_constructor();
             Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
             Ops.begin_method(e, method);
             e.load_arg(0);

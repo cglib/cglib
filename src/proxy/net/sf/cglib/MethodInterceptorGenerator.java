@@ -98,7 +98,7 @@ implements CallbackGenerator
                          method.getParameterTypes(),
                          method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            Ops.throw_exception(e, Types.ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+            e.throw_exception(Types.ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
             e.load_args();

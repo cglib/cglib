@@ -61,7 +61,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.6 2003/09/20 09:01:27 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.7 2003/09/20 09:22:22 herbyderby Exp $
  */
 class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -78,8 +78,8 @@ class MixinEmitter extends Emitter {
                         classes,
                         Constants.SOURCE_FILE);
 
-        Ops.null_constructor(this);
-        Ops.factory_method(this, NEW_INSTANCE);
+        null_constructor();
+        factory_method(NEW_INSTANCE);
 
         declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Types.OBJECT_ARRAY, null);
         begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT_ARRAY, null);

@@ -86,26 +86,26 @@ public class AddDelegateTransformer extends ClassTransformer {
         Type.getMethodDescriptor(m),
         (String[])exeptions.toArray(new String[]{}) );
         
-        cv.visitVarInsn(Opcodes.ALOAD, 0 );
-        cv.visitFieldInsn( Opcodes.GETFIELD,
+        cv.visitVarInsn(Constants.ALOAD, 0 );
+        cv.visitFieldInsn( Constants.GETFIELD,
         className,
         Signature.DELEGATE,
         Type.getDescriptor(Object.class));
-        cv.visitTypeInsn(Opcodes.CHECKCAST,Signature.getInternalName(delegateImpl));
+        cv.visitTypeInsn(Constants.CHECKCAST,Signature.getInternalName(delegateImpl));
         
         for(int i = 1; i <= m.getParameterTypes().length; i++){
             Type type = Type.getType(m.getParameterTypes()[ i - 1]);
-            cv.visitVarInsn(type.getOpcode(Opcodes.ILOAD), i );
+            cv.visitVarInsn(type.getOpcode(Constants.ILOAD), i );
         }
         
         cv.visitMethodInsn(
-        Opcodes.INVOKEVIRTUAL,
+        Constants.INVOKEVIRTUAL,
         Signature.getInternalName(delegateImpl),
         m.getName(),
         Type.getMethodDescriptor(delegate)
         );
         Type type = Type.getType(m.getReturnType());
-        cv.visitInsn(type.getOpcode(Opcodes.IRETURN));
+        cv.visitInsn(type.getOpcode(Constants.IRETURN));
         cv.visitMaxs( 0, 0 );
         
     }

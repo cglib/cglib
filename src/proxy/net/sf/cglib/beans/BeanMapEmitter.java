@@ -72,8 +72,8 @@ class BeanMapEmitter extends Emitter {
         super(v);
 
         Ops.begin_class(this, Modifier.PUBLIC, className, BeanMap.class, null, Constants.SOURCE_FILE);
-        Ops.null_constructor(this);
-        Ops.factory_method(this, NEW_INSTANCE);
+        null_constructor();
+        factory_method(NEW_INSTANCE);
         generateConstructor();
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
