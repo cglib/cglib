@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.28 2003/09/17 20:44:27 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.29 2003/09/18 00:27:39 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -16,6 +16,7 @@
     <property name="component.version" value="2.0pre1"/>
 
     <property name="build.home" value="build/proxy"/>
+    <property name="build.transform" value="build/transform"/>
     <property name="samples.build.home" value="build/samples"/>
 
 
@@ -79,7 +80,7 @@
     <delete dir="${build.home}"/>
     <delete dir="${test.build.home}"/>
     <delete dir="${dist.home}"/>
-     
+    <delete dir="${build.transform}"/>
   </target>
 
   <target depends="clean,compile" 
@@ -242,7 +243,6 @@
           <pathelement path="${test.build.home}/classes"/>
           <pathelement path="${classpath}"/>
           <pathelement path="${java.class.path}"/>
-          <pathelement path="${source.test}"/>
           <pathelement path="${samples.build.home}/classes" />      
           <fileset dir="./lib">
 		<include name="*.*"/>
@@ -251,8 +251,20 @@
     </java>
   </target>
 
-
-
- 
+  <target name="test-transform" depends="build-test">
+    <mkdir dir="${build.transform}"/>
+    <taskdef name="example" classname="net.sf.cglib.transform.ExampleTask">
+      <classpath>
+        <pathelement path="${build.home}/classes"/>
+        <pathelement path="${test.build.home}/classes"/>
+        <pathelement path="${classpath}"/>
+      </classpath>
+    </taskdef>
+    <example destdir="${build.transform}">
+      <fileset dir="${test.build.home}" includes="**/*.class">
+        <depend targetdir="${build.transform}"/>
+      </fileset>
+    </example>
+  </target>
   
 </project>
