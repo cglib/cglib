@@ -484,6 +484,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
     protected void if_icmpne(String label) {
         append(new IF_ICMPNE(null), label);
     }
+
+    protected void if_icmpeq(String label) {
+        append(new IF_ICMPEQ(null), label);
+    }
     
 
     // math
@@ -709,6 +713,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
     }
 
     protected    void pop() { append( new POP() ); }
+    protected    void pop2() { append( new POP2() ); }
     protected    void dup() {  append( new DUP() ); }
     protected    void dup2() {  append( new DUP2() ); }
     protected    void dup_x1() {  append( new DUP_X1() ); }
@@ -1235,43 +1240,106 @@ public abstract class CodeGenerator implements ClassFileConstants {
         if_icmplt(loopbody);
     }
 
-    protected void not_equals(Class clazz, final String label) {
+    protected void process_arrays(Class type, ProcessArrayCallback callback) {
+        Class compType = type.getComponentType();
+        String array1 = newLocal();
+        String array2 = newLocal();
+        String loopvar = newLocal();
+        String loopbody = newLabel();
+        String checkloop = newLabel();
+        local_type(loopvar, Integer.TYPE);
+        store_local(array1);
+        store_local(array2);
+        push(0);
+        store_local(loopvar);
+        goTo(checkloop);
+
+        nop(loopbody);
+        load_local(array1);
+        load_local(loopvar);
+        array_load(compType);
+        load_local(array2);
+        load_local(loopvar);
+        array_load(compType);
+        callback.processElement(compType);
+        iinc(loopvar, 1);
+
+        nop(checkloop);
+        load_local(loopvar);
+        load_local(array1);
+        arraylength();
+        if_icmplt(loopbody);
+    }
+    
+    protected void not_equals(Class clazz, final String notEquals) {
         (new ProcessArrayCallback() {
                 public void processElement(Class type) {
-                    not_equals_helper(type, label, this);
+                    not_equals_helper(type, notEquals, this);
                 }
             }).processElement(clazz);
     }
 
-    private void not_equals_helper(Class clazz, String label, ProcessArrayCallback callback) {
-        if (clazz.isArray()) {
-            process_array(clazz, callback);
-        } else if (clazz.isPrimitive()) {
+    private void not_equals_helper(Class clazz, String notEquals, ProcessArrayCallback callback) {
+        if (clazz.isPrimitive()) {
             if (returnType.equals(Double.TYPE)) {
                 dcmpg();
-                ifne(label);
+                ifne(notEquals);
             } else if (returnType.equals(Long.TYPE)) {
                 lcmp();
-                ifne(label);
+                ifne(notEquals);
             } else if (returnType.equals(Float.TYPE)) {
                 fcmpg();
-                ifne(label);
+                ifne(notEquals);
             } else {
-                if_icmpne(label);
+                if_icmpne(notEquals);
             }
         } else {
-            String oneIsNull = newLabel();
             String end = newLabel();
-            dup();
-            ifnull(oneIsNull);
-            swap();
-            invoke(equalsMethod);
-            ifne(label);
-            goTo(end);
-            nop(oneIsNull);
-            pop();
-            ifnonnull(label);
+            nullcmp(notEquals, end);
+            if (clazz.isArray()) {
+                String checkContents = newLabel();
+                dup2();
+                arraylength();
+                swap();
+                arraylength();
+                if_icmpeq(checkContents);
+                pop2();
+                goTo(notEquals);
+                nop(checkContents);
+                process_arrays(clazz, callback);
+            } else {
+                invoke(equalsMethod);
+                ifeq(notEquals);
+            }
             nop(end);
         }
+    }
+
+    /**
+     * If both objects on the top of the stack are non-null, does nothing.
+     * If one is null, or both are null, both are popped off and execution
+     * jumps to the respective label.
+     * @param oneNull label to jump to if only one of the objects is null
+     * @param bothNull label to jump to if both of the objects are null
+     */
+    protected void nullcmp(String oneNull, String bothNull) {
+        dup2();
+        String nonNull = newLabel();
+        String oneNullHelper = newLabel();
+        String end = newLabel();
+        ifnonnull(nonNull);
+        ifnonnull(oneNullHelper);
+        pop2();
+        goTo(bothNull);
+
+        nop(nonNull);
+        ifnull(oneNullHelper);
+        goTo(end);
+
+        nop(oneNullHelper);
+        pop2();
+        goTo(oneNull);
+
+        nop(end);
     }
 }
