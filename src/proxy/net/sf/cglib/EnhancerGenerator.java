@@ -145,6 +145,14 @@ import java.util.*;
         }
     }
 
+    private static int compare(Method a, Method b ){
+     if( Modifier.isProtected( a.getModifiers() ) && Modifier.isPublic( b.getModifiers() ) ){
+       return   -1;    
+     }else if ( Modifier.isPublic( a.getModifiers() ) && Modifier.isProtected( b.getModifiers() ) ){
+       return 1;
+     } else return 0;
+     
+    }
     protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
             wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", TYPES_OBJECT);
@@ -175,8 +183,7 @@ import java.util.*;
         boolean declaresWriteReplace = false;
         Package packageName = getSuperclass().getPackage();
         Map methodMap = new HashMap();
-        
-        
+                
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
             int mod = method.getModifiers();
@@ -189,11 +196,13 @@ import java.util.*;
                 }
                 Object methodKey = MethodWrapper.newInstance(method);
                 Method other = (Method)methodMap.get(methodKey);
-                if (other != null) {
+                
+                if( other != null && compare( other, method ) > 0 ){
                     
                     checkReturnTypesEqual(method, other);
                    
                 }else{
+                   
                      //addDeclaredMethods adds methods reverse order
                      methodMap.put(methodKey, method);
                 }
@@ -210,6 +219,7 @@ import java.util.*;
                 ( null != filter && !filter.accept(method))   ){
                 continue;
             }   
+            
             String fieldName = getFieldName(i);
             String accessName = getAccessName(method, i);
             declare_field(privateFinalStatic, Method.class, fieldName);
@@ -357,7 +367,7 @@ import java.util.*;
             load_args();
             invoke(method);
         } else if (Modifier.isAbstract(method.getModifiers())) {
-            throwException(AbstractMethodError.class, method.toString() + " is abstract" );
+             throwException(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
             load_args();
