@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: MethodConstants.java,v 1.8 2003/01/28 11:43:37 nemecec Exp $
+ * @version $Id: MethodConstants.java,v 1.9 2003/01/28 22:01:44 herbyderby Exp $
  */
 abstract /* package */ class MethodConstants {
     public static final Method EQUALS =
@@ -93,7 +93,4 @@ abstract /* package */ class MethodConstants {
       ReflectUtils.findMethod("java.util.Map.put(Object,Object)");
     public static final Method MAP_GET =
       ReflectUtils.findMethod("java.util.Map.get(Object)");
-    public static final Method CLASS_GET_METHOD =
-      ReflectUtils.findMethod("java.lang.Class.getMethod(String,Class[])");
-
 }
