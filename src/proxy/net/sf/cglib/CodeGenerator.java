@@ -187,9 +187,9 @@ public abstract class CodeGenerator implements Constants {
         primitiveMethods.put(Long.TYPE, MethodConstants.LONG_VALUE);
         primitiveMethods.put(Double.TYPE, MethodConstants.DOUBLE_VALUE);
         primitiveMethods.put(Float.TYPE, MethodConstants.FLOAT_VALUE);
-        primitiveMethods.put(Short.TYPE, MethodConstants.SHORT_INT_VALUE);
+        primitiveMethods.put(Short.TYPE, MethodConstants.INT_VALUE);
         primitiveMethods.put(Integer.TYPE, MethodConstants.INT_VALUE);
-        primitiveMethods.put(Byte.TYPE, MethodConstants.BYTE_INT_VALUE);
+        primitiveMethods.put(Byte.TYPE, MethodConstants.INT_VALUE);
 
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
         primitiveToWrapper.put(Character.TYPE, Character.class);
