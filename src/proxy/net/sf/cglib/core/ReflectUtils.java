@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.12 2003/09/29 16:24:48 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.13 2003/10/01 06:05:13 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -371,5 +371,14 @@ public class ReflectUtils {
         Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
         DEFINE_CLASS.setAccessible(true);
         return (Class)DEFINE_CLASS.invoke(loader, args);
+    }
+
+    public static int findPackageProtected(Class[] classes) {
+        for (int i = 0; i < classes.length; i++) {
+            if (!Modifier.isPublic(classes[i].getModifiers())) {
+                return i;
+            }
+        }
+        return 0;
     }
 }

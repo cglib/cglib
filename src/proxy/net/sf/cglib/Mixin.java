@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.12 2003/09/29 23:08:52 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.13 2003/10/01 06:05:17 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -141,7 +141,7 @@ abstract public class Mixin {
                     route = r.route;
                 }
             }
-            setNamePrefix(classes[findPackageProtected(classes)].getName());
+            setNamePrefix(classes[ReflectUtils.findPackageProtected(classes)].getName());
             return (Mixin)super.create(KEY_FACTORY.newInstance(classes, route));
         }
 
@@ -160,15 +160,6 @@ abstract public class Mixin {
         protected Object nextInstance(Object instance) {
             return ((Mixin)instance).newInstance(delegates);
         }
-    }
-
-    private static int findPackageProtected(Class[] classes) {
-        for (int i = 0; i < classes.length; i++) {
-            if (!Modifier.isPublic(classes[i].getModifiers())) {
-                return i;
-            }
-        }
-        return 0;
     }
 
     public static Class[] getClasses(Object[] delegates) {
