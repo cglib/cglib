@@ -776,7 +776,6 @@ public class EmitUtils {
         }
     }
 
-    // TODO: use of TinyBitSet limits methods to 32 arguments
     private static void member_helper_size(final CodeEmitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,
@@ -793,7 +792,7 @@ public class EmitUtils {
         e.process_switch(EmitUtils.getSwitchKeys(buckets), new ProcessSwitchCallback() {
             public void processCase(int key, Label dontUseEnd) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
-                member_helper_type(e, bucket, callback, typer, def, end, new TinyBitSet());
+                member_helper_type(e, bucket, callback, typer, def, end, new BitSet());
             }
             public void processDefault() throws Exception {
                 e.goTo(def);
@@ -807,7 +806,7 @@ public class EmitUtils {
                                            final ParameterTyper typer,
                                            final Label def,
                                            final Label end,
-                                           final TinyBitSet checked) throws Exception {
+                                           final BitSet checked) throws Exception {
         if (members.size() == 1) {
             Member member = (Member)members.get(0);
             Class[] types = typer.getParameterTypes(member);
