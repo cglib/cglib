@@ -37,6 +37,17 @@ public abstract class Source implements java.io.Serializable{
       throw new CheckedException();
     }
     
+     
+    
+     public void throwIndexOutOfBoundsException(){
+       throw new IndexOutOfBoundsException();
+    }
+
+     public void throwAbstractMethodError(){
+       throw new AbstractMethodError();
+    }
+ 
+    
     public synchronized void synchronizedMethod(){}
     
     public final void finalMethod(){ }
