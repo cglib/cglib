@@ -135,9 +135,9 @@ public class TestBulkBean extends TestCase {
         return new TestSuite(TestBulkBean.class);
     }
     
-    /** Test of getInstance method, of class net.sf.cglib.BulkBean. */
+    /** Test of create method, of class net.sf.cglib.BulkBean. */
     public void testGetInstance() throws Throwable {
-        BulkBean mClass = BulkBean.getInstance(MA.class, getters, setters, types);
+        BulkBean mClass = BulkBean.create(MA.class, getters, setters, types);
       
         MA bean = new MA();
       
@@ -153,7 +153,7 @@ public class TestBulkBean extends TestCase {
         Class[] types2 = (Class[])types.clone();
         types2[2] = String.class;
         try {
-            BulkBean.getInstance(MA.class, getters, setters, types2);
+            BulkBean.create(MA.class, getters, setters, types2);
             fail("expected exception");
         } catch (BulkBeanException e) {
             assertTrue(e.getIndex() == 2);
@@ -162,7 +162,7 @@ public class TestBulkBean extends TestCase {
 
     public void testMismatchedLengths() throws Throwable {
         try {
-            BulkBean.getInstance(MA.class, getters, setters, new Class[0]);
+            BulkBean.create(MA.class, getters, setters, new Class[0]);
             fail("expected exception");
         } catch (BulkBeanException e) {
             assertTrue(e.getIndex() == -1);
@@ -173,7 +173,7 @@ public class TestBulkBean extends TestCase {
         String[] getters2 = (String[])getters.clone();
         getters2[3] = "getChris";
         try {
-            BulkBean.getInstance(MA.class, getters2, setters, types);
+            BulkBean.create(MA.class, getters2, setters, types);
             fail("expected exception");
         } catch (BulkBeanException e) {
             assertTrue(e.getIndex() == 3);
@@ -181,7 +181,7 @@ public class TestBulkBean extends TestCase {
     }
 
     public void testSetWrongType() throws Throwable {
-        BulkBean mClass = BulkBean.getInstance(MA.class, getters, setters, types);
+        BulkBean mClass = BulkBean.create(MA.class, getters, setters, types);
         MA bean = new MA();
         Object[] values2 = (Object[])values.clone();
         values2[4] = new Object();
@@ -209,7 +209,7 @@ public class TestBulkBean extends TestCase {
         System.out.println(); 
        
        
-        mClass = BulkBean.getInstance(MA.class, getters, setters, types);
+        mClass = BulkBean.create(MA.class, getters, setters, types);
                                        
       
         System.out.println( mClass.getClass().getName() + ": " );
