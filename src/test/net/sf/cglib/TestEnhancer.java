@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.41 2003/09/14 17:44:22 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.42 2003/09/23 10:54:35 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -454,5 +454,20 @@ public class TestEnhancer extends CodeGenTestCase {
 	    Helpers.enhance(AbstractMethodCallInConstructor.class,
 			     TEST_INTERCEPTOR);
 	obj.foo();
+    }
+
+    public void testProxyIface() throws Throwable {
+        final DI1 other = new DI1() {
+                public String herby() {
+                    return "boop";
+                }
+            };
+        DI1 d = (DI1)Helpers.enhance(DI1.class, new MethodInterceptor() {
+                public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
+                                        MethodProxy proxy) throws Throwable {
+                    return proxy.invoke(other, args);
+                }
+            });
+        assertTrue("boop".equals(d.herby()));
     }
 }
