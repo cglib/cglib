@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.16 2003/01/14 18:23:33 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.17 2003/01/18 16:29:31 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -94,12 +94,12 @@ public class Enhancer {
     // should be package-protected but causes problems on jdk1.2
     public interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
-                                  Class interceptor, boolean delegating, Object filter);
+                                   boolean delegating, Object filter);
     }
     
     public interface EnhancerClassKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
-                                  Class interceptor, boolean delegating, Object filter, int flag );
+                                   boolean delegating, Object filter, int flag );
     }
 
     
@@ -234,7 +234,7 @@ public class Enhancer {
         }
         
         Object classKey = classKeyFactory.newInstance(cls, interfaces, null,
-                                        ih.getClass(), false , filter, 0 );
+                                         false , filter, 0 );
         Class result;
         synchronized (cache) {
             result = (Class)cache.get(loader, classKey);
@@ -272,9 +272,9 @@ public class Enhancer {
         }
         
         Object key = keyFactory.newInstance(cls, interfaces, wreplace,
-                                          ih.getClass(), delegating, filter );
+                                           delegating, filter );
         Object classKey = classKeyFactory.newInstance(cls, interfaces, wreplace,
-                                        ih.getClass(), delegating, filter, 0 );
+                                         delegating, filter, 0 );
         Factory factory;
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
