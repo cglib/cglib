@@ -82,11 +82,11 @@ public class ASMBackend implements CodeGeneratorBackend {
     }
 
     public void emit(Label label) {
-        cv.visitLabel(((ASMLabel)label).label);
+        cv.visitLabel(convertLabel(label));
     }
 
     public void emit(int opcode, Label label) {
-        cv.visitJumpInsn(opcode, ((ASMLabel)label).label);
+        cv.visitJumpInsn(opcode, convertLabel(label));
     }
     
     public void emit_var(int opcode, int index) {
@@ -133,9 +133,9 @@ public class ASMBackend implements CodeGeneratorBackend {
     }
 
     public void catch_exception(Block block, Class exceptionType) {
-        cv.visitTryCatchBlock(((ASMLabel)block.getStart()).label,
-                              ((ASMLabel)block.getEnd()).label,
-                              ((ASMLabel)mark()).label,
+        cv.visitTryCatchBlock(convertLabel(block.getStart()),
+                              convertLabel(block.getEnd()),
+                              convertLabel(mark()),
                               Type.getInternalName(exceptionType));
     }
 
@@ -187,6 +187,18 @@ public class ASMBackend implements CodeGeneratorBackend {
         cv.visitLdcInsn(value);
     }
 
+    public void emit_switch(int[] keys, Label[] labels, Label def) {
+        cv.visitLookupSwitchInsn(convertLabel(def),
+                                 keys,
+                                 convertLabels(labels));
+    }
+
+    public void emit_switch(int min, int max, Label[] labels, Label def) {
+        cv.visitTableSwitchInsn(min, max,
+                                convertLabel(def),
+                                convertLabels(labels));
+    }
+
     private Type[] getTypes(Class[] classes) {
         Type[] types = new Type[classes.length];
         for (int i = 0; i < types.length; i++) {
@@ -207,5 +219,17 @@ public class ASMBackend implements CodeGeneratorBackend {
             copy[i] = Type.getInternalName(classes[i]);
         }
         return copy;
+    }
+
+    private org.objectweb.asm.Label convertLabel(Label label) {
+        return ((ASMLabel)label).label;
+    }
+
+    private org.objectweb.asm.Label[] convertLabels(Label[] labels) {
+        org.objectweb.asm.Label[] converted = new org.objectweb.asm.Label[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            converted[i] = convertLabel(labels[i]);
+        }
+        return converted;
     }
 }

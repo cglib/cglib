@@ -70,6 +70,8 @@ public interface CodeGeneratorBackend {
     void emit_invoke(int opcode, String className, String methodName, Class returnType, Class[] parameterTypes);
     void emit_iinc(int index, int amount);
     void emit_ldc(Object value);
+    void emit_switch(int[] keys, Label[] labels, Label def);
+    void emit_switch(int min, int max, Label[] labels, Label def);
 
     Label make_label();
     Label mark();
@@ -79,5 +81,4 @@ public interface CodeGeneratorBackend {
     void begin_method(int modifiers, Class returnType, String name, Class[] parameterTypes, Class[] exceptionTypes);
     void begin_static();
     void end_method();
-
 }
