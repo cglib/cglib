@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.21 2003/01/23 13:05:23 nemecec Exp $
+ *@version    $Id: Enhancer.java,v 1.22 2003/01/23 14:09:46 nemecec Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -211,57 +211,23 @@ public class Enhancer {
                                loader, wreplace, filter );
     }
 
-    /*
-     * this method can be used to enhance class 
-     * without "default" constructor
+    /**
+     * This method can be used to enhance class without "default" constructor.
      *
      */
-   //TODO: dublicated code 
-   public static Class enhanceClass( Class cls, Class[] interfaces, 
+    public static Class enhanceClass(Class cls, Class[] interfaces, 
                                       ClassLoader loader,
                                       MethodFilter filter) {
-         
-      
-        if (cls == null) {
-                cls = Object.class;
-        }
-
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        
-        Object classKey = classKeyFactory.newInstance(cls, interfaces, null,
-                                          false, filter, 0 );
-        Object key = keyFactory.newInstance(cls, interfaces, null ,
-                                          false, filter );
-        Class result;
-        synchronized (cache) {
-            result = (Class)cache.get(loader, classKey);
-            if (result == null) {
-               Object factory = (Class)cache.get(loader, key);
-               if( factory != null ){
-                 return factory.getClass();
-               }
-               
-                String className = nameFactory.getNextName(cls);
-                result = new EnhancerGenerator(className, cls, interfaces,
-                                                      loader, null, 
-                                                     false, filter).define();
-                cache.put( loader, classKey, result );
-                
-            }
-        }
-       return  result;                                    
-   }
+        if (cls == null) cls = Constants.TYPE_OBJECT;
+        if (loader == null) loader = defaultLoader;
+        return getEnhancerGenerator(false, cls, interfaces, loader, null, filter, null, null);
+    }
     
-    private static Object enhanceHelper(boolean delegating, Object obj,Class cls,
+    private static Object enhanceHelper(boolean delegating, Object obj, Class cls,
                                         Class[] interfaces, MethodInterceptor ih,
-                                        ClassLoader loader,Method wreplace,
+                                        ClassLoader loader, Method wreplace,
                                         MethodFilter filter) {
-        if (ih == null) {
-            throw new IllegalArgumentException("MethodInterceptor is null");
-        }
-
+        if (ih == null) throw new IllegalArgumentException("MethodInterceptor is null");
         if (cls == null) {
             if (obj == null) {
                 cls = Constants.TYPE_OBJECT;
@@ -269,27 +235,16 @@ public class Enhancer {
                 cls = obj.getClass();
             }
         }
-
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace,
-                                           delegating, filter );
-        Object classKey = classKeyFactory.newInstance(cls, interfaces, wreplace,
-                                         delegating, filter, 0 );
+        if (loader == null) loader = defaultLoader;
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
         Factory factory;
         synchronized (cache) {
-            factory = (Factory)cache.get(loader, key);
+            factory = (Factory) cache.get(loader, key);
             if (factory == null) {
+                Class generator = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
                 Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
-                String className = nameFactory.getNextName(cls);
-                Class result = new EnhancerGenerator(className, cls, interfaces,
-                                                      loader, wreplace, 
-                                                     delegating, filter).define();
-                cache.put( loader, classKey, result );
                 Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
-                factory = (Factory)ReflectUtils.newInstance(result, types, new Object[delegating ? 2 : 1]);
+                factory = (Factory)ReflectUtils.newInstance(generator, types, new Object[delegating ? 2 : 1]);
                 cache.put(loader, key, factory);
             }
         }
@@ -298,6 +253,28 @@ public class Enhancer {
         } else {
             return factory.newInstance(ih);
         }
+    }
+
+    private static Class getEnhancerGenerator(boolean delegating, Class cls, Class[] interfaces, ClassLoader loader,
+                                                                    Method wreplace, MethodFilter filter, Object key, Factory factory) {
+        if (key == null) key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
+        Object classKey = classKeyFactory.newInstance(cls, interfaces, wreplace, delegating, filter, 0);
+        Class result;
+        synchronized (cache) {
+            result = (Class) cache.get(loader, classKey);
+            if (result == null) {
+                if (factory == null) factory = (Factory) cache.get(loader, key);
+                if( factory != null ){
+                    return factory.getClass();
+                }
+                String className = nameFactory.getNextName(cls);
+                result = new EnhancerGenerator(className, cls, interfaces,
+                                                      loader, wreplace, 
+                                                     delegating, filter).define();
+                cache.put(loader, classKey, result);
+            }
+        }
+        return result;
     }
 
     public static class InternalReplace implements Serializable {
