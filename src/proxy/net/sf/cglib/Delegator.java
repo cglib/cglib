@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.5 2002/12/04 00:41:13 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.6 2002/12/04 00:55:46 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -185,11 +185,11 @@ public class Delegator {
                                               Object[] delegates,
                                               ClassLoader loader,
                                               boolean bean) {
+        if (loader == null) {
+            loader = defaultLoader;
+        }
         Factory factory;
         synchronized (cache) {
-            if (loader == null) {
-                loader = defaultLoader;
-            }
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 Class result = new DelegatorGenerator(getNextName(), classes, loader, bean).define();

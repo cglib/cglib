@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.8 2002/12/04 00:41:13 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.9 2002/12/04 00:55:46 herbyderby Exp $
  */
 public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
@@ -216,12 +216,13 @@ public class Enhancer {
             }
         }
 
+        if (loader == null) {
+            loader = defaultLoader;
+        }
+        
         Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
         Factory factory;
         synchronized (cache) {
-            if (loader == null) {
-                loader = defaultLoader;
-            }
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 Class mi = FactoryCache.forName(INTERCEPTOR_NAME, loader);
