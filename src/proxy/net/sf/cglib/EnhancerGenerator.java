@@ -60,7 +60,10 @@ import net.sf.cglib.util.*;
 
 class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
-    
+    private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
+    private static final String GET_CURRENT_INTERCEPTOR = "CGLIB$GET_CURRENT_INTERCEPTOR";
+    private static final String SET_CURRENT_INTERCEPTOR = "CGLIB$SET_CURRENT_INTERCEPTOR";
+    private static final String THREAD_INTERCEPTOR_FIELD = "CGLIB$THREAD_INTERCEPTOR";
     private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
 
     private static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
@@ -92,15 +95,18 @@ class EnhancerGenerator extends CodeGenerator {
     private Constructor cstruct;
     private List constructorList;
     private boolean isProxy;
+    private MethodInterceptor initialInterceptor;
 
     public EnhancerGenerator(Class type, 
                              Class[] interfaces,
                              Method wreplace, 
-                             MethodFilter filter) {
+                             MethodFilter filter,
+                             MethodInterceptor mi) {
         setSuperclass(type);
         this.interfaces = interfaces;
         this.wreplace = wreplace;
         this.filter = filter;
+        initialInterceptor = mi;
 
         if (interfaces != null) {
             addInterfaces(interfaces);
@@ -179,6 +185,8 @@ class EnhancerGenerator extends CodeGenerator {
         }
 
         declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
+        declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
+        declare_field(PRIVATE_FINAL_STATIC, ThreadLocal.class, THREAD_INTERCEPTOR_FIELD);
         generateConstructors();
         generateFactory();
 
@@ -200,11 +208,19 @@ class EnhancerGenerator extends CodeGenerator {
         }
        
         generateClInit(methods);
+        generateCurrentInterceptor();
 
         if (!declaresWriteReplace) {
             generateWriteReplace();
         }
     }
+
+    protected void postDefine(Class type) throws Exception {
+        Method setter = type.getDeclaredMethod(SET_CURRENT_INTERCEPTOR,
+                                               new Class[]{ MethodInterceptor.class });
+        setter.invoke(null, new Object[]{ initialInterceptor });
+    }
+    
 
     private void filterMembers(List members, MethodFilter filter) {
         Iterator it = members.iterator();
@@ -252,12 +268,17 @@ class EnhancerGenerator extends CodeGenerator {
         end_method();
 
         begin_method(NEW_INSTANCE);
+        load_arg(0);
+        invoke_static_this(SET_CURRENT_INTERCEPTOR, Void.TYPE, new Class[]{ MethodInterceptor.class });
         new_instance_this();
         dup();
         invoke_constructor_this();
         dup();
+        dup();
         load_arg(0);
         putfield(INTERCEPTOR_FIELD);
+        push(1);
+        putfield(CONSTRUCTED_FIELD);
         return_value();
         end_method();
     }
@@ -344,7 +365,7 @@ class EnhancerGenerator extends CodeGenerator {
 
         Label nullInterceptor = make_label();
         load_this();
-        getfield(INTERCEPTOR_FIELD);
+        invoke_virtual_this(GET_CURRENT_INTERCEPTOR, MethodInterceptor.class, Constants.TYPES_EMPTY);
         dup();
         ifnull(nullInterceptor);
 
@@ -409,6 +430,42 @@ class EnhancerGenerator extends CodeGenerator {
         }
     }
 
+    private void generateCurrentInterceptor() {
+        // get
+        begin_method(Modifier.PRIVATE | Modifier.FINAL,
+                     MethodInterceptor.class,
+                     GET_CURRENT_INTERCEPTOR,
+                     Constants.TYPES_EMPTY,
+                     Constants.TYPES_EMPTY);
+        Label end = make_label();
+        load_this();
+        getfield(INTERCEPTOR_FIELD);
+        dup();
+        ifnonnull(end);
+        load_this();
+        getfield(CONSTRUCTED_FIELD);
+        ifne(end);
+        pop(); // make stack sizes equal
+        getfield(THREAD_INTERCEPTOR_FIELD);
+        invoke(MethodConstants.THREADLOCAL_GET);
+        checkcast(MethodInterceptor.class);
+        mark(end);
+        return_value();
+        end_method();
+
+        // set
+        begin_method(Modifier.PUBLIC | Modifier.STATIC,
+                     Void.TYPE,
+                     SET_CURRENT_INTERCEPTOR,
+                     new Class[]{ MethodInterceptor.class },
+                     Constants.TYPES_EMPTY);
+        getfield(THREAD_INTERCEPTOR_FIELD);
+        load_arg(0);
+        invoke(MethodConstants.THREADLOCAL_SET);
+        return_value();
+        end_method();
+    }
+
     private void generateClInit(List methodList) throws NoSuchMethodException {
             
         /* generates:
@@ -445,32 +502,34 @@ class EnhancerGenerator extends CodeGenerator {
             load_local(args);
             invoke(MethodConstants.GET_DECLARED_METHOD);
             
-            
             invoke(MAKE_PROXY);
             putfield(accessName);
         }
 
-
-            new_instance(HashMap.class);
-            dup();
-            dup();
-            invoke_constructor(HashMap.class);
-            putfield(CONSTRUCTOR_PROXY_MAP);
-            Local map = make_local();
-            store_local(map);
-            for (int i = 0, size = constructorList.size(); i < size; i++) {
-                Constructor constructor = (Constructor)constructorList.get(i);
-                Class[] types = constructor.getParameterTypes();
-                load_local(map);
-                push(types);
-                invoke(NEW_CLASS_KEY);//key
-                load_class_this();
-                push(types);
-                invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
-                invoke(MAKE_CONSTRUCTOR_PROXY);//value
-                invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
-
+        new_instance(HashMap.class);
+        dup();
+        dup();
+        invoke_constructor(HashMap.class);
+        putfield(CONSTRUCTOR_PROXY_MAP);
+        Local map = make_local();
+        store_local(map);
+        for (int i = 0, size = constructorList.size(); i < size; i++) {
+            Constructor constructor = (Constructor)constructorList.get(i);
+            Class[] types = constructor.getParameterTypes();
+            load_local(map);
+            push(types);
+            invoke(NEW_CLASS_KEY);//key
+            load_class_this();
+            push(types);
+            invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
+            invoke(MAKE_CONSTRUCTOR_PROXY);//value
+            invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
         }
+
+        new_instance(ThreadLocal.class);
+        dup();
+        invoke_constructor(ThreadLocal.class);
+        putfield(THREAD_INTERCEPTOR_FIELD);
         
         return_value();
         end_method();
