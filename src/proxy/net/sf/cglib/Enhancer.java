@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.23 2003/01/23 14:33:21 nemecec Exp $
+ *@version    $Id: Enhancer.java,v 1.24 2003/01/24 00:27:48 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -218,7 +218,7 @@ public class Enhancer {
     public static Class enhanceClass(Class cls, Class[] interfaces, 
                                       ClassLoader loader,
                                       MethodFilter filter) {
-        if (cls == null) cls = Constants.TYPE_OBJECT;
+        if (cls == null) cls = Object.class;
         if (loader == null) loader = defaultLoader;
         return getEnhancerGenerator(false, cls, interfaces, loader, null, filter, null, null);
     }
@@ -230,7 +230,7 @@ public class Enhancer {
         if (ih == null) throw new IllegalArgumentException("MethodInterceptor is null");
         if (cls == null) {
             if (obj == null) {
-                cls = Constants.TYPE_OBJECT;
+                cls = Object.class;
             } else {
                 cls = obj.getClass();
             }
@@ -243,7 +243,7 @@ public class Enhancer {
             if (factory == null) {
                 Class generator = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
                 Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
-                Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
+                Class[] types = delegating ? new Class[]{ mi, Object.class } : new Class[]{ mi };
                 factory = (Factory)ReflectUtils.newInstance(generator, types, new Object[delegating ? 2 : 1]);
                 cache.put(loader, key, factory);
             }

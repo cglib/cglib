@@ -60,7 +60,7 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.13 2003/01/23 11:16:29 nemecec Exp $
+ * @version $Id: Delegator.java,v 1.14 2003/01/24 00:27:48 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -156,25 +156,17 @@ public class Delegator {
      * @return the dynamically created bean
      */
     public static Object createBean(Object[] beans, ClassLoader loader) {
-        Class[] classes = getClasses(beans);
+        Class[] classes = ReflectUtils.getClasses(beans);
         Object key = keyFactory.newInstance(classes);
         return makeDelegatorHelper(key, classes, beans, loader, true);
     }
 
     synchronized private static Info getInfo(Object[] delegates) {
-        Object key = keyFactory.newInstance(getClasses(delegates));
+        Object key = keyFactory.newInstance(ReflectUtils.getClasses(delegates));
         Info info = (Info)infoCache.get(key);
         if (info == null)
             infoCache.put(key, info = new Info(delegates));
         return info;
-    }
-
-    private static Class[] getClasses(Object[] delegates) {
-        Class[] classes = new Class[delegates.length];
-        for (int i = 0; i < delegates.length; i++) {
-            classes[i] = delegates[i].getClass();
-        }
-        return classes;
     }
 
     private static Object makeDelegatorHelper(Object key,
@@ -231,7 +223,7 @@ public class Delegator {
 
     private static Class[] getAllInterfaces(Class clazz) {
         List interfaces = new ArrayList();
-        while (!clazz.equals(Constants.TYPE_OBJECT)) {
+        while (!clazz.equals(Object.class)) {
             interfaces.addAll(Arrays.asList(clazz.getInterfaces()));
             clazz = clazz.getSuperclass();
         }

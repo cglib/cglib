@@ -56,39 +56,30 @@ package net.sf.cglib;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import org.apache.bcel.generic.*;
-
 /**
  * Abstract base class for code generators
  * @author  baliuka
  */
-/*package*/ abstract class CodeGenerator implements Constants {
-    private static final String CONSTRUCTOR_NAME = "<init>";
-    private static final String SOURCE_FILE = "<generated>";
-    private static final String STATIC_NAME = "<clinit>";
+/* package */ abstract class CodeGenerator {
     private static final String FIND_CLASS = "CGLIB$findClass";
-    private static final String PRIVATE_PREFIX = "PRIVATE_";
+    private static final String PRIVATE_PREFIX = "CGLIB$PRIV";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION = 
                          new RuntimePermission("defineCGLIBClassInJavaPackage");
-   
 
-    private final ClassGen cg;
-    private final InstructionList il = new InstructionList();
-    private final ConstantPoolGen cp;
     private final ClassLoader loader;
-    private MethodGen mg;
+    private String methodName;
     private Class returnType;
+    private Class[] parameterTypes;
     private Class superclass;
     private boolean needsFindClass;
     
-    private Map branches;  
-    private Map labels;
     private int nextPrivateLabel;
     private int nextPrivateLocal;
-	
+
+	private Set labels = new HashSet();
     private Map locals = new HashMap();
     private Map localTypes = new HashMap();
     private int nextLocal;
@@ -97,22 +88,29 @@ import org.apache.bcel.generic.*;
     private LinkedList handlerStack = new LinkedList();
     private LinkedList handlerList = new LinkedList();
 
-    private Map fields = new HashMap();
-    private Set staticFields = new HashSet();
-    protected boolean debug = false;
+    private Map fieldInfo = new HashMap();
+    private String className;
+
+    private CodeGeneratorBackend backend;
+    private boolean debug = false;
     
     protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
         if (loader == null) {
             throw new IllegalArgumentException("ClassLoader is required");
         }
         this.loader = loader;
-        cg = new ClassGen(className, superclass.getName(), SOURCE_FILE, ACC_PUBLIC, null); 
-        cp = cg.getConstantPool();
+        this.className = className;
         this.superclass = superclass;
+        backend = new BCELBackend(className, superclass);
 	}
 
+    protected void setDebug(boolean debug) {
+        this.debug = debug;
+        backend.setDebug(debug);
+    }
+
     protected String getClassName() {
-        return cg.getClassName();
+        return className;
     }
 
     protected Class getSuperclass() {
@@ -126,28 +124,21 @@ import org.apache.bcel.generic.*;
 	/**
 	 * method used to generate code  
      */
-  abstract protected void generate() throws Exception;
+    abstract protected void generate() throws Exception;
 
     public Class define() {
         try {
-            
-                generate();
-                if (needsFindClass) {
-                    generateFindClass();
-                }
-                String name = cg.getClassName();
-                byte[] bytes = cg.getJavaClass().getBytes();
-
-                if (debugLocation != null) {
-                    OutputStream out = new FileOutputStream(new File(new File(debugLocation), name + ".cglib"));
-                    out.write(bytes);
-                    out.close();
-                }
-                    
-                
-                return defineClass(name,bytes,loader);
-                
-            
+            generate();
+            if (needsFindClass) {
+                generateFindClass();
+            }
+            byte[] bytes = backend.getBytes();
+            if (debugLocation != null) {
+                OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".cglib"));
+                out.write(bytes);
+                out.close();
+            }
+            return defineClass(className, bytes, loader);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -159,32 +150,28 @@ import org.apache.bcel.generic.*;
             throw new CodeGenerationException(t);
         }
     }
-
-    
     
     private static Class defineClass(String className, byte[] b, ClassLoader loader)
-     throws Exception{
-          
-                    Method m = MethodConstants.DEFINE_CLASS;
-                    // protected method invocaton
-                    boolean flag = m.isAccessible();
-                    m.setAccessible(true);
+    throws Exception {
+        Method m = MethodConstants.DEFINE_CLASS;
+        // protected method invocaton
+        boolean flag = m.isAccessible();
+        m.setAccessible(true);
                    
-                     SecurityManager sm = System.getSecurityManager(); 
-                     if (className.startsWith("java.") && sm != null  ) {
-                        sm.checkPermission( DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION );
-                     }
+        SecurityManager sm = System.getSecurityManager(); 
+        if (className.startsWith("java.") && sm != null  ) {
+            sm.checkPermission( DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION );
+        }
                     
-                    //way depricated in jdk to define classes, 
-                    // doe's not throws SecurityException if class name starts with "java."  
-                    Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
-                    Class result = (Class)m.invoke(loader, args);
-                    m.setAccessible(flag);
+        //way depricated in jdk to define classes, 
+        // doe's not throws SecurityException if class name starts with "java."  
+        Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
+        Class result = (Class)m.invoke(loader, args);
+        m.setAccessible(flag);
 
-                    return result;
-            }
+        return result;
+    }
        
-
     static {
         primitiveMethods.put(Boolean.TYPE, MethodConstants.BOOLEAN_VALUE);
         primitiveMethods.put(Character.TYPE, MethodConstants.CHAR_VALUE);
@@ -212,38 +199,16 @@ import org.apache.bcel.generic.*;
     }
 
     protected void declare_interface(Class iface) {
-        cg.addInterface(iface.getName());
-    }
-
-    protected void declare_field(int modifiers, Class typeClass, String name) {
-        if (fields.containsKey(name)) {
-            throw new IllegalArgumentException("Field \"" + name + "\" already exists");
-        }
-        Type type = getType(typeClass);
-        FieldGen fg = new FieldGen(javaModifiersToBcel(modifiers), type, name, cp);
-        cg.addField(fg.getField());
-        int ref = cp.addFieldref(cg.getClassName(), name, type.getSignature());
-        if (Modifier.isStatic(modifiers)) {
-            staticFields.add(name);
-        }
-        fields.put(name, new Integer(ref));
+        backend.declare_interface(iface);
     }
 
     protected void begin_method(int modifiers, Class returnType, String methodName,
                                 Class[] parameterTypes, Class[] exceptionTypes) {
         checkInMethod();
+        this.methodName = methodName;
         this.returnType = returnType;
-        mg = new MethodGen(javaModifiersToBcel(modifiers),
-                           getType(returnType),
-                           getTypes(parameterTypes),
-                           null,
-                           methodName,
-                           cg.getClassName(), il, cp);
-        if (exceptionTypes != null) {
-            for (int i = 0; i < exceptionTypes.length; i++) {
-                mg.addException(exceptionTypes[i].getName());
-            }
-        }
+        this.parameterTypes = parameterTypes;
+        backend.begin_method(modifiers, returnType, methodName, parameterTypes, exceptionTypes);
         setNextLocal();
     }
 
@@ -270,22 +235,22 @@ import org.apache.bcel.generic.*;
     }
 
     protected void begin_constructor() {
-        begin_constructor(TYPES_EMPTY);
+        begin_constructor(Constants.TYPES_EMPTY);
     }
 
     protected void begin_constructor(Class[] parameterTypes) {
         checkInMethod();
-        returnType = Void.TYPE;	
-        mg = new MethodGen(ACC_PUBLIC, Type.VOID, getTypes(parameterTypes), null,
-                           CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
+        this.returnType = Void.TYPE;
+        this.parameterTypes = parameterTypes;
+        backend.begin_constructor(parameterTypes);
         setNextLocal();
     }
 
     protected void begin_static() {
         checkInMethod();
-        returnType = Void.TYPE;
-        mg = new MethodGen(ACC_STATIC, Type.VOID, new Type[0], null,
-                           STATIC_NAME, cg.getClassName(), il, cp);
+        this.returnType = Void.TYPE;
+        this.parameterTypes = Constants.TYPES_EMPTY;
+        backend.begin_static();
         setNextLocal();
     }
 
@@ -296,31 +261,15 @@ import org.apache.bcel.generic.*;
     }
 
     private void setNextLocal() {
-        nextLocal = 1 + getStackSize(mg.getArgumentTypes());
+        nextLocal = 1 + getStackSize(parameterTypes);
     }
 
-    // TODO: ensure there are matched pairs and there is no nesting
-    protected void end_constructor() {
-        end_method();
-    }
-
-    protected void end_static() {
-        end_method();
-    }
-    
     protected void end_method() {
-        setTargets();
-        if(debug){
-         System.out.println(mg.getMethod());
-         System.out.println(mg.getMethod().getCode());
-        } 
-        mg.removeNOPs();
-        mg.stripAttributes(true);
-        mg.setMaxLocals();
-        mg.setMaxStack();
-        cg.addMethod(mg.getMethod());
-        il.dispose();
-
+        backend.end_method();
+        parameterTypes = null;
+        returnType = null;
+        methodName = null;
+        labels.clear();
         locals.clear();
         localTypes.clear();
         if (handlerStack.size() > 0) {
@@ -339,187 +288,115 @@ import org.apache.bcel.generic.*;
         /* generates:
            Object args[] = new Object[]{ arg1, new Integer(arg2) };
         */
-        Type[] types = mg.getArgumentTypes();
-        push(types.length);
+        push(parameterTypes.length);
         newarray();
-        for (int i = 0; i < types.length; i++) {
+        for (int i = 0; i < parameterTypes.length; i++) {
             dup();
             push(i);
             load_arg(i);
-            box(types[i]);
+            box(parameterTypes[i]);
             aastore();
         }
     }
 
-    private InstructionHandle mark() {
-        return il.append(new NOP());
-    }
-
-    // TODO: use labels instead?
-    protected int begin_handler() {
+    protected Object begin_handler() {
         int ref = handlerList.size();
-        InstructionHandle[] ih = new InstructionHandle[]{ mark(), null };
-        handlerList.add(ih);
-        handlerStack.add(ih);
-        return ref;
+        Object[] range = new Object[]{ backend.start_range(), null };
+        handlerList.add(range);
+        handlerStack.add(range);
+        return new Integer(ref);
     }
 
     protected void end_handler() {
         if (handlerStack.size() == 0) {
             throw new IllegalStateException("mismatched handler boundaries");
         }
-        InstructionHandle[] ih = (InstructionHandle[])handlerStack.removeLast();
-        ih[1] = il.getEnd().getPrev();
+        Object[] range = (Object[])handlerStack.removeLast();
+        range[1] = backend.end_range();
     }
 
-    protected void handle_exception(int ref, Class exceptionType) {
+    protected void handle_exception(Object handler, Class exceptionType) {
+        int ref = ((Integer)handler).intValue();
         if (handlerList.size() <= ref) {
             throw new IllegalArgumentException("unknown handler reference: " + ref);
         }
-        InstructionHandle[] ih = (InstructionHandle[])handlerList.get(ref);
-        if (ih[1] == null) {
+        Object[] range = (Object[])handlerList.get(ref);
+        if (range[1] == null) {
             throw new IllegalStateException("end of handler is unset");
         }
-        mg.addExceptionHandler(ih[0], ih[1], mark(), (ObjectType)getType(exceptionType));
+        backend.handle_exception(range[0], range[1], exceptionType);
     }
 
-    private void append(Instruction intruction) {
-        il.append(intruction);
-    }
-
-    private void append(String label, Instruction instruction) {
-        if (label != null) {
-            initLabels();
-            if (null != labels.put(label, il.append(instruction))) {
-                throw new IllegalStateException("duplicated label " + label);
-            }
-        } else {
-            il.append(instruction);
-        }
-    }
-
-    private void initLabels() {
-        if (labels == null) {
-            labels = new HashMap();
-        }
-    }
-
-    private void append(BranchInstruction instruction, String label) {
-        if (branches == null) {
-            branches = new HashMap();
-        }
-
-        List list = (List)branches.get(label);
-        if (list == null) {
-            branches.put(label, list = new LinkedList());
-        }
-
-        list.add(instruction);
-        il.append(instruction);
-    }
-  
-    private void setTargets() {
-        if (labels != null && branches != null) {
-            for( Iterator labelIterator = labels.entrySet().iterator(); labelIterator.hasNext(); ){
-                Map.Entry label = (Map.Entry)labelIterator.next();          
-                List branchInstructions = (List)branches.get(label.getKey());
-                if( branchInstructions != null ){
-                    for( Iterator instructions = branchInstructions.iterator(); instructions.hasNext();   ){
-                        BranchInstruction instruction = (BranchInstruction)instructions.next();
-                        instruction.setTarget( (InstructionHandle)label.getValue() );
-                    }
-                }
-            }     
-        }
-        if( labels != null){
-            labels.clear();
-        } 
-        if( branches != null ){
-            branches.clear();
-        }
-    }
-  
-    //-------------- branch istructions:
-  
-    protected    void ifeq(String label ){ append( new IFEQ(null), label ); }
-    protected    void ifne(String label){ append( new IFNE(null), label ); }
-    protected    void iflt(String label){ append( new IFLT(null), label ); }
-    protected    void ifge(String label){ append( new IFGE(null), label ); }
-    protected    void ifgt(String label){ append( new IFGT(null), label ); }
-    protected    void ifle(String label){ append( new IFLE(null), label ); }
-    protected    void goTo(String label){ append( new GOTO(null), label ); }
-    protected    void jsr(String label ){ append( new JSR(null), label ); }
-    protected    void ifnull(String label){ append( new IFNULL(null), label ); }
-    protected    void ifnonnull(String label){ append( new IFNONNULL(null), label ); }
-
-    protected void if_icmplt(String label) {
-        append(new IF_ICMPLT(null), label);
-    }
-
-    protected void if_icmpne(String label) {
-        append(new IF_ICMPNE(null), label);
-    }
-
-    protected void if_icmpeq(String label) {
-        append(new IF_ICMPEQ(null), label);
-    }
-    
-
-    // math
-    protected void imul()  { append(new IMUL());  }
-    protected void iadd()  { append(new IADD());  }
-    protected void lushr() { append(new LUSHR()); }
-    protected void lxor()  { append(new LXOR());  }
-    protected void ixor()  { append(new IXOR());  }
-    protected void l2i()   { append(new L2I());   }
-    protected void dcmpg() { append(new DCMPG()); }
-    protected void fcmpg() { append(new FCMPG()); }
-    protected void lcmp()  { append(new LCMP()); }
-  
-
-    protected  void nop(){ append( new NOP()); }
-    protected  void nop(String label){ append( label, new NOP() ); }
-  
-    protected  void aconst_null(){ append( new ACONST_NULL() ); }
+    protected void ifeq(String label) { backend.ifeq(label); }
+    protected void ifne(String label) { backend.ifne(label); }
+    protected void iflt(String label) { backend.iflt(label); }
+    protected void ifge(String label) { backend.ifge(label); }
+    protected void ifgt(String label) { backend.ifgt(label); }
+    protected void ifle(String label) { backend.ifle(label); }
+    protected void goTo(String label) { backend.goTo(label); }
+    protected void ifnull(String label) { backend.ifnull(label); }
+    protected void ifnonnull(String label) { backend.ifnonnull(label); }
+    protected void if_icmplt(String label) { backend.if_icmplt(label); }
+    protected void if_icmpne(String label) { backend.if_icmpne(label); }
+    protected void if_icmpeq(String label) { backend.if_icmpeq(label); }
+    protected void nop(String label) { backend.nop(label); }
+    protected void imul() { backend.imul(); }
+    protected void iadd() { backend.iadd(); }
+    protected void lushr() { backend.lushr(); }
+    protected void lxor() { backend.lxor(); }
+    protected void ixor() { backend.ixor(); }
+    protected void l2i() { backend.l2i(); }
+    protected void dcmpg() { backend.dcmpg(); }
+    protected void fcmpg() { backend.fcmpg(); }
+    protected void lcmp() { backend.lcmp(); }
+    protected void pop() { backend.pop(); }
+    protected void pop2() { backend.pop2(); }
+    protected void dup() { backend.dup(); }
+    protected void dup2() { backend.dup2(); }
+    protected void dup_x1() { backend.dup_x1(); }
+    protected void dup_x2() { backend.dup_x2(); }
+    protected void swap() { backend.swap(); }
+    protected  void aconst_null() { backend.aconst_null(); }
   
     protected void push(int i) {
         if (i < 0) {
-            append(new LDC(cp.addInteger(i)));
-        } else if (i <= 5) { 
-            append(new ICONST(i));
-        } else if (i <= Byte.MAX_VALUE) { // < or <= ?
-            append(new BIPUSH((byte)i));
-        } else if (i <= Short.MAX_VALUE) { // < or <= ?
-            append(new SIPUSH((short)i));
+            backend.ldc(i);
+        } else if (i <= 5) {
+            backend.iconst(i);
+        } else if (i <= Byte.MAX_VALUE) {
+            backend.bipush((byte)i);
+        } else if (i <= Short.MAX_VALUE) {
+            backend.sipush((short)i);
         } else {
-            append(new LDC(cp.addInteger(i)));
+            backend.ldc(i);
         }
     }
     
-    protected  void push( long value){
+    protected void push (long value) {
         if (value == 0L || value == 1L) {
-            append(new LCONST(value));
+            backend.lconst(value);
         } else {
-            append( new LDC( cp.addLong(value) ) );
+            backend.ldc(value);
         }
     }
-    protected  void push( float value ){
+    
+    protected void push (float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            append(new FCONST(value));
+            backend.fconst(value);
         } else {
-            append( new LDC( cp.addFloat(value) ) );
+            backend.ldc(value);
         }
     }
-    protected  void push( double value){
+    protected void push (double value) {
         if (value == 0d || value == 1d) {
-            append(new DCONST(value));
+            backend.dconst(value);
         } else {
-            append( new LDC( cp.addDouble(value) ) ) ;
+            backend.ldc(value);
         }
     }
 
     protected void push(String value) {
-        append(new LDC(cp.addString(value)));
+        backend.ldc(value);
     }
 
     protected void push(Object[] array) {
@@ -558,66 +435,66 @@ import org.apache.bcel.generic.*;
 
     protected void newarray(Class clazz) {
         if (clazz.isPrimitive()) {
-            append(new NEWARRAY((BasicType)getType(clazz)));
+            backend.newarray(clazz);
         } else {
-            append(new ANEWARRAY(cp.addClass(clazz.getName())));
+            backend.anewarray(clazz);
         }
     }
 
     protected void arraylength() {
-        append(new ARRAYLENGTH());
+        backend.arraylength();
     }
 
     protected void array_load(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Long.TYPE)) {
-                append(new LALOAD());
+                backend.laload();
             } else if (clazz.equals(Double.TYPE)) {
-                append(new DALOAD());
+                backend.daload();
             } else if (clazz.equals(Float.TYPE)) {
-                append(new FALOAD());
+                backend.faload();
             } else if (clazz.equals(Short.TYPE)) {
-                append(new SALOAD());
+                backend.saload();
             } else if (clazz.equals(Character.TYPE)) {
-                append(new CALOAD());
+                backend.caload();
             } else if (clazz.equals(Integer.TYPE)) {
-                append(new IALOAD());
+                backend.iaload();
             } else {
-                append(new BALOAD());
+                backend.baload();
             }
         } else {
-            append(new AALOAD());
+            backend.aaload();
         }
     }
 
     protected void array_store(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Long.TYPE)) {
-                append(new LASTORE());
+                backend.lastore();
             } else if (clazz.equals(Double.TYPE)) {
-                append(new DASTORE());
+                backend.dastore();
             } else if (clazz.equals(Float.TYPE)) {
-                append(new FASTORE());
+                backend.fastore();
             } else if (clazz.equals(Short.TYPE)) {
-                append(new SASTORE());
+                backend.sastore();
             } else if (clazz.equals(Character.TYPE)) {
-                append(new CASTORE());
+                backend.castore();
             } else if (clazz.equals(Integer.TYPE)) {
-                append(new IASTORE());
+                backend.iastore();
             } else {
-                append(new BASTORE());
+                backend.bastore();
             }
         } else {
-            append(new AASTORE());
+            backend.aastore();
         }
     }
     
     protected void load_this() {
-        append(new ALOAD(0));
+        backend.aload(0);
     }
 
     protected void load_class_this() {
-        load_class_helper(getClassName());
+        load_class_helper(className);
     }
 
     protected void load_class(Class clazz) {
@@ -639,14 +516,14 @@ import org.apache.bcel.generic.*;
         // System.err.println("findclass: " + className + " hasFindClass: " + hasFindClass);
         needsFindClass = true;
         push(className);
-        invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
+        invoke_static_this(FIND_CLASS, Class.class, Constants.TYPES_STRING);
     }
 
     /**
      * Pushes all of the arguments of the current method onto the stack.
      */
     protected void load_args() {
-        load_args(0, mg.getArgumentTypes().length);
+        load_args(0, parameterTypes.length);
     }
 
     /**
@@ -654,66 +531,65 @@ import org.apache.bcel.generic.*;
      * @param index the zero-based index into the argument list
      */
     protected void load_arg(int index) {
-        int pos = 1 + skipArgs(index);
-        load_local(mg.getArgumentType(index), pos);
+        load_local(parameterTypes[index], 1 + skipArgs(index));
     }
 
     // zero-based (see load_this)
     protected void load_args(int fromArg, int count) {
         int pos = 1 + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
-            Type t = mg.getArgumentType(fromArg + i);
+            Class t = parameterTypes[fromArg + i];
             load_local(t, pos);
-            pos += t.getSize();
+            pos += getStackSize(t);
         }
     }
 
     private int skipArgs(int numArgs) {
         int amount = 0;
         for (int i = 0; i < numArgs; i++) {
-            amount += mg.getArgumentType(i).getSize();
+            amount += getStackSize(parameterTypes[i]);
         }
         return amount;
     }
 
-    private void load_local(Type t, int pos) {
-        if (t instanceof BasicType) {
-            if (t.equals(Type.LONG)) {
-                append(new LLOAD(pos));
-            } else if (t.equals(Type.DOUBLE)) {
-                append(new DLOAD(pos));
-            } else if (t.equals(Type.FLOAT)) {
-                append(new FLOAD(pos));
+    private void load_local(Class t, int pos) {
+        if (t != null && t.isPrimitive()) {
+            if (t.equals(Long.TYPE)) {
+                backend.lload(pos);
+            } else if (t.equals(Double.TYPE)) {
+                backend.dload(pos);
+            } else if (t.equals(Float.TYPE)) {
+                backend.fload(pos);
             } else {
-                append(new ILOAD(pos));
+                backend.iload(pos);
             }
         } else {
-            append(new ALOAD(pos));
+            backend.aload(pos);
         }
     }
 
-    private void store_local(Type t, int pos) {
-        if (t instanceof BasicType) {
-            if (t.equals(Type.LONG)) {
-                append(new LSTORE(pos));
-            } else if (t.equals(Type.DOUBLE)) {
-                append(new DSTORE(pos));
-            } else if (t.equals(Type.FLOAT)) {
-                append(new FSTORE(pos));
+    private void store_local(Class t, int index) {
+        if (t != null && t.isPrimitive()) {
+            if (t.equals(Long.TYPE)) {
+                backend.lstore(index);
+            } else if (t.equals(Double.TYPE)) {
+                backend.dstore(index);
+            } else if (t.equals(Float.TYPE)) {
+                backend.fstore(index);
             } else {
-                append(new ISTORE(pos));
+                backend.istore(index);
             }
         } else {
-            append(new ASTORE(pos));
+            backend.astore(index);
         }
     }
 
     protected void iinc(String local, int amount) {
-        append(new IINC(getLocal(local), amount));
+        backend.iinc(getLocal(local), amount);
     }
 
     protected void local_type(String name, Class type) {
-        localTypes.put(name, getType(type));
+        localTypes.put(name, type);
     }
 
     protected void store_local(String name) {
@@ -721,14 +597,14 @@ import org.apache.bcel.generic.*;
         if (position == null) {
             position = new Integer(nextLocal);
             locals.put(name, position);
-            Type type = (Type)localTypes.get(name);
-            nextLocal += (type == null) ? 1 : type.getSize();
+            Class type = (Class)localTypes.get(name);
+            nextLocal += (type == null) ? 1 : getStackSize(type);
         }
-        store_local((Type)localTypes.get(name), position.intValue());
+        store_local((Class)localTypes.get(name), position.intValue());
     }
 
     protected void load_local(String name) {
-        load_local((Type)localTypes.get(name), getLocal(name));
+        load_local((Class)localTypes.get(name), getLocal(name));
     }
 
     private int getLocal(String name) {
@@ -739,82 +615,70 @@ import org.apache.bcel.generic.*;
         return position.intValue();
     }
 
-    protected    void pop() { append( new POP() ); }
-    protected    void pop2() { append( new POP2() ); }
-    protected    void dup() {  append( new DUP() ); }
-    protected    void dup2() {  append( new DUP2() ); }
-    protected    void dup_x1() {  append( new DUP_X1() ); }
-    protected    void dup_x2() {  append( new DUP_X2() ); }
-    protected    void swap(){ append( new SWAP() ); }
-   
-    protected    void pop(String  label) { append( label, new POP() ); }
-    protected    void dup(String  label) { append( label, new DUP() ); }
-    protected    void swap(String label) { append( label, new SWAP() ); }
-  
     protected void return_value() {
         if (returnType.isPrimitive()) {
             if (returnType.equals(Void.TYPE)) {
-                append(new RETURN());
+                backend.returnVoid();
             } else if (returnType.equals(Long.TYPE)) {
-                append(new LRETURN());
+                backend.lreturn();
             } else if (returnType.equals(Double.TYPE)) {
-                append(new DRETURN());
+                backend.dreturn();
             } else if (returnType.equals(Float.TYPE)) {
-                append(new FRETURN());
+                backend.freturn();
             } else {
-                append(new IRETURN());
+                backend.ireturn();
             }
         } else {
-            append(new ARETURN());
+            backend.areturn();
         }
     }
   
-    // --------------- Field access ----------------
-
-    private int getFieldref(Field field) {
-        return cp.addFieldref(field.getDeclaringClass().getName(),
-                              field.getName(),
-                              getType(field.getType()).getSignature());
+    protected void declare_field(int modifiers, Class type, String name) {
+        if (getFieldInfo(name) != null) {
+            throw new IllegalArgumentException("Field \"" + name + "\" already exists");
+        }
+        backend.declare_field(modifiers, type, name);
+        fieldInfo.put(name, new FieldInfo(Modifier.isStatic(modifiers), type));
     }
 
-    private int getFieldref(String name) {
-        Integer ref = (Integer)fields.get(name);
-        if (ref == null) {
-            throw new IllegalArgumentException("No field named \"" + name + "\"");
-        }
-        return ref.intValue();
+    private FieldInfo getFieldInfo(String name) {
+        return (FieldInfo)fieldInfo.get(name);
     }
 
-    private int getInstanceField(String name) {
-        int ref = getFieldref(name);
-        if (staticFields.contains(name)) {
-            throw new IllegalArgumentException("Field \"" + name + "\" is static");
+    private static class FieldInfo {
+        private boolean staticFlag;
+        private Class type;
+        
+        public FieldInfo(boolean staticFlag, Class type) {
+            this.staticFlag = staticFlag;
+            this.type = type;
         }
-        return ref;
-    }
 
-    private int getStaticField(String name) {
-        int ref = getFieldref(name);
-        if (!staticFields.contains(name)) {
-            throw new IllegalArgumentException("Field \"" + name + "\" is not static");
+        public boolean isStatic() {
+            return staticFlag;
         }
-        return ref;
+
+        public Class getType() {
+            return type;
+        }
     }
 
     protected void getfield(String name) {
-        append(new GETFIELD(getInstanceField(name)));
+        FieldInfo info = getFieldInfo(name);
+        if (info.isStatic()) {
+            backend.getstatic(className, name, info.getType());
+        } else {
+            backend.getfield(className, name, info.getType());
+        }
     }
 
     protected void putfield(String name) {
-        append(new PUTFIELD(getInstanceField(name)));
-    }
-
-    protected void getstatic(String name) {
-        append(new GETSTATIC(getStaticField(name)));
-    }
-
-    protected void putstatic(String name) {
-        append(new PUTSTATIC(getStaticField(name)));
+        FieldInfo info = getFieldInfo(name);
+        if (info.isStatic()) {
+            backend.putstatic(className, name, info.getType());
+        } else {
+            backend.putfield(className, name, info.getType());
+        }
     }
 
     protected void super_getfield(String name) throws NoSuchFieldException {
@@ -828,72 +692,75 @@ import org.apache.bcel.generic.*;
 
     protected void getfield(Field field) {
         if (Modifier.isStatic(field.getModifiers())) {
-            append(new GETSTATIC(getFieldref(field)));
+            backend.getstatic(field.getDeclaringClass().getName(),
+                              field.getName(),
+                              field.getType());
         } else {
-            append(new GETFIELD(getFieldref(field)));
+            backend.getfield(field.getDeclaringClass().getName(),
+                             field.getName(),
+                             field.getType());
         }
     }
 
     protected void putfield(Field field) {
         if (Modifier.isStatic(field.getModifiers())) {
-            append(new PUTSTATIC(getFieldref(field)));
+            backend.putstatic(field.getDeclaringClass().getName(),
+                              field.getName(),
+                              field.getType());
         } else {
-            append(new PUTFIELD(getFieldref(field)));
+            backend.putfield(field.getDeclaringClass().getName(),
+                             field.getName(),
+                             field.getType());
         }
     }
 
-    // --------------- Invoke method ----------------
-  
     protected void invoke(Method method) {
         if (method.getDeclaringClass().isInterface()) {
-            invoke_interface(method);
+            backend.invoke_interface(method.getDeclaringClass().getName(), method.getName(),
+                                     method.getReturnType(), method.getParameterTypes());
         } else if (Modifier.isStatic(method.getModifiers())) {
-            invoke_static(method);
+            backend.invoke_static(method.getDeclaringClass().getName(), method.getName(),
+                                  method.getReturnType(), method.getParameterTypes());
         } else {
-            invoke_virtual(method);
+            backend.invoke_virtual(method.getDeclaringClass().getName(), method.getName(),
+                                   method.getReturnType(), method.getParameterTypes());
         }
     }
 
     protected void super_invoke(Method method) {
-        append(new INVOKESPECIAL(addMethodref(method)));
+        backend.invoke_special(superclass.getName(), method.getName(),
+                               method.getReturnType(), method.getParameterTypes());
     }
 
     protected void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
-        append(new INVOKEVIRTUAL(cp.addMethodref(cg.getClassName(),
-                                                 methodName,
-                                                 getMethodSignature(returnType, parameterTypes))));
+        backend.invoke_virtual(className, methodName, returnType, parameterTypes);
     }
 
     protected void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
-        append(new INVOKESTATIC(cp.addMethodref(cg.getClassName(),
-                                                methodName,
-                                                getMethodSignature(returnType, parameterTypes))));
+        backend.invoke_static(className, methodName, returnType, parameterTypes);
     }
 
     protected void super_invoke() {
-        append(new INVOKESPECIAL(cp.addMethodref(cg.getSuperclassName(), mg.getName(), mg.getSignature())));
+        backend.invoke_special(superclass.getName(), methodName, returnType, parameterTypes);
+    }
+
+    private void invoke_constructor_helper(String className, Class[] parameterTypes) {
+        backend.invoke_special(className, Constants.CONSTRUCTOR_NAME, Void.TYPE, parameterTypes);
     }
    
     protected void invoke_constructor(Class type) {
-        invoke_constructor(type, TYPES_EMPTY);
+        invoke_constructor(type, Constants.TYPES_EMPTY);
     }
 
     protected void invoke_constructor(Class type, Class[] parameterTypes) {
         invoke_constructor_helper(type.getName(), parameterTypes);
     }
 
-    private void invoke_interface(Method method) {
-        int ref = cp.addInterfaceMethodref(method.getDeclaringClass().getName(),
-                                           method.getName(),
-                                           getMethodSignature(method));
-        append(new INVOKEINTERFACE(ref, 1 + getStackSize(method.getParameterTypes())));
+    private static int getStackSize(Class type) {
+        return (type.equals(Double.TYPE) || type.equals(Long.TYPE)) ? 2 : 1;
     }
 
-    private static int getStackSize(Class clazz) {
-        return getType(clazz).getSize();
-    }
-
-    private static int getStackSize(Class[] classes) {
+    /* package */ static int getStackSize(Class[] classes) {
         int size = 0;
         for (int i = 0; i < classes.length; i++) {
             size += getStackSize(classes[i]);
@@ -901,141 +768,52 @@ import org.apache.bcel.generic.*;
         return size;
     }
 
-    private static int getStackSize(Type[] types) {
-        int size = 0;
-        for (int i = 0; i < types.length; i++) {
-            size += types[i].getSize();
-        }
-        return size;
-    }
-
-    // this is taken from BCEL CVS: Type.getType(Class)
-    public static Type getType(java.lang.Class cl) {
-        if (cl == null) {
-            throw new IllegalArgumentException("Class must not be null");
-        }
-        if (cl.isArray()) {
-            return Type.getType(cl.getName());
-        } else if (cl.isPrimitive()) {
-            if (cl == Integer.TYPE) {
-                return Type.INT;
-            } else if (cl == Void.TYPE) {
-                return Type.VOID;
-            } else if (cl == Double.TYPE) {
-                return Type.DOUBLE;
-            } else if (cl == Float.TYPE) {
-                return Type.FLOAT;
-            } else if (cl == Boolean.TYPE) {
-                return Type.BOOLEAN;
-            } else if (cl == Byte.TYPE) {
-                return Type.BYTE;
-            } else if (cl == Short.TYPE) {
-                return Type.SHORT;
-            } else if (cl == Byte.TYPE) {
-                return Type.BYTE;
-            } else if (cl == Long.TYPE) {
-                return Type.LONG;
-            } else if (cl == Character.TYPE) {
-                return Type.CHAR;
-            } else {
-                throw new IllegalStateException("Ooops, what primitive type is " + cl);
-            }
-        } else { // "Real" class
-            return new ObjectType(cl.getName());
-        }
-    }
-
-    private static Type[] getTypes(Class[] classes) {
-        Type[] types = new Type[classes.length];
-        for (int i = 0; i < types.length; i++) {
-            types[i] = getType(classes[i]);
-        }
-        return types;
-    }
-
-    protected static String getMethodSignature(Method method) {
-        return getMethodSignature(method.getReturnType(), method.getParameterTypes());
-    }
-
-    private static String getMethodSignature(Class returnType, Class[] parameterTypes) {
-        return Type.getMethodSignature(getType(returnType), getTypes(parameterTypes));
-    }
-
-    protected void invoke_virtual(Method method) {
-        append(new INVOKEVIRTUAL(addMethodref(method)));
-    }
-
-    private void invoke_static(Method method) {
-        append(new INVOKESTATIC(addMethodref(method)));
-    }
-
-    private int addMethodref(Method method) {
-        return cp.addMethodref(method.getDeclaringClass().getName(),
-                               method.getName(),
-                               getMethodSignature(method));
-    }
-
     protected void super_invoke_constructor(Constructor constructor) {
         super_invoke_constructor(constructor.getParameterTypes());
     }
 
     protected void super_invoke_constructor() {
-        invoke_constructor_helper(cg.getSuperclassName(), TYPES_EMPTY);
+        invoke_constructor_helper(superclass.getName(), Constants.TYPES_EMPTY);
     }
 
     protected void super_invoke_constructor(Class[] parameterTypes) {
-        invoke_constructor_helper(cg.getSuperclassName(), parameterTypes);
+        invoke_constructor_helper(superclass.getName(), parameterTypes);
     }
 
     protected void invoke_constructor_this() {
-        invoke_constructor_this(TYPES_EMPTY);
+        invoke_constructor_this(Constants.TYPES_EMPTY);
     }
 
     protected void invoke_constructor_this(Class[] parameterTypes) {
-        invoke_constructor_helper(cg.getClassName(), parameterTypes);
-    }
-
-    private void invoke_constructor_helper(String className, Class[] parameterTypes) {
-        int ref = cp.addMethodref(className,
-                                  CONSTRUCTOR_NAME,
-                                  getMethodSignature(Void.TYPE, parameterTypes));
-        append(new INVOKESPECIAL(ref));
+        invoke_constructor_helper(className, parameterTypes);
     }
 
     protected void new_instance_this() {
-        append(new NEW(cp.addClass(cg.getClassName())));
+        backend.new_instance(className);
     }
   
     protected void new_instance(Class clazz) {
-        append(new NEW(cp.addClass(clazz.getName())));
+        backend.new_instance(clazz.getName());
     }
  
-    protected void aaload( int index ){
+    protected void aaload(int index) {
         push(index);
         aaload();
     }
     
-    protected void aaload() {
-        append( new AALOAD() );
-    }
-
-    protected void aastore() {
-        append(new AASTORE());
-    }
+    protected void aaload() { backend.aaload(); }
+    protected void aastore() { backend.aastore(); }
+    protected void athrow() { backend.athrow(); }
   
-    protected   void athrow(){ append( new ATHROW() ); }
-    protected   void athrow(String label){ append(label,new ATHROW() ); }
-  
-    protected String newLabel() {
-        initLabels();
+    protected String anon_label() {
         String label;
         do {
             label = PRIVATE_PREFIX + nextPrivateLabel++;
-        } while (labels.containsKey(label));
+        } while (labels.contains(label));
         return label;
     }
 
-    protected String newLocal() {
+    protected String anon_local() {
         String local;
         do {
             local = PRIVATE_PREFIX + nextPrivateLocal++;
@@ -1071,8 +849,8 @@ import org.apache.bcel.generic.*;
     protected void unbox_or_zero(Class type) {
         if (type.isPrimitive()) {
             if (!type.equals(Void.TYPE)) {
-                String nonNull = newLabel();
-                String end = newLabel();
+                String nonNull = anon_label();
+                String end = anon_label();
                 dup();
                 ifnonnull(nonNull);
                 pop();
@@ -1084,37 +862,6 @@ import org.apache.bcel.generic.*;
             }
         } else {
             checkcast(type);
-        }
-    }
-
-    private Class getPrimitiveClass(BasicType type) {
-        switch (type.getType()) {
-        case T_BYTE:
-            return Byte.TYPE;
-        case T_BOOLEAN:
-            return Boolean.TYPE;
-        case T_CHAR:
-            return Character.TYPE;
-        case T_LONG:
-            return Long.TYPE;
-        case T_DOUBLE:
-            return Double.TYPE;
-        case T_FLOAT:
-            return Float.TYPE;
-        case T_SHORT:
-            return Short.TYPE;
-        case T_INT:
-            return Integer.TYPE;
-        case T_VOID:
-            return Void.TYPE;
-        default:
-            return null; // impossible
-        }
-    }
-
-    private void box(Type type) {
-        if (type instanceof BasicType) {
-            box(getPrimitiveClass((BasicType)type));
         }
     }
 
@@ -1169,63 +916,34 @@ import org.apache.bcel.generic.*;
     }
 
     protected void checkcast_this() {
-        append(new CHECKCAST(cp.addClass(cg.getClassName())));
+        backend.checkcast(className);
     }
 
     protected void checkcast(Class clazz) {
-        Type type = getType(clazz);
-        if (clazz.isArray()) {
-            append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
-        } else if (clazz.equals(Object.class)) {
+        // TODO: necessary?
+//         if (clazz.isArray()) {
+//             append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
+        if (clazz.equals(Object.class)) {
             // ignore
         } else {
-            append(new CHECKCAST(cp.addClass((ObjectType)type)));
+            backend.checkcast(clazz.getName());
         }
     }
    
-    protected void instance_of(Class clazz) { 
-        append(new INSTANCEOF(cp.addClass(clazz.getName())));
+    protected void instance_of(Class clazz) {
+        backend.instance_of(clazz.getName());
     }
 
     protected void instance_of_this() {
-        append(new INSTANCEOF(cp.addClass(cg.getClassName())));
+        backend.instance_of(className);
     }
     
-    private static int javaModifiersToBcel(int modifiers) {
-        int result = 0;
-        if (Modifier.isAbstract(modifiers))
-            result |= ACC_ABSTRACT;
-        if (Modifier.isFinal(modifiers))
-            result |= ACC_FINAL;
-        if (Modifier.isInterface(modifiers))
-            result |= ACC_INTERFACE;
-        if (Modifier.isNative(modifiers))
-            result |= ACC_NATIVE;
-        if (Modifier.isPrivate(modifiers))
-            result |= ACC_PRIVATE;
-        if (Modifier.isProtected(modifiers))
-            result |= ACC_PROTECTED;
-        if (Modifier.isPublic(modifiers))
-            result |= ACC_PUBLIC;
-        if (Modifier.isStatic(modifiers))
-            result |= ACC_STATIC;
-        if (Modifier.isStrict(modifiers))
-            result |= ACC_STRICT;
-        if (Modifier.isSynchronized(modifiers))
-            result |= ACC_SYNCHRONIZED;
-        if (Modifier.isTransient(modifiers))
-            result |= ACC_TRANSIENT;
-        if (Modifier.isVolatile(modifiers))
-            result |= ACC_VOLATILE;
-        return result;
-    }
-
     protected void generateNullConstructor() {
         begin_constructor();
         load_this();
         super_invoke_constructor();
         return_value();
-        end_constructor();
+        end_method();
     }
 
     private void generateFindClass() {
@@ -1241,9 +959,9 @@ import org.apache.bcel.generic.*;
         begin_method(Modifier.PRIVATE | Modifier.STATIC,
                      Class.class,
                      FIND_CLASS,
-                     TYPES_STRING,
+                     Constants.TYPES_STRING,
                      null);
-        int eh = begin_handler();
+        Object eh = begin_handler();
         load_this();
         invoke(MethodConstants.FOR_NAME);
         return_value();
@@ -1254,7 +972,7 @@ import org.apache.bcel.generic.*;
         new_instance(NoClassDefFoundError.class);
         dup_x1();
         swap();
-        invoke_constructor(NoClassDefFoundError.class, TYPES_STRING);
+        invoke_constructor(NoClassDefFoundError.class, Constants.TYPES_STRING);
         athrow();
         end_method();
     }
@@ -1272,10 +990,10 @@ import org.apache.bcel.generic.*;
      */
     protected void process_array(Class type, ProcessArrayCallback callback) {
         Class compType = type.getComponentType();
-        String array = newLocal();
-        String loopvar = newLocal();
-        String loopbody = newLabel();
-        String checkloop = newLabel();
+        String array = anon_local();
+        String loopvar = anon_local();
+        String loopbody = anon_label();
+        String checkloop = anon_label();
         local_type(loopvar, Integer.TYPE);
         store_local(array);
         push(0);
@@ -1305,11 +1023,11 @@ import org.apache.bcel.generic.*;
      */
     protected void process_arrays(Class clazz, ProcessArrayCallback callback) {
         Class compType = clazz.getComponentType();
-        String array1 = newLocal();
-        String array2 = newLocal();
-        String loopvar = newLocal();
-        String loopbody = newLabel();
-        String checkloop = newLabel();
+        String array1 = anon_local();
+        String array2 = anon_local();
+        String loopvar = anon_local();
+        String loopbody = anon_label();
+        String checkloop = anon_label();
         local_type(loopvar, Integer.TYPE);
         store_local(array1);
         store_local(array2);
@@ -1364,10 +1082,10 @@ import org.apache.bcel.generic.*;
                 if_icmpne(notEquals);
             }
         } else {
-            String end = newLabel();
+            String end = anon_label();
             nullcmp(notEquals, end);
             if (clazz.isArray()) {
-                String checkContents = newLabel();
+                String checkContents = anon_label();
                 dup2();
                 arraylength();
                 swap();
@@ -1385,15 +1103,13 @@ import org.apache.bcel.generic.*;
         }
     }
     
-  protected void throwException(Class type, String msg){
-      
+    protected void throw_exception(Class type, String msg) {
         new_instance(type);
         dup();
         push(msg);
         invoke_constructor(type, new Class[]{ String.class });
         athrow();
-  
-  }  
+    }  
 
     /**
      * If both objects on the top of the stack are non-null, does nothing.
@@ -1404,9 +1120,9 @@ import org.apache.bcel.generic.*;
      */
     protected void nullcmp(String oneNull, String bothNull) {
         dup2();
-        String nonNull = newLabel();
-        String oneNullHelper = newLabel();
-        String end = newLabel();
+        String nonNull = anon_label();
+        String oneNullHelper = anon_label();
+        String end = anon_label();
         ifnonnull(nonNull);
         ifnonnull(oneNullHelper);
         pop2();
@@ -1421,5 +1137,15 @@ import org.apache.bcel.generic.*;
         goTo(oneNull);
 
         nop(end);
+    }
+
+    protected void generateFactoryMethod(Method method) {
+        begin_method(method);
+        new_instance_this();
+        dup();
+        load_args();
+        invoke_constructor_this(method.getParameterTypes());
+        return_value();
+        end_method();
     }
 }

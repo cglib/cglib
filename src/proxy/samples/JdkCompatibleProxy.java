@@ -73,7 +73,7 @@ import java.lang.reflect.*;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.2 2003/01/21 17:38:23 baliuka Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.3 2003/01/24 00:27:44 herbyderby Exp $
  */
 public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
@@ -92,12 +92,7 @@ public class JdkCompatibleProxy implements Serializable {
         }
     }
 
-    protected InvocationHandler h;
-
-    protected JdkCompatibleProxy(MethodInterceptor mi) {
-        HandlerAdapter adapter = (HandlerAdapter)mi;
-        if (adapter != null)
-            h = adapter.handler;
+    protected JdkCompatibleProxy() {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {

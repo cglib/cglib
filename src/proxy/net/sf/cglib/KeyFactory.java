@@ -92,7 +92,7 @@ package net.sf.cglib;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.11 2003/01/23 11:16:29 nemecec Exp $
+ * @version $Id: KeyFactory.java,v 1.12 2003/01/24 00:27:48 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -113,7 +113,7 @@ abstract public class KeyFactory {
         }
         String className = nameFactory.getNextName(keyInterface);
         Class result = new KeyFactoryGenerator(className, keyInterface, loader).define();
-        return (KeyFactory)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
+        return (KeyFactory)ReflectUtils.newInstance(result);
     }
 
     public int hashCode() {
