@@ -60,11 +60,11 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.1 2002/11/27 03:05:31 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.2 2002/11/27 21:29:48 herbyderby Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
-        // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
+        net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
     }
     
     private static final MethodInterceptor NOOP_INTERCEPTOR = new NoOpInterceptor();
@@ -352,5 +352,27 @@ public class TestEnhancer extends TestCase {
        Enhancer.enhance(ED.class, null, NOOP_INTERCEPTOR);
        Enhancer.enhance(ClassLoader.class, null, NOOP_INTERCEPTOR);
    }
+
+    public static class AroundDemo {
+        public String getFirstName() {
+            return "Chris";
+        }
+        public String getLastName() {
+            return "Nokleberg";
+        }
+    }
+
+    public void testAround() throws Throwable {
+        AroundDemo demo = (AroundDemo)Enhancer.enhance(AroundDemo.class, null, new AroundInterceptor() {
+                public Object aroundAdvice(Object obj, Method method, Object[] args,
+                                           MethodProxy proxy) throws Throwable {
+                    if (method.getName().equals("getFirstName"))
+                        return "Christopher";
+                    return proxy.invokeSuper(obj, args);
+                }
+            });
+        assertTrue(demo.getFirstName().equals("Christopher"));
+        assertTrue(demo.getLastName().equals("Nokleberg"));
+    }
   
 }

@@ -338,7 +338,7 @@ public abstract class MetaClass  {
            if(setters[i] != null){
                dup2();
                aaload(i);
-               unbox_or_checkcast(setters[i].getParameterTypes()[0]);
+               unbox(setters[i].getParameterTypes()[0]);
                invoke(setters[i]);
            }//read only
        }  

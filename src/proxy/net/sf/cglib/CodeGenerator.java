@@ -122,6 +122,10 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         this.superclass = superclass;
 	}
 
+    protected String getClassName() {
+        return cg.getClassName();
+    }
+
     protected Class getSuperclass() {
         return superclass;
     }
@@ -582,6 +586,9 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
 
     protected void load_class(Class clazz) {
         if (clazz.isPrimitive()) {
+            if (clazz.equals(Void.TYPE)) {
+                // TODO: error
+            }
             try {
                 getfield(((Class)primitiveToWrapper.get(clazz)).getDeclaredField("TYPE"));
             } catch (NoSuchFieldException e) {
@@ -805,6 +812,10 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         } else {
             invoke_virtual(method);
         }
+    }
+
+    protected void super_invoke(Method method) {
+        append(new INVOKESPECIAL(addMethodref(method)));
     }
 
     protected void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
@@ -1052,23 +1063,28 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
      * If the argument is a primitive class, replaces the primitive
      * value on the top of the stack with the wrapped (Object)
      * equivalent. For example, char -> Character.
+     * If the class is Void, a null is pushed onto the stack instead.
      * @param clazz the class indicating the current type of the top stack value
      */
     protected void box(Class clazz) {
         if (clazz.isPrimitive()) {
-            Class wrapper = (Class)primitiveToWrapper.get(clazz);
-            new_instance(wrapper);
-            if (getStackSize(clazz) == 2) {
-                // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
-                dup_x2();
-                dup_x2();
-                pop();
+            if (clazz.equals(Void.TYPE)) {
+                aconst_null();
             } else {
-                // p -> po -> opo -> oop -> o
-                dup_x1();
-                swap();
+                Class wrapper = (Class)primitiveToWrapper.get(clazz);
+                new_instance(wrapper);
+                if (getStackSize(clazz) == 2) {
+                    // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
+                    dup_x2();
+                    dup_x2();
+                    pop();
+                } else {
+                    // p -> po -> opo -> oop -> o
+                    dup_x1();
+                    swap();
+                }
+                invoke_constructor(wrapper, new Class[]{ clazz });
             }
-            invoke_constructor(wrapper, new Class[]{ clazz });
         }
     }
 
@@ -1079,25 +1095,18 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
      * @param clazz the class indicating the desired type of the top stack value
      * @return true if the value was unboxed
      */
-    protected boolean unbox(Class clazz) {
+    protected void unbox(Class clazz) {
         if (clazz.isPrimitive()) {
+            if (clazz.equals(Void.TYPE)) {
+                // TODO: error
+            }
             Class wrapper = (Class)primitiveToWrapper.get(clazz);
             Method convert = (Method)primitiveMethods.get(clazz);
             checkcast(wrapper);
             invoke(convert);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Unboxes the top stack value, if necessary, or casts to the
-     * desired class otherwise.
-     * @param clazz the class indicating the desired type of the top stack value
-     */
-    protected void unbox_or_checkcast(Class clazz) {
-        if (!unbox(clazz))
+        } else {
             checkcast(clazz);
+        }
     }
 
     protected void checkcast_this() {
@@ -1146,6 +1155,14 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         if (Modifier.isVolatile(modifiers))
             result |= ACC_VOLATILE;
         return result;
+    }
+
+    protected void generateNullConstructor() {
+        begin_constructor();
+        load_this();
+        super_invoke_constructor();
+        return_value();
+        end_constructor();
     }
 
     protected void generateFindClass() {

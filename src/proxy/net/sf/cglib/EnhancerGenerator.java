@@ -61,13 +61,39 @@ import java.util.*;
 /* package */ class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
+    private static final String ACCESS_PREFIX = "CGLIB$ACCESS_";
+    private static final String METHOD_FIELD_PREFIX = "METHOD_";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
+    private static final Method INVOKE_SUPER;
+    private static final Method AFTER_RETURN;
+    private static final Method AROUND_ADVICE;
+    private static final Method MAKE_PROXY;
+
+    static {
+        try {
+            Class[] types = new Class[]{ Object.class, Method.class, Object[].class };
+            INVOKE_SUPER = BeforeAfterInterceptor.class.getDeclaredMethod("invokeSuper", types);
+
+            types = new Class[]{ Object.class, Method.class, Object[].class,
+                                 Boolean.TYPE, Object.class, Throwable.class };
+            AFTER_RETURN = BeforeAfterInterceptor.class.getDeclaredMethod("afterReturn", types);
+
+            types = new Class[]{ Object.class, Method.class, Object[].class, MethodProxy.class };
+            AROUND_ADVICE = AroundInterceptor.class.getDeclaredMethod("aroundAdvice", types);
+
+            types = new Class[]{ Method.class };
+            MAKE_PROXY = MethodProxy.class.getDeclaredMethod("generate", types);
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
 
     private Class[] interfaces;
     private Method wreplace;
     private MethodInterceptor ih;
     private boolean delegating;
+    private boolean around;
         
     /* package */ EnhancerGenerator(String className, Class clazz, Class[] interfaces, MethodInterceptor ih,
                                     ClassLoader loader, Method wreplace, boolean delegating) {
@@ -77,8 +103,12 @@ import java.util.*;
         this.wreplace = wreplace;
         this.delegating = delegating;
 
-        if (!(ih instanceof BeforeAfterInterceptor)) {
-            throw new IllegalArgumentException("Only BeforeAfterInterceptor is currently allowed");
+        if (ih instanceof BeforeAfterInterceptor) {
+            // ok
+        } else if (ih instanceof AroundInterceptor) {
+            around = true;
+        } else {
+            throw new IllegalArgumentException("Unknown interceptor type: " + ih);
         }
 
         if (wreplace != null && 
@@ -168,19 +198,22 @@ import java.util.*;
                 methodMap.put(methodKey, method);
             }
         }
-        Method invokeSuper = getInvokeSuper();
-        Method afterReturn = getAfterReturn();
-
-        Map methodTable = new HashMap();
-        int cntr = 0;
-        for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
-            Method method = (Method)it.next();
-            String fieldName = "METHOD_" + cntr++;
-            declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, Method.class, fieldName);
-            generateMethod(fieldName, method, invokeSuper, afterReturn);
-            methodTable.put(fieldName, method);
+        List methodList = new ArrayList(methodMap.values());
+        int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+        for (int i = 0, size = methodList.size(); i < size; i++) {
+            Method method = (Method)methodList.get(i);
+            String fieldName = METHOD_FIELD_PREFIX + i;
+            declare_field(privateFinalStatic, Method.class, fieldName);
+            if (around) {
+                String accessName = ACCESS_PREFIX + i;
+                declare_field(privateFinalStatic, MethodProxy.class, accessName);
+                generateAccessMethod(method, accessName);
+                generateAroundMethod(method, fieldName, accessName);
+            } else {
+                generateMethod(method, fieldName);
+            }
         }
-        generateClInit(methodTable);
+        generateClInit(methodList);
 
         if (!declaresWriteReplace) {
             generateWriteReplace();
@@ -193,27 +226,6 @@ import java.util.*;
                                                "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
                                                m1.toString() + "\n" + m2.toString());
         }
-    }
-
-    private Method getInvokeSuper() throws NoSuchMethodException {
-        Class[] types = new Class[]{
-            Object.class,
-            Method.class,
-            Object[].class,
-        };
-        return BeforeAfterInterceptor.class.getDeclaredMethod("invokeSuper", types);
-    }
-
-    private Method getAfterReturn() throws NoSuchMethodException {
-        Class[] types = new Class[]{
-            Object.class,
-            Method.class,
-            Object[].class,
-            Boolean.TYPE,
-            Object.class,
-            Throwable.class
-        };
-        return BeforeAfterInterceptor.class.getDeclaredMethod("afterReturn", types);
     }
 
     private void generateConstructor() {
@@ -315,7 +327,7 @@ import java.util.*;
         }
     }
 
-    private void generateMethod(String fieldName, Method method, Method invokeSuper, Method afterReturn) {
+    private void generateMethod(Method method, String fieldName) {
         Class returnType = method.getReturnType();
         boolean returnsValue = !returnType.equals(Void.TYPE);
         int mod = method.getModifiers();
@@ -340,7 +352,7 @@ import java.util.*;
             load_this();
             getstatic(fieldName);
             load_local("args");
-            invoke(invokeSuper);
+            invoke(INVOKE_SUPER);
 
             ifeq("endif");
             push(1);
@@ -376,7 +388,7 @@ import java.util.*;
         load_local("superInvoked");
         load_local("resultFromSuper");
         load_local("error");
-        invoke(afterReturn);
+        invoke(AFTER_RETURN);
 
         /* generates:
            if (result == null) {
@@ -385,6 +397,41 @@ import java.util.*;
                return ((Number)result).intValue();
            }
          */
+        return_zero_if_null();
+        end_handler();
+        generateHandleUndeclared(method, outer_eh);
+        end_method();
+    }
+
+    private void generateAccessMethod(Method method, String accessName) {
+        begin_method(Modifier.FINAL,
+                     method.getReturnType(),
+                     accessName,
+                     method.getParameterTypes(),
+                     method.getExceptionTypes());
+        load_this();
+        if (delegating) {
+            getfield(DELEGATE_FIELD);
+            load_args();
+            invoke(method);
+        } else {
+            load_args();
+            super_invoke(method);
+        }
+        return_value();
+        end_method();
+    }
+
+    private void generateAroundMethod(Method method, String fieldName, String accessName) {
+        begin_method(method);
+        int outer_eh = begin_handler();
+        load_this();
+        getfield(INTERCEPTOR_FIELD);
+        load_this();
+        getstatic(fieldName);
+        create_arg_array();
+        getstatic(accessName);
+        invoke(AROUND_ADVICE);
         return_zero_if_null();
         end_handler();
         generateHandleUndeclared(method, outer_eh);
@@ -429,45 +476,59 @@ import java.util.*;
         }
     }
 
-    private void generateClInit(Map methodTable) throws NoSuchMethodException {
+    private void generateClInit(List methodList) throws NoSuchMethodException {
         /* generates:
            static {
              Class [] args;
              Class cls = findClass("java.lang.Object");
              args = new Class[0];
              METHOD_1 = cls.getDeclaredMethod("toString", args);
-             ...etc...
            }
         */
-
+        /* for AroundInterceptor, also generates:
+             Class thisClass = findClass("NameOfThisClass");
+             Method proxied = thisClass.getDeclaredMethod("CGLIB$ACCESS_O", args);
+             CGLIB$ACCESS_0 = MethodProxy.generate(proxied);
+        */
         Method getDeclaredMethod =
             Class.class.getDeclaredMethod("getDeclaredMethod",
                                           new Class[]{ String.class, Class[].class });
         begin_static();
-        for (Iterator it = methodTable.keySet().iterator(); it.hasNext();) {
-            String fieldName = (String)it.next();
-            Method method = (Method)methodTable.get(fieldName);
-            Class[] args = method.getParameterTypes();
+        for (int i = 0, size = methodList.size(); i < size; i++) {
+            Method method = (Method)methodList.get(i);
+            String fieldName = METHOD_FIELD_PREFIX + i;
 
+            Class[] args = method.getParameterTypes();
             push(method.getDeclaringClass().getName());
             invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
             store_local("cls");
             push(args.length);
             newarray(Class.class);
 
-            for (int i = 0; i < args.length; i++) {
+            for (int j = 0; j < args.length; j++) {
                 dup();
-                push(i);
-                load_class(args[i]);
+                push(j);
+                load_class(args[j]);
                 aastore();
             }
+            store_local("args");
 
             load_local("cls");
-            swap();
             push(method.getName());
-            swap();
+            load_local("args");
             invoke(getDeclaredMethod);
             putstatic(fieldName);
+
+            if (around) {
+                String accessName = ACCESS_PREFIX + i;
+                push(getClassName());
+                invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
+                push(accessName);
+                load_local("args");
+                invoke(getDeclaredMethod);
+                invoke(MAKE_PROXY);
+                putstatic(accessName);
+            }
         }
         return_value();
         end_static();

@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.3 2002/11/27 21:29:53 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method hashCode;
@@ -117,14 +117,6 @@ class KeyFactoryGenerator extends CodeGenerator {
         generateConstructor();
         generateFactory();
         generateEquals();
-    }
-
-    private void generateNullConstructor() {
-        begin_constructor();
-        load_this();
-        super_invoke_constructor();
-        return_value();
-        end_constructor();
     }
 
     private void generateConstructor() throws NoSuchFieldException {
