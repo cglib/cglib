@@ -63,7 +63,7 @@ import net.sf.cglib.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.2 2003/09/09 20:59:59 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.3 2003/09/10 00:35:43 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final FactoryCache CACHE = new FactoryCache(Mixin.class);
@@ -144,7 +144,7 @@ abstract public class Mixin {
      * @param beans the list of beans to delegate to
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
      */
-    public static Object createBean(final Object[] beans, ClassLoader loader) {
+    public static Mixin createBean(final Object[] beans, ClassLoader loader) {
         Object key = new ClassesKey(beans);
         return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
             public BasicCodeGenerator newGenerator() {
