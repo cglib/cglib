@@ -67,7 +67,7 @@ import java.lang.reflect.Modifier;
         return accept(method, pkg);
     }
 
-    public static boolean accept(Member member, Package pkg) {
+    private static boolean accept(Member member, Package pkg) {
         int mod = member.getModifiers();
         if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
             return false;

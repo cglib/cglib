@@ -119,29 +119,19 @@ import java.util.*;
         }
 
         try {
-            
-
+            VisibilityFilter vis = new VisibilityFilter(clazz);
             try {
                 cstruct = clazz.getDeclaredConstructor(Constants.TYPES_EMPTY);
-                if (!VisibilityFilter.accept(cstruct, clazz.getPackage())) {
+                if (!vis.accept(cstruct)) {
                     cstruct = null;
                 }
             } catch (NoSuchMethodException ignore) {
             }
-
-            Constructor[] constructors = clazz.getDeclaredConstructors();
-            
-            constructorList = new ArrayList(constructors.length);
-            for(int i = 0; i< constructors.length; i++  ){
-               if( VisibilityFilter.accept(constructors[i], clazz.getPackage()) ){
-                 constructorList.add(constructors[i]);    
-               }
+            constructorList = new ArrayList(Arrays.asList(clazz.getDeclaredConstructors()));
+            filterMembers(constructorList, vis);
+            if (constructorList.size() == 0) {
+                throw new IllegalArgumentException("No visible constructors in " + clazz);
             }
-            
-            if( constructorList.size() == 0  ){
-                  throw new IllegalArgumentException(clazz.getName());
-            }
-            
             
             if (wreplace != null) {
                 loader.loadClass(wreplace.getDeclaringClass().getName());
@@ -171,7 +161,6 @@ import java.util.*;
             declare_field(Modifier.PRIVATE, getSuperclass(), DELEGATE_FIELD);
         }
 
-
         generateConstructors();
         generateFactory();
 
@@ -194,14 +183,14 @@ import java.util.*;
             forcePublic = Collections.EMPTY_SET;
         }
 
-        filterMethods(methods, new VisibilityFilter(getSuperclass()));
+        filterMembers(methods, new VisibilityFilter(getSuperclass()));
         if (delegating) {
-            filterMethods(methods, new ModifierFilter(Modifier.PROTECTED, 0));
+            filterMembers(methods, new ModifierFilter(Modifier.PROTECTED, 0));
         }
-        filterMethods(methods, new DuplicatesFilter());
-        filterMethods(methods, new ModifierFilter(Modifier.FINAL, 0));
+        filterMembers(methods, new DuplicatesFilter());
+        filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
         if (filter != null) {
-            filterMethods(methods, filter);
+            filterMembers(methods, filter);
         }
 
         boolean declaresWriteReplace = false;
@@ -228,10 +217,10 @@ import java.util.*;
         }
     }
 
-    private void filterMethods(List methods, MethodFilter filter) {
-        Iterator it = methods.iterator();
+    private void filterMembers(List members, MethodFilter filter) {
+        Iterator it = members.iterator();
         while (it.hasNext()) {
-            if (!filter.accept((Method)it.next())) {
+            if (!filter.accept((Member)it.next())) {
                 it.remove();
             }
         }
