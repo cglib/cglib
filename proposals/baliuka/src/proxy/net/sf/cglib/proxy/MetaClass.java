@@ -18,9 +18,9 @@ public abstract class MetaClass implements ClassFileConstants{
     
     static Map cache = new Hashtable();
     
-    private Class target;
-    private String [] getters, setters;
-    private Class[] types;
+    protected Class target;
+    protected String [] getters, setters;
+    protected Class[] types;
     
     /** Creates a new instance of MetaClass */
    protected MetaClass( Class target, String getters[], 
