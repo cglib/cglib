@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.18 2002/11/01 07:17:38 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.19 2002/11/06 18:15:54 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -336,7 +336,18 @@ public class TestEnhancer extends TestCase {
        Enhancer.enhance(
         D.class,
         null, NOOP_INTERCEPTOR );
+       
+       Enhancer.enhance(
+        ClassLoader.class,
+        null, NOOP_INTERCEPTOR );
+       
    
   
-  }   
+  }
+   
+   
+   
+   
+   
+   
 }

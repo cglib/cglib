@@ -68,6 +68,23 @@ class ClassFileUtils implements ClassFileConstants {
     private ClassFileUtils() {
     }
     
+    static Instruction getIntConst( int i, ConstantPoolGen cp){
+        
+              if( i<= 5 ){ 
+                  return ( new  ICONST( i ) );
+               }else  if ( i < Byte.MAX_VALUE){
+                  return ( new  BIPUSH((byte)i ) ); 
+               }else if ( i < Short.MAX_VALUE ) {
+                  return ( new  SIPUSH((short)i ) ); 
+               }else{
+                  return new LDC( cp.addInteger(i) );
+               } 
+            
+    
+    }
+    
+  
+    
     static Class defineClass( final ClassLoader  loader,
     final String name,final byte[] b){
         
@@ -205,18 +222,15 @@ class ClassFileUtils implements ClassFileConstants {
     Type[] args) {
         
         int argCount = args.length;
-        if (argCount > 5)
-            il.append(new BIPUSH((byte) argCount));
-        else
-            il.append(new ICONST((byte) argCount));
+       
+        il.append(getIntConst(argCount,cp));
+       
+       
         il.append(new ANEWARRAY(cp.addClass(Type.OBJECT)));
         int load = 1;
         for (int i = 0; i < argCount; i++) {
             il.append(new DUP());
-            if (i > 5)
-                il.append(new BIPUSH((byte) i));
-            else
-                il.append(new ICONST((byte) i));
+            il.append(getIntConst( i, cp ) );
             if (args[i] instanceof BasicType) {
                 if (args[i].equals(Type.BOOLEAN)) {
                     il.append(new NEW(cp.addClass(BOOLEAN_OBJECT)));
@@ -576,7 +590,7 @@ class ClassFileUtils implements ClassFileConstants {
             
             il.append( new LDC( cp.addString( cls.getName()) ) );
             il.append( new INVOKESTATIC( cp.addMethodref( cg.getClassName(),
-            "findClass","(Ljava/lang/String;)Ljava/lang/Class;")
+            FIND_CLASS,"(Ljava/lang/String;)Ljava/lang/Class;")
             )
             ) ;
         }
@@ -608,7 +622,8 @@ class ClassFileUtils implements ClassFileConstants {
         MethodGen findClass = new MethodGen( ACC_PRIVATE | ACC_STATIC , // access flags
         CLASS_OBJECT, // return type
         new Type[] { Type.STRING }, null, // arg names
-        "findClass", cg.getClassName(), il, cp);
+        FIND_CLASS, cg.getClassName(), il, cp);
+        
         
         InstructionHandle start = il.append( new ALOAD(0));
         
