@@ -40,6 +40,7 @@
 
      <H5> Links </h5>
       <li> <a  href='http://jakarta.apache.org/bcel'> BCEL  </a>
+      <li> <a  href='http://xorm.sourceforge.net'> XORM  </a>
    </td>
    <td width='5%' >&nbsp;</td>
    <td width='10%' style='background-color:ffffff'>&nbsp;</td>
