@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="all" name="simplestore">
+
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.1 2002/07/03 19:03:20 baliuka Exp $ -->
+
+<!-- ========== Executable Targets ======================================== -->
+
+  <target description="Initialize and evaluate conditionals" name="init">
+
+    <!-- read properties from the build.properties, if any -->
+    <property name="component-propfile" value="${basedir}/build.properties"/>
+
+    <property name="component.name" value="cglib"/>
+    <property name="component.package" value="net.sf.cglib"/>
+    <property name="component.title" value="cglib"/>
+    <property name="component.version" value="1.0-dev"/>
+
+    <property name="build.home" value="build/proxy"/>
+
+   
+
+
+    <property name="dist.home" value="dist"/>
+    <property name="source.home" value="src/proxy"/>
+    <property name="source.test" value="src/test"/>
+    
+  
+    <property name="compile.debug" value="true"/>
+    <property name="compile.deprecation" value="true"/>
+    <property name="compile.optimize" value="true"/>
+
+    <path id="compile.classpath">
+      <pathelement location="${build.home}/classes"/>
+      <pathelement location="${bcel.jar}"/>
+    
+      <fileset dir="./lib">
+		<include name="*.*"/>
+       </fileset>
+    </path>
+  
+  
+
+    <!-- ========== Test Execution Defaults =================================== -->
+    <property name="cp" value=""/>
+    <property name="classpath" value="${cp}:${junit.jar}:${hsqldb.jar}:${jdbc2_0-stdext.jar}:${bcel.jar}"/>
+    <property name="test.entry" value="org.apache.commons.simplestore.TestAll"/>
+    <property name="test.failonerror" value="true"/>
+    <property name="test.runner" value="junit.textui.TestRunner"/>
+
+    <echo message="-------- ${component.name} ${component.version} --------"/>
+  </target>
+
+  <target depends="init" description="Prepare build directory" name="prepare">
+    <mkdir dir="${build.home}"/>
+    <mkdir dir="${build.home}/classes"/>
+    <mkdir dir="${build.home}/conf"/>
+   
+ 
+  </target>
+
+  <target depends="prepare" description="Compile shareable components" name="compile">
+    <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}">
+      <classpath refid="compile.classpath"/>
+    </javac>
+  </target>
+
+  <target depends="init" description="Clean build and distribution directories" name="clean">
+    <delete dir="${build.home}"/>
+    <delete dir="${test.build.home}"/>
+    <delete dir="${dist.home}"/>
+     
+  </target>
+
+  <target depends="clean,compile" 
+          description="Clean and compile all components" 
+   name="all"/>
+
+  <target depends="compile" description="Create component Javadoc documentation" name="javadoc">
+    <mkdir dir="${dist.home}"/>
+    <mkdir dir="${dist.home}/docs"/>
+    <mkdir dir="${dist.home}/docs/api"/>
+    <javadoc author="true" bottom="Copyright (c) 2001 - Apache Software Foundation" destdir="${dist.home}/docs/api" doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" packagenames="org.apache.commons.*" private="true" sourcepath="${source.home}" version="true" windowtitle="${component.title} (Version ${component.version})"/>
+  </target>
+
+  <target depends="compile" description="Create binary distribution"
+    name="proxy">
+    <mkdir dir="${dist.home}"/>
+
+    <copy file="LICENSE" todir="${dist.home}"/>
+
+    <unzip src="lib/bcel.jar" dest="${build.home}/classes" />
+
+    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}.jar" >
+      <include name="**/*"/>
+    </jar>    
+
+  </target>
+
+ 
+
+  <target depends="proxy" description="Create binary distribution" 
+         name="dist">
+  </target>
+ 
+  
+
+
+  
+
+
+
+ 
+  
+</project>
