@@ -67,10 +67,6 @@ public class ClassesKey
         }
     }
 
-//     public Object[] getArray() {
-//         return array;
-//     }
-
     public boolean equals(Object o) {
         return o != null
             && (o instanceof ClassesKey)
