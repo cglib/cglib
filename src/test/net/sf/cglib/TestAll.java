@@ -63,7 +63,7 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.48 2003/10/06 17:02:38 baliuka Exp $
+ *@version    $Id: TestAll.java,v 1.49 2003/10/07 18:16:50 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -110,6 +110,8 @@ public class TestAll extends TestCase {
         suite.addTest(TestAddClassInit.suite());
         suite.addTest(TestProvideFields.suite());
         suite.addTest(TestAddDelegate.suite());
+        suite.addTest(TestInterceptFields.suite());
+        suite.addTest(TestDemo.suite());
 
         // performance
         // suite.addTest(TestReflectPerf.suite());
