@@ -63,7 +63,7 @@ import junit.framework.TestSuite;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: NoOpInterceptor.java,v 1.1 2002/09/22 16:45:56 baliuka Exp $
+ *@version    $Id: NoOpInterceptor.java,v 1.2 2002/09/23 18:15:01 baliuka Exp $
  */
  public class NoOpInterceptor implements MethodInterceptor{
     
@@ -82,6 +82,10 @@ import junit.framework.TestSuite;
      * @return value to return from generated method
      */
     public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
+        
+        if(e != null )
+            throw e.fillInStackTrace();
+        
        return retValFromSuper;   
     }
     
@@ -93,6 +97,7 @@ import junit.framework.TestSuite;
      * @return true if need to invoke super
      */
     public boolean invokeSuper(Object obj, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+        
         return true;
     }
     
