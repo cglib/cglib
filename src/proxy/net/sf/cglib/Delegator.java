@@ -62,7 +62,7 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.7 2002/12/06 19:16:43 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.8 2002/12/07 15:36:49 baliuka Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -76,7 +76,8 @@ public class Delegator {
     private static final DelegatorKey keyFactory =
       (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
 
-    /* package */ interface DelegatorKey {
+    /*package doe's not work on jdk1.2 */     
+    public interface DelegatorKey {
         public Object newInstance(Class[] classes);
     }
 

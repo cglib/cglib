@@ -94,7 +94,7 @@ import java.util.*;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.6 2002/12/04 17:33:31 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.7 2002/12/07 15:36:49 baliuka Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -114,7 +114,9 @@ abstract public class KeyFactory {
         if (loader == null) {
             loader = defaultLoader;
         }
-        Class result = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
+        
+       
+       Class  result = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
                                                keyInterface,
                                                loader).define();
         return (KeyFactory)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);

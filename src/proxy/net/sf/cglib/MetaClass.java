@@ -76,7 +76,8 @@ public abstract class MetaClass  {
     protected String [] getters, setters;
     protected Class[] types;
 
-    /* package */ interface MetaClassKey {
+   /*package doe's not work on jdk1.2 */      
+    public interface MetaClassKey {
         public Object newInstance(Class target, String[] getters,
                                   String[] setters, Class[] types);
     }

@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.9 2002/12/03 08:02:41 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.10 2002/12/07 15:36:52 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -105,7 +105,7 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("Cache failed",vector1.getClass() == vector2.getClass());
     }
     
-    
+   
     public void testMethods()throws Throwable{
         
         MethodInterceptor interceptor =
@@ -372,4 +372,5 @@ public class TestEnhancer extends CodeGenTestCase {
         samples.Trace.main(new String[]{});
         samples.Beans.main(new String[]{});
     }
+    
 }

@@ -58,8 +58,8 @@ import java.lang.reflect.Method;
 /* package */ class MethodWrapper {
     private static final MethodWrapperKey keyFactory =
       (MethodWrapperKey)KeyFactory.makeFactory(MethodWrapperKey.class, null);
-
-    /* package */ interface MethodWrapperKey {
+/*package doe's not work on jdk1.2 */     
+    public interface MethodWrapperKey {
         public Object newInstance(String name, Class[] parameterTypes);
     }
     
