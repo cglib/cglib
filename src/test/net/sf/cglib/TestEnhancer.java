@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.30 2003/06/13 21:12:48 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.31 2003/07/15 01:05:04 wbiggs Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -507,5 +507,20 @@ public class TestEnhancer extends CodeGenTestCase {
         Signature sig = (Signature)Enhancer.enhance(Signature.class, TEST_INTERCEPTOR);
         assertTrue(((Factory)sig).interceptor() == TEST_INTERCEPTOR);
         assertTrue(sig.interceptor() == 42);
+    }
+
+    public abstract static class AbstractMethodCallInConstructor {
+	public AbstractMethodCallInConstructor() {
+	    foo();
+	}
+
+	public abstract void foo();
+    }
+
+    public void testAbstractMethodCallInConstructor() throws Throwable {
+	AbstractMethodCallInConstructor obj = (AbstractMethodCallInConstructor)
+	    Enhancer.enhance(AbstractMethodCallInConstructor.class,
+			     TEST_INTERCEPTOR);
+	obj.foo();
     }
 }
