@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.23 2002/10/31 15:54:52 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.24 2002/10/31 16:00:51 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -186,7 +186,7 @@ public class Enhancer implements ClassFileConstants {
      * @param loader classloater for enhanced class, uses "current" if null
      * @param wreplace  static method to implement writeReplace, must have
      * single Object type parameter(to replace) and return object, 
-     * default implementation is used if
+     * default implementation from InternalReplace is used if
      * parameter is null : static public Object InternalReplace.writeReplace( 
      *                                                       Object enhanced )
      *                 throws ObjectStreamException;
@@ -243,6 +243,9 @@ public class Enhancer implements ClassFileConstants {
                 ( 
                   !java.lang.reflect.Modifier.
                      isStatic( wreplace.getModifiers() )    ||
+                  !java.lang.reflect.Modifier.
+                     isPublic( wreplace.getModifiers() )    ||
+               
                    wreplace.getReturnType() != Object.class || 
                    wreplace.getParameterTypes().length != 1 ||
                    wreplace.getParameterTypes()[0] != Object.class
