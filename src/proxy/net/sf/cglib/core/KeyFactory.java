@@ -96,7 +96,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.13 2003/10/05 00:54:35 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.14 2003/10/06 07:50:16 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -109,6 +109,8 @@ abstract public class KeyFactory {
       TypeUtils.parseSignature("boolean equals(Object)");
     private static final Signature TO_STRING =
       TypeUtils.parseSignature("String toString()");
+    private static final Signature APPEND_STRING =
+      TypeUtils.parseSignature("StringBuffer append(String)");
     private static final Type KEY_FACTORY =
       TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
     
@@ -278,6 +280,10 @@ abstract public class KeyFactory {
             e.dup();
             e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
             for (int i = 0; i < parameterTypes.length; i++) {
+                if (i > 0) {
+                    e.push(", ");
+                    e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+                }
                 e.load_this();
                 e.getfield(getFieldName(i));
                 ComplexOps.append_string(e, parameterTypes[i], ComplexOps.DEFAULT_DELIMITERS, customizer);
