@@ -57,19 +57,99 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
+ * Delegates are a typesafe pointer to another method.  Since Java does not
+ * have language support for such a construct, this utility will construct
+ * a proxy that forwards method calls to any method with the same signature.
+ * This utility is inspired in part by the C# delegate mechanism.  We
+ * implemented it in a Java-centric manner.
+ *
+ * <h2>Delegate</h2>
+ * <p>
+ *   Any interface with one method can become the interface for a delegate.
+ *   Consider the example below:
+ * </p>
+ *
+ * <pre>
+ *   public interface MainDelegate {
+ *       int main(String[] args);
+ *   }
+ * </pre>
+ *
+ * <p>
+ *   The interface above is an example of an interface that can become a
+ *   delegate.  It has only one method, and the interface is public.  In
+ *   order to create a delegate for that method, all we have to do is
+ *   call <code>MethodDelegate.create(this, "alternateMain", MainDelegate.class)</code>.
+ *   The following program will show how to use it:
+ * </p>
+ *
+ * <pre>
+ *   public class Main {
+ *       public static int main( String[] args ) {
+ *           Main newMain = new Main();
+ *           MainDelegate start = (MainDelegate)
+ *               MethodDelegate.create(newMain, "alternateMain", MainDelegate.class);
+ *           return start.main( args );
+ *       }
+ *
+ *       public int alternateMain( String[] args ) {
+ *           for (int i = 0; i < args.length; i++) {
+ *               System.out.println( args[i] );
+ *           }
+ *           return args.length;
+ *       }
+ *   }
+ * </pre>
+ *
+ * <p>
+ *   By themselves, delegates don't do much.  Their true power lies in the fact that
+ *   they can be treated like objects, and passed to other methods.  In fact that is
+ *   one of the key building blocks of building Intelligent Agents which in tern are
+ *   the foundation of artificial intelligence.  In the above program, we could have
+ *   easily created the delegate to match the static <code>main</code> method by
+ *   substituting the delegate creation call with this:
+ *   <code>MethodDelegate.createStatic(getClass(), "main", MainDelegate.class)</code>.
+ * </p>
+ * <p>
+ *   Another key use for Delegates is to register event listeners.  It is much easier
+ *   to have all the code for your events separated out into methods instead of individual
+ *   classes.  One of the ways Java gets around that is to create anonymous classes.
+ *   They are particularly troublesome because many Debuggers do not know what to do
+ *   with them.  Anonymous classes tend to duplicate alot of code as well.  We can
+ *   use any interface with one declared method to forward events to any method that
+ *   matches the signature (although the method name can be different).
+ * </p>
+ *
+ * <h3>Equality</h3>
+ *  The criteria that we use to test if two delegates are equal are:
+ *   <ul>
+ *     <li>
+ *       They both refer to the same instance.  That is, the <code>instance</code>
+ *       parameter passed to the newDelegate method was the same for both. The
+ *       instances are compared with the identity equality operator, <code>==</code>.
+ *     </li>
+ *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
+ *   </ul>
+ *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.7 2002/12/22 00:21:17 herbyderby Exp $
+ * @author <a href="mailto:bloritsch@apache.org">Berin Loritsch</a>
+ * @author <a href="mailto:leo.sutic@inspireinfrastructure.com">Leo Sutic</a>
+ * @version $Id: MethodDelegate.java,v 1.1 2002/12/29 21:36:22 herbyderby Exp $
  */
-abstract public class MethodClosure {
-    /* package */ static final Class TYPE = MethodClosure.class;
+abstract public class MethodDelegate {
+    /* package */ static final Class TYPE = MethodDelegate.class;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("ClosuredByCGLIB");
-    private static final MethodClosureKey keyFactory =
-      (MethodClosureKey)KeyFactory.makeFactory(MethodClosureKey.class, null);
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("DelegatedByCGLIB");
+
+    private static final MethodDelegateKey keyFactory =
+      (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class, null);
+
+    private static final Method NEW_INSTANCE =
+      ReflectUtils.findMethod("MethodDelegate.cglib_newInstance(Object)");
 
     // should be package-protected but causes problems on jdk1.2
-    public interface MethodClosureKey {
+    public interface MethodDelegateKey {
         public Object newInstance(Class delegateClass, String methodName, Class iface);
     }
 
@@ -77,7 +157,7 @@ abstract public class MethodClosure {
     protected String eqMethod;
 
     public boolean equals(Object obj) {
-        MethodClosure other = (MethodClosure)obj;
+        MethodDelegate other = (MethodDelegate)obj;
         return delegate == other.delegate && eqMethod.equals(other.eqMethod);
     }
 
@@ -85,40 +165,48 @@ abstract public class MethodClosure {
         return delegate.hashCode() ^ eqMethod.hashCode();
     }
 
-    protected MethodClosure() {
+    protected MethodDelegate() {
     }
 
-    abstract public MethodClosure newInstance(Object delegate);
+    abstract protected MethodDelegate cglib_newInstance(Object delegate);
 
-    public Object getDelegate() {
-        return delegate;
+    public static MethodDelegate createStatic(Class clazz, String methodName, Class iface) {
+        return createHelper(null, clazz, methodName, iface, null);
     }
 
-    public static MethodClosure generate(Object delegate, String methodName, Class iface) {
-        return generate(delegate, methodName, iface, null);
+    public static MethodDelegate createStatic(Class clazz, String methodName, Class iface, ClassLoader loader) {
+        return createHelper(null, clazz, methodName, iface, loader);
     }
 
-    public static MethodClosure generate(Object delegate, String methodName, Class iface, ClassLoader loader) {
+    public static MethodDelegate create(Object delegate, String methodName, Class iface) {
+        return createHelper(delegate, delegate.getClass(), methodName, iface, null);
+    }
+
+    public static MethodDelegate create(Object delegate, String methodName, Class iface, ClassLoader loader) {
+        return createHelper(delegate, delegate.getClass(), methodName, iface, loader);
+    }
+
+    private static MethodDelegate createHelper(Object delegate, Class clazz, String methodName,
+                                               Class iface, ClassLoader loader) {
         if (loader == null) {
             loader = defaultLoader;
         }
-        Class delegateClass = delegate.getClass();
-        Object key = keyFactory.newInstance(delegateClass, methodName, iface);
-        MethodClosure factory;
+        Object key = keyFactory.newInstance(clazz, methodName, iface);
+        MethodDelegate factory;
         synchronized (cache) {
-            factory = (MethodClosure)cache.get(loader, key);
+            factory = (MethodDelegate)cache.get(loader, key);
             if (factory == null) {
-                Method method = findProxiedMethod(delegateClass, methodName, iface);
-                String className = nameFactory.getNextName(delegateClass);
+                Method method = findProxiedMethod(clazz, methodName, iface);
+                String className = nameFactory.getNextName(clazz);
                 Class result = new Generator(className, method, iface, loader).define();
-                factory = (MethodClosure)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);
+                factory = (MethodDelegate)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
                 cache.put(loader, key, factory);
             }
         }
-        return factory.newInstance(delegate);
+        return factory.cglib_newInstance(delegate);
     }
 
-    private static Method findProxiedMethod(Class delegateClass, String methodName, Class iface) {
+    private static Method findProxiedMethod(Class clazz, String methodName, Class iface) {
         if (!iface.isInterface()) {
             throw new IllegalArgumentException(iface + " is not an interface");
         }
@@ -128,7 +216,7 @@ abstract public class MethodClosure {
         }
         Method proxy = methods[0];
         try {
-            Method method = delegateClass.getMethod(methodName, proxy.getParameterTypes());
+            Method method = clazz.getMethod(methodName, proxy.getParameterTypes());
             if (method == null) {
                 throw new IllegalArgumentException("no matching method found");
             }
@@ -146,7 +234,7 @@ abstract public class MethodClosure {
         private Class iface;
 
         public Generator(String className, Method method, Class iface, ClassLoader loader) {
-            super(className, MethodClosure.class, loader);
+            super(className, MethodDelegate.class, loader);
             this.method = method;
             this.iface = iface;
         }
@@ -167,8 +255,7 @@ abstract public class MethodClosure {
             end_method();
 
             // newInstance
-            Method newInstance = MethodClosure.TYPE.getMethod("newInstance", TYPES_OBJECT);
-            begin_method(newInstance);
+            begin_method(NEW_INSTANCE);
             new_instance_this();
             dup();
             dup2();
