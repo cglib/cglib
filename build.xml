@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="all" name="simplestore">
+<project basedir="." default="test" name="simplestore">
 
-<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.2 2002/07/03 19:25:58 baliuka Exp $ -->
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.3 2002/07/04 17:32:08 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -17,8 +17,8 @@
 
     <property name="build.home" value="build/proxy"/>
 
-   
 
+    <property name="test.build.home" value="build/test"/>
 
     <property name="dist.home" value="dist"/>
     <property name="source.home" value="src/proxy"/>
@@ -42,10 +42,10 @@
 
     <!-- ========== Test Execution Defaults =================================== -->
     <property name="cp" value=""/>
-    <property name="classpath" value="${cp}:${junit.jar}:${hsqldb.jar}:${jdbc2_0-stdext.jar}:${bcel.jar}"/>
-    <property name="test.entry" value="org.apache.commons.simplestore.TestAll"/>
-    <property name="test.failonerror" value="true"/>
-    <property name="test.runner" value="junit.textui.TestRunner"/>
+    <property name="classpath" value="${cp}:${junit.jar}:${bcel.jar}" />
+    <property name="test.entry" value="net.sf.cglib.TestAll" />
+    <property name="test.failonerror" value="true" />
+    <property name="test.runner" value="junit.textui.TestRunner" />
 
     <echo message="-------- ${component.name} ${component.version} --------"/>
   </target>
@@ -54,17 +54,20 @@
     <mkdir dir="${build.home}"/>
     <mkdir dir="${build.home}/classes"/>
     <mkdir dir="${build.home}/conf"/>
+    <mkdir dir="${test.build.home}/classes"/>
    
  
   </target>
 
-  <target depends="prepare" description="Compile shareable components" name="compile">
+  <target depends="prepare" description="Compile shareable components" 
+          name="compile">
     <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}">
       <classpath refid="compile.classpath"/>
     </javac>
   </target>
 
-  <target depends="init" description="Clean build and distribution directories" name="clean">
+  <target depends="init" description="Clean build and distribution directories" 
+          name="clean">
     <delete dir="${build.home}"/>
     <delete dir="${test.build.home}"/>
     <delete dir="${dist.home}"/>
@@ -105,7 +108,50 @@
   
 
 
+  <target depends="compile"
+    name="build-test">
+    <javac debug="${compile.debug}" 
+           deprecation="${compile.deprecation}" 
+           destdir="${test.build.home}/classes" 
+           optimize="${compile.optimize}" 
+           srcdir="${source.test}"
+         >
+   
+   <classpath refid="compile.classpath"/>
+   <classpath>
+   <pathelement path="${build.home}/classes"/>
+   </classpath> 
+   </javac>
   
+
+  </target>
+
+
+  
+  <target depends="init,build-test" 
+          description="runs (junit) unit tests" 
+          name="test">
+    <java classname="${test.runner}" 
+          failonerror="${test.failonerror}"
+          fork="yes" 
+          >
+
+  <!-- jvmarg value="-Xrunhprof:cpu=times,file=debug.txt" / -->
+  <!-- jvmarg value="-verbose:gc" / --> 
+  <!-- jvmarg value="-verbose:class" / --> 
+      <arg value="${test.entry}"/>
+        <classpath>
+          <pathelement path="${build.home}/classes"/>
+          <pathelement path="${test.build.home}/classes"/>
+          <pathelement path="${classpath}"/>
+          <pathelement path="${java.class.path}"/>
+          <pathelement path="${source.test}"/>
+          <fileset dir="./lib">
+		<include name="*.*"/>
+          </fileset>
+        </classpath>
+    </java>
+  </target>
 
 
 
