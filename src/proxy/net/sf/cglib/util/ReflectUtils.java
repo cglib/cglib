@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.2 2003/06/16 17:06:59 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.3 2003/06/24 20:57:26 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -86,6 +86,22 @@ public class ReflectUtils {
         transforms.put("boolean", "Z");
     }
 
+    public static Constructor findConstructor(String desc) {
+        return findConstructor(desc, defaultLoader);
+    }
+
+    public static Constructor findConstructor(String desc, ClassLoader loader) {
+        try {
+            int lparen = desc.indexOf('(');
+            String className = desc.substring(0, lparen).trim();
+            return getClass(className, loader).getConstructor(parseTypes(desc, loader));
+        } catch (ClassNotFoundException e) {
+            throw new CodeGenerationException(e);
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
     public static Method findMethod(String desc) {
         return findMethod(desc, defaultLoader); 
     }
@@ -93,34 +109,38 @@ public class ReflectUtils {
     public static Method findMethod(String desc, ClassLoader loader) {
         try {
             int lparen = desc.indexOf('(');
-            int rparen = desc.indexOf(')', lparen);
             int dot = desc.lastIndexOf('.', lparen);
             String className = desc.substring(0, dot).trim();
             String methodName = desc.substring(dot + 1, lparen).trim();
-            List params = new ArrayList();
-            int start = lparen + 1;
-            for (;;) {
-                int comma = desc.indexOf(',', start);
-                if (comma < 0) {
-                    break;
-                }
-                params.add(desc.substring(start, comma).trim());
-                start = comma + 1;
-            }
-            if (start < rparen) {
-                params.add(desc.substring(start, rparen).trim());
-            }
-            Class cls = getClass(className, loader);
-            Class[] types = new Class[params.size()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = getClass((String)params.get(i), loader);
-            }
-            return cls.getDeclaredMethod(methodName, types);
+            return getClass(className, loader).getDeclaredMethod(methodName, parseTypes(desc, loader));
         } catch (ClassNotFoundException e) {
             throw new CodeGenerationException(e);
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    private static Class[] parseTypes(String desc, ClassLoader loader) throws ClassNotFoundException {
+        int lparen = desc.indexOf('(');
+        int rparen = desc.indexOf(')', lparen);
+        List params = new ArrayList();
+        int start = lparen + 1;
+        for (;;) {
+            int comma = desc.indexOf(',', start);
+            if (comma < 0) {
+                break;
+            }
+            params.add(desc.substring(start, comma).trim());
+            start = comma + 1;
+        }
+        if (start < rparen) {
+            params.add(desc.substring(start, rparen).trim());
+        }
+        Class[] types = new Class[params.size()];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = getClass((String)params.get(i), loader);
+        }
+        return types;
     }
 
     private static Class getClass(String className, ClassLoader loader) throws ClassNotFoundException {
@@ -180,25 +200,34 @@ public class ReflectUtils {
     }
 
     public static Object newInstance(Class type, Class[] parameterTypes, Object[] args) {
-        try {
-            return newInstance(type.getConstructor(parameterTypes), args);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
+        return newInstance(getConstructor(type, parameterTypes), args);
     }
 
     public static Object newInstance(Constructor cstruct, Object[] args) {
+        boolean flag = cstruct.isAccessible();
         try {
-            return cstruct.newInstance(args);
+            cstruct.setAccessible(true);
+            Object result = cstruct.newInstance(args);
+            return result;
         } catch (InstantiationException e) {
             throw new CodeGenerationException(e);
         } catch (IllegalAccessException e) {
             throw new CodeGenerationException(e);
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e.getTargetException());
+        } finally {
+            cstruct.setAccessible(flag);
         }
     }
-    
+
+    public static Constructor getConstructor(Class type, Class[] parameterTypes) {
+        try {
+            return type.getConstructor(parameterTypes);
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
     public static Class[] getClasses(Object[] objects) {
         Class[] classes = new Class[objects.length];
         for (int i = 0; i < objects.length; i++) {
@@ -232,6 +261,12 @@ public class ReflectUtils {
         String name = type.getName();
         int idx = name.lastIndexOf('.');
         return (idx < 0) ? "" : name.substring(0, idx);
+    }
+
+    public static String getNameWithoutPackage(Class type) {
+        String pkg = getPackageName(type);
+        int len = pkg.length();
+        return (len == 0) ? type.getName() : type.getName().substring(len + 1);
     }
 
     public static PropertyDescriptor[] getBeanProperties(Class type) {
@@ -280,5 +315,45 @@ public class ReflectUtils {
         }
         methods.remove(null);
         return (Method[])methods.toArray(new Method[methods.size()]);
+    }
+
+    public static boolean arrayEquals(Object[] a1, Object[] a2) {
+        if ((a1 == null) ^ (a2 == null)) {
+            return false;
+        }
+        if (a1.length != a2.length) {
+            return false;
+        }
+        for (int i = 0; i < a1.length; i++) {
+            Object o1 = a1[i];
+            Object o2 = a2[i];
+            if (o1 == null) {
+                if (o2 != null) {
+                    return false;
+                }
+            } else if (o2 == null) {
+                return false;
+            } else {
+                Class c1 = o1.getClass();
+                Class c2 = o2.getClass();
+                if (!c1.equals(c2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static Method findDeclaredMethod(Class type, String methodName, Class[] parameterTypes)
+    throws NoSuchMethodException {
+        Class cl = type;
+        while (cl != null) {
+            try {
+                return cl.getDeclaredMethod(methodName, parameterTypes);
+            } catch (NoSuchMethodException e) {
+                cl = cl.getSuperclass();
+            }
+        }
+        throw new NoSuchMethodException(methodName);
     }
 }
