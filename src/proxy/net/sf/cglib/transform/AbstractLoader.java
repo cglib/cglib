@@ -9,10 +9,12 @@ import java.io.IOException;
 
 abstract public class AbstractLoader extends ClassLoader {
     private ClassFilter filter;
+    private ClassLoader classPath;
     
-    protected AbstractLoader(ClassLoader parent, ClassFilter filter) {
+    protected AbstractLoader(ClassLoader parent, ClassLoader classPath, ClassFilter filter) {
         super(parent);
         this.filter = filter;
+        this.classPath = classPath;
     }
 
     public Class loadClass(String name) throws ClassNotFoundException {
@@ -30,7 +32,25 @@ abstract public class AbstractLoader extends ClassLoader {
 
         ClassReader r;
         try {
-            r = new ClassReader(name);
+            
+           java.io.InputStream is = classPath.getResourceAsStream( 
+                       name.replace('.','/') + ".class"
+                  ); 
+           
+           if (is == null) {
+               
+              throw new ClassNotFoundException(name);
+              
+           }
+           try { 
+               
+              r = new ClassReader(is);
+            
+           } finally {
+               
+              is.close();
+             
+           }
         } catch (IOException e) {
             throw new ClassNotFoundException(name + ":" + e.getMessage());
         }

@@ -8,7 +8,7 @@ public class TransformingLoader extends AbstractLoader {
     private ClassTransformer t;
     
     public TransformingLoader(ClassLoader parent, ClassFilter filter, ClassTransformer t) {
-        super(parent, filter);
+        super(parent, parent, filter);
         this.t = t;
     }
 

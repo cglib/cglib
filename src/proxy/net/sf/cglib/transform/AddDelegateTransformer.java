@@ -15,6 +15,8 @@ import org.objectweb.asm.Constants;
  */
 public class AddDelegateTransformer extends ClassTransformer {
     
+    static final String DELEGATE = "$CGLIB_DELEGATE";
+    
     Class delegateIf[] = null ;
     Class delegateImpl = null ;
     String className;
@@ -41,7 +43,7 @@ public class AddDelegateTransformer extends ClassTransformer {
             
             
             for(int i = 0; i< delegateIf.length; i++){
-                interfaces.add(Signature.getInternalName(delegateIf[i]));
+                interfaces.add( Type.getInternalName(delegateIf[i]) );
             }
             
             
@@ -55,7 +57,7 @@ public class AddDelegateTransformer extends ClassTransformer {
             
        super.visitField(
         Modifier.PRIVATE|Modifier.TRANSIENT,
-        Signature.DELEGATE,
+        DELEGATE,
         Type.getDescriptor(Object.class) ,
         null
         );
@@ -73,7 +75,7 @@ public class AddDelegateTransformer extends ClassTransformer {
         
         List exeptions = new ArrayList(m.getExceptionTypes().length);
         for(int i = 0; i< m.getExceptionTypes().length; i++ ){
-            exeptions.add(Signature.getInternalName( m.getExceptionTypes()[i]) );
+            exeptions.add(Type.getInternalName( m.getExceptionTypes()[i]) );
         }
         
         Method delegate = delegateImpl.getMethod(m.getName(), m.getParameterTypes() );
@@ -89,10 +91,10 @@ public class AddDelegateTransformer extends ClassTransformer {
         cv.visitVarInsn(Constants.ALOAD, 0 );
         cv.visitFieldInsn( Constants.GETFIELD,
         className,
-        Signature.DELEGATE,
+        DELEGATE,
         Type.getDescriptor(Object.class));
         cv.visitTypeInsn( Constants.CHECKCAST,
-                          Signature.getInternalName(delegateImpl)
+                          Type.getInternalName(delegateImpl)
                          );
         
         for(int i = 1; i <= m.getParameterTypes().length; i++){
@@ -102,7 +104,7 @@ public class AddDelegateTransformer extends ClassTransformer {
         
         cv.visitMethodInsn(
         Constants.INVOKEVIRTUAL,
-        Signature.getInternalName(delegateImpl),
+        Type.getInternalName(delegateImpl),
         m.getName(),
         Type.getMethodDescriptor(delegate)
         );
@@ -158,7 +160,7 @@ public class AddDelegateTransformer extends ClassTransformer {
           cv.visitInsn( Constants.DUP );
           cv.visitVarInsn( Constants.ALOAD, 0 );
           cv.visitMethodInsn(Constants.INVOKESPECIAL,Type.getInternalName(delegateImpl), "<init>", "(Ljava/lang/Object;)V"); 
-          cv.visitFieldInsn(Constants.PUTFIELD,className, Signature.DELEGATE, Type.getDescriptor(Object.class) );
+          cv.visitFieldInsn(Constants.PUTFIELD,className,DELEGATE, Type.getDescriptor(Object.class) );
           transFormInit = false;  
         }
         
