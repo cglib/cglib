@@ -233,7 +233,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                 throw new ClassNotFoundException();
             }
         }else if( name.equals( CLASS_NAME )){
-            return generate();
+            return getBeanClass();
         }
         return super.findClass(name);
     }
@@ -312,9 +312,13 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
           throw new IllegalStateException("Bean is generated");
         }
     }
-    public Class generate(){
+    public Class getBeanClass(){
         
         //TODO: serialization
+        
+        if( result != null ){
+          return result; 
+        }
         
         ClassGen cg = new ClassGen( CLASS_NAME , Object.class.getName(),SOURCE_FILE,
         ACC_PUBLIC  , null );
@@ -343,6 +347,8 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
     }
     
     public BeanGenerator copyMethods( Class clasz ){
+        
+        validate();
         
         java.lang.reflect.Method methods[] = clasz.getMethods();
         

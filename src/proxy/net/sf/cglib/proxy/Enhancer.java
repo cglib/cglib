@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.20 2002/10/08 19:04:23 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.21 2002/10/18 17:01:55 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -424,6 +424,7 @@ public class Enhancer implements ClassFileConstants {
         generateClInit(cg, cp, methodTable);
         
         JavaClass jcl = cg.getJavaClass();
+        
         return jcl;
     }
     
