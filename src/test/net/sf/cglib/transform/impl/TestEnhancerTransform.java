@@ -21,7 +21,8 @@ public class TestEnhancerTransform extends AbstractTransformTest {
         assertTrue(foo() == 0);
 
         Enhancer.registerCallbacks(getClass(), new Callback[]{new MethodInterceptor() {
-            public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) {
+            public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                assertTrue(new Integer(0).equals(proxy.invokeSuper(obj, args)));
                 return new Integer(1);
             }
         }});
@@ -30,7 +31,8 @@ public class TestEnhancerTransform extends AbstractTransformTest {
         
         TestEnhancerTransform proxied =
             (TestEnhancerTransform)Enhancer.create(getClass(), new MethodInterceptor() {
-                public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) {
+                public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                    assertTrue(new Integer(1).equals(proxy.invokeSuper(obj, args)));
                     return new Integer(2);
                 }
             });

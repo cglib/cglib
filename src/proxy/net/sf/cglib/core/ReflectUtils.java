@@ -62,7 +62,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.23 2004/04/07 07:00:59 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.24 2004/04/08 16:15:37 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -298,22 +298,6 @@ public class ReflectUtils {
         }
         return m;
     }
-
-//     // TODO: get rid of this
-//     public static MethodInfo[] getMethodInfo(Member[] methods) {
-//         Collection c = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
-//             public Object transform(Object value) {
-//                 if (value instanceof Field) {
-//                     throw new IllegalArgumentException("cannot get method info for fields");
-//                 } else if (value instanceof Method) {
-//                     return getMethodInfo((Method)value);
-//                 } else {
-//                     return getMethodInfo((Constructor)value);
-//                 }
-//             }
-//         });
-//         return (MethodInfo[])c.toArray(new MethodInfo[c.size()]);
-//     }
 
     public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
         Set methods = new HashSet();

@@ -518,6 +518,8 @@ public class Enhancer extends AbstractClassGenerator
         try {
             getCallbacksSetter(type, SET_THREAD_CALLBACKS_NAME);
             return true;
+        } catch (ClassNotFoundException e) {
+            return false;
         } catch (NoSuchMethodException e) {
             return false;
         }
@@ -542,11 +544,15 @@ public class Enhancer extends AbstractClassGenerator
             throw new CodeGenerationException(e);
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e);
+        } catch (ClassNotFoundException e) {
+            throw new CodeGenerationException(e);
         }
     }
 
-    private static Method getCallbacksSetter(Class type, String methodName) throws NoSuchMethodException {
-        return type.getDeclaredMethod(methodName, new Class[]{ Callback[].class });
+    private static Method getCallbacksSetter(Class type, String methodName) throws NoSuchMethodException, ClassNotFoundException {
+        // Class c = Class.forName("[Lnet.sf.cglib.proxy.Callback;", true, type.getClass().getClassLoader());
+        Class c = Callback[].class;
+        return type.getDeclaredMethod(methodName, new Class[]{ c });
     }
 
     private Object createUsingReflection(Class type) {
