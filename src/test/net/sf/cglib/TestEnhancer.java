@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.21 2003/01/25 00:12:09 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.22 2003/01/25 08:22:30 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -443,8 +443,10 @@ public class TestEnhancer extends CodeGenTestCase {
     
          Class f = Enhancer.enhanceClass(ArgInit.class, null, null, null );
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
-                                                       new Class[]{ String.class, MethodInterceptor.class },
-                                                       new Object[]{ "test", TEST_INTERCEPTOR });
+                                                       new Class[]{ String.class },
+                                                       new Object[]{ "test" });
+         assertEquals("test", a.toString());
+         ((Factory)a).setInterceptor(TEST_INTERCEPTOR);
          assertEquals("test", a.toString());
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },

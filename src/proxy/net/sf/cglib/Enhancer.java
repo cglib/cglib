@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.27 2003/01/25 02:21:43 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.28 2003/01/25 08:22:32 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -242,10 +242,7 @@ public class Enhancer {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 Class gen = enhanceClassHelper(delegating, cls, interfaces, loader, wreplace, filter);
-                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
-                Class[] types = delegating ? new Class[]{ mi, Object.class } : new Class[]{ mi };
-                Object[] args = delegating ? new Object[]{ ih, obj } : new Object[]{ ih };
-                factory = (Factory)ReflectUtils.newInstance(gen, types, args);
+                factory = (Factory)ReflectUtils.newInstance(gen);
                 cache.put(loader, key, factory);
             }
         }
