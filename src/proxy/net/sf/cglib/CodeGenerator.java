@@ -150,8 +150,10 @@ abstract class CodeGenerator {
         }
     }
     
-    private static Class defineClass(String className, byte[] b, ClassLoader loader)
+    
+    private static Class defineClass(String className, byte b[],  ClassLoader loader)
     throws Exception {
+        
         Method m = MethodConstants.DEFINE_CLASS;
         // protected method invocaton
         boolean flag = m.isAccessible();
