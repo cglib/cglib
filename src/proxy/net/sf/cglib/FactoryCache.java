@@ -58,13 +58,10 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: FactoryCache.java,v 1.1 2002/12/04 00:41:13 herbyderby Exp $
+ * @version $Id: FactoryCache.java,v 1.2 2002/12/04 17:37:51 herbyderby Exp $
  */
 /* package */ class FactoryCache {
     private final Map cache = new WeakHashMap();
-
-    public FactoryCache() {
-    }
 
     public Object get(ClassLoader loader, Object key) {
         return getFactoryMap(loader).get(key);
