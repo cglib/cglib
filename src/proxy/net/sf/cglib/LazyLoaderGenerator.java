@@ -71,7 +71,7 @@ class LazyLoaderGenerator implements CallbackGenerator {
     private static final Type LAZY_LOADER = Type.getType(LazyLoader.class);
 
     public void generate(Emitter e, Context context) {
-        e.declare_field(Modifier.PRIVATE, DELEGATE, Types.OBJECT, null);
+        e.declare_field(Modifier.PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null);
 
         e.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
                         LOAD_PRIVATE,
@@ -96,13 +96,13 @@ class LazyLoaderGenerator implements CallbackGenerator {
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                Ops.begin_method(e, method, context.getModifiers(method));
+                ReflectOps.begin_method(e, method, context.getModifiers(method));
                 e.load_this();
                 e.dup();
                 e.invoke_virtual_this(LOAD_PRIVATE);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();
-                Ops.invoke(e, method);
+                ReflectOps.invoke(e, method);
                 e.return_value();
             }
         }

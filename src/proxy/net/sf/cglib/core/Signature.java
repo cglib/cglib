@@ -54,8 +54,6 @@
 package net.sf.cglib.core;
 
 import java.util.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import org.objectweb.asm.Type;
 
 public class Signature {
@@ -72,27 +70,6 @@ public class Signature {
         this(name, Type.getMethodDescriptor(returnType, argumentTypes));
     }
 
-    public Signature(Method method) {
-        this(method.getName(), Type.getMethodDescriptor(method));
-    }
-
-    public Signature(Constructor constructor) {
-        this(Constants.CONSTRUCTOR_NAME,
-             Type.getMethodDescriptor(Type.VOID_TYPE, getTypes(constructor.getParameterTypes())));
-    }
-
-    // TODO: move to utility class
-    public static Type[] getTypes(Class[] classes) {
-        if (classes == null) {
-            return null;
-        }
-        Type[] types = new Type[classes.length];
-        for (int i = 0; i < classes.length; i++) {
-            types[i] = Type.getType(classes[i]);
-        }
-        return types;
-    }
-    
     static {
         transforms.put("void", "V");
         transforms.put("byte", "B");
@@ -112,18 +89,9 @@ public class Signature {
         String returnType = s.substring(0, space);
         String methodName = s.substring(space + 1, lparen);
         StringBuffer sb = new StringBuffer();
-        int mark = lparen;
+
         sb.append('(');
-        for (;;) {
-            int next = s.indexOf(',', mark + 1);
-            if (next < 0) {
-                sb.append(map(s.substring(mark + 1, rparen).trim()));
-                break;
-            } else {
-                sb.append(map(s.substring(mark + 1, next).trim()));
-                mark = next;
-            }
-        }
+        parseTypes(s, lparen + 1, rparen, sb);
         sb.append(')');
         sb.append(map(returnType));
         return new Signature(methodName, sb.toString());
@@ -133,7 +101,24 @@ public class Signature {
         return Type.getType(map(s));
     }
 
+//     public static Type[] parseTypes(String s) {
+//     }
+
+    private static void parseTypes(String s, int start, int end, StringBuffer sb) {
+        int mark = start;
+        for (;;) {
+            int next = s.indexOf(',', mark);
+            if (next < 0) {
+                break;
+            }
+            sb.append(map(s.substring(mark, next)));
+            mark = next + 1;
+        }
+        sb.append(map(s.substring(mark, end)));
+    }
+
     private static String map(String type) {
+        type = type.trim();
         if (type.equals("")) {
             return type;
         }

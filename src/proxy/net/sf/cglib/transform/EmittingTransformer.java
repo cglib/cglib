@@ -33,7 +33,7 @@ abstract public class EmittingTransformer extends ClassTransformer {
 
     public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
         e.begin_class(access,
-                      fromInternalName(name),
+                      name.replace('/', '.'),
                       fromInternalName(superName),
                       fromInternalNames(interfaces),
                       sourceFile);

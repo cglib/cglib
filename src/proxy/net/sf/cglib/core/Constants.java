@@ -58,10 +58,41 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.3 2003/09/19 23:31:04 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.4 2003/09/20 20:23:26 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
+
+    public static final Type[] TYPE_EMPTY = {};
+
+    public static final Type TYPE_OBJECT_ARRAY = Signature.parseType("Object[]");
+    public static final Type TYPE_OBJECT = Signature.parseType("Object");
+    public static final Type TYPE_CLASS = Signature.parseType("Class");
+    public static final Type TYPE_BIG_INTEGER = Signature.parseType("java.math.BigInteger");
+    public static final Type TYPE_BIG_DECIMAL = Signature.parseType("java.math.BigDecimal");
+    public static final Type TYPE_CHARACTER = Signature.parseType("Character");
+    public static final Type TYPE_BOOLEAN = Signature.parseType("Boolean");
+    public static final Type TYPE_DOUBLE = Signature.parseType("Double");
+    public static final Type TYPE_FLOAT = Signature.parseType("Float");
+    public static final Type TYPE_LONG = Signature.parseType("Long");
+    public static final Type TYPE_INTEGER = Signature.parseType("Integer");
+    public static final Type TYPE_SHORT = Signature.parseType("Short");
+    public static final Type TYPE_BYTE = Signature.parseType("Byte");
+    public static final Type TYPE_NUMBER = Signature.parseType("Number");
+    public static final Type TYPE_STRING = Signature.parseType("String");
+    public static final Type TYPE_THREAD_LOCAL = Signature.parseType("ThreadLocal");
+    public static final Type TYPE_THROWABLE = Signature.parseType("Throwable");
+    public static final Type TYPE_ERROR = Signature.parseType("Error");
+    public static final Type TYPE_EXCEPTION = Signature.parseType("Exception");
+    public static final Type TYPE_RUNTIME_EXCEPTION = Signature.parseType("RuntimeException");
+    public static final Type TYPE_METHOD = Signature.parseType("java.lang.reflect.Method");
+    public static final Type TYPE_ILLEGAL_STATE_EXCEPTION = Signature.parseType("IllegalStateException");
+    public static final Type TYPE_ILLEGAL_ARGUMENT_EXCEPTION = Signature.parseType("IllegalArgumentException");
+    public static final Type TYPE_NO_CLASS_DEF_FOUND_ERROR = Signature.parseType("NoClassDefFoundError");
+    public static final Type TYPE_CLASS_NOT_FOUND_EXCEPTION = Signature.parseType("ClassNotFoundException");
+    public static final Type TYPE_ABSTRACT_METHOD_ERROR = Signature.parseType("AbstractMethodError");
+    public static final Type TYPE_CLASS_CAST_EXCEPTION = Signature.parseType("ClassCastException");
+    public static final Type TYPE_NO_SUCH_METHOD_ERROR = Signature.parseType("NoSuchMethodError");
     
     public static final Class[] TYPES_EMPTY = {};
     public static final String CONSTRUCTOR_NAME = "<init>";

@@ -61,28 +61,30 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.7 2003/09/20 09:22:22 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.8 2003/09/20 20:23:26 herbyderby Exp $
  */
 class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
+    private static final Signature CSTRUCT_OBJECT_ARRAY =
+      Signature.parse("void <init>(Object[])");
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.Mixin newInstance(Object[])");
+    private static final Type MIXIN =
+      Signature.parseType("net.sf.cglib.Mixin");
 
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         super(v);
 
-        Ops.begin_class(this,
-                        Constants.ACC_PUBLIC,
-                        className,
-                        Mixin.class,
-                        classes,
-                        Constants.SOURCE_FILE);
-
+        begin_class(Constants.ACC_PUBLIC,
+                    className,
+                    MIXIN,
+                    TypeUtils.getTypes(classes),
+                    Constants.SOURCE_FILE);
         null_constructor();
         factory_method(NEW_INSTANCE);
 
-        declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Types.OBJECT_ARRAY, null);
-        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT_ARRAY, null);
+        declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Constants.TYPE_OBJECT_ARRAY, null);
+        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
         load_this();
         super_invoke_constructor();
         load_this();
@@ -96,13 +98,13 @@ class MixinEmitter extends Emitter {
             for (int j = 0; j < methods.length; j++) {
                 if (unique.add(MethodWrapper.create(methods[j]))) {
                     Method method = methods[j];
-                    Ops.begin_method(this, method);
+                    ReflectOps.begin_method(this, method);
                     load_this();
                     getfield(FIELD_NAME);
                     aaload((route != null) ? route[i] : i);
                     checkcast(Type.getType(method.getDeclaringClass()));
                     load_args();
-                    Ops.invoke(this, method);
+                    ReflectOps.invoke(this, method);
                     return_value();
                 }
             }

@@ -14,6 +14,8 @@ implements CallbackGenerator
       Signature.parseType("net.sf.cglib.InvocationHandler");
     public static final Type UNDECLARED_THROWABLE_EXCEPTION =
       Signature.parseType("net.sf.cglib.UndeclaredThrowableException");
+    private static final Signature CSTRUCT_THROWABLE =
+      Signature.parse("void <init>(Throwable)");
     private static final Signature INVOKE =
       Signature.parse("Object invoke(Object, java.lang.reflect.Method, Object[])");
 
@@ -26,9 +28,9 @@ implements CallbackGenerator
             Method method = (Method)it.next();
 
             String fieldName = getFieldName(context, method);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Types.METHOD, null);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_METHOD, null);
 
-            Ops.begin_method(e, method, context.getModifiers(method));
+            ReflectOps.begin_method(e, method, context.getModifiers(method));
             Block handler = e.begin_block();
             context.emitCallback();
             e.load_this();
@@ -45,7 +47,7 @@ implements CallbackGenerator
     public void generateStatic(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            Ops.load_method(e, method);
+            ReflectOps.load_method(e, method);
             e.putfield(getFieldName(context, method));
         }
     }
@@ -66,11 +68,11 @@ implements CallbackGenerator
         if (!(exceptionSet.contains(Exception.class) ||
               exceptionSet.contains(Throwable.class))) {
             if (!exceptionSet.contains(RuntimeException.class)) {
-                e.catch_exception(handler, Types.RUNTIME_EXCEPTION);
+                e.catch_exception(handler, Constants.TYPE_RUNTIME_EXCEPTION);
                 e.athrow();
             }
             if (!exceptionSet.contains(Error.class)) {
-                e.catch_exception(handler, Types.ERROR);
+                e.catch_exception(handler, Constants.TYPE_ERROR);
                 e.athrow();
             }
             for (int i = 0; i < exceptionTypes.length; i++) {
@@ -78,11 +80,11 @@ implements CallbackGenerator
                 e.athrow();
             }
             // e -> eo -> oeo -> ooe -> o
-            e.catch_exception(handler, Types.THROWABLE);
+            e.catch_exception(handler, Constants.TYPE_THROWABLE);
             e.new_instance(UNDECLARED_THROWABLE_EXCEPTION);
             e.dup_x1();
             e.swap();
-            e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, Signatures.CSTRUCT_THROWABLE);
+            e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, CSTRUCT_THROWABLE);
             e.athrow();
         }
     }

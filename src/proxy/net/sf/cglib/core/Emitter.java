@@ -61,6 +61,11 @@ import org.objectweb.asm.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class Emitter {
+    private static final Signature STATIC =
+      Signature.parse("void <clinit>()");
+    private static final Signature CSTRUCT_STRING =
+      Signature.parse("void <init>(String)");
+
     public static final int OP_ADD = Constants.IADD;
     public static final int OP_MUL = Constants.IMUL;
     public static final int OP_XOR = Constants.IXOR;
@@ -71,8 +76,6 @@ public class Emitter {
     public static final int OP_REM = Constants.IREM;
     public static final int OP_AND = Constants.IAND;
     public static final int OP_OR = Constants.IOR;
-
-
 
     // current class
     private ClassVisitor classv;
@@ -120,9 +123,9 @@ public class Emitter {
         return (Type[])argumentTypes.clone();
     }
 
-    public void begin_class(int access, Type classType, Type superType, Type[] interfaces, String sourceFile) {
-        this.classType = classType;
-        this.superType = (superType != null) ? superType : Types.OBJECT;
+    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        this.classType = Type.getType("L" + className.replace('.', '/') + ";");
+        this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
         classv.visit(access,
                      this.classType.getInternalName(),
                      this.superType.getInternalName(),
@@ -203,7 +206,7 @@ public class Emitter {
                     type = Type.DOUBLE_TYPE;
                     break;
                 default:
-                    type = Types.OBJECT;
+                    type = Constants.TYPE_OBJECT;
                 }
                 cv.visitVarInsn(opcode, remapLocal(var, type));
             }
@@ -270,10 +273,6 @@ public class Emitter {
                      exceptions);
     }
 
-//     public void begin_constructor(int access, Signature sig, Type[] exceptions) {
-//         begin_method(access, sig.getArgumentTypes(), exceptions);
-//     }
-
     private static String[] toInternalNames(Type[] types) {
         if (types == null) {
             return null;
@@ -286,7 +285,7 @@ public class Emitter {
     }
 
     public void begin_static() {
-        begin_method(Constants.ACC_STATIC, Signatures.STATIC, null);
+        begin_method(Constants.ACC_STATIC, STATIC, null);
     }
 
     public Block begin_block() {
@@ -463,11 +462,11 @@ public class Emitter {
     }
 
     public void newarray() {
-        newarray(Types.OBJECT);
+        newarray(Constants.TYPE_OBJECT);
     }
 
     public void newarray(Type type) {
-        if (isPrimitive(type)) {
+        if (TypeUtils.isPrimitive(type)) {
             codev.visitIntInsn(Constants.NEWARRAY, Constants.NEWARRAY(type));
         } else {
             emit_type(Constants.ANEWARRAY, type);
@@ -658,7 +657,7 @@ public class Emitter {
     }
 
     public void invoke_constructor(Type type) {
-        invoke_constructor(type, Types.EMPTY);
+        invoke_constructor(type, Constants.TYPE_EMPTY);
     }
 
     // TODO: change to signature variant
@@ -674,7 +673,7 @@ public class Emitter {
     }
 
     public void super_invoke_constructor() {
-        invoke_constructor(superType, Types.EMPTY);
+        invoke_constructor(superType, Constants.TYPE_EMPTY);
     }
     
     public void super_invoke_constructor(Type[] argumentTypes) {
@@ -682,7 +681,7 @@ public class Emitter {
     }
     
     public void invoke_constructor_this() {
-        invoke_constructor_this(Types.EMPTY);
+        invoke_constructor_this(Constants.TYPE_EMPTY);
     }
     
     public void invoke_constructor_this(Type[] argumentTypes) {
@@ -737,34 +736,9 @@ public class Emitter {
         emit_type(Constants.NEW, type);
     }
 
-    ///////////// MOVE THESE? /////////////////
-
-    public static boolean isArray(Type type) {
-        return type.getSort() == Type.ARRAY;
-    }
-
-    public static Type getComponentType(Type type) {
-        if (!isArray(type)) {
-            throw new IllegalArgumentException("Type " + type + " is not an array");
-        }
-        return Type.getType(type.getDescriptor().substring(1));
-    }
-
-    public static boolean isPrimitive(Type type) {
-        switch (type.getSort()) {
-        case Type.ARRAY:
-        case Type.OBJECT:
-            return false;
-        default:
-            return true;
-        }
-    }
-
-    //////////////////////////////
-
     private void emit_type(int opcode, Type type) {
         String desc;
-        if (isArray(type)) {
+        if (TypeUtils.isArray(type)) {
             desc = type.getDescriptor();
         } else {
             desc = type.getInternalName();
@@ -786,7 +760,7 @@ public class Emitter {
     }
     
     public Local make_local() {
-        return make_local(Types.OBJECT);
+        return make_local(Constants.TYPE_OBJECT);
     }
     
     public Local make_local(Type type) {
@@ -801,7 +775,7 @@ public class Emitter {
     }
     
     public void checkcast(Type type) {
-        if (!type.equals(Types.OBJECT)) {
+        if (!type.equals(Constants.TYPE_OBJECT)) {
             emit_type(Constants.CHECKCAST, type);
         }
     }
@@ -908,7 +882,7 @@ public class Emitter {
         new_instance(type);
         dup();
         push(msg);
-        invoke_constructor(type, Signatures.CSTRUCT_STRING);
+        invoke_constructor(type, CSTRUCT_STRING);
         athrow();
     }
 
@@ -922,7 +896,7 @@ public class Emitter {
     }
 
     public void null_constructor() {
-        begin_constructor(Constants.ACC_PUBLIC, Types.EMPTY, null);
+        begin_constructor(Constants.ACC_PUBLIC, Constants.TYPE_EMPTY, null);
         load_this();
         super_invoke_constructor();
         return_value();

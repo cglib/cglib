@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.8 2003/09/20 09:22:22 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.9 2003/09/20 20:23:26 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -188,6 +188,8 @@ abstract public class MethodDelegate {
         private static final Source SOURCE = new Source(MethodDelegate.class, true);
         private static final Signature NEW_INSTANCE =
           Signature.parse("net.sf.cglib.reflect.MethodDelegate newInstance(Object)");
+        private static final Type METHOD_DELEGATE =
+          Signature.parseType("net.sf.cglib.reflect.MethodDelegate");
         
         private Object target;
         private Class targetClass;
@@ -252,22 +254,21 @@ abstract public class MethodDelegate {
             }
 
             Emitter e = new Emitter(v);
-            Ops.begin_class(e,
-                            Modifier.PUBLIC,
-                            getClassName(),
-                            MethodDelegate.class,
-                            new Class[]{ iface },
-                            Constants.SOURCE_FILE);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Types.STRING, null);
+            e.begin_class(Constants.ACC_PUBLIC,
+                          getClassName(),
+                          METHOD_DELEGATE,
+                          new Type[]{ Type.getType(iface) },
+                          Constants.SOURCE_FILE);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
             e.null_constructor();
 
             // generate proxied method
-            Ops.begin_method(e, iface.getDeclaredMethods()[0]);
+            ReflectOps.begin_method(e, iface.getDeclaredMethods()[0]);
             e.load_this();
-            e.super_getfield("target", Types.OBJECT);
+            e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(Type.getType(method.getDeclaringClass()));
             e.load_args();
-            Ops.invoke(e, method);
+            ReflectOps.invoke(e, method);
             e.return_value();
 
             // newInstance
@@ -277,9 +278,9 @@ abstract public class MethodDelegate {
             e.dup2();
             e.invoke_constructor_this();
             e.getfield("eqMethod");
-            e.super_putfield("eqMethod", Types.STRING);
+            e.super_putfield("eqMethod", Constants.TYPE_STRING);
             e.load_arg(0);
-            e.super_putfield("target", Types.OBJECT);
+            e.super_putfield("target", Constants.TYPE_OBJECT);
             e.return_value();
 
             // static initializer
