@@ -59,7 +59,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestJdkCompatibleProxy.java,v 1.1 2002/12/06 17:47:49 herbyderby Exp $
+ * @version $Id: TestJdkCompatibleProxy.java,v 1.2 2002/12/16 18:51:18 baliuka Exp $
  */
 public class TestJdkCompatibleProxy extends CodeGenTestCase {
     public void testBeanMap() throws Exception {
@@ -70,7 +70,7 @@ public class TestJdkCompatibleProxy extends CodeGenTestCase {
         assertTrue("Chris".equals(identity.get("Name")));
     }
 
-    interface Person {
+   public interface Person {
         public String getName();
         public void setName(String name);
     }

@@ -175,6 +175,7 @@ import java.util.*;
         boolean declaresWriteReplace = false;
         Package packageName = getSuperclass().getPackage();
         Map methodMap = new HashMap();
+        Map modifierMap = new HashMap();
                 
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
@@ -188,11 +189,26 @@ import java.util.*;
                 }
                 Object methodKey = MethodWrapper.newInstance(method);
                 Method existing = (Method)methodMap.get(methodKey);
-
-                if (existing == null ||
-                    (Modifier.isProtected(existing.getModifiers()) &&
-                     Modifier.isPublic(method.getModifiers()))) {
+                
+                if ( existing != null && 
+                     Modifier.isProtected(existing.getModifiers()) &&
+                     Modifier.isPublic(method.getModifiers()) )  {
+                    modifierMap.put(existing,  new Integer( Modifier.PUBLIC | Modifier.FINAL ) );     
+                }else{
+                    
+                     int modifiers = method.getModifiers();
+                     modifiers = Modifier.FINAL | (modifiers
+                                 & ~Modifier.ABSTRACT
+                                 & ~Modifier.NATIVE
+                                 & ~Modifier.SYNCHRONIZED);
+       
+                    modifierMap.put(method, new Integer( modifiers ) );     
+                }    
+                
+               if(existing == null){     
+                     
                     methodMap.put(methodKey, method);
+                
                 } else {
                     checkReturnTypesEqual(method, existing);
                 }
@@ -214,7 +230,8 @@ import java.util.*;
             declare_field(privateFinalStatic, Method.class, fieldName);
             declare_field(privateFinalStatic, MethodProxy.class, accessName);
             generateAccessMethod(method, accessName);
-            generateAroundMethod(method, fieldName, accessName);
+            int modifiers = ((Integer)modifierMap.get(method)).intValue();
+            generateAroundMethod( modifiers, method, fieldName, accessName);
             list.add(method);
             i++;
         }
@@ -366,8 +383,8 @@ import java.util.*;
         end_method();
     }
 
-    private void generateAroundMethod(Method method, String fieldName, String accessName) {
-        begin_method(method);
+    private void generateAroundMethod(int modifiers, Method method, String fieldName, String accessName) {
+        begin_method(method, modifiers);
         int outer_eh = begin_handler();
         load_this();
         getfield(INTERCEPTOR_FIELD);

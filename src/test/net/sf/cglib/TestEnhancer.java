@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.11 2002/12/13 22:27:22 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.12 2002/12/16 18:51:17 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -368,16 +368,40 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue(demo.getLastName().equals("Nokleberg"));
     }
  
+    
     public static interface TestClone extends Cloneable{
      public Object clone()throws java.lang.CloneNotSupportedException;
 
     }
+    public static class TestCloneImpl implements TestClone{
+     public Object clone()throws java.lang.CloneNotSupportedException{
+       return super.clone();
+     }
+    }
+    
     
     public void testClone() throws Throwable{
     
-      TestClone testClone = (TestClone)Enhancer.override( TestClone.class,
+      TestClone testClone = (TestClone)Enhancer.override( TestCloneImpl.class,
                                                           TEST_INTERCEPTOR );
-      testClone.clone();  
+      assertTrue( testClone.clone() != null );  
+      
+            
+      testClone = (TestClone)Enhancer.override( TestClone.class,
+         new MethodInterceptor(){
+      
+           public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
+                        MethodProxy proxy) throws Throwable{
+                     return  proxy.invokeSuper(obj, args);
+           }
+  
+      
+      } );
+    
+      assertTrue( testClone.clone() != null );  
+      
+      
+      
     }
     
     public void testSamples() throws Throwable{
