@@ -483,7 +483,6 @@ public class Enhancer extends AbstractClassGenerator
         CollectionUtils.filter(actualMethods, new DuplicatesPredicate());
         CollectionUtils.filter(actualMethods, new RejectModifierPredicate(Constants.ACC_FINAL));
 
-        final Map classInfoCache = new HashMap();
         List methods = CollectionUtils.transform(actualMethods, new Transformer() {
             public Object transform(Object value) {
                 Method method = (Method)value;
