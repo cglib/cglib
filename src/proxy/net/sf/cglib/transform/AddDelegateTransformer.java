@@ -91,7 +91,9 @@ public class AddDelegateTransformer extends ClassTransformer {
         className,
         Signature.DELEGATE,
         Type.getDescriptor(Object.class));
-        cv.visitTypeInsn(Constants.CHECKCAST,Signature.getInternalName(delegateImpl));
+        cv.visitTypeInsn( Constants.CHECKCAST,
+                          Signature.getInternalName(delegateImpl)
+                         );
         
         for(int i = 1; i <= m.getParameterTypes().length; i++){
             Type type = Type.getType(m.getParameterTypes()[ i - 1]);

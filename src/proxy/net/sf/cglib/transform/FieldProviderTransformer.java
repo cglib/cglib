@@ -4,8 +4,11 @@ import java.util.*;
 import net.sf.cglib.core.*;
 import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
+
+
 
 public class FieldProviderTransformer extends EmittingTransformer {
     
@@ -32,7 +35,13 @@ public class FieldProviderTransformer extends EmittingTransformer {
     
     private static final Signature PROVIDER_GET_NAMES =
       TypeUtils.parseSignature("String[] getFieldNames()");
-   
+    
+    private static final Signature INIT_FIELD_PROVIDER =
+      TypeUtils.parseSignature("void cglib$initFieldProvider()");
+    
+    
+    
+   private boolean generatedClassInit = false;
     
 
     private Map fields;
@@ -55,6 +64,17 @@ public class FieldProviderTransformer extends EmittingTransformer {
                 }
             }
 
+             public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
+                CodeVisitor v = super.begin_method(access, sig, exceptions);
+                if (sig.getName().equals(Constants.STATIC_NAME)) {
+                    generatedClassInit = true;
+                    invoke_static(getClassType(),INIT_FIELD_PROVIDER);
+                    
+                }
+                return v;
+            }
+
+            
             public void end_class() {
                 if (fields.size() == 0) {
                     super.end_class();
@@ -66,6 +86,15 @@ public class FieldProviderTransformer extends EmittingTransformer {
                for(int i = 0; i < indexes.length; i++ ){ indexes[i] = i; }
                     
                 try {
+                    
+                    if( !generatedClassInit ){
+                        
+                      begin_static();
+                      return_value();
+                    
+                    }
+                    
+                    
                     super.declare_field(
                                          Constants.ACC_PRIVATE|Constants.ACC_STATIC,
                                          FIELD_NAMES, 
@@ -78,7 +107,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
                                );
               
                     
-                    begin_static();
+                    begin_method(Constants.ACC_STATIC,INIT_FIELD_PROVIDER,null);
                     push(names.length);
                     newarray(Type.getType(String.class));
                     dup();
