@@ -57,15 +57,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.core.KeyFactory;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Juozas Baliuka
  */
 abstract public class BulkBean
 {
-    private static final FactoryCache CACHE = new FactoryCache(BulkBean.class);
     private static final BulkBeanKey KEY_FACTORY =
       (BulkBeanKey)KeyFactory.create(BulkBeanKey.class);
     
@@ -100,40 +99,76 @@ abstract public class BulkBean
         return (String[])setters.clone();
     }
 
-    public static BulkBean getInstance(Class target, String[] getters, String[] setters, Class[] types) {
-        return getInstance(target, getters, setters, types, null);
+    public static BulkBean create(Class target, String[] getters, String[] setters, Class[] types) {
+        Generator gen = new Generator();
+        gen.setTarget(target);
+        gen.setGetters(getters);
+        gen.setSetters(setters);
+        gen.setTypes(types);
+        return gen.create();
     }
 
-    public static BulkBean getInstance(final Class target,
-                                       final String[] getters,
-                                       final String[] setters,
-                                       final Class[] types,
-                                       ClassLoader loader) {
-//         if (loader == null) {
-//             loader = target.getClassLoader();
-//         }
-        Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
-        return (BulkBean)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new BulkBeanGenerator(target, getters, setters, types);
-            }
-            public Object newInstance(Object factory, boolean isNew) {
-                if (isNew) {
-                    BulkBean singleton = (BulkBean)factory;
-                    singleton.target = target;
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(BulkBean.class, true);
+        private Class target;
+        private String[] getters;
+        private String[] setters;
+        private Class[] types;
+
+        public Generator() {
+            super(SOURCE);
+            setSuperclass(BulkBean.class);
+        }
+
+        public void setTarget(Class target) {
+            this.target = target;
+            setNamePrefix(target.getName());
+        }
+
+        public void setGetters(String[] getters) {
+            this.getters = getters;
+        }
+
+        public void setSetters(String[] setters) {
+            this.setters = setters;
+        }
+
+        public void setTypes(Class[] types) {
+            this.types = types;
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return target.getClassLoader();
+        }
+
+        public BulkBean create() {
+            Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
+            return (BulkBean)super.create(key);
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            new BulkBeanEmitter(v, getClassName(), target, getters, setters, types);
+        }
+
+        protected Object firstInstance(Class type) {
+            BulkBean instance = (BulkBean)ReflectUtils.newInstance(type);
+            instance.target = target;
                     
-                    int length = getters.length;
-                    singleton.getters = new String[length];
-                    System.arraycopy(getters, 0, singleton.getters, 0, length);
+            int length = getters.length;
+            instance.getters = new String[length];
+            System.arraycopy(getters, 0, instance.getters, 0, length);
                     
-                    singleton.setters = new String[length];
-                    System.arraycopy(setters, 0, singleton.setters, 0, length);
+            instance.setters = new String[length];
+            System.arraycopy(setters, 0, instance.setters, 0, length);
                     
-                    singleton.types = new Class[types.length];
-                    System.arraycopy(types, 0, singleton.types, 0, types.length);
-                }
-                return factory;
-            }
-        });
+            instance.types = new Class[types.length];
+            System.arraycopy(types, 0, instance.types, 0, types.length);
+
+            return instance;
+        }
+
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
     }
 }

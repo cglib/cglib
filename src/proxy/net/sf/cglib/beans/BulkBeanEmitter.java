@@ -57,33 +57,36 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
     
-class BulkBeanGenerator extends CodeGenerator {
+class BulkBeanEmitter extends Emitter {
     private static final Method GET_PROPERTY_VALUES =
       ReflectUtils.findMethod("BulkBean.getPropertyValues(Object, Object[])");
     private static final Method SET_PROPERTY_VALUES =
       ReflectUtils.findMethod("BulkBean.setPropertyValues(Object, Object[])");
     private static final Class[] EXCEPTION_TYPES = { Throwable.class, Integer.TYPE };
         
-    private Class target;
-    private Method[] getters, setters;
-        
-    public BulkBeanGenerator(Class target, String[] getters, String[] setters, Class[] types) {
-        setSuperclass(BulkBean.class);
-        setNamePrefix(target.getName());
+    public BulkBeanEmitter(ClassVisitor v,
+                           String className,
+                           Class target,
+                           String[] getterNames,
+                           String[] setterNames,
+                           Class[] types) throws Exception {
 
-        this.target = target;
-        this.getters = new Method[getters.length];
-        this.setters = new Method[setters.length];
-        validate(target, getters, setters, types, this.getters, this.setters);
+        Method[] getters = new Method[getterNames.length];
+        Method[] setters = new Method[setterNames.length];
+        validate(target, getterNames, setterNames, types, getters, setters);
+
+        setClassVisitor(v);
+        begin_class(Modifier.PUBLIC, className, BulkBean.class, null);
+        Virt.null_constructor(this);
+        generateGet(target, getters);
+        generateSet(target, setters);
+        end_class();
     }
-        
-    public void generate() throws NoSuchMethodException {
-        // constructor
-        null_constructor();
 
-        // getPropertyValues
+    private void generateGet(Class target, Method[] getters) {
         begin_method(GET_PROPERTY_VALUES);
         load_arg(0);
         checkcast(target);
@@ -95,13 +98,15 @@ class BulkBeanGenerator extends CodeGenerator {
                 push(i);
                 load_local(bean);
                 invoke(getters[i]);
-                box(getters[i].getReturnType());
+                Virt.box(this, getters[i].getReturnType());
                 aastore();
             }
         }
         return_value();
         end_method();
-            
+    }
+
+    private void generateSet(Class target, Method[] setters) {
         // setPropertyValues
         begin_method(SET_PROPERTY_VALUES);
         Local index = make_local(Integer.TYPE);
@@ -121,7 +126,7 @@ class BulkBeanGenerator extends CodeGenerator {
                 }
                 dup2();
                 aaload(i);
-                unbox(setters[i].getParameterTypes()[0]);
+                Virt.unbox(this, setters[i].getParameterTypes()[0]);
                 invoke(setters[i]);
             }
         }
@@ -136,7 +141,7 @@ class BulkBeanGenerator extends CodeGenerator {
         athrow();
         end_method();
     }
-
+    
     private static void validate(Class target,
                                  String[] getters,
                                  String[] setters,
