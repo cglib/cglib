@@ -13,7 +13,7 @@ public class ExampleTask extends AbstractTransformTask {
         return transformer;
     }
     
-    public void init() {
+    protected void beforeExecute() {
         ClassTransformer t1 = new AccessFieldTransformer(new AccessFieldTransformer.Callback() {
             public String getPropertyName(Type owner, String fieldName) {
                 return fieldName + fieldSuffix;
