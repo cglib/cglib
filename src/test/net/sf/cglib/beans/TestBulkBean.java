@@ -149,6 +149,10 @@ public class TestBulkBean extends TestCase {
         }  
     }
 
+    public void testEmpty() throws Throwable {
+        BulkBean.create(MA.class, new String[0], new String[0], new Class[0]);
+    }
+
     public void testBadTypes() throws Throwable {
         Class[] types2 = (Class[])types.clone();
         types2[2] = String.class;
