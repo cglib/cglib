@@ -95,61 +95,59 @@ class BulkBeanEmitter extends ClassEmitter {
     }
 
     private void generateGet(final Class target, final Method[] getters) {
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null)) {{
-            load_arg(0);
-            checkcast(Type.getType(target));
-            Local bean = make_local();
-            store_local(bean);
-            for (int i = 0; i < getters.length; i++) {
-                if (getters[i] != null) {
-                    load_arg(1);
-                    push(i);
-                    load_local(bean);
-                    ReflectOps.invoke(this, getters[i]);
-                    box(Type.getType(getters[i].getReturnType()));
-                    aastore();
-                }
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
+        e.load_arg(0);
+        e.checkcast(Type.getType(target));
+        Local bean = e.make_local();
+        e.store_local(bean);
+        for (int i = 0; i < getters.length; i++) {
+            if (getters[i] != null) {
+                e.load_arg(1);
+                e.push(i);
+                e.load_local(bean);
+                ReflectOps.invoke(e, getters[i]);
+                e.box(Type.getType(getters[i].getReturnType()));
+                e.aastore();
             }
-            return_value();
-            end_method();
-        }};
+        }
+        e.return_value();
+        e.end_method();
     }
 
     private void generateSet(final Class target, final Method[] setters) {
         // setPropertyValues
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null)) {{
-            Local index = make_local(Type.INT_TYPE);
-            push(0);
-            store_local(index);
-            load_arg(0);
-            checkcast(Type.getType(target));
-            load_arg(1);
-            Block handler = begin_block();
-            int lastIndex = 0;
-            for (int i = 0; i < setters.length; i++) {
-                if (setters[i] != null) {
-                    int diff = i - lastIndex;
-                    if (diff > 0) {
-                        iinc(index, diff);
-                        lastIndex = i;
-                    }
-                    dup2();
-                    aaload(i);
-                    unbox(Type.getType(setters[i].getParameterTypes()[0]));
-                    ReflectOps.invoke(this, setters[i]);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
+        Local index = e.make_local(Type.INT_TYPE);
+        e.push(0);
+        e.store_local(index);
+        e.load_arg(0);
+        e.checkcast(Type.getType(target));
+        e.load_arg(1);
+        Block handler = e.begin_block();
+        int lastIndex = 0;
+        for (int i = 0; i < setters.length; i++) {
+            if (setters[i] != null) {
+                int diff = i - lastIndex;
+                if (diff > 0) {
+                    e.iinc(index, diff);
+                    lastIndex = i;
                 }
+                e.dup2();
+                e.aaload(i);
+                e.unbox(Type.getType(setters[i].getParameterTypes()[0]));
+                e.invoke(setters[i]);
             }
-            end_block();
-            return_value();
-            catch_exception(handler, CLASS_CAST_EXCEPTION);
-            new_instance(BULK_BEAN_EXCEPTION);
-            dup_x1();
-            swap();
-            load_local(index);
-            invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
-            athrow();
-            end_method();
-        }};
+        }
+        e.end_block();
+        e.return_value();
+        e.catch_exception(handler, CLASS_CAST_EXCEPTION);
+        e.new_instance(BULK_BEAN_EXCEPTION);
+        e.dup_x1();
+        e.swap();
+        e.load_local(index);
+        e.invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
+        e.athrow();
+        e.end_method();
     }
     
     private static void validate(Class target,
