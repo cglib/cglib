@@ -18,9 +18,17 @@ public class ClassTransformerChain extends AbstractClassTransformer {
         }
     }
 
+    public CodeVisitor visitMethod(int access,
+                                   String name,
+                                   String desc,
+                                   String[] exceptions,
+                                   Attribute attrs) {
+        return cv.visitMethod(access, name, desc, exceptions, attrs);
+    }
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
-        sb.append("TransformerChain{");
+        sb.append("ClassTransformerChain{");
         for (int i = 0; i < chain.length; i++) {
             if (i > 0) {
                 sb.append(", ");
