@@ -55,8 +55,7 @@
 package net.sf.cglib;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenerationException.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: CodeGenerationException.java,v 1.3 2003/01/24 19:53:48 herbyderby Exp $
  */
 public class CodeGenerationException extends RuntimeException {
     private Throwable cause;

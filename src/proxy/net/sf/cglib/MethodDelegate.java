@@ -59,11 +59,15 @@ import java.lang.reflect.Modifier;
 // TODO: don't require exact match for return type
 
 /**
+ * <b>DOCUMENTATION FROM APACHE AVALON DELEGATE CLASS</b>
+ *
+ * <p>
  * Delegates are a typesafe pointer to another method.  Since Java does not
  * have language support for such a construct, this utility will construct
  * a proxy that forwards method calls to any method with the same signature.
  * This utility is inspired in part by the C# delegate mechanism.  We
  * implemented it in a Java-centric manner.
+ * </p>
  *
  * <h2>Delegate</h2>
  * <p>
@@ -133,10 +137,7 @@ import java.lang.reflect.Modifier;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @author <a href="mailto:bloritsch@apache.org">Berin Loritsch</a>
- * @author <a href="mailto:leo.sutic@inspireinfrastructure.com">Leo Sutic</a>
- * @version $Id: MethodDelegate.java,v 1.4 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.5 2003/01/24 19:53:44 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     /* package */ static final Class TYPE = MethodDelegate.class;

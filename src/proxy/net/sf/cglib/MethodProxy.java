@@ -56,8 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.11 2003/01/24 19:49:47 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.12 2003/01/24 19:53:44 herbyderby Exp $
  */
 abstract public class MethodProxy {
     private static final Method INVOKE_SUPER =

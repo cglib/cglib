@@ -57,8 +57,7 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.10 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.11 2003/01/24 19:53:45 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
