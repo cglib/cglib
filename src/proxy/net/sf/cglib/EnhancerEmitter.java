@@ -235,7 +235,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
         
     private void emitSetCallbacks() {
-        CodeEmitter e= begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null);
         e.load_this();
         e.load_arg(0);
         emitSetCallbacks(e);

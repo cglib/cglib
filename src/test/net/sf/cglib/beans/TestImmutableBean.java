@@ -51,71 +51,39 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
+import java.lang.reflect.Method;
 import junit.framework.*;
-import net.sf.cglib.beans.*;
-import net.sf.cglib.core.*;
-import net.sf.cglib.reflect.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.transform.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.43 2003/10/05 02:41:59 herbyderby Exp $
+ *
+ * @author baliuka
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestImmutableBean extends TestCase {
+
+    public void testSimple() {
+        MA bean = new MA();
+        assertTrue(bean.getIntP() == 0);
+        bean.setIntP(42);
+        assertTrue(bean.getIntP() == 42);
+        bean = (MA)ImmutableBean.create(bean);
+        assertTrue(bean.getIntP() == 42);
+        try {
+            bean.setIntP(43);
+            fail("expecting illegal state exception");
+        } catch (IllegalStateException ignore) { }
+    }
+    
+    public TestImmutableBean(java.lang.String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-
-        // root
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-        suite.addTest(TestMixin.suite());
-
-        // beans
-        suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestImmutableBean.suite());
-
-        // reflect
-        suite.addTest(TestDelegates.suite());
-        suite.addTest(TestFastClass.suite());
-
-        // core
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
-        suite.addTest(TestTinyBitSet.suite());
-        
-        // util
-        suite.addTest(TestParallelSorter.suite());
-
-        // transform
-        suite.addTest(TestTransformingLoader.suite());
-
-        // performance
-        // suite.addTest(TestReflectPerf.suite());
-        return suite;
+    
+    public static void main(java.lang.String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[])throws Exception {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-       
+    
+    public static Test suite() {
+        return new TestSuite(TestImmutableBean.class);
     }
 }
-
