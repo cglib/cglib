@@ -89,7 +89,14 @@ class ClassFileUtils implements ClassFileConstants {
                     m.setAccessible(flag);
                     
                     return result;
-                }catch( Exception e ){
+                    
+                 }catch( java.lang.reflect.InvocationTargetException ite  ){
+                     
+                    Throwable e = ite.getTargetException();
+                    throw new Error( e.getClass().getName() + ":" + e.getMessage());
+                   
+                  }catch( Throwable e ){
+                      
                     throw new Error( e.getClass().getName() + ":" + e.getMessage());
                 }
             }
