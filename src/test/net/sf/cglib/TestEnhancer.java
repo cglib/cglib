@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.2 2002/11/27 21:29:48 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.3 2002/11/29 18:36:01 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -190,7 +190,7 @@ public class TestEnhancer extends TestCase {
         TestCase.assertTrue("floatType", 1.1f  == source.floatType(1.1f));
         TestCase.assertTrue("doubleType",1.1 == source.doubleType(1.1));
         TestCase.assertEquals("objectType","1", source.objectType("1") );
-        
+        TestCase.assertEquals("objectType","",  source.toString() );
         
         
     }
@@ -346,11 +346,11 @@ public class TestEnhancer extends TestCase {
     }
     
    public void testABC() throws Throwable{
-       Enhancer.enhance(EA.class, null, NOOP_INTERCEPTOR);
-       Enhancer.enhance(EC1.class, null, NOOP_INTERCEPTOR);
-       Enhancer.enhance(EB.class, null, NOOP_INTERCEPTOR);
-       Enhancer.enhance(ED.class, null, NOOP_INTERCEPTOR);
-       Enhancer.enhance(ClassLoader.class, null, NOOP_INTERCEPTOR);
+       Enhancer.enhance(EA.class, null, NOOP_INTERCEPTOR).toString();
+       Enhancer.enhance(EC1.class, null, NOOP_INTERCEPTOR).toString();
+       Enhancer.enhance(EB.class, null, NOOP_INTERCEPTOR).toString();
+       Enhancer.enhance(ED.class, null, NOOP_INTERCEPTOR).toString();
+       Enhancer.enhance(ClassLoader.class, null, NOOP_INTERCEPTOR).toString();
    }
 
     public static class AroundDemo {
@@ -375,4 +375,8 @@ public class TestEnhancer extends TestCase {
         assertTrue(demo.getLastName().equals("Nokleberg"));
     }
   
+    public void testSamples() throws Throwable{
+        samples.Trace.main(new String[]{});
+        samples.Beans.main(new String[]{});
+    }
 }

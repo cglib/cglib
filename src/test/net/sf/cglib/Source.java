@@ -60,7 +60,9 @@ public abstract class Source implements java.io.Serializable{
     public static class CheckedException extends Exception{}
     public static class UndeclaredException extends Exception{}
 
-
+ public String toString(){
+   return "";
+ }
     public Source() {
     }
     

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.10 2002/11/09 16:19:30 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.11 2002/11/29 18:36:00 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -195,7 +195,7 @@
 
 
 
-  <target depends="compile"
+  <target depends="compile,compile-samples"
     name="build-test">
     <javac debug="${compile.debug}" 
            deprecation="${compile.deprecation}" 
@@ -207,7 +207,9 @@
    <classpath refid="compile.classpath"/>
    <classpath>
    <pathelement path="${build.home}/classes"/>
+   <pathelement path="${samples.build.home}/classes" />
    </classpath> 
+ 
    </javac>
   
 
@@ -233,6 +235,7 @@
           <pathelement path="${classpath}"/>
           <pathelement path="${java.class.path}"/>
           <pathelement path="${source.test}"/>
+          <pathelement path="${samples.build.home}/classes" />      
           <fileset dir="./lib">
 		<include name="*.*"/>
           </fileset>

@@ -1,13 +1,16 @@
 
+
+package samples;
+
 import java.beans.*;
-import net.sf.cglib.proxy.*;
+import net.sf.cglib.*;
 import java.util.*;
 
 /**
  *
  * @author  baliuka
  */
-public class Beans implements MethodInterceptor{
+public class Beans implements BeforeAfterInterceptor{
     
     private PropertyChangeSupport propertySupport;
    
