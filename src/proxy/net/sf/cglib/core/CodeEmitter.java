@@ -108,7 +108,6 @@ public class CodeEmitter extends CodeAdapter {
         int firstLocal;
         int nextLocal;
         Map remap;
-        boolean staticHook;
 
         State(int access, Signature sig, Type[] exceptions) {
             this.access = access;
@@ -125,12 +124,8 @@ public class CodeEmitter extends CodeAdapter {
         state = new State(access, sig, exceptions);
     }
 
-    void setStaticHook(boolean staticHook) {
-        state.staticHook = staticHook;
-    }
-
     public boolean isStaticHook() {
-        return state.staticHook;
+        return false;
     }
 
     public CodeEmitter(CodeEmitter wrap) {
@@ -508,9 +503,9 @@ public class CodeEmitter extends CodeAdapter {
     // package-protected for ComplexOps, try to fix
     void emit_field(int opcode, Type ctype, String name, Type ftype) {
         cv.visitFieldInsn(opcode,
-                             ctype.getInternalName(),
-                             name,
-                             ftype.getDescriptor());
+                          ctype.getInternalName(),
+                          name,
+                          ftype.getDescriptor());
     }
 
     public void super_invoke() {

@@ -23,12 +23,11 @@ public class AddStaticInitTransformer extends EmittingTransformer {
         this.classInit = classInit;
     }
 
-    public void end_class() {
+    protected void init() {
         if (!TypeUtils.isInterface(getAccess())) {
             CodeEmitter e = getStaticHook();
             ComplexOps.load_class_this(e);
             e.invoke(classInit);
         }
-        super.end_class();
     }
 }

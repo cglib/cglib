@@ -6,28 +6,29 @@ public class TransformerChain extends AbstractTransformer {
     private ClassTransformer[] chain;
     
     public TransformerChain(ClassTransformer[] chain) {
-        this.chain = cloneAndLink(chain);
+        this.chain = clone(chain);
     }
 
-    private static ClassTransformer[] cloneAndLink(ClassTransformer[] chain) {
+    private static ClassTransformer[] clone(ClassTransformer[] chain) {
         ClassTransformer[] copy = new ClassTransformer[chain.length];
-        ClassVisitor cv = null;
         for (int i = chain.length - 1; i >= 0; i--) {
             copy[i] = (ClassTransformer)chain[i].clone();
-            copy[i].setTarget(cv);
-            cv = copy[i];
         }
         return copy;
     }
 
-    public void setTarget(ClassVisitor v) {
-        super.setTarget(chain[0]);
-        chain[chain.length - 1].setTarget(v);
+    public void setTarget(ClassVisitor v, ClassVisitor outer) {
+        super.setTarget(chain[0], outer);
+        ClassVisitor next = v;
+        for (int i = chain.length - 1; i >= 0; i--) {
+            chain[i].setTarget(next, outer);
+            next = chain[i];
+        }
     }
 
     public Object clone() {
         TransformerChain t = (TransformerChain)super.clone();
-        t.chain = cloneAndLink(chain);
+        t.chain = clone(chain);
         return t;
     }
 

@@ -63,43 +63,33 @@ import org.objectweb.asm.*;
 public class ClassEmitter extends ClassAdapter {
     private static final Signature STATIC_HOOK =
       TypeUtils.parseSignature("void CGLIB$STATIC_HOOK()");
+    private static final String STATIC_HOOK_FLAG = "CGLIB$STATIC_HOOK_FLAG";
 
     private int access;
     private Type classType;
     private Type superType;
     private Map fieldInfo;
     private boolean seenStatic;
-    private ClassEmitter rec;
-    private ClassVisitor raw;
     private CodeEmitter hook;
-    private boolean useHook = true;
+    private boolean ended;
+    private ClassVisitor outer;
 
     public ClassEmitter(ClassVisitor cv) {
         super(null);
-        setTarget(cv);
-    }
-
-    public ClassEmitter(ClassVisitor cv, boolean useHook) {
-        super(null);
-        this.useHook = useHook;
-        setTarget(cv);
+        setTarget(cv, this);
     }
 
     public ClassEmitter() {
         super(null);
     }
 
-    public void setTarget(ClassVisitor cv) {
-        if (useHook) {
-            this.raw = cv;
-            this.cv = new ClassVisitorTee(rec = new ClassEmitter(new ClassRecorder(), false), cv);
-        } else {
-            this.raw = cv;
-            this.cv = cv;
-        }
+    public void setTarget(ClassVisitor cv, ClassVisitor outer) {
+        this.cv = cv;
+        this.outer = outer;
         fieldInfo = new HashMap();
         seenStatic = false;
         hook = null;
+        ended = false;
     }
 
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
@@ -115,14 +105,22 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public CodeEmitter getStaticHook() {
-        if (!useHook || TypeUtils.isInterface(access)) {
-            throw new IllegalStateException("static hook is invalid for this class");
-        }
-        if (hook == null) { 
-            hook = rec.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
-            hook.setStaticHook(true);
-        }
-        return hook;
+         if (TypeUtils.isInterface(access)) {
+             throw new IllegalStateException("static hook is invalid for this class");
+         }
+         if (hook == null) {
+             ClassEmitter oe = new ClassEmitter(outer);
+             oe.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE, null);
+             CodeEmitter e = oe.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
+             Label ok = e.make_label();
+             e.getstatic(classType, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE);
+             e.if_jump(e.EQ, ok);
+             e.return_value();
+             e.mark(ok);
+             e.push(true);
+             e.putstatic(classType, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE);
+         }
+         return hook;
     }
 
     protected void init() {
@@ -141,21 +139,23 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public void end_class() {
-        if (useHook && !TypeUtils.isInterface(access)) {
-            if (hook != null && !seenStatic) {
-                CodeEmitter e = begin_static();
-                e.return_value();
-                e.end_method();
-            }
-            if (seenStatic) {
-                getStaticHook(); // make sure hook is not null
-                hook.return_value();
-                hook.end_method();
-                ((ClassRecorder)rec.cv).generateMethod(STATIC_HOOK, raw);
-            }
+        if (seenStatic && hook == null) {
+            getStaticHook(); // force hook method creation
         }
-        raw.visitEnd();
-        cv = raw = null; // for safety
+        if (hook != null) {
+            if (!seenStatic) {
+                CodeVisitor v = outer.visitMethod(Constants.ACC_STATIC,
+                                                  Constants.SIG_STATIC.getName(),
+                                                  Constants.SIG_STATIC.getDescriptor(),
+                                                  null);
+                v.visitInsn(Constants.RETURN);
+                v.visitMaxs(0, 0);
+            }
+            ended = true;
+            hook.return_value();
+            hook.end_method();
+        }
+        cv.visitEnd();
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
@@ -163,12 +163,31 @@ public class ClassEmitter extends ClassAdapter {
                                        sig.getName(),
                                        sig.getDescriptor(),
                                        TypeUtils.toInternalNames(exceptions));
-        CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
-        if (useHook && sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(access)) {
-            seenStatic = true;
-            e.invoke_static_this(STATIC_HOOK);
+        if (sig.equals(STATIC_HOOK)) {
+            hook = new CodeEmitter(this, v, access, sig, exceptions) {
+                public boolean isStaticHook() {
+                    return true;
+                }
+                public void visitMaxs(int maxStack, int maxLocals) {
+                    if (ended) {
+                        super.visitMaxs(maxStack, maxLocals);
+                    }
+                }
+                public void visitInsn(int insn) {
+                    if (insn != Constants.RETURN || ended) {
+                        super.visitInsn(insn);
+                    }
+                }
+            };
+            return hook;
+        } else {
+            CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
+            if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(access)) {
+                seenStatic = true;
+                e.invoke_static_this(STATIC_HOOK);
+            }
+            return e;
         }
-        return e;
     }
 
     public CodeEmitter begin_static() {
