@@ -61,6 +61,7 @@ import java.util.*;
  * @author  baliuka
  */
 abstract class CodeGenerator {
+    private static final Object lock = new Object();
     private static final Class[] BACKEND_CONSTRUCTOR_ARGS = { String.class, Class.class };
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
@@ -104,7 +105,7 @@ abstract class CodeGenerator {
                 // defer
             }
         }
-   }
+    }
 
     public static void setBackend(Class backendClass) {
         try {
@@ -157,12 +158,15 @@ abstract class CodeGenerator {
     
     public Class define() {
         try {
-            generate();
-            if (needsFindClass) {
-                generateFindClass();
+            byte[] bytes;
+            synchronized (lock) {
+                generate();
+                if (needsFindClass) {
+                    generateFindClass();
+                }
+                bytes = backend.getBytes();                
             }
             
-            byte[] bytes = backend.getBytes();
             if (debugLocation != null) {
                 OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".cglib"));
                 out.write(bytes);
@@ -1004,7 +1008,7 @@ abstract class CodeGenerator {
     protected interface ProcessArrayCallback {
         public void processElement(Class type);
     }
-    
+
     /**
      * Process an array on the stack. Assumes the top item on the stack
      * is an array of the specified type. For each element in the array,
