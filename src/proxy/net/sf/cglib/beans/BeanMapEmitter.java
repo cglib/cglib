@@ -80,7 +80,7 @@ class BeanMapEmitter extends ClassEmitter {
     private static final Type FIXED_KEY_SET =
       TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
 
-    public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) {
+    public BeanMapEmitter(ClassVisitor v, String className, Class type) {
         super(v);
 
         begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
@@ -90,15 +90,15 @@ class BeanMapEmitter extends ClassEmitter {
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
         Map setters = makePropertyMap(ReflectUtils.getBeanSetters(type));
-        generateGet(type, switchStyle, getters);
-        generatePut(type, switchStyle, setters);
+        generateGet(type, getters);
+        generatePut(type, setters);
 
         Map allProps = new HashMap();
         allProps.putAll(getters);
         allProps.putAll(setters);
         String[] allNames = getNames(allProps);
         generateKeySet(allNames);
-        generateGetPropertyType(switchStyle, allProps, allNames);
+        generateGetPropertyType(allProps, allNames);
         end_class();
     }
 
@@ -123,14 +123,14 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
         
-    private void generateGet(Class type, int switchStyle, final Map getters) {
+    private void generateGet(Class type, final Map getters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         e.checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(e, getNames(getters), switchStyle, new ObjectSwitchCallback() {
+        ComplexOps.string_switch(e, getNames(getters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                 e.invoke(pd.getReadMethod());
@@ -145,14 +145,14 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void generatePut(Class type, int switchStyle, final Map setters) {
+    private void generatePut(Class type, final Map setters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         e.checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(e, getNames(setters), switchStyle, new ObjectSwitchCallback() {
+        ComplexOps.string_switch(e, getNames(setters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                 if (pd.getReadMethod() == null) {
@@ -198,10 +198,10 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void generateGetPropertyType(int switchStyle, final Map allProps, String[] allNames) {
+    private void generateGetPropertyType(final Map allProps, String[] allNames) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_TYPE, null);
         e.load_arg(0);
-        ComplexOps.string_switch(e, allNames, switchStyle, new ObjectSwitchCallback() {
+        ComplexOps.string_switch(e, allNames, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)allProps.get(key);
                 ComplexOps.load_class(e, Type.getType(pd.getPropertyType()));

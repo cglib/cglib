@@ -117,63 +117,6 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(map.getPropertyType("kdkkj") == null);
     }
 
-    public static Map create(Object bean, int switchStyle) {
-        BeanMap.Generator gen = new BeanMap.Generator();
-        gen.setBean(bean);
-        gen.setSwitchStyle(switchStyle);
-        return gen.create();
-    }
-
-    public void testPerformance() throws Throwable {
-        int iter = 100000;
-        System.out.println();
-        System.out.println("iteration count: " + iter);
-
-        TestBean b1 = makePerfBean();
-        TestBean b2 = makePerfBean();
-
-        Map hash = create(b2, Constants.SWITCH_STYLE_HASH);
-        Map trie = create(b1, Constants.SWITCH_STYLE_TRIE);
-
-        System.out.println("\nHash\n----");
-        perfHelper(hash, iter);
-        System.out.println("\nTrie\n------");
-        perfHelper(trie, iter);
-    }
-
-    public void perfHelper(Map map, int iter) {
-        Integer wrapped = new Integer(30);
-        long t1  = System.currentTimeMillis();
-        for (int i = 0; i < iter; i++) {
-            map.get("foo");
-        }
-        long t2  = System.currentTimeMillis();
-        for (int i = 0; i < iter; i++) {
-            map.get("quud");
-        }
-        long t3  = System.currentTimeMillis();
-        for (int i = 0; i < iter; i++) {
-            map.put("foo", "derby");
-        }
-        long t4  = System.currentTimeMillis();
-        for (int i = 0; i < iter; i++) {
-            map.put("quud", wrapped);
-        }
-        long t5  = System.currentTimeMillis();
-
-        System.out.println("get object    = " + (t2 - t1) 
-                           + "\n" + "get primitive = " + (t3 - t2)
-                           + "\n" + "put object    = " + (t4 - t3)
-                           + "\n" + "put primitive = " + (t5 - t4));
-    }
-
-    private TestBean makePerfBean() {
-        TestBean bean = new TestBean();
-        bean.setFoo("herby");
-        bean.setQuud(20);
-        return bean;
-    }
-
     public TestBeanMap(String testName) {
         super(testName);
     }

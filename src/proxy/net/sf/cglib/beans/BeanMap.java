@@ -60,13 +60,22 @@ import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 
+/**
+ * A <code>Map</code>-based view of a JavaBean.  The set of keys is the
+ * union of all property names (getters or setters).  An attempt to set
+ * a read-only property will be ignored, and write-only properties will
+ * be returned as <code>null</code>. Removal of objects is not a
+ * supported (the key set is fixed).
+ * @author Chris Nokleberg
+ */
 abstract public class BeanMap implements Map {
-    private static final BeanMapKey KEY_FACTORY =
-      (BeanMapKey)KeyFactory.create(BeanMapKey.class, KeyFactory.CLASS_BY_NAME);
-    interface BeanMapKey {
-        public Object newInstance(Class type, int switchStyle);
-    }
-
+    /**
+     * Helper method to create a new <code>BeanMap</code>.  For finer
+     * control over the generated instance, use a new instance of
+     * <code>BeanMap.Generator</code> instead of this static method.
+     * @param bean the JavaBean underlying the map
+     * @return a new <code>BeanMap</code> instance
+     */
     public static BeanMap create(Object bean) {
         Generator gen = new Generator();
         gen.setBean(bean);
@@ -77,7 +86,7 @@ abstract public class BeanMap implements Map {
         private static final Source SOURCE = new Source(BeanMap.class.getName());
 
         private Object bean;
-        private int switchStyle;
+        private Class beanClass;
         
         public Generator() {
             super(SOURCE);
@@ -85,24 +94,25 @@ abstract public class BeanMap implements Map {
 
         public void setBean(Object bean) {
             this.bean = bean;
+            if (bean != null)
+                beanClass = bean.getClass();
         }
 
-        public void setSwitchStyle(int switchStyle) {
-            this.switchStyle = switchStyle;
+        public void setBeanClass(Class beanClass) {
+            this.beanClass = beanClass;
         }
-
+        
         protected ClassLoader getDefaultClassLoader() {
             return bean.getClass().getClassLoader();
         }
 
         public BeanMap create() {
             setNamePrefix(BeanMap.class.getName());
-            Object key = KEY_FACTORY.newInstance(bean.getClass(), switchStyle);
-            return (BeanMap)super.create(key);
+            return (BeanMap)super.create(beanClass);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            new BeanMapEmitter(v, getClassName(), bean.getClass(), switchStyle);
+            new BeanMapEmitter(v, getClassName(), beanClass);
         }
 
         protected Object firstInstance(Class type) {
@@ -114,7 +124,19 @@ abstract public class BeanMap implements Map {
         }
     }
 
+    /**
+     * Create a new <code>BeanMap</code> instance using the specified bean.
+     * This is faster than using the {@link #create} static method.
+     * @param bean the JavaBean underlying the map
+     * @return a new <code>BeanMap</code> instance
+     */
     abstract protected BeanMap newInstance(Object bean);
+
+    /**
+     * Get the type of a property.
+     * @param name the name of the JavaBean property
+     * @return the type of the property, or null if the property does not exist
+     */
     abstract public Class getPropertyType(String name);
 
     protected Object bean;
@@ -126,10 +148,18 @@ abstract public class BeanMap implements Map {
         setBean(bean);
     }
 
+    /**
+     * Change the underlying bean this map should use.
+     * @param bean the new JavaBean
+     */
     public void setBean(Object bean) {
         this.bean = bean;
     }
 
+    /**
+     * Return the bean currently in use by this map.
+     * @return the current JavaBean
+     */
     public Object getBean() {
         return bean;
     }
