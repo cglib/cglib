@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.20 2003/06/13 21:12:49 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.21 2003/06/13 21:22:26 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="1.1-pre1"/>
+    <property name="component.version" value="1.1pre1"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -25,7 +25,8 @@
     <property name="source.home" value="src/proxy"/>
     <property name="samples.source.home" value="src/proxy/samples"/>
     <property name="source.test" value="src/test"/>
-    
+
+    <property name="asm.jar" value="lib/asm.jar"/>    
   
     <property name="compile.debug" value="true"/>
     <property name="compile.deprecation" value="true"/>
@@ -112,11 +113,14 @@
       <exclude name="samples/**" />
     </jar> 
 
+<!--
       <copy file="lib/asm-copyright.txt" todir="${build.home}/classes"/>  
       <copy file="lib/asm-license.txt" todir="${build.home}/classes"/>   
+-->
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
-      <zipfileset src="lib/asm.jar"/>
+      <zipfileset dir="lib" includes="asm*.txt"/>
+      <zipfileset src="${asm.jar}"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
     </jar> 
