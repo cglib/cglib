@@ -71,11 +71,28 @@ import net.sf.cglib.core.CodeGenerationException;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.2 2003/11/10 23:43:09 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.3 2003/12/02 21:59:05 herbyderby Exp $
  */
 public class Proxy implements Serializable {
+    protected InvocationHandler h;
+
+    private static final CallbackFilter BAD_OBJECT_METHOD_FILTER = new CallbackFilter() {
+        public int accept(Method method) {
+            if (method.getDeclaringClass().getName().equals("java.lang.Object")) {
+                String name = method.getName();
+                if (!(name.equals("hashCode") ||
+                      name.equals("equals") ||
+                      name.equals("toString"))) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+    };
+
     protected Proxy(InvocationHandler h) {
-        ((Factory)this).setCallback(0, h);
+        EnhancerEmitter.setThreadCallbacks(getClass(), new Callback[]{ h, null });
+        this.h = h;
     }
 
     // private for security of isProxyClass
@@ -86,14 +103,22 @@ public class Proxy implements Serializable {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return (InvocationHandler)((Factory)proxy).getCallback(0);
+        if (!(proxy instanceof ProxyImpl)) {
+            throw new IllegalArgumentException("Object is not a proxy");
+        }
+        return ((Proxy)proxy).h;
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
         Enhancer e = new Enhancer();
         e.setSuperclass(ProxyImpl.class);
         e.setInterfaces(interfaces);
-        e.setCallbackType(InvocationHandler.class);
+        e.setCallbackTypes(new Class[]{
+            InvocationHandler.class,
+            NoOp.class,
+        });
+        e.setCallbackFilter(BAD_OBJECT_METHOD_FILTER);
+        e.setUseFactory(false);
         return e.createClass();
     }
 

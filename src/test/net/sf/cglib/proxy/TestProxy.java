@@ -64,7 +64,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestProxy.java,v 1.2 2003/11/30 18:23:46 herbyderby Exp $
+ * @version $Id: TestProxy.java,v 1.3 2003/12/02 21:59:02 herbyderby Exp $
  */
 public class TestProxy extends CodeGenTestCase {
 
@@ -77,7 +77,7 @@ public class TestProxy extends CodeGenTestCase {
             System.out.println("invoking " + m + " on " + o + " with " + args);
             Object r = m.invoke(o, args);
             System.out.println("done: " + m + " on " + o + " with " + args + ", result is " + r);
-            return r; 
+            return r;
         }
      }
 
