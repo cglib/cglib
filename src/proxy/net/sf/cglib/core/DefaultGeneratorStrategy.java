@@ -53,20 +53,26 @@
  */
 package net.sf.cglib.core;
 
-import java.util.Set;
+import org.objectweb.asm.ClassWriter;
 
-/**
- * Customize the generated class name for {@link AbstractClassGenerator}-based utilities.
- */
-public interface NamingPolicy {
-    /**
-     * Choose a name for a generated class.
-     * @param prefix a dotted-name chosen by the generating class (possibly to put the generated class in a particular package)
-     * @param source the fully-qualified class name of the generating class (for example "net.sf.cglib.Enhancer")
-     * @param key A key object representing the state of the parameters; for caching to work properly, equal keys should result
-     * in the same generated class name. The default policy incorporates <code>key.hashCode()</code> into the class name.
-     * @param names a predicate that returns true if the given classname has already been used in the same ClassLoader.
-     * @return the fully-qualified class name
-     */
-    String getClassName(String prefix, String source, Object key, Predicate names);
+public class DefaultGeneratorStrategy implements GeneratorStrategy {
+    public static final DefaultGeneratorStrategy INSTANCE = new DefaultGeneratorStrategy();
+    
+    public byte[] generate(ClassGenerator cg) throws Exception {
+        ClassWriter cw = getClassWriter();
+        transform(cg).generateClass(cw);
+        return transform(cw.toByteArray());
+    }
+
+    protected ClassWriter getClassWriter() throws Exception {
+        return new DebuggingClassWriter(true);
+    }
+
+    protected byte[] transform(byte[] b) throws Exception {
+        return b;
+    }
+
+    protected ClassGenerator transform(ClassGenerator cg) throws Exception {
+        return cg;
+    }
 }

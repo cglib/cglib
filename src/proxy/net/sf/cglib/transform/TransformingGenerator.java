@@ -17,12 +17,4 @@ public class TransformingGenerator implements ClassGenerator {
         t.setTarget(v, t);
         gen.generateClass(t);
     }
-
-    public static Transformer adapt(final ClassTransformer t) {
-        return new Transformer() {
-            public Object transform(Object value) {
-                return new TransformingGenerator((ClassGenerator)value, t);
-            }
-        };
-    }
 }
