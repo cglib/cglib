@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.12 2002/09/26 18:57:13 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.13 2002/09/27 14:39:34 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -1065,17 +1065,21 @@ public class Enhancer implements org.apache.bcel.Constants {
         new Type[] { }, null, // arg names
         "<clinit>", cg.getClassName(), il, cp );
         
-        il.append( new  LDC( cp.addString(cg.getClassName()) ));
-        il.append( new  INVOKESTATIC(
-        cp.addMethodref(   generateFindClass(cg, cp )  ) )
-        );
-        il.append( new  ASTORE(1) );
+        MethodGen findClass = generateFindClass( cg, cp );
         
         for( java.util.Iterator i = methods.keySet().iterator(); i.hasNext(); ){
+            
             String fieldName      = (String)i.next();
             java.lang.reflect.Method method =
-            (java.lang.reflect.Method)methods.get(fieldName);
+            (java.lang.reflect.Method)methods.get( fieldName );
             Class[] args = method.getParameterTypes();
+            String declaring    = method.getDeclaringClass().getName();
+            
+            il.append( new  LDC( cp.addString(declaring) ));
+            il.append( new  INVOKESTATIC(
+            cp.addMethodref(  findClass   ) ) );
+            il.append( new  ASTORE(1) );
+            
             
             il.append( new ICONST( args.length )  );
             il.append( new ANEWARRAY( cp.addClass( CLASS_OBJECT ) ) );
@@ -1198,7 +1202,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 ClassLoader loader = this.getClass().getClassLoader();
                 Class parent = loader.loadClass(parentClassName);
                 Class interfaceList[] = null;
-                if( interfaceNameList != null){
+                if( interfaceNameList != null ){
                     interfaceList = new Class[interfaceNameList.length];
                     for( int i = 0; i< interfaceNameList.length; i++ ){
                         interfaceList[i] = loader.loadClass( interfaceNameList[i] );
