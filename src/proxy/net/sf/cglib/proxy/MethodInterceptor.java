@@ -76,12 +76,11 @@ package net.sf.cglib.proxy;
 * <b>public boolean</b> removeElement(Object arg1){
 *
 *   Object args[] = { arg1 };
-*   Object retValFromBefore = h.<b>beforeInvoke</b>(this,METHOD_23,args);
 *   boolean invokedSuper = false;
 *   Throwable t = null;
 *   Object retValFromSuper = null;
 *
-*   if( h.<b>invokeSuper</b>(this,METHOD_23,args,retValFromBefore) ){
+*   if( h.<b>invokeSuper</b>(this,METHOD_23,args) ){
 *     invokedSuper = true;
 *   try{
 *
@@ -94,7 +93,7 @@ package net.sf.cglib.proxy;
 *   }
 *
 *  return ((Boolean) h.<b>afterReturn</b>(this, METHOD_23, args,
-*                       retValFromBefore, invokedSuper, retValFromSuper,t )
+*                           invokedSuper, retValFromSuper,t )
 *            ).booleanValue();
 *
 *}
@@ -103,7 +102,7 @@ package net.sf.cglib.proxy;
 
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: MethodInterceptor.java,v 1.1 2002/07/03 18:25:50 baliuka Exp $
+ *@version    $Id: MethodInterceptor.java,v 1.2 2002/07/06 10:20:37 baliuka Exp $
  */
 public interface MethodInterceptor {
     
@@ -115,10 +114,6 @@ public interface MethodInterceptor {
      * @return returned value used as parameter for all
      * interceptor methods
      */    
-  /*  public Object beforeInvoke( Object obj,
-                                java.lang.reflect.Method method,
-                                Object args[] )throws java.lang.Throwable;
-   */
     
     /** Generated code calls this method before invoking super
      * @param obj this

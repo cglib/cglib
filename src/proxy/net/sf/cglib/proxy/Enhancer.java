@@ -61,26 +61,21 @@ import org.apache.bcel.generic.*;
  * this code returns Enhanced Vector to intercept  all methods for tracing
  *   <pre>
  *         java.util.Vector vector = (java.util.Vector)Enhancer.enhance(
- *        java.util.Vector.class,
- *        new Class[]{java.util.List.class},
+ *        java.util.Vector.<b>class</b>,
+ *        new Class[]{java.util.List.<b>class</b>},
  *
  *        new MethodInterceptor(){
  *
- *            public Object beforeInvoke( Object obj,java.lang.reflect.Method method,
- *            Object args[] )
- *            throws java.lang.Throwable{
- *                return null;
- *            }
- *
- *            public boolean invokeSuper( Object obj,java.lang.reflect.Method method,
- *            Object args[], Object retValFromBefore )
+ *         
+ *            <b>public boolean invokeSuper</b>( Object obj,java.lang.reflect.Method method,
+ *            Object args[])
  *            throws java.lang.Throwable{
  *                return true;
  *            }
  *
  *
- *        public Object afterReturn(  Object obj,     java.lang.reflect.Method method,
- *        Object args[],  Object retValFromBefore,
+ *        <b>public</b> Object <b>afterReturn</b>(  Object obj,     java.lang.reflect.Method method,
+ *        Object args[],  
  *        boolean invokedSuper, Object retValFromSuper,
  *        java.lang.Throwable e )throws java.lang.Throwable{
  *            System.out.println(method);
@@ -91,7 +86,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.1 2002/07/03 18:25:50 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.2 2002/07/06 10:20:37 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
