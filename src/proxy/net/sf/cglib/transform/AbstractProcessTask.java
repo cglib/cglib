@@ -30,7 +30,7 @@ abstract public class AbstractProcessTask extends Task {
         filesets.addElement(set);
     }
     
-    private Collection getFiles() {
+    protected Collection getFiles() {
         Map fileMap = new HashMap();
         Project p = getProject();
         for (int i = 0; i < filesets.size(); i++) {
