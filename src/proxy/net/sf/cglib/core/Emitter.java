@@ -61,6 +61,18 @@ import org.objectweb.asm.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class Emitter {
+    private static final Signature BOOLEAN_VALUE =
+      Signature.parse("boolean booleanValue()");
+    private static final Signature CHAR_VALUE =
+      Signature.parse("char charValue()");
+    private static final Signature LONG_VALUE =
+      Signature.parse("long longValue()");
+    private static final Signature DOUBLE_VALUE =
+      Signature.parse("double doubleValue()");
+    private static final Signature FLOAT_VALUE =
+      Signature.parse("float floatValue()");
+    private static final Signature INT_VALUE =
+      Signature.parse("int intValue()");
     private static final Signature STATIC =
       Signature.parse("void <clinit>()");
     private static final Signature CSTRUCT_STRING =
@@ -119,9 +131,9 @@ public class Emitter {
         return returnType;
     }
     
-    public Type[] getArgumentTypes() {
-        return (Type[])argumentTypes.clone();
-    }
+//     public Type[] getArgumentTypes() {
+//         return (Type[])argumentTypes.clone();
+//     }
 
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
@@ -901,6 +913,99 @@ public class Emitter {
         super_invoke_constructor();
         return_value();
     }
+    
+    /**
+     * Allocates and fills an Object[] array with the arguments to the
+     * current method. Primitive values are inserted as their boxed
+     * (Object) equivalents.
+     */
+    public void create_arg_array() {
+        /* generates:
+           Object[] args = new Object[]{ arg1, new Integer(arg2) };
+         */
+        push(argumentTypes.length);
+        newarray();
+        for (int i = 0; i < argumentTypes.length; i++) {
+            dup();
+            push(i);
+            load_arg(i);
+            box(argumentTypes[i]);
+            aastore();
+        }
+    }
 
-    // TODO: box, unbox, unbox_or_zero, zero_or_null, create_arg_array
+     /**
+      * If the argument is a primitive class, replaces the primitive value
+      * on the top of the stack with the wrapped (Object) equivalent. For
+      * example, char -> Character.
+      * If the class is Void, a null is pushed onto the stack instead.
+      * @param type the class indicating the current type of the top stack value
+      */
+     public void box(Type type) {
+         if (TypeUtils.isPrimitive(type)) {
+             if (type == Type.VOID_TYPE) {
+                 aconst_null();
+             } else {
+                 Type boxed = TypeUtils.getBoxedType(type);
+                 new_instance(boxed);
+                 if (type.getSize() == 2) {
+                     // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
+                     dup_x2();
+                     dup_x2();
+                     pop();
+                 } else {
+                     // p -> po -> opo -> oop -> o
+                     dup_x1();
+                     swap();
+                 }
+                 invoke_constructor(boxed, new Type[]{ type });
+             }
+         }
+     }
+    
+    /**
+     * If the argument is a primitive class, replaces the object
+     * on the top of the stack with the unwrapped (primitive)
+     * equivalent. For example, Character -> char.
+     * @param type the class indicating the desired type of the top stack value
+     * @return true if the value was unboxed
+     */
+    public void unbox(Type type) {
+        Type t = Constants.TYPE_NUMBER;
+        Signature sig = null;
+        switch (type.getSort()) {
+        case Type.VOID:
+            return;
+        case Type.CHAR:
+            t = Constants.TYPE_CHARACTER;
+            sig = CHAR_VALUE;
+            break;
+        case Type.BOOLEAN:
+            t = Constants.TYPE_BOOLEAN;
+            sig = BOOLEAN_VALUE;
+            break;
+        case Type.DOUBLE:
+            sig = DOUBLE_VALUE;
+            break;
+        case Type.FLOAT:
+            sig = FLOAT_VALUE;
+            break;
+        case Type.LONG:
+            sig = LONG_VALUE;
+            break;
+        case Type.INT:
+        case Type.SHORT:
+        case Type.BYTE:
+            sig = INT_VALUE;
+        }
+
+        if (sig == null) {
+            checkcast(type);
+        } else {
+            checkcast(t);
+            invoke_virtual(t, sig);
+        }
+    }
+
+    // TODO: unbox_or_zero, zero_or_null
 }

@@ -127,7 +127,7 @@ class BeanMapEmitter extends Emitter {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                 ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
-                Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
+                box(Type.getType(pd.getReadMethod().getReturnType()));
                 return_value();
             }
             public void processDefault() {
@@ -152,11 +152,11 @@ class BeanMapEmitter extends Emitter {
                 } else {
                     dup();
                     ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
-                    Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
+                    box(Type.getType(pd.getReadMethod().getReturnType()));
                 }
                 swap(); // move old value behind bean
                 load_arg(1); // new value
-                Ops.unbox(BeanMapEmitter.this, Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
+                unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
                 ReflectOps.invoke(BeanMapEmitter.this, pd.getWriteMethod());
                 return_value();
             }

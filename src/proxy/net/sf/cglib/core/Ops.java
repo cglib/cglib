@@ -70,18 +70,6 @@ public class Ops {
       Signature.parse("Class forName(String)");
     public static final Signature GET_MESSAGE =
       Signature.parse("String getMessage()");
-    private static final Signature BOOLEAN_VALUE =
-      Signature.parse("boolean booleanValue()");
-    private static final Signature CHAR_VALUE =
-      Signature.parse("char charValue()");
-    private static final Signature LONG_VALUE =
-      Signature.parse("long longValue()");
-    private static final Signature DOUBLE_VALUE =
-      Signature.parse("double doubleValue()");
-    private static final Signature FLOAT_VALUE =
-      Signature.parse("float floatValue()");
-    private static final Signature INT_VALUE =
-      Signature.parse("int intValue()");
     private static final Signature CSTRUCT_STRING =
       Signature.parse("void <init>(String)");
     
@@ -91,27 +79,6 @@ public class Ops {
       Signature.parse("Class CGLIB$findClass(String)");
 
     private Ops() {
-    }
-    
-    /**
-     * Allocates and fills an Object[] array with the arguments to the
-     * current method. Primitive values are inserted as their boxed
-     * (Object) equivalents.
-     */
-    public static void create_arg_array(Emitter e) {
-        /* generates:
-           Object[] args = new Object[]{ arg1, new Integer(arg2) };
-         */
-        Type[] argumentTypes = e.getArgumentTypes();
-        e.push(argumentTypes.length);
-        e.newarray();
-        for (int i = 0; i < argumentTypes.length; i++) {
-            e.dup();
-            e.push(i);
-            e.load_arg(i);
-            box(e, argumentTypes[i]);
-            e.aastore();
-        }
     }
     
     /**
@@ -154,84 +121,11 @@ public class Ops {
                 zero_or_null(e, type);
                 e.goTo(end);
                 e.mark(nonNull);
-                unbox(e, type);
+                e.unbox(type);
                 e.mark(end);
             }
         } else {
             e.checkcast(type);
-        }
-    }
-
-     /**
-      * If the argument is a primitive class, replaces the primitive value
-      * on the top of the stack with the wrapped (Object) equivalent. For
-      * example, char -> Character.
-      * If the class is Void, a null is pushed onto the stack instead.
-      * @param type the class indicating the current type of the top stack value
-      */
-     public static void box(Emitter e, Type type) {
-         if (TypeUtils.isPrimitive(type)) {
-             if (type == Type.VOID_TYPE) {
-                 e.aconst_null();
-             } else {
-                 Type boxed = TypeUtils.getBoxedType(type);
-                 e.new_instance(boxed);
-                 if (type.getSize() == 2) {
-                     // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
-                     e.dup_x2();
-                     e.dup_x2();
-                     e.pop();
-                 } else {
-                     // p -> po -> opo -> oop -> o
-                     e.dup_x1();
-                     e.swap();
-                 }
-                 e.invoke_constructor(boxed, new Type[]{ type });
-             }
-         }
-     }
-    
-    /**
-     * If the argument is a primitive class, replaces the object
-     * on the top of the stack with the unwrapped (primitive)
-     * equivalent. For example, Character -> char.
-     * @param type the class indicating the desired type of the top stack value
-     * @return true if the value was unboxed
-     */
-    public static void unbox(Emitter e, Type type) {
-        Type t = Constants.TYPE_NUMBER;
-        Signature sig = null;
-        switch (type.getSort()) {
-        case Type.VOID:
-            return;
-        case Type.CHAR:
-            t = Constants.TYPE_CHARACTER;
-            sig = CHAR_VALUE;
-            break;
-        case Type.BOOLEAN:
-            t = Constants.TYPE_BOOLEAN;
-            sig = BOOLEAN_VALUE;
-            break;
-        case Type.DOUBLE:
-            sig = DOUBLE_VALUE;
-            break;
-        case Type.FLOAT:
-            sig = FLOAT_VALUE;
-            break;
-        case Type.LONG:
-            sig = LONG_VALUE;
-            break;
-        case Type.INT:
-        case Type.SHORT:
-        case Type.BYTE:
-            sig = INT_VALUE;
-        }
-
-        if (sig == null) {
-            e.checkcast(type);
-        } else {
-            e.checkcast(t);
-            e.invoke_virtual(t, sig);
         }
     }
 

@@ -118,7 +118,7 @@ implements CallbackGenerator
 
         e.load_this();
         e.getfield(getFieldName(context, method));
-        Ops.create_arg_array(e);
+        e.create_arg_array();
         e.getfield(getAccessName(context, method));
         ReflectOps.invoke(e, AROUND_ADVICE);
         Ops.unbox_or_zero(e, Type.getType(method.getReturnType()));

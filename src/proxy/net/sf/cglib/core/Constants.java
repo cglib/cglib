@@ -53,12 +53,11 @@
  */
 package net.sf.cglib.core;
 
-import java.lang.reflect.Modifier;
 import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.4 2003/09/20 20:23:26 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.5 2003/09/20 20:56:49 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
@@ -98,7 +97,7 @@ public class Constants implements org.objectweb.asm.Constants {
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String SOURCE_FILE = "<generated>";
     public static final String STATIC_NAME = "<clinit>";
-    public static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+    public static final int PRIVATE_FINAL_STATIC = ACC_PRIVATE | ACC_FINAL | ACC_STATIC;
 
 //////////////////////////////////////////////////
     // get rid of this
