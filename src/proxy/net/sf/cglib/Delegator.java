@@ -62,14 +62,12 @@ import net.sf.cglib.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.21 2003/06/24 20:59:05 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.22 2003/07/15 16:38:46 herbyderby Exp $
  * @author Chris Nokleberg
  */
 public class Delegator {
     private static final FactoryCache cache = new FactoryCache(Delegator.class);
     private static final Map infoCache = Collections.synchronizedMap(new HashMap());
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("DelegatorGenerator(Class, Class[], int[])");
     private static final DelegatorKey KEY_FACTORY =
       (DelegatorKey)KeyFactory.create(DelegatorKey.class, null);
 
@@ -214,19 +212,20 @@ public class Delegator {
         return info;
     }
 
-    private static Object createHelper(Class type,
-                                       Class[] classes,
-                                       Object[] delegates,
-                                       int[] routing,
+    private static Object createHelper(final Class type,
+                                       final Class[] classes,
+                                       final Object[] delegates,
+                                       final int[] routing,
                                        ClassLoader loader) {
-        Factory factory =
-            (Factory)cache.getFactory(loader,
-                                      KEY_FACTORY.newInstance(type, classes, routing),
-                                      GENERATOR,
-                                      type,
-                                      classes,
-                                      routing);
-        return factory.newInstance(delegates);
+        Object key = KEY_FACTORY.newInstance(type, classes, routing);
+        return cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new DelegatorGenerator(type, classes, routing);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    return ((Factory)factory).newInstance(delegates);
+                }
+            });
     }
 
     private static class Info {

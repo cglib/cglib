@@ -72,91 +72,50 @@ public class FactoryCache {
         this.cache = cache;
     }
 
-    public Class getClass(ClassLoader loader, Object key, Constructor gen,
-                          Object a0) {
-        return (Class)getHelper(false, loader, key, gen, 1, a0, null, null, null);
+    public interface Callback {
+        BasicCodeGenerator newGenerator();
+        Object newFactory(Class type);
+        Object newInstance(Object factory, boolean isNew);
     }
 
-    public Class getClass(ClassLoader loader, Object key, Constructor gen,
-                          Object a0, Object a1) {
-        return (Class)getHelper(false, loader, key, gen, 2, a0, a1, null, null);
-    }
-        
-    public Class getClass(ClassLoader loader, Object key, Constructor gen,
-                          Object a0, Object a1, Object a2) {
-        return (Class)getHelper(false, loader, key, gen, 3, a0, a1, a2, null);
-    }
-
-    public Class getClass(ClassLoader loader, Object key, Constructor gen,
-                          Object a0, Object a1, Object a2, Object a3) {
-        return (Class)getHelper(false, loader, key, gen, 4, a0, a1, a2, a3);
+    abstract public static class AbstractCallback implements Callback {
+        public Object newFactory(Class type) {
+            return ReflectUtils.newInstance(type);
+        }
+        public Object newInstance(Object factory, boolean isNew) {
+            return factory;
+        }
     }
 
-    public Object getFactory(ClassLoader loader, Object key, Constructor gen,
-                             Object a0) {
-        return getHelper(true, loader, key, gen, 1, a0, null, null, null);
+    abstract public static class ClassOnlyCallback extends AbstractCallback {
+        public Object newFactory(Class type) {
+            return type;
+        }
     }
-
-    public Object getFactory(ClassLoader loader, Object key, Constructor gen,
-                             Object a0, Object a1) {
-        return getHelper(true, loader, key, gen, 2, a0, a1, null, null);
-    }
-        
-    public Object getFactory(ClassLoader loader, Object key, Constructor gen,
-                             Object a0, Object a1, Object a2) {
-        return getHelper(true, loader, key, gen, 3, a0, a1, a2, null);
-    }
-
-    public Object getFactory(ClassLoader loader, Object key, Constructor gen,
-                             Object a0, Object a1, Object a2, Object a3) {
-        return getHelper(true, loader, key, gen, 4, a0, a1, a2, a3);
-    }
-
-    private Object getHelper(boolean isFactory, ClassLoader loader, Object key, Constructor gen,
-                             int numArgs, Object a0, Object a1, Object a2, Object a3) {
+    
+    public Object get(ClassLoader loader, Object key, Callback callback) {
         if (loader == null) {
             loader = defaultLoader;
         }
+        boolean isNew;
         Object factory;
         synchronized (this) {
-            factory = get(loader, key);
-            if (factory == null) {
-                Object[] args = new Object[numArgs];
-                switch (numArgs) {
-                case 4: args[3] = a3;
-                case 3: args[2] = a2;
-                case 2: args[1] = a1;
-                case 1: args[0] = a0;
-                }
-
-                BasicCodeGenerator cg = (BasicCodeGenerator)ReflectUtils.newInstance(gen, args);
+            Map loaderCache = (Map)cache.get(loader);
+            if (loaderCache == null) {
+                cache.put(loader, loaderCache = new HashMap());
+            }
+            factory = loaderCache.get(key);
+            isNew = factory == null;
+            if (isNew) {
+                BasicCodeGenerator cg = callback.newGenerator();
                 cg.setNameSuffix(suffix + counter++);
                 cg.setClassLoader(loader);
-                factory = cg.define();
-                if (isFactory) {
-                    factory = ReflectUtils.newInstance((Class)factory);
-                }
+                factory = callback.newFactory(cg.define());
                 if (key != null) {
-                    put(loader, key, factory);
+                    loaderCache.put(key, factory);
                 }
             }
+            return callback.newInstance(factory, isNew);
         }
-        return factory;
-    }
-
-    private Object get(ClassLoader loader, Object key) {
-        return getFactoryMap(loader).get(key);
-    }
-
-    private void put(ClassLoader loader, Object key, Object factory) {
-        getFactoryMap(loader).put(key, factory);
-    }
-
-    private Map getFactoryMap(ClassLoader loader) {
-        Map factories = (Map)cache.get(loader);
-        if (factories == null) {
-            cache.put(loader, factories = new HashMap());
-        }
-        return factories;
     }
 }

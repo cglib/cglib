@@ -137,12 +137,10 @@ import net.sf.cglib.util.*;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.10 2003/06/24 21:00:09 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.11 2003/07/15 16:38:46 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final FactoryCache cache = new FactoryCache(MethodDelegate.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("MethodDelegate$Generator(Class, String, Class)");
     private static final MethodDelegateKey KEY_FACTORY =
       (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class, null);
     private static final Method NEW_INSTANCE =
@@ -189,16 +187,20 @@ abstract public class MethodDelegate {
         return createHelper(delegate, delegate.getClass(), methodName, iface, loader);
     }
 
-    private static MethodDelegate createHelper(Object delegate, Class type, String methodName,
-                                               Class iface, ClassLoader loader) {
-        MethodDelegate factory =
-            (MethodDelegate)cache.getFactory(loader,
-                                             KEY_FACTORY.newInstance(type, methodName, iface),
-                                             GENERATOR,
-                                             type,
-                                             methodName,
-                                             iface);
-        return factory.newInstance(delegate);
+    private static MethodDelegate createHelper(final Object delegate,
+                                               final Class type,
+                                               final String methodName,
+                                               final Class iface,
+                                               ClassLoader loader) {
+        Object key = KEY_FACTORY.newInstance(type, methodName, iface);
+        return (MethodDelegate)cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(type, methodName, iface);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    return ((MethodDelegate)factory).newInstance(delegate);
+                }
+            });
     }
 
     static Method findInterfaceMethod(Class iface) {

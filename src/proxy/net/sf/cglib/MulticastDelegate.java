@@ -60,8 +60,6 @@ import net.sf.cglib.util.*;
 
 abstract public class MulticastDelegate implements Cloneable {
     private static final FactoryCache cache = new FactoryCache(MulticastDelegate.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("MulticastDelegate$Generator(Class)");
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("MulticastDelegate.newInstance()");
     private static final Method ADD =
@@ -107,10 +105,15 @@ abstract public class MulticastDelegate implements Cloneable {
         return create(iface, null);
     }
 
-    public static MulticastDelegate create(Class iface, ClassLoader loader) {
-        MulticastDelegate factory =
-            (MulticastDelegate)cache.getFactory(loader, iface, GENERATOR, iface);
-        return factory.newInstance();
+    public static MulticastDelegate create(final Class iface, ClassLoader loader) {
+        return (MulticastDelegate)cache.get(loader, iface, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(iface);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    return ((MulticastDelegate)factory).newInstance();
+                }
+            });
     }
 
     private static class Generator extends CodeGenerator {

@@ -58,12 +58,10 @@ import net.sf.cglib.util.*;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
- * @version $Id: ConstructorProxy.java,v 1.15 2003/06/25 17:24:27 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.16 2003/07/15 16:38:46 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final FactoryCache cache = new FactoryCache(ConstructorProxy.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("ConstructorProxy$Generator(Constructor, Method)");
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
 
@@ -102,9 +100,14 @@ public abstract class ConstructorProxy {
         }
     }
 
-    private static ConstructorProxy createHelper(Constructor constructor, Method newInstance) {
+    private static ConstructorProxy createHelper(final Constructor constructor,
+                                                 final Method newInstance) {
         ClassLoader loader = constructor.getDeclaringClass().getClassLoader();
-        return (ConstructorProxy)cache.getFactory(loader, null, GENERATOR, constructor, newInstance);
+        return (ConstructorProxy)cache.get(loader, null, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(constructor, newInstance);
+                }
+            });
     }
 
     public abstract Object newInstance(Object[] args);

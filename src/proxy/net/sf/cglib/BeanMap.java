@@ -64,15 +64,11 @@ abstract public class BeanMap implements Map {
     public static final int SWITCH_STYLE_HASH = CodeGenerator.SWITCH_STYLE_HASH;
     
     private static final FactoryCache cache = new FactoryCache(BeanMap.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("BeanMapGenerator(Class, Integer)");
-    private static final Integer DEFAULT_SWITCH_STYLE = new Integer(SWITCH_STYLE_TRIE);
-
     private static final BeanMapKey KEY_FACTORY =
       (BeanMapKey)KeyFactory.create(BeanMapKey.class, null);
 
     interface BeanMapKey {
-        public Object newInstance(Class type, Integer switchStyle);
+        public Object newInstance(Class type, int switchStyle);
     }
 
     abstract protected BeanMap newInstance(Object bean);
@@ -86,22 +82,24 @@ abstract public class BeanMap implements Map {
     }
 
     public static BeanMap create(Object bean, ClassLoader loader) {
-        return createHelper(bean, DEFAULT_SWITCH_STYLE, loader);
+        return createHelper(bean, SWITCH_STYLE_TRIE, loader);
     }
 
     public static BeanMap create(Object bean, int switchStyle, ClassLoader loader) {
-        return createHelper(bean, new Integer(switchStyle), loader);
+        return createHelper(bean, switchStyle, loader);
     }
 
-    private static BeanMap createHelper(Object bean, Integer switchStyle, ClassLoader loader) {
-        Class type = bean.getClass();
-        BeanMap factory = 
-            (BeanMap)cache.getFactory(loader,
-                                      KEY_FACTORY.newInstance(type, switchStyle),
-                                      GENERATOR,
-                                      type,
-                                      switchStyle);
-        return factory.newInstance(bean);
+    private static BeanMap createHelper(final Object bean, final int switchStyle, ClassLoader loader) {
+        final Class type = bean.getClass();
+        Object key = KEY_FACTORY.newInstance(type, switchStyle);
+        return (BeanMap)cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new BeanMapGenerator(type, switchStyle);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    return ((BeanMap)factory).newInstance(bean);
+                }
+            });
     }
 
     public void clear() {
