@@ -131,7 +131,7 @@ public class ImmutableBean
 
             for (int i = 0; i < getters.length; i++) {
                 e = ce.begin_method(Constants.ACC_PUBLIC,
-                                    TypeUtils.getSignature(getters[i]),
+                                    ReflectUtils.getSignature(getters[i]),
                                     TypeUtils.getTypes(getters[i].getExceptionTypes()),
                                     null);
                 e.load_this();
@@ -143,7 +143,7 @@ public class ImmutableBean
 
             for (int i = 0; i < setters.length; i++) {
                 e = ce.begin_method(Constants.ACC_PUBLIC,
-                                    TypeUtils.getSignature(setters[i]),
+                                    ReflectUtils.getSignature(setters[i]),
                                     null,
                                     null);
                 e.throw_exception(ILLEGAL_STATE_EXCEPTION, "Bean is immutable");

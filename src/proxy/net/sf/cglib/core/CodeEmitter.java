@@ -865,7 +865,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
     public void invoke(Method method) {
         Class declaring = method.getDeclaringClass();
         Type owner = Type.getType(declaring);
-        Signature sig = TypeUtils.getSignature(method);
+        Signature sig = ReflectUtils.getSignature(method);
         if (declaring.isInterface()) {
             invoke_interface(owner, sig);
         } else if (TypeUtils.isStatic(method.getModifiers())) {

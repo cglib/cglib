@@ -1,6 +1,5 @@
 package net.sf.cglib.core;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import org.objectweb.asm.Type;
 
@@ -354,9 +353,5 @@ public class TypeUtils {
         default:
             return -1; // error
         }
-    }
-
-    public static Signature getSignature(Method method) {
-        return new Signature(method.getName(), Type.getMethodDescriptor(method));
     }
 }
