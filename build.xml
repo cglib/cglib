@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.4 2002/07/05 06:41:09 baliuka Exp $ -->
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.5 2002/07/06 10:20:37 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -78,12 +78,23 @@
           description="Clean and compile all components" 
    name="all"/>
 
-  <target depends="compile" description="Create component Javadoc documentation" name="javadoc">
-    <mkdir dir="${dist.home}"/>
-    <mkdir dir="${dist.home}/docs"/>
-    <mkdir dir="${dist.home}/docs/api"/>
-    <javadoc author="true" bottom="Copyright (c) 2001 - Apache Software Foundation" destdir="${dist.home}/docs/api" doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" packagenames="org.apache.commons.*" private="true" sourcepath="${source.home}" version="true" windowtitle="${component.title} (Version ${component.version})"/>
+  
+
+  <target depends="compile" 
+          description="Create component Javadoc documentation" 
+          name="javadoc">
+    <mkdir dir="docs/api"/>
+    <javadoc author="true" 
+             bottom="Copyright (c) 2001 - Apache Software Foundation" 
+             destdir="docs/api" 
+             doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
+             packagenames="net.sf.cglib.*" 
+             private="false" 
+             sourcepath="${source.home}" version="true" 
+             windowtitle="${component.title} (Version ${component.version})"/>
   </target>
+
+
 
   <target depends="compile" description="Create binary distribution"
     name="proxy">
@@ -102,15 +113,27 @@
       <include name="build.xml"/>
       <include name="LICENSE*"/>
       <include name="README*"/>
-      <include name="src/**"/>
+      <include name="src/**/*.java"/>
+      <include name="src/**/*.properties"/>
+      <include name="src/**/*.xml"/>  
       <include name="lib/**"/>  
-    </jar>       
+    </jar>   
+
+    <jar basedir="docs" jarfile="${dist.home}/${component.name}-docs-${component.version}.jar" >
+      <include name="**/*.html"/>
+      <include name="**/*.css"/> 
+      <include name="**/*.php"/>
+      <include name="**/*.js"/> 
+      <include name="**/*.pdf"/>
+      <include name="**/*.gif"/>
+    </jar> 
+    
 
   </target>
 
  
 
-  <target depends="proxy" description="Create binary distribution" 
+  <target depends="clean,javadoc,proxy" description="Create binary distribution" 
          name="dist">
   </target>
  
