@@ -116,7 +116,7 @@ public class TestStringSwitch extends CodeGenTestCase {
         public void generateClass(ClassVisitor v) throws Exception {
             final Emitter e = new Emitter(v);
             Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
-            Ops.null_constructor(e);
+            e.null_constructor();
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
             Ops.begin_method(e, method);
             e.load_arg(0);

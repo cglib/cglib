@@ -138,7 +138,7 @@ abstract public class MulticastDelegate implements Cloneable {
                             MulticastDelegate.class,
                             new Class[]{ iface },
                             Constants.SOURCE_FILE);
-            Ops.null_constructor(e);
+            e.null_constructor();
 
             // generate proxied method
             Ops.begin_method(e, method);

@@ -68,8 +68,8 @@ class ParallelSorterEmitter extends Emitter {
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
         super(v);
         Ops.begin_class(this, Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
-        Ops.null_constructor(this);
-        Ops.factory_method(this, NEW_INSTANCE);
+        null_constructor();
+        factory_method(NEW_INSTANCE);
         generateConstructor(arrays);
         generateSwap(arrays);
         end_class();

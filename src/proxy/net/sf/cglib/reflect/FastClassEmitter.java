@@ -159,10 +159,9 @@ class FastClassEmitter extends Emitter {
                 }
                 return_value();
             }
+
             public void processDefault() {
-                Ops.throw_exception(FastClassEmitter.this,
-                                    Types.NO_SUCH_METHOD_ERROR,
-                                    "Cannot find matching method/constructor");
+                throw_exception(Types.NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
             }
         });
     }

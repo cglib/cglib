@@ -255,7 +255,7 @@ class EnhancerEmitter extends Emitter {
             invoke_constructor_this();
             break;
         default:
-            Ops.throw_exception(this, Types.ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
+            throw_exception(Types.ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
         }
         return_value();
         
@@ -281,9 +281,7 @@ class EnhancerEmitter extends Emitter {
                 goTo(end);
             }
             public void processDefault() {
-                Ops.throw_exception(EnhancerEmitter.this,
-                                    Types.ILLEGAL_ARGUMENT_EXCEPTION,
-                                    "Constructor not found");
+                throw_exception(Types.ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
             }
         });
         load_arg(2);
@@ -328,14 +326,6 @@ class EnhancerEmitter extends Emitter {
         }
         return keys;
     }
-
-//     private void throwIllegalState(Method method) {
-//         Ops.begin_method(this, method);
-//         Ops.throw_exception(this,
-//                             Types.ILLEGAL_STATE_EXCEPTION,
-//                             "MethodInterceptor does not apply to this object");
-//         return_value();
-//     }
 
     private CallbackGenerator.Context[] createContexts(CallbackGenerator[] generators,
                                                        List[] methods,
