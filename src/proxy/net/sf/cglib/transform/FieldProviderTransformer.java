@@ -26,56 +26,37 @@ public class FieldProviderTransformer extends EmittingTransformer {
       TypeUtils.parseSignature("Class[] getFieldTypes()");
     private static final Signature PROVIDER_GET_NAMES =
       TypeUtils.parseSignature("String[] getFieldNames()");
-    private static final Signature INIT_FIELD_PROVIDER =
-      TypeUtils.parseSignature("void cglib$initFieldProvider()");
     
-    private boolean generatedClassInit = false;
     private int access;
-    private Map fields = new HashMap();
+    private Map fields;
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isAbstract(access)) {
             interfaces = TypeUtils.add(interfaces, FIELD_PROVIDER);
         }
         this.access = access;
+        fields = new HashMap();
         super.begin_class(access, className, superType, interfaces, sourceFile);
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
         super.declare_field(access, name, type, value);
         
-        if ( !TypeUtils.isStatic(access)) {
+        if (!TypeUtils.isStatic(access)) {
             fields.put(name, type);
         }
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        CodeEmitter e = super.begin_method(access, sig, exceptions);
-        if (sig.getName().equals(Constants.STATIC_NAME)) {
-            generatedClassInit = true;
-            e.invoke_static(getClassType(), INIT_FIELD_PROVIDER);
-        }
-        return e;
-    }
-
     public void end_class() {
-      if (!TypeUtils.isInterface(access)) {  
-        if (!generatedClassInit) {
-            CodeEmitter e = begin_static();
-            e.return_value();
-            e.end_method();
-        }
-        try {
-            
+        if (!TypeUtils.isInterface(access)) {  
+            try {
                 generate();
-              //  fields.clear();        
-                
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CodeGenerationException(e);
+            }
         }
-      }//interface
         super.end_class();
     }
 
@@ -101,7 +82,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
     }
 
     private void initFieldProvider(String[] names) {
-        CodeEmitter e = super.begin_method(Constants.ACC_STATIC, INIT_FIELD_PROVIDER, null);
+        CodeEmitter e = getStaticHook();
         ComplexOps.push_object(e, names);
         e.putstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
         
@@ -116,8 +97,6 @@ public class FieldProviderTransformer extends EmittingTransformer {
             e.aastore();
         }
         e.putstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
-        e.return_value();
-        e.end_method();
     }
 
     private void getNames() {
