@@ -139,7 +139,7 @@ import org.objectweb.asm.ClassVisitor;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.3 2003/09/15 17:25:32 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.4 2003/09/15 18:41:32 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -181,7 +181,7 @@ abstract public class MethodDelegate {
         return target;
     }
 
-    abstract protected Object newInstance(Object target);
+    abstract public MethodDelegate newInstance(Object target);
 
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(MethodDelegate.class, true);
@@ -212,6 +212,10 @@ abstract public class MethodDelegate {
 
         public void setInterface(Class iface) {
             this.iface = iface;
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return targetClass.getClassLoader();
         }
 
         public MethodDelegate create() {

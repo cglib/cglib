@@ -61,12 +61,12 @@ import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.2 2003/09/14 03:27:53 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.3 2003/09/15 18:41:32 herbyderby Exp $
  */
 class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Mixin$Factory.newInstance(Object[])");
+      ReflectUtils.findMethod("Mixin.newInstance(Object[])");
     private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
 
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
@@ -74,8 +74,8 @@ class MixinEmitter extends Emitter {
 
         begin_class(Modifier.PUBLIC,
                     className,
-                    null,
-                    ReflectUtils.add(classes, Mixin.Factory.class));
+                    Mixin.class,
+                    classes);
 
         Virt.null_constructor(this);
         generateConstructor();

@@ -70,9 +70,7 @@ implements ClassGenerator
     private ClassLoader classLoader;
 
     private String className;
-//     private String packageName;
     private String namePrefix;
-    private Class superclass;
     private int counter;
 
     static {
@@ -98,17 +96,6 @@ implements ClassGenerator
         this.source = source;
     }
 
-    protected void setSuperclass(Class superclass) {
-        this.superclass = superclass;
-    }
-
-    protected Class getSuperclass() {
-        if (superclass == null) {
-            return Object.class;
-        }
-        return superclass;
-    }
-
     public void setClassName(String className) {
         this.className = className;
     }
@@ -117,19 +104,13 @@ implements ClassGenerator
         this.namePrefix = namePrefix;
     }
 
-//     public void setPackageName(String packageName) {
-//         this.packageName = packageName;
-//     }
-
     // TODO: pluggable policy?
     protected String getClassName() {
         if (className != null) {
             return className;
         } else {
-            // TODO: use package of interface if applicable
-            Class sc = getSuperclass();
             StringBuffer sb = new StringBuffer();
-            sb.append((namePrefix != null) ? namePrefix : sc.getName());
+            sb.append((namePrefix != null) ? namePrefix : "net.sf.cglib.empty.Object");
             sb.append("$$");
             sb.append(ReflectUtils.getNameWithoutPackage(source.type));
             sb.append("ByCGLIB$$");
@@ -145,17 +126,9 @@ implements ClassGenerator
     // TODO: pluggable policy?
     protected ClassLoader getClassLoader() {
         ClassLoader t = classLoader;
-//         t = Thread.currentThread().getContextClassLoader();
-//         if (t != null) {
-//             return t;
-//         }
-
         if (t == null) {
             t = getDefaultClassLoader();
         }
-//         if (t == null && superclass != null) {
-//             t = superclass.getClassLoader();
-//         }
         if (t == null) {
             t = getClass().getClassLoader();
         }
@@ -165,9 +138,7 @@ implements ClassGenerator
         return t;
     }
 
-    protected ClassLoader getDefaultClassLoader() {
-        return null;
-    }
+    abstract protected ClassLoader getDefaultClassLoader();
 
     protected Object create(Object key) {
         try {

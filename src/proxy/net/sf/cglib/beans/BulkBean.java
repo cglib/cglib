@@ -117,12 +117,10 @@ abstract public class BulkBean
 
         public Generator() {
             super(SOURCE);
-            setSuperclass(BulkBean.class);
         }
 
         public void setTarget(Class target) {
             this.target = target;
-            setNamePrefix(target.getName());
         }
 
         public void setGetters(String[] getters) {
@@ -147,6 +145,7 @@ abstract public class BulkBean
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
+            setNamePrefix(target.getName());
             new BulkBeanEmitter(v, getClassName(), target, getters, setters, types);
         }
 

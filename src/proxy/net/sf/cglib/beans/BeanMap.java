@@ -84,7 +84,6 @@ abstract public class BeanMap implements Map {
         
         public Generator() {
             super(SOURCE);
-            setSuperclass(BeanMap.class);
         }
 
         public void setBean(Object bean) {
@@ -100,10 +99,12 @@ abstract public class BeanMap implements Map {
         }
 
         public BeanMap create() {
-            return (BeanMap)super.create(KEY_FACTORY.newInstance(bean.getClass(), switchStyle));
+            Object key = KEY_FACTORY.newInstance(bean.getClass(), switchStyle);
+            return (BeanMap)super.create(key);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
+            setNamePrefix(BeanMap.class.getName());
             new BeanMapEmitter(v, getClassName(), bean.getClass(), switchStyle);
         }
 

@@ -64,63 +64,93 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.6 2003/09/14 17:14:04 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.7 2003/09/15 18:41:32 herbyderby Exp $
  */
-public class Mixin extends AbstractClassGenerator {
-    private static final Source SOURCE = new Source(Mixin.class, true);
-    private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
+abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
       (MixinKey)KeyFactory.create(MixinKey.class);
-
-    private Class[] interfaces;
-    private Object[] delegates;
-    private int[] route;
+    private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
 
     interface MixinKey {
         public Object newInstance(Class[] interfaces, int[] route);
     }
 
-    interface Factory {
-        Factory newInstance(Object[] delegates);
+    abstract public Mixin newInstance(Object[] delegates);
+
+    public static Mixin create(Object[] delegates) {
+        Generator gen = new Generator();
+        gen.setDelegates(delegates);
+        return gen.create();
     }
 
-    public Mixin() {
-        super(SOURCE);
-        setNamePrefix("net.sf.cglib.Object");
+    public static Mixin create(Class[] interfaces, Object[] delegates) {
+        Generator gen = new Generator();
+        gen.setInterfaces(interfaces);
+        gen.setDelegates(delegates);
+        return gen.create();
     }
 
-    public void setInterfaces(Class[] interfaces) {
-        this.interfaces = interfaces;
-    }
+//     public static Mixin createBean(final Object[] beans, ClassLoader loader) {
+//         Object key = new ClassesKey(beans);
+//         return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
+//             public BasicCodeGenerator newGenerator() {
+//                 return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
+//             }
+//             public Object newInstance(Object factory, boolean isNew) {
+//                 return ((Mixin)factory).newInstance(beans);
+//             }
+//         });
+//     }
+    
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(Mixin.class, true);
 
-    public void setDelegates(Object[] delegates) {
-        this.delegates = delegates;
-    }
+        private Class[] interfaces;
+        private Object[] delegates;
+        private int[] route;
 
-    public void setRoute(int[] route) {
-        this.route = route;
-    }
-
-    public Object create() {
-        if (interfaces == null) {
-            Route r = route(delegates);
-            interfaces = r.interfaces;
-            route = r.route;
+        public Generator() {
+            super(SOURCE);
         }
-        Object key = KEY_FACTORY.newInstance(interfaces, route);
-        return (Mixin.Factory)super.create(key);
-    }
 
-    public void generateClass(ClassVisitor v) {
-        new MixinEmitter(v, getClassName(), interfaces, route);
-    }
+        protected ClassLoader getDefaultClassLoader() {
+            return delegates[0].getClass().getClassLoader(); // is this right?
+        }
 
-    protected Object firstInstance(Class type) {
-        return ((Mixin.Factory)ReflectUtils.newInstance(type)).newInstance(delegates);
-    }
+        public void setInterfaces(Class[] interfaces) {
+            this.interfaces = interfaces;
+        }
 
-    protected Object nextInstance(Object instance) {
-        return ((Mixin.Factory)instance).newInstance(delegates);
+        public void setDelegates(Object[] delegates) {
+            this.delegates = delegates;
+        }
+
+        public void setRoute(int[] route) {
+            this.route = route;
+        }
+
+        public Mixin create() {
+            if (interfaces == null) {
+                Route r = route(delegates);
+                interfaces = r.interfaces;
+                route = r.route;
+            }
+            Object key = KEY_FACTORY.newInstance(interfaces, route);
+            return (Mixin)super.create(key);
+        }
+
+        public void generateClass(ClassVisitor v) {
+            setNamePrefix("net.sf.cglib.Object");
+            new MixinEmitter(v, getClassName(), interfaces, route);
+        }
+
+        protected Object firstInstance(Class type) {
+            return ((Mixin)ReflectUtils.newInstance(type)).newInstance(delegates);
+        }
+
+        protected Object nextInstance(Object instance) {
+            return ((Mixin)instance).newInstance(delegates);
+        }
     }
 
     public static Class[] getInterfaces(Object[] delegates) {
@@ -177,16 +207,4 @@ public class Mixin extends AbstractClassGenerator {
             collectAllInterfaces(type.getSuperclass(), list);
         }
     }
-
-//     public static Mixin createBean(final Object[] beans, ClassLoader loader) {
-//         Object key = new ClassesKey(beans);
-//         return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-//             public BasicCodeGenerator newGenerator() {
-//                 return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
-//             }
-//             public Object newInstance(Object factory, boolean isNew) {
-//                 return ((Mixin)factory).newInstance(beans);
-//             }
-//         });
-//     }
 }
