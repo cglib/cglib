@@ -24,7 +24,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.46 2004/06/24 21:15:16 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.47 2004/08/20 15:08:46 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -704,5 +704,18 @@ public class TestEnhancer extends CodeGenTestCase {
         assertEquals("You called method toString", proxy.toString());
         assertEquals("You called method herby", ((DI1)proxy).herby());
         assertEquals("You called method derby", ((DI2)proxy).derby());
+    }
+
+    public void testSerialVersionUID() throws Exception {
+        Long suid = new Long(0xABBADABBAD00L);
+
+        Enhancer e = new Enhancer();
+        e.setSerialVersionUID(suid);
+        e.setCallback(NoOp.INSTANCE);
+        Object obj = e.create();
+
+        Field field = obj.getClass().getDeclaredField("serialVersionUID");
+        field.setAccessible(true);
+        assertEquals(suid, field.get(obj));
     }
 }

@@ -116,7 +116,8 @@ public class Enhancer extends AbstractClassGenerator
                                   Class[] interfaces,
                                   Object filter,
                                   Type[] callbackTypes,
-                                  boolean useFactory);
+                                  boolean useFactory,
+                                  Long serialVersionUID);
     }
 
     private Class[] interfaces;
@@ -129,6 +130,7 @@ public class Enhancer extends AbstractClassGenerator
     private Object[] arguments;
     private boolean useFactory = true;
     private int depth;
+    private Long serialVersionUID;
 
     /**
      * Create a new <code>Enhancer</code>. A new <code>Enhancer</code>
@@ -312,6 +314,14 @@ public class Enhancer extends AbstractClassGenerator
         return (Class)createHelper();
     }
 
+    /**
+     * Insert a static serialVersionUID field into the generated class.
+     * @param sUID the field value, or null to avoid generating field.
+     */
+    public void setSerialVersionUID(Long sUID) {
+        serialVersionUID = sUID;
+    }
+
     private void validate(boolean transforming) {
         if (transforming && filter != null && !(filter instanceof CallbackFilter2)) {
             throw new IllegalStateException("CallbackFilter2 must be used when transforming");
@@ -364,7 +374,7 @@ public class Enhancer extends AbstractClassGenerator
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
-        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, useFactory);
+        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, useFactory, serialVersionUID);
         return super.create(key);
     }
 
@@ -739,6 +749,9 @@ public class Enhancer extends AbstractClassGenerator
         ce.declare_field(Constants.ACC_PRIVATE, BOUND_FIELD, Type.BOOLEAN_TYPE, null, null);
         ce.declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL, null, null);
         ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_STATIC, DEFAULT_CALLBACKS_FIELD, CALLBACK_ARRAY, null, null);
+        if (serialVersionUID != null) {
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, Constants.SUID_FIELD_NAME, Type.LONG_TYPE, serialVersionUID, null);
+        }
 
         for (int i = 0; i < callbackTypes.length; i++) {
             ce.declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackTypes[i], null, null);

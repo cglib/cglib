@@ -19,7 +19,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.18 2004/06/24 21:15:21 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.19 2004/08/20 15:08:47 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
@@ -55,6 +55,7 @@ public interface Constants extends org.objectweb.asm.Constants {
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";
     public static final String SOURCE_FILE = "<generated>";
+    public static final String SUID_FIELD_NAME = "serialVersionUID";
 
     public static final int PRIVATE_FINAL_STATIC = ACC_PRIVATE | ACC_FINAL | ACC_STATIC;
 
