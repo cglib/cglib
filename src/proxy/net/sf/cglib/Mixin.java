@@ -58,12 +58,12 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- * <code>Delegator</code> provides a number of static methods that allow
+ * <code>Mixin</code> provides a number of static methods that allow
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Mixin.java,v 1.1 2003/09/09 19:49:03 herbyderby Exp $
  * @author Chris Nokleberg
+ * @version $Id: Mixin.java,v 1.2 2003/09/09 20:59:59 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final FactoryCache CACHE = new FactoryCache(Mixin.class);
@@ -136,6 +136,24 @@ abstract public class Mixin {
     public static Mixin create(Object[] delegates, ClassLoader loader) {
         Route route = route(delegates);
         return createHelper(route.interfaces, delegates, route.route, loader);
+    }
+
+    /**
+     * Combines an array of JavaBeans into a single "super" bean.
+     * Calls to the super bean will delegate to the underlying beans.
+     * @param beans the list of beans to delegate to
+     * @param loader The ClassLoader to use. If null uses the one that loaded this class.
+     */
+    public static Object createBean(final Object[] beans, ClassLoader loader) {
+        Object key = new ClassesKey(beans);
+        return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
+            public BasicCodeGenerator newGenerator() {
+                return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
+            }
+            public Object newInstance(Object factory, boolean isNew) {
+                return ((Mixin)factory).newInstance(beans);
+            }
+        });
     }
 
     private static class Route

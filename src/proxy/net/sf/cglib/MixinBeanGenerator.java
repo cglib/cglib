@@ -54,73 +54,18 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.util.ReflectUtils;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinGenerator.java,v 1.2 2003/09/09 20:59:59 herbyderby Exp $
+ * @version $Id: MixinBeanGenerator.java,v 1.1 2003/09/09 20:59:59 herbyderby Exp $
  */
-class MixinGenerator extends CodeGenerator {
-    private static final String FIELD_NAME = "CGLIB$DELEGATES";
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Mixin.newInstance(Object[])");
-    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
-
-    private Class[] classes;
-    private int[] route;
-        
-    public MixinGenerator(Class[] classes, int[] route) {
-        setSuperclass(Mixin.class);
-        this.classes = classes;
-        this.route = route;
-        if (classes[0].isInterface()) {
-            addInterfaces(classes);
-        }
-    }
-
-    protected void generate() throws NoSuchMethodException {
-        null_constructor();
-        generateConstructor();
-        factory_method(NEW_INSTANCE);
-
-        Set unique = new HashSet();
-        for (int i = 0; i < classes.length; i++) {
-            Method[] methods = getMethods(classes[i]);
-            for (int j = 0; j < methods.length; j++) {
-                if (unique.add(MethodWrapper.create(methods[j]))) {
-                    generateProxy(methods[j], (route != null) ? route[i] : i);
-                }
-            }
-        }
+class MixinBeanGenerator extends MixinGenerator {
+    public MixinBeanGenerator(Class[] classes) {
+        super(classes, null);
     }
 
     protected Method[] getMethods(Class type) {
-        return type.getMethods();
-    }
-
-    private void generateConstructor() {
-        declare_field(Modifier.PRIVATE, Object[].class, FIELD_NAME);
-        begin_constructor(TYPES_OBJECT_ARRAY);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        putfield(FIELD_NAME);
-        return_value();
-        end_method();
-    }
-
-    private void generateProxy(Method method, int index) {
-        begin_method(method);
-        load_this();
-        getfield(FIELD_NAME);
-        aaload(index);
-        checkcast(method.getDeclaringClass());
-        load_args();
-        invoke(method);
-        return_value();
-        end_method();
+        return ReflectUtils.getPropertyMethods(ReflectUtils.getBeanProperties(type), true, true);
     }
 }
