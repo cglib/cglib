@@ -1,7 +1,8 @@
 package net.sf.cglib.core;
 
-import org.objectweb.asm.Type;
+import java.lang.reflect.Method;
 import java.util.*;
+import org.objectweb.asm.Type;
 
 public class TypeUtils {
     private static final Map transforms = new HashMap();
@@ -345,5 +346,9 @@ public class TypeUtils {
         default:
             return -1; // error
         }
+    }
+
+    public static Signature getSignature(Method method) {
+        return new Signature(method.getName(), Type.getMethodDescriptor(method));
     }
 }

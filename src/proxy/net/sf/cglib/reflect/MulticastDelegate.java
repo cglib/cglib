@@ -57,6 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
 
 abstract public class MulticastDelegate implements Cloneable {
@@ -104,7 +105,7 @@ abstract public class MulticastDelegate implements Cloneable {
         private static final Source SOURCE = new Source(MulticastDelegate.class.getName());
         private static final Signature NEW_INSTANCE =
           TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate newInstance()");
-        private static final Signature ADD =
+        private static final Signature ADD_DELEGATE =
           TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate add(Object)");
         private static final Signature ADD_HELPER =
           TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
@@ -130,63 +131,70 @@ abstract public class MulticastDelegate implements Cloneable {
             return (MulticastDelegate)super.create(iface.getName());
         }
 
-        public void generateClass(ClassVisitor v) throws NoSuchFieldException {
+        public void generateClass(ClassVisitor cv) throws NoSuchFieldException {
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
-            final Emitter e = new Emitter(v);
-            e.begin_class(Constants.ACC_PUBLIC,
-                          getClassName(),
-                          MULTICAST_DELEGATE,
-                          new Type[]{ Type.getType(iface) },
-                          Constants.SOURCE_FILE);
-            e.null_constructor();
+            ClassEmitter ce = new ClassEmitter(cv);
+            ce.begin_class(Constants.ACC_PUBLIC,
+                           getClassName(),
+                           MULTICAST_DELEGATE,
+                           new Type[]{ Type.getType(iface) },
+                           Constants.SOURCE_FILE);
+            ComplexOps.null_constructor(ce);
 
             // generate proxied method
-            e.begin_method(Constants.ACC_PUBLIC,
-                           ReflectUtils.getSignature(method),
-                           ReflectUtils.getExceptionTypes(method));
-            Type returnType = e.getReturnType();
-            final boolean returns = returnType != Type.VOID_TYPE;
-            Local result = null;
-            if (returns) {
-                result = e.make_local(returnType);
-                e.zero_or_null(returnType);
-                e.store_local(result);
-            }
-            e.load_this();
-            e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
-            final Local result2 = result;
-            ComplexOps.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
-                public void processElement(Type type) {
-                    e.checkcast(Type.getType(iface));
-                    e.load_args();
-                    ReflectOps.invoke(e, method);
-                    if (returns) {
-                        e.store_local(result2);
-                    }
+            CodeEmitter e;
+            e = ce.begin_method(Constants.ACC_PUBLIC,
+                                ReflectUtils.getSignature(method),
+                                ReflectUtils.getExceptionTypes(method));
+            new CodeEmitter(e) {{
+                Type returnType = getReturnType();
+                final boolean returns = returnType != Type.VOID_TYPE;
+                Local result = null;
+                if (returns) {
+                    result = make_local(returnType);
+                    zero_or_null(returnType);
+                    store_local(result);
                 }
-            });
-            if (returns) {
-                e.load_local(result);
-            }
-            e.return_value();
+                load_this();
+                super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
+                final Local result2 = result;
+                final CodeEmitter ce = this;
+                ComplexOps.process_array(this, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+                    public void processElement(Type type) {
+                        checkcast(Type.getType(iface));
+                        load_args();
+                        invoke(method);
+                        if (returns) {
+                            store_local(result2);
+                        }
+                    }
+                });
+                if (returns) {
+                    load_local(result);
+                }
+                return_value();
+                end_method();
+            }};
 
             // newInstance
-            e.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.invoke_constructor_this();
             e.return_value();
+            e.end_method();
 
             // add
-            e.begin_method(Constants.ACC_PUBLIC, ADD, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null);
             e.load_this();
             e.load_arg(0);
             e.checkcast(Type.getType(iface));
             e.invoke_virtual_this(ADD_HELPER);
             e.return_value();
+            e.end_method();
 
-            e.end_class();
+            ce.end_class();
         }
 
         protected Object firstInstance(Class type) {

@@ -16,7 +16,8 @@ public class ReflectOps {
     private ReflectOps() {
     }
 
-    public static void invoke(Emitter e, Method method) {
+    // get rid of this
+    public static void invoke(CodeEmitter e, Method method) {
         Type owner = Type.getType(method.getDeclaringClass());
         Signature sig = ReflectUtils.getSignature(method);
         if (method.getDeclaringClass().isInterface()) {
@@ -28,7 +29,7 @@ public class ReflectOps {
         }
     }
 
-    public static void load_method(Emitter e, Method method) {
+    public static void load_method(CodeEmitter e, Method method) {
         ComplexOps.load_class(e, Type.getType(method.getDeclaringClass()));
         e.push(method.getName());
         ComplexOps.push_object(e, method.getParameterTypes());
@@ -39,7 +40,7 @@ public class ReflectOps {
         Class[] getParameterTypes(Object member);
     }
 
-    public static void method_switch(Emitter e,
+    public static void method_switch(CodeEmitter e,
                                      Method[] methods,
                                      ObjectSwitchCallback callback) throws Exception {
         member_switch_helper(e, Arrays.asList(methods), callback, true, new ParameterTyper() {
@@ -49,7 +50,7 @@ public class ReflectOps {
         });
     }
 
-    public static void constructor_switch(Emitter e,
+    public static void constructor_switch(CodeEmitter e,
                                           Constructor[] cstructs,
                                           ObjectSwitchCallback callback) throws Exception {
         member_switch_helper(e, Arrays.asList(cstructs), callback, false, new ParameterTyper() {
@@ -59,7 +60,7 @@ public class ReflectOps {
         });
     }
 
-    private static void member_switch_helper(final Emitter e,
+    private static void member_switch_helper(final CodeEmitter e,
                                              List members,
                                              final ObjectSwitchCallback callback,
                                              boolean useName,
@@ -101,7 +102,7 @@ public class ReflectOps {
         e.mark(end);
     }
 
-    private static void member_helper_size(final Emitter e,
+    private static void member_helper_size(final CodeEmitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,
                                            final ParameterTyper typer,
@@ -126,7 +127,7 @@ public class ReflectOps {
         });
     }
 
-    private static void member_helper_type(final Emitter e,
+    private static void member_helper_type(final CodeEmitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,
                                            final ParameterTyper typer,

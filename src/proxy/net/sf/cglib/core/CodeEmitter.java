@@ -54,13 +54,14 @@
 package net.sf.cglib.core;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.*;
 import org.objectweb.asm.*;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class Emitter {
+public class CodeEmitter extends CodeAdapter {
     private static final Signature BOOLEAN_VALUE =
       TypeUtils.parseSignature("boolean booleanValue()");
     private static final Signature CHAR_VALUE =
@@ -73,8 +74,6 @@ public class Emitter {
       TypeUtils.parseSignature("float floatValue()");
     private static final Signature INT_VALUE =
       TypeUtils.parseSignature("int intValue()");
-    private static final Signature STATIC =
-      TypeUtils.parseSignature("void <clinit>()");
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature CSTRUCT_STRING =
@@ -98,112 +97,111 @@ public class Emitter {
     public static final int NE = Constants.IFNE;
     public static final int EQ = Constants.IFEQ;
 
-    // current class
-    private ClassVisitor classv;
-    private int classAccess;
-    private Type classType;
-    private Type superType;
-    private Map fieldInfo = new HashMap();    
+    private ClassEmitter ce;
+    private State state;
 
-    // current method
-    private EmitterMethod curMethod;
-    private CodeVisitor codev;
+    private static class State {
+        int access;
+        Signature sig;
+        Type[] argumentTypes;
+        int localOffset;
+        int firstLocal;
+        int nextLocal;
+        Map remap;
+        Block curBlock;
 
-    // current block
-    private Block curBlock;
-
-    public Emitter(ClassVisitor v) {
-        this.classv = v;
+        State(int access, Signature sig, Type[] exceptions) {
+            this.access = access;
+            this.sig = sig;
+            argumentTypes = sig.getArgumentTypes();
+            localOffset = TypeUtils.isStatic(access) ? 0 : 1;
+            firstLocal = nextLocal = localOffset + TypeUtils.getStackSize(argumentTypes);
+        }
     }
 
-    public Type getClassType() {
-        return classType;
+    CodeEmitter(ClassEmitter ce, int access, Signature sig, Type[] exceptions) {
+        super(ce.getTarget().visitMethod(access,
+                                         sig.getName(),
+                                         sig.getDescriptor(),
+                                         TypeUtils.toInternalNames(exceptions)));
+        this.ce = ce;
+        state = new State(access, sig, exceptions);
     }
 
-    public Type getSuperType() {
-        return superType;
+    public CodeEmitter(CodeEmitter wrap) {
+        super(wrap.cv);
+        this.ce = wrap.ce;
+        this.state = wrap.state;
     }
 
     public Type getReturnType() {
-        return curMethod.getReturnType();
+        return state.sig.getReturnType();
     }
 
-    protected void init() {
-        // no-op
-    }
-    
-    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-        init();
-        this.classAccess = access;
-        this.classType = Type.getType("L" + className.replace('.', '/') + ";");
-        this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
-        classv.visit(access,
-                     this.classType.getInternalName(),
-                     this.superType.getInternalName(),
-                     TypeUtils.toInternalNames(interfaces),
-                     sourceFile);
+//     public Type[] getArgumentTypes() {
+//         return state.argumentTypes;
+//     }
+
+    public ClassEmitter getClassEmitter() {
+        return ce;
     }
 
-    public int getClassAccess() {
-        return classAccess;
-    }
-
-    public void end_class() {
-        closeMethod();
-        classv.visitEnd();
-        classv = null; // for safety
-    }
-    
-    public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
-        closeMethod();
-        curMethod = new EmitterMethod(classv, access, sig, exceptions);
-        codev = curMethod.getRaw();
-        return curMethod;
-    }
-
-    private void closeMethod() {
-        if (curBlock != null) {
+    public void end_method() {
+        if (state.curBlock != null) {
             throw new IllegalStateException("unclosed exception block");
         }
-        if (curMethod != null) {
-            curMethod.close();
-            curMethod = null;
-            codev = null;
-        }
+        visitMaxs(0, 0);
     }
 
-    public CodeVisitor begin_static() {
-        return begin_method(Constants.ACC_STATIC, STATIC, null);
+    private int remapLocal(int index, Type type) {
+        if (index < state.firstLocal) {
+            // System.err.println("remap keeping " + index + " (type=" + type.getDescriptor() + ")");
+            return index;
+        }
+        Integer key = new Integer((type.getSize() == 2) ? ~index : index);
+        if (state.remap == null) {
+            state.remap = new HashMap();
+        }
+        Local local = (Local)state.remap.get(key);
+        if (local == null) {
+            state.remap.put(key, local = make_local(type));
+        }
+
+        // System.err.println("remapping " + index + " --> " + local.getIndex()  + " (type=" + type.getDescriptor() + ")");
+        if (local.getType().getSize() != type.getSize()) {
+            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") in method " + state.sig + " requires different opcode sizes: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
+        }
+        return local.getIndex();
     }
 
     public Block begin_block() {
-        return curBlock = new Block(curBlock, mark());
+        return state.curBlock = new Block(state.curBlock, mark());
     }
 
     public void end_block() {
-        if (curBlock == null) {
+        if (state.curBlock == null) {
             throw new IllegalStateException("mismatched block boundaries");
         }
-        curBlock.setEnd(mark());
-        curBlock = curBlock.getParent();
+        state.curBlock.setEnd(mark());
+        state.curBlock = state.curBlock.getParent();
     }
 
     public void catch_exception(Block block, Type exception) {
         if (block.getEnd() == null) {
             throw new IllegalStateException("end of block is unset");
         }
-        codev.visitTryCatchBlock(block.getStart(),
+        cv.visitTryCatchBlock(block.getStart(),
                                  block.getEnd(),
                                  mark(),
                                  exception.getInternalName());
     }
 
-    public void goTo(Label label) { codev.visitJumpInsn(Constants.GOTO, label); }
-    public void ifnull(Label label) { codev.visitJumpInsn(Constants.IFNULL, label); }
-    public void ifnonnull(Label label) { codev.visitJumpInsn(Constants.IFNONNULL, label); }
+    public void goTo(Label label) { cv.visitJumpInsn(Constants.GOTO, label); }
+    public void ifnull(Label label) { cv.visitJumpInsn(Constants.IFNULL, label); }
+    public void ifnonnull(Label label) { cv.visitJumpInsn(Constants.IFNONNULL, label); }
 
     public void if_jump(int mode, Label label) {
-        codev.visitJumpInsn(mode, label);
+        cv.visitJumpInsn(mode, label);
     }
 
     public void if_icmp(int mode, Label label) {
@@ -219,22 +217,22 @@ public class Emitter {
         }
         switch (type.getSort()) {
         case Type.LONG:
-            codev.visitInsn(Constants.LCMP);
+            cv.visitInsn(Constants.LCMP);
             break;
         case Type.DOUBLE:
-            codev.visitInsn(Constants.DCMPG);
+            cv.visitInsn(Constants.DCMPG);
             break;
         case Type.FLOAT:
-            codev.visitInsn(Constants.FCMPG);
+            cv.visitInsn(Constants.FCMPG);
             break;
         case Type.ARRAY:
         case Type.OBJECT:
             switch (mode) {
             case EQ:
-                codev.visitJumpInsn(Constants.IF_ACMPEQ, label);
+                cv.visitJumpInsn(Constants.IF_ACMPEQ, label);
                 return;
             case NE:
-                codev.visitJumpInsn(Constants.IF_ACMPNE, label);
+                cv.visitJumpInsn(Constants.IF_ACMPNE, label);
                 return;
             }
             throw new IllegalArgumentException("Bad comparison for type " + type);
@@ -247,28 +245,28 @@ public class Emitter {
             case LE: swap(); /* fall through */
             case GT: intOp = Constants.IF_ICMPGT; break;
             }
-            codev.visitJumpInsn(intOp, label);
+            cv.visitJumpInsn(intOp, label);
             return;
         }
         if_jump(jumpmode, label);
     }
 
-    public void pop() { codev.visitInsn(Constants.POP); }
-    public void pop2() { codev.visitInsn(Constants.POP2); }
-    public void dup() { codev.visitInsn(Constants.DUP); }
-    public void dup2() { codev.visitInsn(Constants.DUP2); }
-    public void dup_x1() { codev.visitInsn(Constants.DUP_X1); }
-    public void dup_x2() { codev.visitInsn(Constants.DUP_X2); }
-    public void swap() { codev.visitInsn(Constants.SWAP); }
-    public void aconst_null() { codev.visitInsn(Constants.ACONST_NULL); }
+    public void pop() { cv.visitInsn(Constants.POP); }
+    public void pop2() { cv.visitInsn(Constants.POP2); }
+    public void dup() { cv.visitInsn(Constants.DUP); }
+    public void dup2() { cv.visitInsn(Constants.DUP2); }
+    public void dup_x1() { cv.visitInsn(Constants.DUP_X1); }
+    public void dup_x2() { cv.visitInsn(Constants.DUP_X2); }
+    public void swap() { cv.visitInsn(Constants.SWAP); }
+    public void aconst_null() { cv.visitInsn(Constants.ACONST_NULL); }
 
-    public void monitorenter() { codev.visitInsn(Constants.MONITORENTER); }
-    public void monitorexit() { codev.visitInsn(Constants.MONITOREXIT); }
+    public void monitorenter() { cv.visitInsn(Constants.MONITORENTER); }
+    public void monitorexit() { cv.visitInsn(Constants.MONITOREXIT); }
 
-    public void math(int op, Type type) { codev.visitInsn(type.getOpcode(op)); }
+    public void math(int op, Type type) { cv.visitInsn(type.getOpcode(op)); }
 
-    public void array_load(Type type) { codev.visitInsn(type.getOpcode(Constants.IALOAD)); }
-    public void array_store(Type type) { codev.visitInsn(type.getOpcode(Constants.IASTORE)); }
+    public void array_load(Type type) { cv.visitInsn(type.getOpcode(Constants.IALOAD)); }
+    public void array_store(Type type) { cv.visitInsn(type.getOpcode(Constants.IASTORE)); }
 
     /**
      * Casts from one primitive numeric type to another
@@ -277,44 +275,44 @@ public class Emitter {
         if (from != to) {
             if (from == Type.DOUBLE_TYPE) {
                 if (to == Type.FLOAT_TYPE) {
-                    codev.visitInsn(Constants.D2F);
+                    cv.visitInsn(Constants.D2F);
                 } else if (to == Type.LONG_TYPE) {
-                    codev.visitInsn(Constants.D2L);
+                    cv.visitInsn(Constants.D2L);
                 } else {
-                    codev.visitInsn(Constants.D2I);
+                    cv.visitInsn(Constants.D2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else if (from == Type.FLOAT_TYPE) {
                 if (to == Type.DOUBLE_TYPE) {
-                    codev.visitInsn(Constants.F2D);
+                    cv.visitInsn(Constants.F2D);
                 } else if (to == Type.LONG_TYPE) {
-                    codev.visitInsn(Constants.F2L);
+                    cv.visitInsn(Constants.F2L);
                 } else {
-                    codev.visitInsn(Constants.F2I);
+                    cv.visitInsn(Constants.F2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else if (from == Type.LONG_TYPE) {
                 if (to == Type.DOUBLE_TYPE) {
-                    codev.visitInsn(Constants.L2D);
+                    cv.visitInsn(Constants.L2D);
                 } else if (to == Type.FLOAT_TYPE) {
-                    codev.visitInsn(Constants.L2F);
+                    cv.visitInsn(Constants.L2F);
                 } else {
-                    codev.visitInsn(Constants.L2I);
+                    cv.visitInsn(Constants.L2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else {
                 if (to == Type.BYTE_TYPE) {
-                    codev.visitInsn(Constants.I2B);
+                    cv.visitInsn(Constants.I2B);
                 } else if (to == Type.CHAR_TYPE) {
-                    codev.visitInsn(Constants.I2C);
+                    cv.visitInsn(Constants.I2C);
                 } else if (to == Type.DOUBLE_TYPE) {
-                    codev.visitInsn(Constants.I2D);
+                    cv.visitInsn(Constants.I2D);
                 } else if (to == Type.FLOAT_TYPE) {
-                    codev.visitInsn(Constants.I2F);
+                    cv.visitInsn(Constants.I2F);
                 } else if (to == Type.LONG_TYPE) {
-                    codev.visitInsn(Constants.I2L);
+                    cv.visitInsn(Constants.I2L);
                 } else if (to == Type.SHORT_TYPE) {
-                    codev.visitInsn(Constants.I2S);
+                    cv.visitInsn(Constants.I2S);
                 }
             }
         }
@@ -322,43 +320,43 @@ public class Emitter {
 
     public void push(int i) {
         if (i < -1) {
-            codev.visitLdcInsn(new Integer(i));
+            cv.visitLdcInsn(new Integer(i));
         } else if (i <= 5) {
-            codev.visitInsn(TypeUtils.ICONST(i));
+            cv.visitInsn(TypeUtils.ICONST(i));
         } else if (i <= Byte.MAX_VALUE) {
-            codev.visitIntInsn(Constants.BIPUSH, i);
+            cv.visitIntInsn(Constants.BIPUSH, i);
         } else if (i <= Short.MAX_VALUE) {
-            codev.visitIntInsn(Constants.SIPUSH, i);
+            cv.visitIntInsn(Constants.SIPUSH, i);
         } else {
-            codev.visitLdcInsn(new Integer(i));
+            cv.visitLdcInsn(new Integer(i));
         }
     }
     
     public void push(long value) {
         if (value == 0L || value == 1L) {
-            codev.visitInsn(TypeUtils.LCONST(value));
+            cv.visitInsn(TypeUtils.LCONST(value));
         } else {
-            codev.visitLdcInsn(new Long(value));
+            cv.visitLdcInsn(new Long(value));
         }
     }
     
     public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            codev.visitInsn(TypeUtils.FCONST(value));
+            cv.visitInsn(TypeUtils.FCONST(value));
         } else {
-            codev.visitLdcInsn(new Float(value));
+            cv.visitLdcInsn(new Float(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
-            codev.visitInsn(TypeUtils.DCONST(value));
+            cv.visitInsn(TypeUtils.DCONST(value));
         } else {
-            codev.visitLdcInsn(new Double(value));
+            cv.visitLdcInsn(new Double(value));
         }
     }
     
     public void push(String value) {
-        codev.visitLdcInsn(value);
+        cv.visitLdcInsn(value);
     }
 
     public void newarray() {
@@ -367,28 +365,28 @@ public class Emitter {
 
     public void newarray(Type type) {
         if (TypeUtils.isPrimitive(type)) {
-            codev.visitIntInsn(Constants.NEWARRAY, TypeUtils.NEWARRAY(type));
+            cv.visitIntInsn(Constants.NEWARRAY, TypeUtils.NEWARRAY(type));
         } else {
             emit_type(Constants.ANEWARRAY, type);
         }
     }
     
     public void arraylength() {
-        codev.visitInsn(Constants.ARRAYLENGTH);
+        cv.visitInsn(Constants.ARRAYLENGTH);
     }
     
     public void load_this() {
-        if (TypeUtils.isStatic(curMethod.getAccess())) {
+        if (TypeUtils.isStatic(state.access)) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
-        codev.visitVarInsn(Constants.ALOAD, 0);
+        cv.visitVarInsn(Constants.ALOAD, 0);
     }
     
     /**
      * Pushes all of the arguments of the current method onto the stack.
      */
     public void load_args() {
-        load_args(0, curMethod.getArgumentTypes().length);
+        load_args(0, state.argumentTypes.length);
     }
 
     /**
@@ -396,42 +394,40 @@ public class Emitter {
      * @param index the zero-based index into the argument list
      */
     public void load_arg(int index) {
-        load_local(curMethod.getArgumentTypes()[index],
-                   curMethod.getLocalOffset() + skipArgs(index));
+        load_local(state.argumentTypes[index],
+                   state.localOffset + skipArgs(index));
     }
 
     // zero-based (see load_this)
     public void load_args(int fromArg, int count) {
-        Type[] args = curMethod.getArgumentTypes();
-        int pos = curMethod.getLocalOffset() + skipArgs(fromArg);
+        int pos = state.localOffset + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
-            Type t = args[fromArg + i];
+            Type t = state.argumentTypes[fromArg + i];
             load_local(t, pos);
             pos += t.getSize();
         }
     }
     
     private int skipArgs(int numArgs) {
-        Type[] args = curMethod.getArgumentTypes();
         int amount = 0;
         for (int i = 0; i < numArgs; i++) {
-            amount += args[i].getSize();
+            amount += state.argumentTypes[i].getSize();
         }
         return amount;
     }
 
     private void load_local(Type t, int pos) {
         // TODO: make t == null ok?
-        codev.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
+        cv.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
     }
 
     private void store_local(Type t, int pos) {
         // TODO: make t == null ok?
-        codev.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
+        cv.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
     }
     
     public void iinc(Local local, int amount) {
-        codev.visitIincInsn(local.getIndex(), amount);
+        cv.visitIincInsn(local.getIndex(), amount);
     }
     
     public void store_local(Local local) {
@@ -443,61 +439,35 @@ public class Emitter {
     }
 
     public void return_value() {
-        codev.visitInsn(getReturnType().getOpcode(Constants.IRETURN));
-    }
-
-    public void declare_field(int access, String name, Type type, Object value) {
-        if (fieldInfo.get(name) != null) {
-            throw new IllegalArgumentException("Field \"" + name + "\" already exists");
-        }
-        fieldInfo.put(name, new FieldInfo(TypeUtils.isStatic(access), type));
-        classv.visitField(access, name, type.getDescriptor(), value);
-    }
-
-    private FieldInfo getFieldInfo(String name) {
-        FieldInfo field = (FieldInfo)fieldInfo.get(name);
-        if (field == null) {
-            throw new IllegalArgumentException("Field " + name + " is not declared");
-        }
-        return field;
-    }
-    
-    private static class FieldInfo {
-        boolean isStatic;
-        Type type;
-        
-        public FieldInfo(boolean isStatic, Type type) {
-            this.isStatic = isStatic;
-            this.type = type;
-        }
+        cv.visitInsn(state.sig.getReturnType().getOpcode(Constants.IRETURN));
     }
 
     public void getfield(String name) {
-        FieldInfo info = getFieldInfo(name);
+        ClassEmitter.FieldInfo info = ce.getFieldInfo(name);
         int opcode = info.isStatic ? Constants.GETSTATIC : Constants.GETFIELD;
-        emit_field(opcode, classType, name, info.type);
+        emit_field(opcode, ce.getClassType(), name, info.type);
     }
     
     public void putfield(String name) {
-        FieldInfo info = getFieldInfo(name);
+        ClassEmitter.FieldInfo info = ce.getFieldInfo(name);
         int opcode = info.isStatic ? Constants.PUTSTATIC : Constants.PUTFIELD;
-        emit_field(opcode, classType, name, info.type);
+        emit_field(opcode, ce.getClassType(), name, info.type);
     }
 
     public void super_getfield(String name, Type type) {
-        emit_field(Constants.GETFIELD, superType, name, type);
+        emit_field(Constants.GETFIELD, ce.getSuperType(), name, type);
     }
     
     public void super_putfield(String name, Type type) {
-        emit_field(Constants.PUTFIELD, superType, name, type);
+        emit_field(Constants.PUTFIELD, ce.getSuperType(), name, type);
     }
 
     public void super_getstatic(String name, Type type) {
-        emit_field(Constants.GETSTATIC, superType, name, type);
+        emit_field(Constants.GETSTATIC, ce.getSuperType(), name, type);
     }
     
     public void super_putstatic(String name, Type type) {
-        emit_field(Constants.PUTSTATIC, superType, name, type);
+        emit_field(Constants.PUTSTATIC, ce.getSuperType(), name, type);
     }
 
     public void getfield(Type owner, String name, Type type) {
@@ -518,18 +488,18 @@ public class Emitter {
 
     // package-protected for ReflectOps, try to fix
     void emit_field(int opcode, Type ctype, String name, Type ftype) {
-        codev.visitFieldInsn(opcode,
+        cv.visitFieldInsn(opcode,
                              ctype.getInternalName(),
                              name,
                              ftype.getDescriptor());
     }
 
     public void super_invoke() {
-        super_invoke(curMethod.getSignature());
+        super_invoke(state.sig);
     }
 
     public void super_invoke(Signature sig) {
-        emit_invoke(Constants.INVOKESPECIAL, superType, sig);
+        emit_invoke(Constants.INVOKESPECIAL, ce.getSuperType(), sig);
     }
 
     public void invoke_constructor(Type type) {
@@ -537,11 +507,11 @@ public class Emitter {
     }
 
     public void super_invoke_constructor() {
-        invoke_constructor(superType);
+        invoke_constructor(ce.getSuperType());
     }
     
     public void invoke_constructor_this() {
-        invoke_constructor(classType);
+        invoke_constructor(ce.getClassType());
     }
 
     private void emit_invoke(int opcode, Type type, Signature sig) {
@@ -550,10 +520,10 @@ public class Emitter {
              (opcode == Constants.INVOKESTATIC))) {
             // TODO: error
         }
-        codev.visitMethodInsn(opcode,
-                              type.getInternalName(),
-                              sig.getName(),
-                              sig.getDescriptor());
+        cv.visitMethodInsn(opcode,
+                           type.getInternalName(),
+                           sig.getName(),
+                           sig.getDescriptor());
     }
     
     public void invoke_interface(Type owner, Signature sig) {
@@ -569,11 +539,11 @@ public class Emitter {
     }
 
     public void invoke_virtual_this(Signature sig) {
-        invoke_virtual(classType, sig);
+        invoke_virtual(ce.getClassType(), sig);
     }
 
     public void invoke_static_this(Signature sig) {
-        invoke_static(classType, sig);
+        invoke_static(ce.getClassType(), sig);
     }
 
     public void invoke_constructor(Type type, Signature sig) {
@@ -581,15 +551,15 @@ public class Emitter {
     }
 
     public void invoke_constructor_this(Signature sig) {
-        invoke_constructor(classType, sig);
+        invoke_constructor(ce.getClassType(), sig);
     }
 
     public void super_invoke_constructor(Signature sig) {
-        invoke_constructor(superType, sig);
+        invoke_constructor(ce.getSuperType(), sig);
     }
     
     public void new_instance_this() {
-        new_instance(classType);
+        new_instance(ce.getClassType());
     }
 
     public void new_instance(Type type) {
@@ -603,7 +573,7 @@ public class Emitter {
         } else {
             desc = type.getInternalName();
         }
-        codev.visitTypeInsn(opcode, desc);
+        cv.visitTypeInsn(opcode, desc);
     }
 
     public void aaload(int index) {
@@ -611,9 +581,9 @@ public class Emitter {
         aaload();
     }
 
-    public void aaload() { codev.visitInsn(Constants.AALOAD); }
-    public void aastore() { codev.visitInsn(Constants.AASTORE); }
-    public void athrow() { codev.visitInsn(Constants.ATHROW); }
+    public void aaload() { cv.visitInsn(Constants.AALOAD); }
+    public void aastore() { cv.visitInsn(Constants.AASTORE); }
+    public void athrow() { cv.visitInsn(Constants.ATHROW); }
 
     public Label make_label() {
         return new Label();
@@ -624,11 +594,13 @@ public class Emitter {
     }
     
     public Local make_local(Type type) {
-        return curMethod.make_local(type);
+        Local local = new Local(state.nextLocal, type);
+        state.nextLocal += type.getSize();
+        return local;
     }
 
     public void checkcast_this() {
-        checkcast(classType);
+        checkcast(ce.getClassType());
     }
     
     public void checkcast(Type type) {
@@ -642,7 +614,7 @@ public class Emitter {
     }
     
     public void instance_of_this() {
-        instance_of(classType);
+        instance_of(ce.getClassType());
     }
 
     public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
@@ -673,7 +645,7 @@ public class Emitter {
                 for (int i = 0; i < len; i++) {
                     labels[keys[i] - min] = make_label();
                 }
-                codev.visitTableSwitchInsn(min, max, def, labels);
+                cv.visitTableSwitchInsn(min, max, def, labels);
                 for (int i = 0; i < range; i++) {
                     Label label = labels[i];
                     if (label != def) {
@@ -686,7 +658,7 @@ public class Emitter {
                 for (int i = 0; i < len; i++) {
                     labels[i] = make_label();
                 }
-                codev.visitLookupSwitchInsn(def, keys, labels);
+                cv.visitLookupSwitchInsn(def, keys, labels);
                 for (int i = 0; i < len; i++) {
                     mark(labels[i]);
                     callback.processCase(keys[i], end);
@@ -708,12 +680,12 @@ public class Emitter {
     }
 
     public void mark(Label label) {
-        codev.visitLabel(label);
+        cv.visitLabel(label);
     }
 
     private Label mark() {
         Label label = make_label();
-        codev.visitLabel(label);
+        cv.visitLabel(label);
         return label;
     }
 
@@ -737,72 +709,34 @@ public class Emitter {
         athrow();
     }
 
-    public void factory_method(Signature sig) {
-        begin_method(Constants.ACC_PUBLIC, sig, null);
-        new_instance_this();
-        dup();
-        load_args();
-        invoke_constructor_this(TypeUtils.parseConstructor(sig.getArgumentTypes()));
-        return_value();
-    }
-
-    public void null_constructor() {
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null);
-        load_this();
-        super_invoke_constructor();
-        return_value();
-    }
-    
     /**
-     * Allocates and fills an Object[] array with the arguments to the
-     * current method. Primitive values are inserted as their boxed
-     * (Object) equivalents.
+     * If the argument is a primitive class, replaces the primitive value
+     * on the top of the stack with the wrapped (Object) equivalent. For
+     * example, char -> Character.
+     * If the class is Void, a null is pushed onto the stack instead.
+     * @param type the class indicating the current type of the top stack value
      */
-    public void create_arg_array() {
-        /* generates:
-           Object[] args = new Object[]{ arg1, new Integer(arg2) };
-         */
-
-        Type[] args = curMethod.getArgumentTypes();
-        push(args.length);
-        newarray();
-        for (int i = 0; i < args.length; i++) {
-            dup();
-            push(i);
-            load_arg(i);
-            box(args[i]);
-            aastore();
+    public void box(Type type) {
+        if (TypeUtils.isPrimitive(type)) {
+            if (type == Type.VOID_TYPE) {
+                aconst_null();
+            } else {
+                Type boxed = TypeUtils.getBoxedType(type);
+                new_instance(boxed);
+                if (type.getSize() == 2) {
+                    // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
+                    dup_x2();
+                    dup_x2();
+                    pop();
+                } else {
+                    // p -> po -> opo -> oop -> o
+                    dup_x1();
+                    swap();
+                }
+                invoke_constructor(boxed, new Signature(Constants.CONSTRUCTOR_NAME, Type.VOID_TYPE, new Type[]{ type }));
+            }
         }
     }
-
-     /**
-      * If the argument is a primitive class, replaces the primitive value
-      * on the top of the stack with the wrapped (Object) equivalent. For
-      * example, char -> Character.
-      * If the class is Void, a null is pushed onto the stack instead.
-      * @param type the class indicating the current type of the top stack value
-      */
-     public void box(Type type) {
-         if (TypeUtils.isPrimitive(type)) {
-             if (type == Type.VOID_TYPE) {
-                 aconst_null();
-             } else {
-                 Type boxed = TypeUtils.getBoxedType(type);
-                 new_instance(boxed);
-                 if (type.getSize() == 2) {
-                     // Pp -> Ppo -> oPpo -> ooPpo -> ooPp -> o
-                     dup_x2();
-                     dup_x2();
-                     pop();
-                 } else {
-                     // p -> po -> opo -> oop -> o
-                     dup_x1();
-                     swap();
-                 }
-                 invoke_constructor(boxed, new Signature(Constants.CONSTRUCTOR_NAME, Type.VOID_TYPE, new Type[]{ type }));
-             }
-         }
-     }
     
     /**
      * If the argument is a primitive class, replaces the object
@@ -849,6 +783,28 @@ public class Emitter {
     }
 
     /**
+     * Allocates and fills an Object[] array with the arguments to the
+     * current method. Primitive values are inserted as their boxed
+     * (Object) equivalents.
+     */
+    public void create_arg_array() {
+        /* generates:
+           Object[] args = new Object[]{ arg1, new Integer(arg2) };
+         */
+
+        push(state.argumentTypes.length);
+        newarray();
+        for (int i = 0; i < state.argumentTypes.length; i++) {
+            dup();
+            push(i);
+            load_arg(i);
+            box(state.argumentTypes[i]);
+            aastore();
+        }
+    }
+
+
+    /**
      * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
      */
     public void zero_or_null(Type type) {
@@ -893,6 +849,63 @@ public class Emitter {
             }
         } else {
             checkcast(type);
+        }
+    }
+    
+    ////////// VISITOR METHODS //////////
+
+    public void visitMaxs(int maxStack, int maxLocals) {
+        if (!TypeUtils.isAbstract(state.access)) {
+            cv.visitMaxs(0, 0);
+        }
+    }
+
+    public void visitVarInsn(int opcode, int var) {
+        Type type;
+        switch (opcode) {
+        case Constants.RET: // is this correct?
+        case Constants.ILOAD:
+        case Constants.ISTORE:
+            type = Type.INT_TYPE;
+            break;
+        case Constants.FLOAD:
+        case Constants.FSTORE:
+            type = Type.FLOAT_TYPE;
+            break;
+        case Constants.LLOAD:
+        case Constants.LSTORE:
+            type = Type.LONG_TYPE;
+            break;
+        case Constants.DLOAD:
+        case Constants.DSTORE:
+            type = Type.DOUBLE_TYPE;
+            break;
+        default:
+            type = Constants.TYPE_OBJECT;
+        }
+        cv.visitVarInsn(opcode, remapLocal(var, type));
+    }
+
+    public void visitIincInsn(int var, int increment) {
+        cv.visitIincInsn(remapLocal(var, Type.INT_TYPE), increment);
+    }
+
+    public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
+        cv.visitLocalVariable(name, desc, start, end, remapLocal(index, null));
+    }
+
+    ////////// MOVED FROM REFLECTOPS //////////
+
+    public void invoke(Method method) {
+        Class declaring = method.getDeclaringClass();
+        Type owner = Type.getType(declaring);
+        Signature sig = TypeUtils.getSignature(method);
+        if (declaring.isInterface()) {
+            invoke_interface(owner, sig);
+        } else if (TypeUtils.isStatic(method.getModifiers())) {
+            invoke_static(owner, sig);
+        } else {
+            invoke_virtual(owner, sig);
         }
     }
 }

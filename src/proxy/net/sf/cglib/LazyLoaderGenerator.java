@@ -70,12 +70,14 @@ class LazyLoaderGenerator implements CallbackGenerator {
       TypeUtils.parseSignature("Object loadObject()");
     private static final Type LAZY_LOADER = Type.getType(LazyLoader.class);
 
-    public void generate(Emitter e, Context context) {
-        e.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null);
+    public void generate(ClassEmitter ce, final Context context) {
+        ce.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null);
 
-        e.begin_method(Constants.ACC_PRIVATE | Constants.ACC_SYNCHRONIZED | Constants.ACC_FINAL,
-                       LOAD_PRIVATE,
-                       null);
+        CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
+                                        Constants.ACC_SYNCHRONIZED |
+                                        Constants.ACC_FINAL,
+                                        LOAD_PRIVATE,
+                                        null);
         e.load_this();
         e.getfield(DELEGATE);
         e.dup();
@@ -83,21 +85,22 @@ class LazyLoaderGenerator implements CallbackGenerator {
         e.ifnonnull(end);
         e.pop();
         e.load_this();
-        context.emitCallback();
+        context.emitCallback(e);
         e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
         e.dup_x1();
         e.putfield(DELEGATE);
         e.mark(end);
         e.return_value();
+        e.end_method();
 
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                e.begin_method(context.getModifiers(method),
-                               ReflectUtils.getSignature(method),
-                               ReflectUtils.getExceptionTypes(method));
+                e = ce.begin_method(context.getModifiers(method),
+                                    ReflectUtils.getSignature(method),
+                                    ReflectUtils.getExceptionTypes(method));
                 e.load_this();
                 e.dup();
                 e.invoke_virtual_this(LOAD_PRIVATE);
@@ -105,9 +108,10 @@ class LazyLoaderGenerator implements CallbackGenerator {
                 e.load_args();
                 ReflectOps.invoke(e, method);
                 e.return_value();
+                e.end_method();
             }
         }
     }
 
-    public void generateStatic(Emitter e, Context context) { }
+    public void generateStatic(CodeEmitter e, Context context) { }
 }

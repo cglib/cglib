@@ -31,29 +31,26 @@ public class AddStaticInitTransformer extends EmittingTransformer {
         this.classInit = classInit;
     }
 
-    protected Emitter getEmitter(ClassVisitor cv) {
-        return new Emitter(cv) {
-            protected void init() {
-                generated = false; // transformers can be cloned, need to reset
-            }
+    protected void init() {
+        generated = false; // transformers can be cloned, need to reset
+    }
                 
-            public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
-                CodeVisitor v = super.begin_method(access, sig, exceptions);
-                if (sig.getName().equals(Constants.STATIC_NAME)) {
-                    generated = true;
-                    ComplexOps.load_class_this(this);
-                    ReflectOps.invoke(this, classInit);
-                }
-                return v;
-            }
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+        CodeEmitter e = super.begin_method(access, sig, exceptions);
+        if (sig.getName().equals(Constants.STATIC_NAME)) {
+            generated = true;
+            ComplexOps.load_class_this(e);
+            ReflectOps.invoke(e, classInit);
+        }
+        return e;
+    }
 
-            public void end_class() {
-                if (!generated) {
-                    begin_static(); // calls begin_method
-                    return_value();
-                }
-                super.end_class();
-            }
-        };
+    public void end_class() {
+        if (!generated) {
+            CodeEmitter e = begin_static(); // calls begin_method
+            e.return_value();
+            e.end_method();
+        }
+        super.end_class();
     }
 }

@@ -54,15 +54,13 @@
 package net.sf.cglib.beans;
 
 import java.beans.*;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-class BeanMapEmitter extends Emitter {
+class BeanMapEmitter extends ClassEmitter {
     private static final Signature CSTRUCT_OBJECT =
       TypeUtils.parseConstructor("Object");
     private static final Signature CSTRUCT_STRING_ARRAY =
@@ -84,8 +82,8 @@ class BeanMapEmitter extends Emitter {
         super(v);
 
         begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
-        null_constructor();
-        factory_method(NEW_INSTANCE);
+        ComplexOps.null_constructor(this);
+        ComplexOps.factory_method(this, NEW_INSTANCE);
         generateConstructor();
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
@@ -109,83 +107,92 @@ class BeanMapEmitter extends Emitter {
     }
 
     private void generateConstructor() {
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
-        load_this();
-        load_arg(0);
-        super_invoke_constructor(CSTRUCT_OBJECT);
-        return_value();
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
+        e.load_this();
+        e.load_arg(0);
+        e.super_invoke_constructor(CSTRUCT_OBJECT);
+        e.return_value();
+        e.end_method();
     }
         
-    private void generateGet(Class type, int switchStyle, final Map getters) throws Exception {
-        begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
-        load_this();
-        super_getfield("bean", Constants.TYPE_OBJECT);
-        checkcast(Type.getType(type));
-        load_arg(0);
-        checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
-                PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
-                box(Type.getType(pd.getReadMethod().getReturnType()));
-                return_value();
-            }
-            public void processDefault() {
-                aconst_null();
-                return_value();
-            }
-        });
+    private void generateGet(final Class type, final int switchStyle, final Map getters) throws Exception {
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, MAP_GET, null)) {{
+            load_this();
+            super_getfield("bean", Constants.TYPE_OBJECT);
+            checkcast(Type.getType(type));
+            load_arg(0);
+            checkcast(Constants.TYPE_STRING);
+            ComplexOps.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label end) {
+                    PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
+                    invoke(pd.getReadMethod());
+                    box(Type.getType(pd.getReadMethod().getReturnType()));
+                    return_value();
+                }
+                public void processDefault() {
+                    aconst_null();
+                    return_value();
+                }
+            });
+            end_method();
+        }};
     }
 
-    private void generatePut(Class type, int switchStyle, final Map setters) throws Exception {
-        begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
-        load_this();
-        super_getfield("bean", Constants.TYPE_OBJECT);
-        checkcast(Type.getType(type));
-        load_arg(0);
-        checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
-                PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
-                if (pd.getReadMethod() == null) {
-                    aconst_null();
-                } else {
-                    dup();
-                    ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
-                    box(Type.getType(pd.getReadMethod().getReturnType()));
+    private void generatePut(final Class type, final int switchStyle, final Map setters) throws Exception {
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, MAP_PUT, null)) {{
+            load_this();
+            super_getfield("bean", Constants.TYPE_OBJECT);
+            checkcast(Type.getType(type));
+            load_arg(0);
+            checkcast(Constants.TYPE_STRING);
+            ComplexOps.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
+                public void processCase(Object key, Label end) {
+                    PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
+                    if (pd.getReadMethod() == null) {
+                        aconst_null();
+                    } else {
+                        dup();
+                        invoke(pd.getReadMethod());
+                        box(Type.getType(pd.getReadMethod().getReturnType()));
+                    }
+                    swap(); // move old value behind bean
+                    load_arg(1); // new value
+                    unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
+                    invoke(pd.getWriteMethod());
+                    return_value();
                 }
-                swap(); // move old value behind bean
-                load_arg(1); // new value
-                unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
-                ReflectOps.invoke(BeanMapEmitter.this, pd.getWriteMethod());
-                return_value();
-            }
-            public void processDefault() {
-                // fall-through
-            }
-        });
-        aconst_null();
-        return_value();
+                public void processDefault() {
+                    // fall-through
+                }
+            });
+            aconst_null();
+            return_value();
+            end_method();
+        }};
     }
             
     private void generateKeySet(Map getters, Map setters) {
         // static initializer
         declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null);
+
         Set allNames = new HashSet();
         allNames.addAll(getters.keySet());
         allNames.addAll(setters.keySet());
-        begin_static();
-        new_instance(FIXED_KEY_SET);
-        dup();
-        ComplexOps.push(this, allNames.toArray(new String[allNames.size()]));
-        invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
-        putfield("keys");
-        return_value();
+
+        CodeEmitter e = begin_static();
+        e.new_instance(FIXED_KEY_SET);
+        e.dup();
+        ComplexOps.push(e, allNames.toArray(new String[allNames.size()]));
+        e.invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
+        e.putfield("keys");
+        e.return_value();
+        e.end_method();
 
         // keySet
-        begin_method(Constants.ACC_PUBLIC, KEY_SET, null);
-        load_this();
-        getfield("keys");
-        return_value();
+        e = begin_method(Constants.ACC_PUBLIC, KEY_SET, null);
+        e.load_this();
+        e.getfield("keys");
+        e.return_value();
+        e.end_method();
     }
 }

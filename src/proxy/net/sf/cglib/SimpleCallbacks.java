@@ -66,7 +66,7 @@ implements Callbacks
         if (callback == null) {
             throw new IllegalArgumentException("Callback cannot be null");
         }
-        if (!CallbackUtils.getType(type).isAssignableFrom(callback.getClass())) {
+        if (CallbackUtils.getGenerator(type).getClass().isAssignableFrom(callback.getClass())) {
             throw new IllegalArgumentException("Callback " + callback + " has incorrect type " + type);
         }
         callbacks[type] = callback;

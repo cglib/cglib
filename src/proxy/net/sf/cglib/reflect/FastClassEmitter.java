@@ -60,7 +60,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
     
-class FastClassEmitter extends Emitter {
+class FastClassEmitter extends ClassEmitter {
     private static final Signature CSTRUCT_CLASS =
       TypeUtils.parseConstructor("Class");
     private static final Signature METHOD_GET_INDEX =
@@ -83,11 +83,12 @@ class FastClassEmitter extends Emitter {
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null);
-        load_this();
-        load_args();
-        super_invoke_constructor(CSTRUCT_CLASS);
-        return_value();
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null);
+        e.load_this();
+        e.load_args();
+        e.super_invoke_constructor(CSTRUCT_CLASS);
+        e.return_value();
+        e.end_method();
 
         VisibilityPredicate vp = new VisibilityPredicate(type, false);
         List methodList = ReflectUtils.addAllMethods(type, new ArrayList());
@@ -97,99 +98,108 @@ class FastClassEmitter extends Emitter {
         final Constructor[] constructors = (Constructor[])CollectionUtils.filter(type.getDeclaredConstructors(), vp);
 
         // getIndex(String)
-        begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
-        final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
-            public Object transform(Object obj) {
-                Signature sig = ReflectUtils.getSignature((Method)obj);
-                return sig.getName() + sig.getDescriptor();
-            }
-        });
-        load_arg(0);
-        ComplexOps.string_switch(this,
-                                 (String[])signatures.toArray(new String[0]),
-                                 Constants.SWITCH_STYLE_HASH,
-                                 new ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
-                // TODO: remove linear indexOf
-                push(signatures.indexOf(key));
-                return_value();
-            }
-            public void processDefault() {
-                push(-1);
-                return_value();
-            }
-        });
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null)) {{
+            final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+                    public Object transform(Object obj) {
+                        Signature sig = ReflectUtils.getSignature((Method)obj);
+                        return sig.getName() + sig.getDescriptor();
+                    }
+                });
+            load_arg(0);
+            ObjectSwitchCallback callback = new ObjectSwitchCallback() {
+                public void processCase(Object key, Label end) {
+                    // TODO: remove linear indexOf
+                    push(signatures.indexOf(key));
+                    return_value();
+                }
+                public void processDefault() {
+                    push(-1);
+                    return_value();
+                }
+            };
+            ComplexOps.string_switch(this,
+                                     (String[])signatures.toArray(new String[0]),
+                                     Constants.SWITCH_STYLE_HASH,
+                                     callback);
+            end_method();
+        }};
 
         // getIndex(String, Class[])
-        begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
-        load_args();
-        ReflectOps.method_switch(this, methods, new GetIndexCallback(methods));
+        e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
+        e.load_args();
+        ReflectOps.method_switch(e, methods, new GetIndexCallback(e, methods));
+        e.end_method();
 
         // getIndex(Class[])
-        begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
-        load_args();
-        ReflectOps.constructor_switch(this, constructors, new GetIndexCallback(constructors));
+        e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
+        e.load_args();
+        ReflectOps.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
+        e.end_method();
 
         // invoke(int, Object, Object[])
-        begin_method(Constants.ACC_PUBLIC, INVOKE, null);
-        load_arg(1);
-        checkcast(Type.getType(type));
-        load_arg(0);
-        invokeSwitchHelper(methods, 2);
+        e = begin_method(Constants.ACC_PUBLIC, INVOKE, null);
+        e.load_arg(1);
+        e.checkcast(Type.getType(type));
+        e.load_arg(0);
+        invokeSwitchHelper(e, methods, 2);
+        e.end_method();
 
         // newInstance(int, Object[])
-        begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
-        new_instance(Type.getType(type));
-        dup();
-        load_arg(0);
-        invokeSwitchHelper(constructors, 1);
+        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+        e.new_instance(Type.getType(type));
+        e.dup();
+        e.load_arg(0);
+        invokeSwitchHelper(e, constructors, 1);
+        e.end_method();
 
         end_class();
     }
 
-    private void invokeSwitchHelper(final Object[] members, final int arg) throws Exception {
-        process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
+    private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) throws Exception {
+        e.process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
                 Member member = (Member)members[key];
                 Signature sig = ReflectUtils.getSignature(member);
                 Type[] types = sig.getArgumentTypes();
                 for (int i = 0; i < types.length; i++) {
-                    load_arg(arg);
-                    aaload(i);
-                    unbox(types[i]);
+                    e.load_arg(arg);
+                    e.aaload(i);
+                    e.unbox(types[i]);
                 }
                 if (member instanceof Method) {
-                    ReflectOps.invoke(FastClassEmitter.this, (Method)member);
-                    box(Type.getType(((Method)member).getReturnType()));
+                    ReflectOps.invoke(e, (Method)member);
+                    e.box(Type.getType(((Method)member).getReturnType()));
                 } else {
-                    invoke_constructor(Type.getType(member.getDeclaringClass()), sig);
+                    e.invoke_constructor(Type.getType(member.getDeclaringClass()), sig);
                 }
-                return_value();
+                e.return_value();
             }
 
             public void processDefault() {
-                throw_exception(NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
+                e.throw_exception(NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
             }
         });
     }
 
-    private class GetIndexCallback implements ObjectSwitchCallback {
+    private static class GetIndexCallback implements ObjectSwitchCallback {
+        private CodeEmitter e;
         private Map indexes = new HashMap();
 
-        public GetIndexCallback(Object[] members) {
+        public GetIndexCallback(CodeEmitter e, Object[] members) {
+            this.e = e;
             for (int i = 0; i < members.length; i++) {
                 indexes.put(members[i], new Integer(i));
             }
         }
             
         public void processCase(Object key, Label end) {
-            push(((Integer)indexes.get(key)).intValue());
-            return_value();
+            e.push(((Integer)indexes.get(key)).intValue());
+            e.return_value();
         }
         
         public void processDefault() {
-            push(-1);
-            return_value();
+            e.push(-1);
+            e.return_value();
         }
     }
     

@@ -61,9 +61,9 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.11 2003/09/22 02:03:32 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.12 2003/10/03 19:25:08 herbyderby Exp $
  */
-class MixinEmitter extends Emitter {
+class MixinEmitter extends ClassEmitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Signature CSTRUCT_OBJECT_ARRAY =
       TypeUtils.parseConstructor("Object[]");
@@ -80,17 +80,19 @@ class MixinEmitter extends Emitter {
                     MIXIN,
                     TypeUtils.getTypes(getInterfaces(classes)),
                     Constants.SOURCE_FILE);
-        null_constructor();
-        factory_method(NEW_INSTANCE);
+        ComplexOps.null_constructor(this);
+        ComplexOps.factory_method(this, NEW_INSTANCE);
 
         declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Constants.TYPE_OBJECT_ARRAY, null);
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        putfield(FIELD_NAME);
-        return_value();
+
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
+        e.load_this();
+        e.super_invoke_constructor();
+        e.load_this();
+        e.load_arg(0);
+        e.putfield(FIELD_NAME);
+        e.return_value();
+        e.end_method();
 
         Set unique = new HashSet();
         for (int i = 0; i < classes.length; i++) {
@@ -98,16 +100,17 @@ class MixinEmitter extends Emitter {
             for (int j = 0; j < methods.length; j++) {
                 if (unique.add(MethodWrapper.create(methods[j]))) {
                     Method method = methods[j];
-                    begin_method(Constants.ACC_PUBLIC,
-                                 ReflectUtils.getSignature(method),
-                                 ReflectUtils.getExceptionTypes(method));
-                    load_this();
-                    getfield(FIELD_NAME);
-                    aaload((route != null) ? route[i] : i);
-                    checkcast(Type.getType(method.getDeclaringClass()));
-                    load_args();
-                    ReflectOps.invoke(this, method);
-                    return_value();
+                    e = begin_method(Constants.ACC_PUBLIC,
+                                     ReflectUtils.getSignature(method),
+                                     ReflectUtils.getExceptionTypes(method));
+                    e.load_this();
+                    e.getfield(FIELD_NAME);
+                    e.aaload((route != null) ? route[i] : i);
+                    e.checkcast(Type.getType(method.getDeclaringClass()));
+                    e.load_args();
+                    ReflectOps.invoke(e, method);
+                    e.return_value();
+                    e.end_method();
                 }
             }
         }

@@ -53,16 +53,14 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.ClassEmitter;
+import net.sf.cglib.core.CodeEmitter;
 
 class NoOpGenerator
 implements CallbackGenerator
 {
     public static final NoOpGenerator INSTANCE = new NoOpGenerator();
 
-    public void generate(Emitter cg, Context context) { }
-    public void generateStatic(Emitter cg, Context context) { }
+    public void generate(ClassEmitter e, Context context) { }
+    public void generateStatic(CodeEmitter e, Context context) { }
 }

@@ -81,16 +81,54 @@ implements CallbackGenerator
     private static final Signature INTERCEPT =
       TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.MethodProxy)");
 
-    public void generate(Emitter e, Context context) {
+    public void generate(ClassEmitter ce, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             String accessName = getAccessName(context, method);
             String fieldName = getFieldName(context, method);
 
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Type.getType(Method.class), null);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, Type.getType(MethodProxy.class), null);
-            generateAccessMethod(e, context, method);
-            generateAroundMethod(e, context, method);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null);
+            CodeEmitter e;
+
+            // access method
+            e = ce.begin_method(Constants.ACC_FINAL,
+                                new Signature(getAccessName(context, method),
+                                              ReflectUtils.getSignature(method).getDescriptor()),
+                                ReflectUtils.getExceptionTypes(method));
+            if (Modifier.isAbstract(method.getModifiers())) {
+                e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+            } else {
+                e.load_this();
+                e.load_args();
+                e.super_invoke(ReflectUtils.getSignature(method));
+            }
+            e.return_value();
+            e.end_method();
+
+            // around method
+            e = ce.begin_method(context.getModifiers(method),
+                                ReflectUtils.getSignature(method),
+                                ReflectUtils.getExceptionTypes(method));
+            Label nullInterceptor = e.make_label();
+            context.emitCallback(e);
+            e.dup();
+            e.ifnull(nullInterceptor);
+
+            e.load_this();
+            e.getfield(fieldName);
+            e.create_arg_array();
+            e.getfield(accessName);
+            e.invoke_interface(METHOD_INTERCEPTOR, INTERCEPT);
+            e.unbox_or_zero(Type.getType(method.getReturnType()));
+            e.return_value();
+
+            e.mark(nullInterceptor);
+            e.load_this();
+            e.load_args();
+            e.super_invoke(ReflectUtils.getSignature(method));
+            e.return_value();
+            e.end_method();
         }
     }
 
@@ -102,48 +140,7 @@ implements CallbackGenerator
         return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
-    private void generateAccessMethod(Emitter e, Context context, Method method) {
-        e.begin_method(Constants.ACC_FINAL,
-                       new Signature(getAccessName(context, method),
-                                     ReflectUtils.getSignature(method).getDescriptor()),
-                       ReflectUtils.getExceptionTypes(method));
-        if (Modifier.isAbstract(method.getModifiers())) {
-            e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
-        } else {
-            e.load_this();
-            e.load_args();
-            e.super_invoke(ReflectUtils.getSignature(method));
-        }
-        e.return_value();
-    }
-
-    private void generateAroundMethod(Emitter e,
-                                      Context context,
-                                      Method method) {
-        e.begin_method(context.getModifiers(method),
-                       ReflectUtils.getSignature(method),
-                       ReflectUtils.getExceptionTypes(method));
-        Label nullInterceptor = e.make_label();
-        context.emitCallback();
-        e.dup();
-        e.ifnull(nullInterceptor);
-
-        e.load_this();
-        e.getfield(getFieldName(context, method));
-        e.create_arg_array();
-        e.getfield(getAccessName(context, method));
-        e.invoke_interface(METHOD_INTERCEPTOR, INTERCEPT);
-        e.unbox_or_zero(Type.getType(method.getReturnType()));
-        e.return_value();
-
-        e.mark(nullInterceptor);
-        e.load_this();
-        e.load_args();
-        e.super_invoke(ReflectUtils.getSignature(method));
-        e.return_value();
-    }
-
-    public void generateStatic(Emitter e, Context context) {
+    public void generateStatic(CodeEmitter e, final Context context) {
         /* generates:
            static {
              Class cls = findClass("java.lang.Object");

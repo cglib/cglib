@@ -99,13 +99,17 @@ public class TestSwitch extends CodeGenTestCase {
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            final Emitter e = new Emitter(v);
-            e.begin_class(Constants.ACC_PUBLIC, getClassName(), null, new Type[]{ Type.getType(Alphabet.class) }, Constants.SOURCE_FILE);
-            e.null_constructor();
+            ClassEmitter ce = new ClassEmitter(v);
+            ce.begin_class(Constants.ACC_PUBLIC,
+                           getClassName(),
+                           null,
+                           new Type[]{ Type.getType(Alphabet.class) },
+                           Constants.SOURCE_FILE);
+            ComplexOps.null_constructor(ce);
             Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
-            e.begin_method(Constants.ACC_PUBLIC,
-                           ReflectUtils.getSignature(method),
-                           ReflectUtils.getExceptionTypes(method));
+            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
+                                                  ReflectUtils.getSignature(method),
+                                                  ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
             e.process_switch(keys, new ProcessSwitchCallback() {
                     public void processCase(int index, Label end) {
@@ -117,7 +121,8 @@ public class TestSwitch extends CodeGenTestCase {
                     }
                 });
             e.return_value();
-            e.end_class();
+            e.end_method();
+            ce.end_class();
         }
     }
 
