@@ -59,7 +59,7 @@ import java.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.17 2003/02/04 16:39:42 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.18 2003/05/28 03:56:45 herbyderby Exp $
  */
 public class Delegator {
     static final Class TYPE = Delegator.class;
@@ -72,7 +72,7 @@ public class Delegator {
       (DelegatorKey)KeyFactory.create(DelegatorKey.class, null);
 
     interface DelegatorKey {
-        public Object newInstance(Class[] classes);
+        public Object newInstance(Class[] classes, boolean multicast);
     }
 
     private Delegator() { }
@@ -99,7 +99,9 @@ public class Delegator {
      * @return the dynamically created object
      */
     public static Object create(Class[] interfaces, Object[] delegates, ClassLoader loader) {
-        return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader, false);
+        return makeDelegatorHelper(Object.class, false,
+                                   keyFactory.newInstance(interfaces, false),
+                                   interfaces, delegates, loader, false);
     }
     
     /**
@@ -122,13 +124,13 @@ public class Delegator {
         for (int i = 0; i < remapped.length; i++) {
             remapped[i] = delegates[info.indexes[i]];
         }
-        return makeDelegatorHelper(info.key, info.interfaces, remapped, loader, false);
+        return makeDelegatorHelper(Object.class, false, info.key, info.interfaces, remapped, loader, false);
     }
 
     /**
      * Returns a Map that describes how interfaces would be delegated.
      * The keys are interfaces (Class objects) that would be implemented
-     * by the object returned by <code>makeDelegator(delegates)</code>. For each
+     * by the object returned by the <code>create</code> methods. For each
      * interface, the Map value is the objects from the argument array
      * that would be used as a delegate.
      * @param delegates the array of delegates
@@ -147,31 +149,50 @@ public class Delegator {
     /**
      * Combines an array of JavaBeans into a single "super" bean.
      * Calls to the super bean will delegate to the underlying beans.
-     * In the case of a property name conflicts, the first bean in the list
-     * that has the troublesome property will be chosen as the delegate.
+     * In the case of a property name conflicts, the first bean is used.
      * @param beans the list of beans to delegate to
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
      * @return the dynamically created bean
      */
     public static Object createBean(Object[] beans, ClassLoader loader) {
+        return createBean(Object.class, beans, false, loader);
+    }
+
+    /**
+     * Combines an array of JavaBeans into a single "super" bean.
+     * Calls to the super bean will delegate to the underlying beans.
+     * @param cls the Class to extend, Object is used if null
+     * @param beans the list of beans to delegate to
+     * @param multicast if false, the first bean is used in the case of property name conflicts;
+     * if true, "set" methods will set all applicable beans, and "get" will return the value
+     * from the last bean in the list.
+     * @param loader The ClassLoader to use. If null uses the one that loaded this class.
+     */
+    public static Object createBean(Class cls, Object[] beans, boolean multicast, ClassLoader loader)
+    {
         Class[] classes = ReflectUtils.getClasses(beans);
-        Object key = keyFactory.newInstance(classes);
-        return makeDelegatorHelper(key, classes, beans, loader, true);
+        Object key = keyFactory.newInstance(classes, multicast);
+        return makeDelegatorHelper(cls, multicast, key, classes, beans, loader, true);
     }
 
     synchronized private static Info getInfo(Object[] delegates) {
-        Object key = keyFactory.newInstance(ReflectUtils.getClasses(delegates));
+        Object key = keyFactory.newInstance(ReflectUtils.getClasses(delegates), false);
         Info info = (Info)infoCache.get(key);
         if (info == null)
             infoCache.put(key, info = new Info(delegates));
         return info;
     }
 
-    private static Object makeDelegatorHelper(Object key,
+    private static Object makeDelegatorHelper(Class cls,
+                                              boolean multicast,
+                                              Object key,
                                               Class[] classes,
                                               Object[] delegates,
                                               ClassLoader loader,
                                               boolean bean) {
+        if (cls == null) {
+            cls = Object.class;
+        }
         if (loader == null) {
             loader = defaultLoader;
         }
@@ -180,7 +201,7 @@ public class Delegator {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 String className = nameFactory.getNextName(TYPE);
-                Class result = new DelegatorGenerator(className, classes, loader, bean).define();
+                Class result = new DelegatorGenerator(cls, multicast, className, classes, loader, bean).define();
                 factory = (Factory)ReflectUtils.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
                 cache.put(loader, key, factory);
             }
@@ -215,7 +236,7 @@ public class Delegator {
             for (int i = 0; it.hasNext(); i++) {
                 indexes[i] = ((Integer)it.next()).intValue();
             }
-            key = keyFactory.newInstance(interfaces);
+            key = keyFactory.newInstance(interfaces, false);
         }
     }
 

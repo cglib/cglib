@@ -59,7 +59,7 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.9 2003/02/10 19:22:39 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.10 2003/05/28 03:56:45 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -67,10 +67,12 @@ class DelegatorGenerator extends CodeGenerator {
       ReflectUtils.findMethod("Delegator$Factory.cglib_newInstance(Object[])");
 
     private Class[] classes;
+    private boolean multicast;
     private boolean bean;
         
-    public DelegatorGenerator(String className, Class[] classes, ClassLoader loader, boolean bean) {
-        super(className, Object.class, loader);
+    public DelegatorGenerator(Class cls, boolean multicast, String className, Class[] classes, ClassLoader loader, boolean bean) {
+        super(className, cls, loader);
+        this.multicast = multicast;
         this.classes = classes;
         this.bean = bean;
     }
@@ -80,7 +82,7 @@ class DelegatorGenerator extends CodeGenerator {
         generateFactoryMethod(NEW_INSTANCE);
         declare_interface(Delegator.Factory.TYPE);
 
-        Set methodSet = new HashSet();
+        Map methodMap = new HashMap();
         for (int i = 0; i < classes.length; i++) {
             Class clazz = classes[i];
             Method[] methods;
@@ -95,12 +97,38 @@ class DelegatorGenerator extends CodeGenerator {
             }
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
-                Object methodKey = MethodWrapper.create(method);
-                if (!methodSet.contains(methodKey)) {
-                    methodSet.add(methodKey);
-                    generateProxy(clazz, method, i);
+                Object key = MethodWrapper.create(method);
+                List list = (List)methodMap.get(key);
+                if (list == null) {
+                    list = new LinkedList();
+                    methodMap.put(key, list);
+                }
+                if (multicast || list.size() == 0) {
+                    list.add(new MethodInfo(method, i));
                 }
             }
+        }
+        for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
+            generateProxy((List)it.next());
+        }
+    }
+
+    private static class MethodInfo
+    {
+        private Method method;
+        private int arrayref;
+        
+        public MethodInfo(Method method, int arrayref) {
+            this.method = method;
+            this.arrayref = arrayref;
+        }
+        
+        public Method getMethod() {
+            return method;
+        }
+
+        public int getArrayRef() {
+            return arrayref;
         }
     }
 
@@ -112,11 +140,13 @@ class DelegatorGenerator extends CodeGenerator {
             for (int i = 0; i < descriptors.length; i++) {
                 PropertyDescriptor pd = descriptors[i];
                 Method read = pd.getReadMethod();
-                if (read != null)
+                if (read != null) {
                     methods.add(read);
+                }
                 Method write = pd.getWriteMethod();
-                if (write != null)
+                if (write != null) {
                     methods.add(write);
+                }
             }
             return (Method[])methods.toArray(new Method[methods.size()]);
         } catch (IntrospectionException e) {
@@ -136,14 +166,17 @@ class DelegatorGenerator extends CodeGenerator {
         end_method();
     }
 
-    private void generateProxy(Class clazz, Method method, int arrayref) {
-        begin_method(method);
-        load_this();
-        getfield(FIELD_NAME);
-        aaload(arrayref);
-        checkcast(clazz);
-        load_args();
-        invoke(method);
+    private void generateProxy(List methods) {
+        begin_method(((MethodInfo)methods.get(0)).getMethod());
+        for (Iterator it = methods.iterator(); it.hasNext();) {
+            MethodInfo info = (MethodInfo)it.next();
+            load_this();
+            getfield(FIELD_NAME);
+            aaload(info.getArrayRef());
+            checkcast(info.getMethod().getDeclaringClass());
+            load_args();
+            invoke(info.getMethod());
+        }
         return_value();
         end_method();
     }

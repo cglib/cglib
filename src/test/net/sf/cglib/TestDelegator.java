@@ -53,13 +53,14 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
 import java.beans.*;
+import java.lang.reflect.Method;
 import java.util.*;
+import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestDelegator.java,v 1.5 2002/12/29 21:38:51 herbyderby Exp $
+ * @version $Id: TestDelegator.java,v 1.6 2003/05/28 03:56:44 herbyderby Exp $
  */
 public class TestDelegator extends CodeGenTestCase {
     public void testSimple() throws Exception {
@@ -103,6 +104,20 @@ public class TestDelegator extends CodeGenTestCase {
         assertTrue(getters.contains("age"));
     }
 
+    public void testMulticast() throws Exception {
+        DBean3 bean1 = new DBean3();
+        DBean3 bean2 = new DBean3();
+        Object obj = Delegator.createBean(Object.class, new Object[]{ bean1, bean2 }, true, null);
+        PropertyDescriptor prop = getProperty(obj.getClass(), "age");
+        prop.getWriteMethod().invoke(obj, new Object[]{ new Integer(33) });
+        assertTrue(bean1.getAge() == 33);
+        assertTrue(bean2.getAge() == 33);
+        bean1.setAge(14);
+        assertTrue(((Integer)prop.getReadMethod().invoke(obj, null)).intValue() == 33);
+        bean2.setAge(15);
+        assertTrue(((Integer)prop.getReadMethod().invoke(obj, null)).intValue() == 15);
+    }
+
     private static Set getGetters(Class beanClass) throws Exception {
         Set getters = new HashSet();
         PropertyDescriptor[] descriptors =
@@ -113,6 +128,17 @@ public class TestDelegator extends CodeGenTestCase {
             }
         }
         return getters;
+    }
+
+    private static PropertyDescriptor getProperty(Class beanClass, String property) throws Exception {
+        Set getters = new HashSet();
+        PropertyDescriptor[] descriptors =
+            Introspector.getBeanInfo(beanClass).getPropertyDescriptors();
+        for (int i = 0; i < descriptors.length; i++) {
+            if (descriptors[i].getName().equals(property))
+                return descriptors[i];
+        }
+        return null;
     }
 
     public TestDelegator(String testName) {
