@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.20 2003/01/24 21:35:21 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.21 2003/01/25 00:12:09 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -442,8 +442,9 @@ public class TestEnhancer extends CodeGenTestCase {
      public void testArgInit() throws Throwable{
     
          Class f = Enhancer.enhanceClass(ArgInit.class, null, null, null );
-         ArgInit a = (ArgInit)ReflectUtils.newInstance(f, new Class[]{ String.class }, new Object[]{ "test" });
-         ((Factory)a).setInterceptor(TEST_INTERCEPTOR);
+         ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
+                                                       new Class[]{ String.class, MethodInterceptor.class },
+                                                       new Object[]{ "test", TEST_INTERCEPTOR });
          assertEquals("test", a.toString());
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },
@@ -457,6 +458,18 @@ public class TestEnhancer extends CodeGenTestCase {
          }catch( IllegalArgumentException iae ){
          
          }
+    }
+
+    private static class ConstructorIntercept {
+        public ConstructorIntercept() {
+            foo();
+        }
+        public void foo() {
+        }
+    }
+
+    public void testConstructorIntercept() throws Throwable {
+        Enhancer.enhance(ConstructorIntercept.class, null, TEST_INTERCEPTOR);
     }
    
 }

@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.25 2003/01/24 21:35:23 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.26 2003/01/25 00:12:09 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -89,7 +89,7 @@ public class Enhancer {
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
     private static final EnhancerClassKey classKeyFactory =
       (EnhancerClassKey)KeyFactory.create(EnhancerClassKey.class, null);
-    
+
     private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
     // should be package-protected but causes problems on jdk1.2
@@ -246,7 +246,10 @@ public class Enhancer {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 Class gen = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
-                factory = (Factory)ReflectUtils.newInstance(gen);
+                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
+                Class[] types = delegating ? new Class[]{ mi, Object.class } : new Class[]{ mi };
+                Object[] args = delegating ? new Object[]{ ih, obj } : new Object[]{ ih };
+                factory = (Factory)ReflectUtils.newInstance(gen, types, args);
                 cache.put(loader, key, factory);
             }
         }

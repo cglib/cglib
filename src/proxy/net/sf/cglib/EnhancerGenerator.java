@@ -79,7 +79,7 @@ import java.util.*;
     private static final Method NEW_CLASS_KEY = 
      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
     private static final Method PROXY_NEW_INSTANCE = 
-     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
+     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[], Object)");
     private static final Method MULTIARG_NEW_INSTANCE = 
       ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], MethodInterceptor)");
     private static final Method SET_DELEGATE =
@@ -88,8 +88,6 @@ import java.util.*;
       ReflectUtils.findMethod("Factory.getDelegate()");
     private static final Method GET_INTERCEPTOR =
       ReflectUtils.findMethod("Factory.getInterceptor()");
-    private static final Method SET_INTERCEPTOR =
-      ReflectUtils.findMethod("Factory.setInterceptor(MethodInterceptor)");
 
     private Class[] interfaces;
     private Method wreplace;
@@ -97,6 +95,7 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
+    private List constructorTypes;
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -235,14 +234,36 @@ import java.util.*;
     }
 
     private void generateConstructors() throws NoSuchMethodException {
+        constructorTypes = new ArrayList(constructorList.size());
         for (Iterator i = constructorList.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
+
             Class[] types = constructor.getParameterTypes();
-            begin_constructor(types);
+            List typeList = new ArrayList(types.length + 2);
+            typeList.addAll(Arrays.asList(types));
+            typeList.add(MethodInterceptor.class);
+            if (delegating) {
+                typeList.add(Object.class);
+            }
+            Class[] argTypes = (Class[])typeList.toArray(new Class[typeList.size()]);
+            constructorTypes.add(argTypes);
+
+            begin_constructor(argTypes);
             load_this();
+
             dup();
-            load_args();
-            super_invoke_constructor(types);
+            load_arg(types.length);
+            putfield(INTERCEPTOR_FIELD);
+            
+            if (delegating) {
+                dup();
+                load_arg(types.length + 1);
+                checkcast(getSuperclass());
+                putfield(DELEGATE_FIELD);
+            }
+
+            load_args(0, types.length);
+            super_invoke(constructor);
             return_value();       
             end_method();
         }
@@ -255,41 +276,17 @@ import java.util.*;
         return_value();
         end_method();
 
-        begin_method(SET_INTERCEPTOR);
-        load_this();
-        load_arg(0);
-        putfield(INTERCEPTOR_FIELD);
-        return_value();
-        end_method();
-
         if (delegating) {
             throwWrongType(NORMAL_NEW_INSTANCE);
             throwWrongType(MULTIARG_NEW_INSTANCE);
-            generateFactoryHelper(DELEGATE_NEW_INSTANCE);
+            generateFactoryMethod(DELEGATE_NEW_INSTANCE);
             generateSetDelegate();
         } else {
             throwWrongType(DELEGATE_NEW_INSTANCE);
             throwWrongType(SET_DELEGATE);
-            generateFactoryHelper(NORMAL_NEW_INSTANCE);
+            generateFactoryMethod(NORMAL_NEW_INSTANCE);
             generateMultiArgFactory();
         }
-    }
-
-    private void generateFactoryHelper(Method method) {
-        begin_method(method);
-        new_instance_this();
-        dup();
-        invoke_constructor_this();
-        dup();
-        load_arg(0);
-        invoke(SET_INTERCEPTOR);
-        if (delegating) {
-            dup();
-            load_arg(1);
-            invoke(SET_DELEGATE);
-        }
-        return_value();
-        end_method();
     }
 
     private void generateSetDelegate() {
@@ -313,11 +310,8 @@ import java.util.*;
         dup();
         ifnull("fail");
         load_arg(1);
-        invoke(PROXY_NEW_INSTANCE);
-        checkcast_this();
-        dup();
         load_arg(2);
-        invoke(SET_INTERCEPTOR);
+        invoke(PROXY_NEW_INSTANCE);
         return_value();
         nop("fail");
         throw_exception(IllegalArgumentException.class, "Constructor not found ");
@@ -485,14 +479,15 @@ import java.util.*;
             putfield(CONSTRUCTOR_PROXY_MAP);
             final String LOCAL_MAP = "map";
             store_local(LOCAL_MAP);
-            for (Iterator i = constructorList.iterator(); i.hasNext();) {
-                Constructor constructor = (Constructor)i.next();
+            for (int i = 0, size = constructorList.size(); i < size; i++) {
+                Constructor constructor = (Constructor)constructorList.get(i);
                 Class[] types = constructor.getParameterTypes();
+                Class[] argTypes = (Class[])constructorTypes.get(i);
                 load_local(LOCAL_MAP);
                 push(types);
                 invoke(NEW_CLASS_KEY);//key
                 load_class_this();
-                push(types);
+                push(argTypes);
                 invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
                 invoke(MAKE_CONSTRUCTOR_PROXY);//value
                 invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
