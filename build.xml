@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.43 2004/04/25 16:15:03 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.44 2004/06/24 21:15:21 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
   <target description="Initialize and evaluate conditionals" name="init">
 
     <!-- read properties from the build.properties, if any -->
+    <property file="${user.home}/build.properties" />
     <property name="component-propfile" value="${basedir}/build.properties"/>
 
     <property name="component.name" value="cglib"/>
@@ -30,6 +31,10 @@
     <property name="asm.jar" value="lib/asm.jar"/>    
     <property name="source.asm" value="../asm-src"/>    
   
+    <property name="compile.target" value="1.2"/>
+    <property name="compile.bootclasspath" value=""/>
+    <property name="compile.extdirs" value=""/>
+
     <property name="compile.debug" value="true"/>
     <property name="compile.deprecation" value="true"/>
     <property name="compile.optimize" value="true"/>
@@ -68,8 +73,10 @@
 
   <target depends="prepare" description="Compile shareable components" 
           name="compile">
-    <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}">
+    <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}"
+      target="${compile.target}" bootclasspath="${compile.bootclasspath}" extdirs="${compile.extdirs}">
       <classpath refid="compile.classpath"/>
+      <compilerarg compiler="jikes" value="-nowarn"/>
     </javac>
   </target>
 
@@ -97,6 +104,7 @@
              doctitle="${component.title}"
              packagenames="net.sf.cglib.*"
              access="public"
+             classpathref="compile.classpath"
              sourcepathref="javadoc.path" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
   </target>
@@ -110,6 +118,7 @@
     
 
     <copy file="LICENSE" todir="${build.home}/classes"/>
+    <copy file="NOTICE" todir="${build.home}/classes"/>
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
@@ -137,6 +146,7 @@
     <jar basedir="./" jarfile="${dist.home}/${component.name}-src-${component.version}.jar" >
       <include name="build.xml"/>
       <include name="LICENSE*"/>
+      <include name="NOTICE*"/>
       <include name="README*"/>
       <include name="src/**/*.java"/>
       <include name="src/**/*.properties"/>
@@ -154,6 +164,7 @@
             optimize="${compile.optimize}" 
             srcdir="${samples.source.home}">
        <classpath refid="compile.classpath"/>
+       <compilerarg compiler="jikes" value="-nowarn"/>
      </javac>
    </target>  
 
@@ -213,6 +224,7 @@
    <pathelement path="${build.home}/classes"/>
    <pathelement path="${samples.build.home}/classes" />
    </classpath> 
+   <compilerarg compiler="jikes" value="-nowarn"/>
  
    </javac>
   
@@ -233,8 +245,8 @@
   <!-- <jvmarg value="-Xprof"/> -->
   <!-- <jvmarg value="-server"/> -->
   <!-- <sysproperty key="cglib.debugLocation" value="debug"/> -->
-  <jvmarg value="-Djava.security.policy==java.policy" /> 
-  <jvmarg value="-Djava.security.manager" /> 
+  <!-- <jvmarg value="-Djava.security.policy==java.policy" /> -->
+  <!-- <jvmarg value="-Djava.security.manager" />  -->
  
       <arg value="${test.entry}"/>
         <classpath>
