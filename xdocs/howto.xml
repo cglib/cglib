@@ -71,6 +71,29 @@
    
   </section>
   
+  <section name="Avoiding StackOverflowError">
+   Common mistake is to cause recursion in MethodInterceptor implementation:
+   <source>
+     Object intercept( Object proxy, Method method,
+                       MethodProxy fastMethod, Object args[] )throws Throwable{
+        //ERROR 
+        System.out.println(proxy.toString());
+        //ERROR 
+        return fastMethod.invoke(proxy,args);     
+     }
+   </source>
+   <i>invokeSuper</i> method must be used to invoke super class method. It
+   will throw AbstarctMethodError if super method is abstract. See trace sample
+   how to solve recursion problem caused by "this" parameter in  "args[]" array.
+  
+  </section>
+  
+  <section name="Optimizing Proxies" >
+    Filter unused methods with CallbackFilter and use light Callback version if
+    possible. It can help to avoid hash lookup on method object if you use per method
+    interceptors too.
+  </section>
+  
     
   </body>
   
