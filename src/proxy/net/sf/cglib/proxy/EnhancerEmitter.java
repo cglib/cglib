@@ -74,8 +74,6 @@ class EnhancerEmitter extends ClassEmitter {
       TypeUtils.parseType("ThreadLocal");
     private static final Type FACTORY =
       TypeUtils.parseType("net.sf.cglib.proxy.Factory");
-    private static final Type CALLBACKS =
-      TypeUtils.parseType("net.sf.cglib.proxy.Callbacks");
 
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
