@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.7 2003/02/02 11:02:26 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.8 2003/02/03 22:50:39 herbyderby Exp $
  */
 abstract class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -212,5 +212,11 @@ abstract class ReflectUtils {
             throw new IllegalArgumentException("Missing newInstance method");
         }
         return newInstance;
+    }
+
+    public static String getPackageName(Class clazz) {
+        String name = clazz.getName();
+        int idx = name.lastIndexOf('.');
+        return (idx < 0) ? "" : name.substring(0, idx);
     }
 }
