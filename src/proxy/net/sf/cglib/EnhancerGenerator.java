@@ -58,18 +58,27 @@ import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
 
-/* package */ class EnhancerGenerator extends CodeGenerator {
+/*package*/ class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
+    private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
+    private static final  int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
     private static final Method MAKE_PROXY =
       ReflectUtils.findMethod("MethodProxy.create(Method)");
+    private static final Method MAKE_CONSTRUCTOR_PROXY =
+      ReflectUtils.findMethod("ConstructorProxy.create(Constructor)");
     private static final Method INTERNAL_WRITE_REPLACE =
       ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
-
+    private static final Method NEW_CALSS_KEY = 
+     ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
+    private static final Method NEW_INSTANCE = 
+       ReflectUtils.findMethod("Factory.newInstance(Class[],Object[],MethodInterceptor)");
+   
+    
     private Class[] interfaces;
     private Method wreplace;
     private MethodInterceptor ih;
@@ -77,6 +86,7 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
+    private List constructorTypes = new ArrayList();
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -190,7 +200,7 @@ import java.util.*;
         }
 
         boolean declaresWriteReplace = false;
-        int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+       
         for (int i = 0; i < methods.size(); i++) {
             Method method = (Method)methods.get(i);
             if (method.getName().equals("writeReplace") &&
@@ -199,8 +209,8 @@ import java.util.*;
             }
             String fieldName = getFieldName(i);
             String accessName = getAccessName(method, i);
-            declare_field(privateFinalStatic, Method.class, fieldName);
-            declare_field(privateFinalStatic, MethodProxy.class, accessName);
+            declare_field(PRIVATE_FINAL_STATIC, Method.class, fieldName);
+            declare_field(PRIVATE_FINAL_STATIC, MethodProxy.class, accessName);
             generateAccessMethod(method, accessName);
             generateAroundMethod(method, fieldName, accessName,
                                  forcePublic.contains(MethodWrapper.create(method)));
@@ -252,6 +262,7 @@ import java.util.*;
              argTypes[ argTypes.length - 1 ] = MethodInterceptor.class; 
           }
           
+          constructorTypes.add(argTypes);
           
           begin_constructor(argTypes);
            load_this();
@@ -440,6 +451,7 @@ import java.util.*;
     }
 
     private void generateClInit(List methodList) throws NoSuchMethodException {
+            
         /* generates:
            static {
              Class [] args;
@@ -452,6 +464,7 @@ import java.util.*;
              CGLIB$ACCESS_0 = MethodProxy.create(proxied);
            }
         */
+        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP ); 
         begin_static();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
@@ -473,6 +486,27 @@ import java.util.*;
             invoke(MAKE_PROXY);
             putstatic(accessName);
         }
+        new_instance(HashMap.class);
+        dup();
+        dup();
+        invoke_constructor(HashMap.class);
+        putstatic(CONSTRUCTOR_PROXY_MAP);
+        store_local("args");//reuses alocal for map
+        for( Iterator i = constructorTypes.iterator(); i.hasNext(); ){
+            Class[] types = (Class[])i.next();
+            load_local("args");
+            push_object(types);//constructor types
+            dup();
+            invoke(NEW_CALSS_KEY);//key
+            swap();
+            load_class_this();
+            swap();
+            invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
+            invoke(MAKE_CONSTRUCTOR_PROXY);//value
+            invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
+            
+        }
+        
         return_value();
         end_static();
     }
