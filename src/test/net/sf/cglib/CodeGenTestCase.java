@@ -57,51 +57,18 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestDelegator.java,v 1.3 2002/12/03 08:02:42 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.1 2002/12/03 08:02:42 herbyderby Exp $
  */
-public class TestDelegator extends CodeGenTestCase {
-    public void testSimple() throws Exception {
-        Object obj = Delegator.makeDelegator(new Class[]{ DI1.class, DI2.class },
-                                             new Object[]{ new D1(), new D2() },
-                                             null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
+abstract public class CodeGenTestCase extends TestCase {
+    public void setUp() {
+        String debugLocation = System.getProperty("cglib.debugLocation");
+        if (debugLocation != null) {
+            CodeGenerator.setDebugLocation(debugLocation);
+        }
     }
 
-    public void testDetermineInterfaces() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D2() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
-    }
- 
-    public void testOverride() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D4() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D4"));
-    }
-
-    public void testNonOverride() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D4(), new D1() }, null);
-        assertTrue(((DI1)obj).herby().equals("D4"));
-        assertTrue(((DI2)obj).derby().equals("D4"));
-    }
-
-    public void testSubclass() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D3(), new D1() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
-        assertTrue(((DI3)obj).extra().equals("D3"));
-    }
-
-    public TestDelegator(String testName) {
+    public CodeGenTestCase(String testName) {
         super(testName);
     }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestDelegator.class);
-    }
 }
+
