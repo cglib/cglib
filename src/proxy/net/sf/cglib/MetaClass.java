@@ -273,8 +273,7 @@ public abstract class MetaClass  {
                       	           String[].class,Class[].class}
                       	           );
                       	           
-        begin_constructor( constructor );
-        
+           begin_constructor( constructor );
 	        load_this();
 	        load_args();
 	        super_invoke_constructor(constructor);

@@ -5,8 +5,11 @@
  <!--extend>template:sourceforge</extend -->
 
   <pomVersion>3</pomVersion>
+
   <name>cglib</name>
   <id>cglib</id>
+  <logo>/images/cglib.png</logo>
+  <url>http://sourceforge.net/projects/cglib/</url>
   <currentVersion>1.0.0-dev</currentVersion>
   <inceptionYear>2002</inceptionYear>
   <package>net.sf.cglib</package>
@@ -18,7 +21,7 @@
     <url>http://sourceforge.net/projects/cglib/</url> 
     <logo>http://sourceforge.net/sflogo.php?group_id=56933</logo> 
   </organization>
-
+     
 
   <issueTrackingUrl>http://sourceforge.net/tracker/?group_id=56933</issueTrackingUrl>
   <siteAddress>cglib.sourceforge.net</siteAddress>

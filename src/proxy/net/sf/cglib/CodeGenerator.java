@@ -72,22 +72,25 @@ public abstract class CodeGenerator implements Constants {
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static String debugLocation;
+    private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION = 
+                         new RuntimePermission("defineCGLIBClassInJavaPackage");
+   
 
-	private final ClassGen cg;
-	private final InstructionList il = new InstructionList();
-	private final ConstantPoolGen cp;
+    private final ClassGen cg;
+    private final InstructionList il = new InstructionList();
+    private final ConstantPoolGen cp;
     private final ClassLoader loader;
-	private MethodGen mg;
-	private Class returnType;
+    private MethodGen mg;
+    private Class returnType;
     private Class superclass;
     private boolean needsFindClass;
     
-	private Map branches;  
-	private Map labels;
+    private Map branches;  
+    private Map labels;
     private int nextPrivateLabel;
     private int nextPrivateLocal;
 	
-	private Map locals = new HashMap();
+    private Map locals = new HashMap();
     private Map localTypes = new HashMap();
     private int nextLocal;
     private boolean inMethod;
@@ -123,11 +126,11 @@ public abstract class CodeGenerator implements Constants {
 	/**
 	 * method used to generate code  
      */
-	abstract protected void generate() throws Exception;
+  abstract protected void generate() throws Exception;
 
     public Class define() {
         try {
-            try {
+            
                 generate();
                 if (needsFindClass) {
                     generateFindClass();
@@ -141,11 +144,10 @@ public abstract class CodeGenerator implements Constants {
                     out.close();
                 }
                     
-                PrivilegedAction action = getDefineClassAction(name, bytes, loader);
-                return (Class)java.security.AccessController.doPrivileged(action);
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
-            }
+                
+                return defineClass(name,bytes,loader);
+                
+            
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -158,28 +160,30 @@ public abstract class CodeGenerator implements Constants {
         }
     }
 
-    private static PrivilegedAction getDefineClassAction(final String name,
-                                                         final byte[] b,
-                                                         final ClassLoader loader) {
-        return new PrivilegedAction() {
-            public Object run() {
-                try {
+    
+    
+    private static Class defineClass(String className, byte[] b, ClassLoader loader)
+     throws Exception{
+          
                     Method m = MethodConstants.DEFINE_CLASS;
-
                     // protected method invocaton
                     boolean flag = m.isAccessible();
                     m.setAccessible(true);
-                    Object[] args = new Object[]{ name, b, new Integer(0), new Integer(b.length) };
+                   
+                     SecurityManager sm = System.getSecurityManager(); 
+                     if (className.startsWith("java.") && sm != null  ) {
+                        sm.checkPermission( DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION );
+                     }
+                    
+                    //way depricated in jdk to define classes, 
+                    // doe's not throws SecurityException if class name starts with "java."  
+                    Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
                     Class result = (Class)m.invoke(loader, args);
                     m.setAccessible(flag);
 
                     return result;
-                } catch (Exception e) {
-                    throw new CodeGenerationException(e);
-                }
             }
-        };
-    }
+       
 
     static {
         primitiveMethods.put(Boolean.TYPE, MethodConstants.BOOLEAN_VALUE);
