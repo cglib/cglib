@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.12 2002/12/16 18:51:17 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.13 2002/12/27 12:48:32 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -225,7 +225,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
-    public void testSystemClassLoader()throws Throwable{
+    public void _testSystemClassLoader()throws Throwable{
         
         Object source =  Enhancer.enhance(
         null,
@@ -238,7 +238,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
     
     
-    public void testCustomClassLoader()throws Throwable{
+    public void _testCustomClassLoader()throws Throwable{
         
         ClassLoader custom = new ClassLoader(){};
         
