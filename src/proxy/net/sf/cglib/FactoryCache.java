@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.util.*;
 
 /**
- * @version $Id: FactoryCache.java,v 1.7 2003/01/28 11:42:32 nemecec Exp $
+ * @version $Id: FactoryCache.java,v 1.8 2003/01/28 17:26:17 herbyderby Exp $
  */
 /* package */ class FactoryCache {
     private final Map cache;
@@ -80,7 +80,7 @@ import java.util.*;
     private Map getFactoryMap(ClassLoader loader) {
         Map factories = (Map)cache.get(loader);
         if (factories == null) {
-            cache.put(loader, factories = new WeakHashMap());
+            cache.put(loader, factories = new HashMap());
         }
         return factories;
     }
