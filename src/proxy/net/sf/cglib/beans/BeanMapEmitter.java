@@ -59,18 +59,20 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
-class BeanMapEmitter extends Emitter {
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("BeanMap.newInstance(Object)");
-    private static final Class[] TYPES_OBJECT = { Object.class };
+class BeanMapEmitter extends Emitter2 {
+    private static final Signature NEW_INSTANCE =
+      Signature.parse("net.sf.cglib.beans.BeanMap newInstance(Object)");
+    private static final Type FIXED_KEY_SET =
+      Signature.parseType("net.sf.cglib.beans.FixedKeySet");
 
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
-        setClassVisitor(v);
+        super(v);
 
-        begin_class(Modifier.PUBLIC, className, BeanMap.class, null, Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
-        Virt.factory_method(this, NEW_INSTANCE);
+        Ops.begin_class(this, Modifier.PUBLIC, className, BeanMap.class, null, Constants.SOURCE_FILE);
+        Ops.null_constructor(this);
+        Ops.factory_method(this, NEW_INSTANCE);
         generateConstructor();
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
@@ -94,26 +96,25 @@ class BeanMapEmitter extends Emitter {
     }
 
     private void generateConstructor() {
-        begin_constructor(TYPES_OBJECT);
+        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT, null);
         load_this();
         load_arg(0);
-        super_invoke_constructor(TYPES_OBJECT);
+        super_invoke_constructor(Signatures.CSTRUCT_OBJECT);
         return_value();
-        end_method();
     }
         
     private void generateGet(Class type, int switchStyle, final Map getters) throws Exception {
-        begin_method(MethodConstants.MAP_GET);
+        begin_method(Constants.ACC_PUBLIC, Signatures.GET, null);
         load_this();
-        super_getfield("bean");
-        checkcast(type);
+        super_getfield("bean", Types.OBJECT);
+        checkcast(Type.getType(type));
         load_arg(0);
-        checkcast(String.class);
-        Virt.string_switch(this, getNames(getters), switchStyle, new Virt.ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
+        checkcast(Types.STRING);
+        Ops.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
+            public void processCase(Object key, org.objectweb.asm.Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                invoke(pd.getReadMethod());
-                Virt.box(BeanMapEmitter.this, pd.getReadMethod().getReturnType());
+                Ops.invoke(BeanMapEmitter.this, pd.getReadMethod());
+                Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
                 return_value();
             }
             public void processDefault() {
@@ -121,30 +122,29 @@ class BeanMapEmitter extends Emitter {
                 return_value();
             }
         });
-        end_method();
     }
 
     private void generatePut(Class type, int switchStyle, final Map setters) throws Exception {
-        begin_method(MethodConstants.MAP_PUT);
+        begin_method(Constants.ACC_PUBLIC, Signatures.PUT, null);
         load_this();
-        super_getfield("bean");
-        checkcast(type);
+        super_getfield("bean", Types.OBJECT);
+        checkcast(Type.getType(type));
         load_arg(0);
-        checkcast(String.class);
-        Virt.string_switch(this, getNames(setters), switchStyle, new Virt.ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) {
+        checkcast(Types.STRING);
+        Ops.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
+            public void processCase(Object key, org.objectweb.asm.Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                 if (pd.getReadMethod() == null) {
                     aconst_null();
                 } else {
                     dup();
-                    invoke(pd.getReadMethod());
-                    Virt.box(BeanMapEmitter.this, pd.getReadMethod().getReturnType());
+                    Ops.invoke(BeanMapEmitter.this, pd.getReadMethod());
+                    Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
                 }
                 swap(); // move old value behind bean
                 load_arg(1); // new value
-                Virt.unbox(BeanMapEmitter.this, pd.getWriteMethod().getParameterTypes()[0]);
-                invoke(pd.getWriteMethod());
+                Ops.unbox(BeanMapEmitter.this, Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
+                Ops.invoke(BeanMapEmitter.this, pd.getWriteMethod());
                 return_value();
             }
             public void processDefault() {
@@ -153,29 +153,26 @@ class BeanMapEmitter extends Emitter {
         });
         aconst_null();
         return_value();
-        end_method();
     }
             
     private void generateKeySet(Map getters, Map setters) {
         // static initializer
-        declare_field(Modifier.STATIC | Modifier.PRIVATE, FixedKeySet.class, "keys");
+        declare_field(Modifier.STATIC | Modifier.PRIVATE, "keys", FIXED_KEY_SET, null);
         Set allNames = new HashSet();
         allNames.addAll(getters.keySet());
         allNames.addAll(setters.keySet());
         begin_static();
-        new_instance(FixedKeySet.class);
+        new_instance(FIXED_KEY_SET);
         dup();
-        Virt.push(this, allNames.toArray(new String[allNames.size()]));
-        invoke_constructor(FixedKeySet.class, new Class[]{ String[].class });
+        Ops.push(this, allNames.toArray(new String[allNames.size()]));
+        invoke_constructor(FIXED_KEY_SET, Signatures.CSTRUCT_STRING_ARRAY);
         putfield("keys");
         return_value();
-        end_method();
 
         // keySet
-        begin_method(MethodConstants.MAP_KEY_SET);
+        begin_method(Constants.ACC_PUBLIC, Signatures.KEY_SET, null);
         load_this();
         getfield("keys");
         return_value();
-        end_method();
     }
 }
