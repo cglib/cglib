@@ -173,7 +173,6 @@ public class Enhancer extends AbstractClassGenerator
      */
     public void setCallback(final Callback callback) {
         setCallbacks(new Callback[]{ callback });
-        setCallbackFilter(CallbackFilter.ALL_ZERO);
     }
 
     public void setCallbacks(Callback[] callbacks) {
@@ -193,7 +192,6 @@ public class Enhancer extends AbstractClassGenerator
 
     public void setCallbackType(Class callbackType) {
         setCallbackTypes(new Class[]{ callbackType });
-        setCallbackFilter(CallbackFilter.ALL_ZERO);
     }
 
     public void setCallbackTypes(Class[] callbackTypes) {
