@@ -57,6 +57,7 @@ import java.lang.reflect.*;
 import net.sf.cglib.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 // TODO: don't require exact match for return type
 
@@ -139,7 +140,7 @@ import org.objectweb.asm.ClassVisitor;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.5 2003/09/17 20:44:27 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.6 2003/09/20 07:49:16 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -185,8 +186,8 @@ abstract public class MethodDelegate {
 
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(MethodDelegate.class, true);
-        private static final Method NEW_INSTANCE =
-          ReflectUtils.findMethod("MethodDelegate.newInstance(Object)");
+        private static final Signature NEW_INSTANCE =
+          Signature.parse("net.sf.cglib.reflect.MethodDelegate newInstance(Object)");
         
         private Object target;
         private Class targetClass;
@@ -250,44 +251,42 @@ abstract public class MethodDelegate {
                 throw new IllegalArgumentException("Static method " + (isStatic ? "not " : "") + "expected");
             }
 
-            Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC,
-                          getClassName(),
-                          MethodDelegate.class,
-                          new Class[]{ iface },
-                          Constants.SOURCE_FILE);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, String.class, "eqMethod");
-            Virt.null_constructor(e);
+            Emitter2 e = new Emitter2(v);
+            Ops.begin_class(e,
+                            Modifier.PUBLIC,
+                            getClassName(),
+                            MethodDelegate.class,
+                            new Class[]{ iface },
+                            Constants.SOURCE_FILE);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Types.STRING, null);
+            Ops.null_constructor(e);
 
             // generate proxied method
-            e.begin_method(iface.getDeclaredMethods()[0]);
+            Ops.begin_method(e, iface.getDeclaredMethods()[0]);
             e.load_this();
-            e.super_getfield("target");
-            e.checkcast(method.getDeclaringClass());
+            e.super_getfield("target", Types.OBJECT);
+            e.checkcast(Type.getType(method.getDeclaringClass()));
             e.load_args();
-            e.invoke(method);
+            Ops.invoke(e, method);
             e.return_value();
-            e.end_method();
 
             // newInstance
-            e.begin_method(NEW_INSTANCE);
+            e.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.dup2();
             e.invoke_constructor_this();
             e.getfield("eqMethod");
-            e.super_putfield("eqMethod");
+            e.super_putfield("eqMethod", Types.STRING);
             e.load_arg(0);
-            e.super_putfield("target");
+            e.super_putfield("target", Types.OBJECT);
             e.return_value();
-            e.end_method();
 
             // static initializer
             e.begin_static();
             e.push(method.getName() + ReflectUtils.getMethodDescriptor(method));
             e.putfield("eqMethod");
             e.return_value();
-            e.end_method();
             
             e.end_class();
         }

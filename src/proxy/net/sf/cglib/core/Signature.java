@@ -15,15 +15,18 @@ public class Signature {
         this.desc = desc;
     }
 
+    // TODO: move to utility class
     public Signature(Method method) {
         this(method.getName(), Type.getMethodDescriptor(method));
     }
 
+    // TODO: move to utility class
     public Signature(Constructor constructor) {
         this(Constants.CONSTRUCTOR_NAME,
              Type.getMethodDescriptor(Type.VOID_TYPE, getTypes(constructor.getParameterTypes())));
     }
 
+    // TODO: move to utility class
     public static Type[] getTypes(Class[] classes) {
         if (classes == null) {
             return null;

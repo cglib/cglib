@@ -32,5 +32,7 @@ public interface Types {
     public static final Type NO_CLASS_DEF_FOUND_ERROR = Signature.parseType("NoClassDefFoundError");
     public static final Type CLASS_NOT_FOUND_EXCEPTION = Signature.parseType("ClassNotFoundException");
     public static final Type ABSTRACT_METHOD_ERROR = Signature.parseType("AbstractMethodError");
+    public static final Type CLASS_CAST_EXCEPTION = Signature.parseType("ClassCastException");
+    public static final Type NO_SUCH_METHOD_ERROR = Signature.parseType("NoSuchMethodError");
 }
     

@@ -34,13 +34,26 @@ public interface Signatures {
     public static final Signature INT_VALUE =
       Signature.parse("int intValue()");
 
+    public static final Signature GET =
+      Signature.parse("Object get(Object)");
+    public static final Signature PUT =
+      Signature.parse("Object put(Object, Object)");
+    public static final Signature KEY_SET =
+      Signature.parse("java.util.Set keySet()");
+
     public static final Signature STATIC =
       Signature.parse("void <clinit>()");
 
+    public static final Signature CSTRUCT_OBJECT =
+      Signature.parse("void <init>(Object)");
+    public static final Signature CSTRUCT_CLASS =
+      Signature.parse("void <init>(Class)");
     public static final Signature CSTRUCT_OBJECT_ARRAY =
       Signature.parse("void <init>(Object[])");
     public static final Signature CSTRUCT_STRING =
       Signature.parse("void <init>(String)");
+    public static final Signature CSTRUCT_STRING_ARRAY =
+      Signature.parse("void <init>(String[])");
     public static final Signature CSTRUCT_THROWABLE =
       Signature.parse("void <init>(Throwable)");
 }

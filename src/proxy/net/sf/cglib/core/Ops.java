@@ -844,6 +844,11 @@ public class Ops {
                       Signature.getTypes(method.getParameterTypes()));
     }
 
+    public static void invoke(Emitter2 e, Constructor constructor) {
+        e.invoke_constructor(Type.getType(constructor.getDeclaringClass()),
+                             Signature.getTypes(constructor.getParameterTypes()));
+    }
+
     public static void super_invoke(Emitter2 e, Method method) {
         // TODO: remove need for direct access to emit_invoke?
         e.emit_invoke(Constants.INVOKESPECIAL,
