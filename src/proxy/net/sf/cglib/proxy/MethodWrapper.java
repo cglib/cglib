@@ -55,6 +55,11 @@
 
 package net.sf.cglib.proxy;
 
+
+import net.sf.cglib.util.*;
+
+
+
 /**
  *  private utility
  * @author  baliuka
