@@ -73,22 +73,25 @@ public class ClassRecorder implements ClassVisitor, ClassGenerator {
                                   i1[r]);
                 break;
             case VISIT_METHOD:
-                ((CodeRecorder)o4[r]).accept(v.visitMethod(i1[r],
-                                                           (String)o1[r],
-                                                           (String)o2[r],
-                                                           (o3[r] != null) ? (String[])((String[])o3[r]).clone() : null));
+                visitMethodHelper(r, v);
                 break;
             }
         }
     }
 
-    public void generateCode(Signature sig, CodeVisitor v) {
+    private void visitMethodHelper(int r, ClassVisitor v) {
+        ((CodeRecorder)o4[r]).accept(v.visitMethod(i1[r],
+                                                   (String)o1[r],
+                                                   (String)o2[r],
+                                                   (o3[r] != null) ? (String[])((String[])o3[r]).clone() : null));
+    }
+
+    public void generateMethod(Signature sig, ClassVisitor v) {
         for (int i = 0, size = classIndexes.length; i < size; i++) {
             int r = classIndexes[i];
             if (types[r] == VISIT_METHOD) {
-                Signature compare = new Signature((String)o1[r], (String)o2[r]);
                 if (sig.getName().equals(o1[r]) && sig.getDescriptor().equals(o2[r])) {
-                    ((CodeRecorder)o4[r]).accept(v);
+                    visitMethodHelper(r, v);
                     return;
                 }
             }

@@ -70,6 +70,7 @@ public class ClassEmitter extends ClassAdapter {
     private Map fieldInfo;
     private boolean seenStatic;
     private ClassEmitter rec;
+    private ClassVisitor raw;
     private CodeEmitter hook;
     private boolean useHook = true;
 
@@ -90,8 +91,10 @@ public class ClassEmitter extends ClassAdapter {
 
     public void setTarget(ClassVisitor cv) {
         if (useHook) {
+            this.raw = cv;
             this.cv = new ClassVisitorTee(rec = new ClassEmitter(new ClassRecorder(), false), cv);
         } else {
+            this.raw = cv;
             this.cv = cv;
         }
         fieldInfo = new HashMap();
@@ -144,25 +147,22 @@ public class ClassEmitter extends ClassAdapter {
                 e.return_value();
                 e.end_method();
             }
-            
             if (seenStatic) {
-                CodeEmitter e = begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
-                if (hook != null) {
-                    ((ClassRecorder)rec.cv).generateCode(STATIC_HOOK, e);
-                }
-                e.return_value();
-                e.end_method();
+                getStaticHook(); // make sure hook is not null
+                hook.return_value();
+                hook.end_method();
+                ((ClassRecorder)rec.cv).generateMethod(STATIC_HOOK, raw);
             }
         }
-        cv.visitEnd();
-        cv = null; // for safety
+        raw.visitEnd();
+        cv = raw = null; // for safety
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        CodeVisitor v = super.visitMethod(access,
-                                          sig.getName(),
-                                          sig.getDescriptor(),
-                                          TypeUtils.toInternalNames(exceptions));
+        CodeVisitor v = cv.visitMethod(access,
+                                       sig.getName(),
+                                       sig.getDescriptor(),
+                                       TypeUtils.toInternalNames(exceptions));
         CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
         if (useHook) {
             if (sig.equals(Constants.SIG_STATIC)) {
