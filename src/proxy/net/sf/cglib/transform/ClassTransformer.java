@@ -7,13 +7,17 @@ import org.objectweb.asm.CodeVisitor;
 
 // cannot extend from ClassAdapter because cv is final
 abstract public class ClassTransformer implements ClassVisitor, Cloneable {
-    protected ClassVisitor cv; // TODO: make this private?
+    private ClassVisitor cv;
     
     protected ClassTransformer() {
     }
 
-    public void wire(ClassVisitor cv) {
-        this.cv = cv;
+    public void setTarget(ClassVisitor target) {
+        cv = target;
+    }
+
+    public ClassVisitor getTarget() {
+        return cv;
     }
 
     public Object clone() {

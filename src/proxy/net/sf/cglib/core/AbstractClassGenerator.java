@@ -158,7 +158,9 @@ implements ClassGenerator
                     }
                 }
                 if (instance == null) {
-                    byte[] b = DebuggingLoader.getBytes(this);
+                    ClassWriter w = new DebuggingClassWriter(true);
+                    generateClass(transform(w));
+                    byte[] b = w.toByteArray();
                     Class gen = defineClass(source.defineClass, getClassName(), b, loader);
                     instance = firstInstance(gen);
 
@@ -171,16 +173,16 @@ implements ClassGenerator
             return nextInstance(instance);
         } catch (RuntimeException e) {
             throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
         } catch (Error e) {
             throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
         }
     }
 
-//     protected ClassVisitor transform(ClassWriter cw) {
-//         return cw;
-//     }
+    protected ClassVisitor transform(ClassWriter cw) {
+        return cw;
+    }
 
     abstract protected Object firstInstance(Class type) throws Exception;
     abstract protected Object nextInstance(Object instance) throws Exception;

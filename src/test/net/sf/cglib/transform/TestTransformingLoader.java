@@ -59,7 +59,7 @@ import java.util.Map;
 import junit.framework.*;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.1 2003/09/17 20:44:24 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.2 2003/09/17 23:07:26 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -70,16 +70,26 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         }
     };
 
+    private ClassTransformer getExampleTransformer(String name, Class type) {
+        return new ExampleTransformer(new String[]{ name }, new Class[]{ type });
+    }
+
     public void testExample() throws Exception {
+        ClassTransformer t1 = getExampleTransformer("herby", String.class);
+        ClassTransformer t2 = getExampleTransformer("derby", Double.TYPE);
+        ClassTransformer chain = new TransformerChain(new ClassTransformer[]{ t1, t2 });
+        System.err.println("chain=" + chain);
+
         ClassLoader parent = TestTransformingLoader.class.getClassLoader();
-        ClassTransformer t = new ExampleTransformer(new String[]{ "herby" },
-                                                    new Class[]{ String.class });
-        TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER, t);
+        TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER, chain);
         Class loaded = loader.loadClass(Example.class.getName());
         Object obj = loaded.newInstance();
+
         String value = "HELLO";
         loaded.getMethod("setHerby", new Class[]{ String.class }).invoke(obj, new Object[]{ value });
         assertTrue(value.equals(loaded.getMethod("getHerby", null).invoke(obj, null)));
+
+        loaded.getMethod("setDerby", new Class[]{ Double.TYPE }).invoke(obj, new Object[]{ new Double(1.23456789d) });
     }
 
     public TestTransformingLoader(String testName) {
