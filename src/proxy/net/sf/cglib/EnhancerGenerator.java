@@ -154,7 +154,6 @@ import java.util.*;
 
         generateConstructor();
         generateFactory();
-        generateFindClass();
 
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
@@ -451,43 +450,24 @@ import java.util.*;
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
             String fieldName = getFieldName(i);
-            String args = generateSetStaticMethodField(fieldName, method);
+
+            load_class(method.getDeclaringClass());
+            push(method.getName());
+            push_object(method.getParameterTypes());
+            dup();
+            store_local("args");
+            invoke(MethodConstants.GET_DECLARED_METHOD);
+            putstatic(fieldName);
 
             String accessName = getAccessName(method, i);
-            push(getClassName());
-            invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
+            load_class_this();
             push(accessName);
-            load_local(args);
+            load_local("args");
             invoke(MethodConstants.GET_DECLARED_METHOD);
             invoke(MAKE_PROXY);
             putstatic(accessName);
         }
         return_value();
         end_static();
-    }
-
-    // TODO: move to helper class?
-    private String generateSetStaticMethodField(String fieldName, Method method) {
-        Class[] types = method.getParameterTypes();
-        push(method.getDeclaringClass().getName());
-        invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
-        String cls = newLocal();
-        store_local(cls);
-        push(types.length);
-        newarray(Class.class);
-        for (int i = 0; i < types.length; i++) {
-            dup();
-            push(i);
-            load_class(types[i]);
-            aastore();
-        }
-        String args = newLocal();
-        store_local(args);
-        load_local(cls);
-        push(method.getName());
-        load_local(args);
-        invoke(MethodConstants.GET_DECLARED_METHOD);
-        putstatic(fieldName);
-        return args;
     }
 }

@@ -64,11 +64,11 @@ import org.apache.bcel.generic.*;
  * @author  baliuka
  */
 public abstract class CodeGenerator implements Constants {
-    protected static final String CONSTRUCTOR_NAME = "<init>";
-    protected static final String SOURCE_FILE = "<generated>";
-    protected static final String FIND_CLASS = "CGLIB$findClass";
-    protected static final String STATIC_NAME = "<clinit>";
-
+    private static final String CONSTRUCTOR_NAME = "<init>";
+    private static final String SOURCE_FILE = "<generated>";
+    private static final String STATIC_NAME = "<clinit>";
+    private static final String FIND_CLASS = "CGLIB$findClass";
+    private static final String FIND_CLASS_SIG = getMethodSignature(Class.class, TYPES_STRING);
     private static final String PRIVATE_PREFIX = "PRIVATE_";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
@@ -81,6 +81,7 @@ public abstract class CodeGenerator implements Constants {
 	private MethodGen mg;
 	private Class returnType;
     private Class superclass;
+    private boolean needsFindClass;
     
 	private Map branches;  
 	private Map labels;
@@ -129,6 +130,9 @@ public abstract class CodeGenerator implements Constants {
         try {
             try {
                 generate();
+                if (needsFindClass) {
+                    generateFindClass();
+                }
                 String name = cg.getClassName();
                 byte[] bytes = cg.getJavaClass().getBytes();
 
@@ -510,6 +514,36 @@ public abstract class CodeGenerator implements Constants {
     protected void push(String value) {
         append(new LDC(cp.addString(value)));
     }
+
+    protected void push(Object[] array) {
+        push(array.length);
+        newarray(array.getClass().getComponentType());
+        for (int i = 0; i < array.length; i++) {
+            dup();
+            push(i);
+            push_object(array[i]);
+            aastore();
+        }
+    }
+
+    protected void push_object(Object obj) {
+        if (obj == null) {
+            aconst_null();
+        } else {
+            Class type = obj.getClass();
+            if (type.isArray()) {
+                push((Object[])obj);
+            } else if (obj instanceof String) {
+                push((String)obj);
+            } else if (obj instanceof Class) {
+                load_class((Class)obj);
+            } else if (obj.getClass().getSuperclass().equals(Number.class)) {
+                throw new IllegalArgumentException("not implemented yet");
+            } else {
+                throw new IllegalArgumentException("unknown type: " + obj.getClass());
+            }
+        }
+    }
   
     protected void newarray() {
         newarray(Object.class);
@@ -575,10 +609,14 @@ public abstract class CodeGenerator implements Constants {
         append(new ALOAD(0));
     }
 
+    protected void load_class_this() {
+        load_class_helper(getClassName());
+    }
+
     protected void load_class(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Void.TYPE)) {
-                // TODO: error
+                throw new IllegalArgumentException("cannot load void type");
             }
             try {
                 getfield(((Class)primitiveToWrapper.get(clazz)).getDeclaredField("TYPE"));
@@ -586,12 +624,15 @@ public abstract class CodeGenerator implements Constants {
                 throw new CodeGenerationException(e);
             }
         } else {
-            push(clazz.getName());
-            int ref = cp.addMethodref(cg.getClassName(),
-                                      FIND_CLASS,
-                                      getMethodSignature(Class.class, TYPES_STRING));
-            append(new INVOKESTATIC(ref));
+            load_class_helper(clazz.getName());
         }
+    }
+
+    private void load_class_helper(String className) {
+        // System.err.println("findclass: " + className + " hasFindClass: " + hasFindClass);
+        needsFindClass = true;
+        push(className);
+        invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
     }
 
     /**
@@ -905,11 +946,11 @@ public abstract class CodeGenerator implements Constants {
         return types;
     }
 
-    protected String getMethodSignature(Method method) {
+    protected static String getMethodSignature(Method method) {
         return getMethodSignature(method.getReturnType(), method.getParameterTypes());
     }
 
-    private String getMethodSignature(Class returnType, Class[] parameterTypes) {
+    private static String getMethodSignature(Class returnType, Class[] parameterTypes) {
         return Type.getMethodSignature(getType(returnType), getTypes(parameterTypes));
     }
 
@@ -1180,7 +1221,7 @@ public abstract class CodeGenerator implements Constants {
         end_constructor();
     }
 
-    protected void generateFindClass() {
+    private void generateFindClass() {
         /* generates:
            static private Class findClass(String name) throws Exception {
                try {
