@@ -145,14 +145,6 @@ import java.util.*;
         }
     }
 
-    private static int compare(Method a, Method b ){
-     if( Modifier.isProtected( a.getModifiers() ) && Modifier.isPublic( b.getModifiers() ) ){
-       return   -1;    
-     }else if ( Modifier.isPublic( a.getModifiers() ) && Modifier.isProtected( b.getModifiers() ) ){
-       return 1;
-     } else return 0;
-     
-    }
     protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
             wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", TYPES_OBJECT);
@@ -195,18 +187,15 @@ import java.util.*;
                     declaresWriteReplace = true;
                 }
                 Object methodKey = MethodWrapper.newInstance(method);
-                Method other = (Method)methodMap.get(methodKey);
-                
-                if( other != null && compare( other, method ) >= 0 ){
-                    
-                    checkReturnTypesEqual(method, other);
-                   
-                }else{
-                   
-                     //addDeclaredMethods adds methods reverse order
-                     methodMap.put(methodKey, method);
+                Method existing = (Method)methodMap.get(methodKey);
+
+                if (existing == null ||
+                    (Modifier.isProtected(existing.getModifiers()) &&
+                     Modifier.isPublic(method.getModifiers()))) {
+                    methodMap.put(methodKey, method);
+                } else {
+                    checkReturnTypesEqual(method, existing);
                 }
-                
             }
         }
         List methodList = new ArrayList(methodMap.values());
