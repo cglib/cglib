@@ -77,6 +77,8 @@ class FastClassEmitter extends ClassEmitter {
       TypeUtils.parseSignature("Object newInstance(int, Object[])");
     private static final Signature GET_MAX_INDEX =
       TypeUtils.parseSignature("int getMaxIndex()");
+    private static final Signature GET_SIGNATURE_WITHOUT_RETURN_TYPE =
+      TypeUtils.parseSignature("String getSignatureWithoutReturnType(String, Class[])");
     private static final Type FAST_CLASS =
       TypeUtils.parseType("net.sf.cglib.reflect.FastClass");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
@@ -108,11 +110,8 @@ class FastClassEmitter extends ClassEmitter {
         emitIndexBySignature(methods);
 
         // getIndex(String, Class[])
-        e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null, null);
-        e.load_args();
-        EmitUtils.method_switch(e, methods, new GetIndexCallback(e, methods));
-        e.end_method();
-
+        emitIndexByClassArray(methods);
+        
         // getIndex(Class[])
         e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null, null);
         e.load_args();
@@ -145,14 +144,40 @@ class FastClassEmitter extends ClassEmitter {
     }
 
     private void emitIndexBySignature(Method[] methods) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
-        final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
+        List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
                 return ReflectUtils.getSignature((Method)obj).toString();
             }
         });
         e.load_arg(0);
         e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
+        signatureSwitchHelper(e, signatures);
+        e.end_method();
+    }
+
+    private static final int TOO_MANY_METHODS = 100; // TODO
+    private void emitIndexByClassArray(Method[] methods) {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null, null);
+        if (methods.length > TOO_MANY_METHODS) {
+            // hack for big classes
+            List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+                public Object transform(Object obj) {
+                    String s = ReflectUtils.getSignature((Method)obj).toString();
+                    return s.substring(0, s.lastIndexOf(')') + 1);
+                }
+            });
+            e.load_args();
+            e.invoke_static(FAST_CLASS, GET_SIGNATURE_WITHOUT_RETURN_TYPE);
+            signatureSwitchHelper(e, signatures);
+        } else {
+            e.load_args();
+            EmitUtils.method_switch(e, methods, new GetIndexCallback(e, methods));
+        }
+        e.end_method();
+    }
+
+    private void signatureSwitchHelper(final CodeEmitter e, final List signatures) {
         ObjectSwitchCallback callback = new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf
@@ -165,10 +190,9 @@ class FastClassEmitter extends ClassEmitter {
             }
         };
         EmitUtils.string_switch(e,
-                                (String[])signatures.toArray(new String[0]),
+                                (String[])signatures.toArray(new String[signatures.size()]),
                                 Constants.SWITCH_STYLE_HASH,
                                 callback);
-        e.end_method();
     }
 
     private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) {

@@ -58,6 +58,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 abstract public class FastClass
 {
@@ -175,4 +176,15 @@ abstract public class FastClass
 
     abstract public int getIndex(Signature sig);
     abstract public int getMaxIndex();
+
+    /* protected */ static String getSignatureWithoutReturnType(String name, Class[] parameterTypes) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(name);
+        sb.append('(');
+        for (int i = 0; i < parameterTypes.length; i++) {
+            sb.append(Type.getDescriptor(parameterTypes[i]));
+        }
+        sb.append(')');
+        return sb.toString();
+    }
 }
