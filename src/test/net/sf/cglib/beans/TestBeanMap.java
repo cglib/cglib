@@ -53,6 +53,7 @@
  */
 package net.sf.cglib.beans;
 
+import net.sf.cglib.proxy.*;
 import net.sf.cglib.core.Constants;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -128,6 +129,39 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(bean.getFoo().equals("FOO"));
         assertTrue(map.get(bean, "foo").equals("FOO"));
     }
+
+    public void testMixinMapIntoBean() {
+        Object bean = new TestBean();
+        bean = mixinMapIntoBean(bean);
+        ((TestBean)bean).setFoo("hello");
+        assertTrue(bean instanceof Map);
+        assertTrue(((Map)bean).get("foo").equals("hello"));
+    }
+
+    public static Object mixinMapIntoBean(final Object bean) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(bean.getClass());
+        e.setInterfaces(new Class[]{ Map.class });
+        final Map map = BeanMap.create(bean);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return method.getDeclaringClass().equals(Map.class) ? 1 : 0;
+            }
+        });
+        e.setCallbacks(new Callback[]{
+            new Dispatcher() {
+                public Object loadObject() {
+                    return bean;
+                }
+            },
+            new Dispatcher() {
+                public Object loadObject() {
+                    return map;
+                }
+            }
+        });
+        return e.create();
+    }    
 
     // TODO: test different package
     // TODO: test change bean instance
