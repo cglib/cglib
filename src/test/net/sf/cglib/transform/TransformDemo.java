@@ -33,18 +33,21 @@ public class TransformDemo {
     
     public static void makePersistent(Object obj){
         System.out.println( "makePersistent " + obj.getClass() + " " +  Arrays.asList(obj.getClass().getInterfaces()) ); 
-        Transformed t = (Transformed)obj;
-        t.setReadWriteFieldCallback( new StateManager());
+        InterceptFieldEnabled t = (InterceptFieldEnabled)obj;
+        t.setInterceptFieldCallback( new StateManager());
+        FieldProvider provider = (FieldProvider)obj;
+        System.out.println("Field Names " + Arrays.asList(provider.getFieldNames()) );
+        System.out.println("Field Types " + Arrays.asList(provider.getFieldTypes()) );
     
     }
     
     public static void main( String args [] )throws Exception{
     
         
-        FieldTransformer t1 = new FieldTransformer( new Filter() );
+       InterceptFieldTransformer t1 = new InterceptFieldTransformer( new Filter() );
         
         
-        AddClintTransformer t2 = new   AddClintTransformer(
+        AddStaticInitTransformer t2 = new   AddStaticInitTransformer(
              TransformDemo.class.getMethod("register",new Class[]{Class.class}) 
         );                                   
         
@@ -53,8 +56,10 @@ public class TransformDemo {
                           new Class[]{PersistenceCapable.class},
                           PersistenceCapableImpl.class
                     );    
+                          
+        FieldProviderTransformer t4 = new FieldProviderTransformer();                 
         
-        TransformerChain transformation = new TransformerChain( new ClassTransformer[]{t1,t2,t3} );
+        TransformerChain transformation = new TransformerChain( new ClassTransformer[]{t4,t1,t2,t3} );
         
         TransformingLoader loader = new TransformingLoader(
           TransformDemo.class.getClassLoader(),
@@ -79,21 +84,21 @@ public class TransformDemo {
     }
     
     
-   public static class Filter implements ReadWriteFieldFilter{
+   public static class Filter implements InterceptFieldFilter{
        
-        public boolean acceptRead(String clas, String name){
-                 
-            return true;
+        
+        public boolean acceptRead(org.objectweb.asm.Type owner, String name) {
+                  return true;
         }
         
-        public boolean acceptWrite(String clas, String name){
-            
-            return true;
+        public boolean acceptWrite(org.objectweb.asm.Type owner, String name) {
+                  return true;
         }
+        
     };
     
 
-  public   static class  StateManager implements ReadWriteFieldCallback{
+  public   static class  StateManager implements InterceptFieldCallback{
         
        
         public boolean readBoolean(Object _this, String name, boolean oldValue) {

@@ -16,6 +16,14 @@ abstract public class AbstractLoader extends ClassLoader {
     }
 
     public Class loadClass(String name) throws ClassNotFoundException {
+        
+        Class loaded = findLoadedClass(name);
+        if( loaded != null ){
+            if( loaded.getClassLoader() == this ){
+               return loaded;
+            }//else reload with this class loader
+        }
+        
         if (!filter.accept(name)) {
             return super.loadClass(name);
         }
