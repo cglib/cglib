@@ -6,6 +6,8 @@
 
 package net.sf.cglib.metaclass;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -56,7 +58,32 @@ public abstract class MetaClass implements ClassFileConstants{
    
         return (String[])setters.clone();
    }
-   
+
+
+  static private Method findDeclaredMethod(Class clazz, String name, Class types[])
+                        throws NoSuchMethodException{
+
+      
+         Class cl = clazz;
+         
+         while ( cl != null ){
+         
+         try{
+         	
+          return cl.getDeclaredMethod(name,types);  
+
+          
+         }catch(NoSuchMethodException nsme ){
+         	
+             cl = cl.getSuperclass();  
+        }
+                     
+      }
+      
+        throw new NoSuchMethodException(name);
+      
+  
+  }   
    
    private static String generateKey( Class target, String getters[],
                                       String setters[], Class types[] ){
@@ -65,6 +92,52 @@ public abstract class MetaClass implements ClassFileConstants{
   
    private static void validate( Class target, String getters[], 
                                  String setters[], Class types[] ){
+
+
+     if(target.getName().startsWith("java") ){
+       
+       throw new IllegalArgumentException("classes from java packge not supported");
+       
+     } 
+    
+    int length = types.length;
+    
+    if( setters.length != length || length != getters.length ){
+    
+               throw new IllegalArgumentException("accessor array length must be equal type array length");
+    
+    }
+     String last = null;	                             	
+   try{
+    
+    for(int i=0; i< types.length; i++ ){
+    
+      if( getters[i] != null ){
+      	 last = getters[i];
+      	 Method method = findDeclaredMethod(target,last,new Class[]{});  
+         int mod = method.getModifiers();
+         
+         if(method.getReturnType() != types[i] || Modifier.isPrivate(mod) ){
+           throw new IllegalArgumentException(last);
+         }
+      }
+      
+      if( setters[i] != null ){
+      	   last = setters[i];
+       Method method = findDeclaredMethod( target, last, new Class[]{ types[i] });  
+       if( Modifier.isPrivate(method.getModifiers()) ){
+           throw new IllegalArgumentException(last);
+         }
+      }
+      
+    
+    }
+                                 	
+    }catch( NoSuchMethodException nesme ){
+    	
+    	throw new IllegalArgumentException(last);
+    
+    }                             	
    
    }
    
@@ -85,7 +158,9 @@ public abstract class MetaClass implements ClassFileConstants{
     
         ConstantPoolGen cp = cg.getConstantPool();       
         InstructionList il = new InstructionList();
+        
         //------------- Generate constructor -------------
+        
         MethodGen constructor = new MethodGen( ACC_PUBLIC, Type.VOID, 
                   new Type[]{ CLASS_OBJECT, new ArrayType(Type.STRING,1),
                            new ArrayType(Type.STRING, 1),  
@@ -93,11 +168,12 @@ public abstract class MetaClass implements ClassFileConstants{
         }, null, CONSTRUCTOR_NAME, cg.getClassName(), il, cp);           
         
         
-        il.append( new ALOAD(0) );
-        il.append( new ALOAD(1) );
-        il.append( new ALOAD(2) );
-        il.append( new ALOAD(3) );
-        il.append( new ALOAD(4) );
+        il.append( new ALOAD(0) );//this
+        il.append( new ALOAD(1) );//target
+        il.append( new ALOAD(2) );//getters
+        il.append( new ALOAD(3) );//setters
+        il.append( new ALOAD(4) );//types
+        
         il.append( new INVOKESPECIAL( cp.addMethodref(
           MetaClass.class.getName(),"<init>",
           METACLASS_CONSTRUCTOR
@@ -105,7 +181,9 @@ public abstract class MetaClass implements ClassFileConstants{
         il.append( new RETURN() );
         cg.addMethod( ClassFileUtils.getMethod( constructor ) );
         il.dispose();
+        
         //------------- newInstance -------------------------
+        
         MethodGen newInstance = ClassFileUtils.toMethodGen( 
                      MetaClass.class.getMethod("newInstance",new Class[]{}), 
                      cg.getClassName(), il, cp
@@ -219,7 +297,7 @@ public abstract class MetaClass implements ClassFileConstants{
                                                      }
                                         );
        
-        cache.put( key, result );  
+           cache.put( key, result );  
           
        return result;
    
