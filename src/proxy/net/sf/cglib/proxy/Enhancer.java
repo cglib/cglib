@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.27 2002/11/02 17:40:11 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.28 2002/11/06 18:15:54 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -448,8 +448,9 @@ public class Enhancer implements ClassFileConstants {
                     m.getParameterTypes().length == 0   ){
                  declaresWriteReplace = true;
                 }
-                
-                methodSet.add(new MethodWrapper(m));
+               
+               
+               methodSet.add(new MethodWrapper(m));
             }
         }
         
@@ -779,13 +780,13 @@ public class Enhancer implements ClassFileConstants {
             il.append( new  ASTORE(1) );
             
             
-            il.append( new ICONST( args.length )  );
+            il.append( ClassFileUtils.getIntConst( args.length, cp )  );
             il.append( new ANEWARRAY( cp.addClass( CLASS_OBJECT ) ) );
             
             for( int j = 0; j < args.length; j++   ){
                 
                 il.append( new DUP() );
-                il.append( new ICONST(j) );
+                il.append( ClassFileUtils.getIntConst(j,cp) );
                 ClassFileUtils.loadClass( il, cg,  cp, args[j] );
                 il.append(  new AASTORE() );
                 

@@ -99,6 +99,13 @@ public class Obj extends ObjS implements Serializable{
     
     public static void main( String args[] ) throws Exception{
     
+        
+      Class cls = ClassLoader.class;
+      
+      ClassLoader loader = (ClassLoader) Trace.newInstance(cls);
+        
+      loader.loadClass(Obj.class.getName());
+        
       JavaClass jc =  Repository.lookupClass( Obj.class.getName() );
       
       Field fields[] = jc.getFields();

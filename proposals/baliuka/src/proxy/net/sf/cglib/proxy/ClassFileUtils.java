@@ -106,6 +106,21 @@ class ClassFileUtils implements ClassFileConstants {
         
     }
     
+    static Instruction getIntConst( int i, ConstantPoolGen cp){
+        
+              if( i<= 5 ){ 
+                  return ( new  ICONST( i ) );
+               }else  if ( i < Byte.MAX_VALUE){
+                  return ( new  BIPUSH((byte)i ) ); 
+               }else if ( i < Short.MAX_VALUE ) {
+                  return ( new  SIPUSH((short)i ) ); 
+               }else{
+                  return new LDC( cp.addInteger(i) );
+               } 
+            
+    
+    }
+    
     static int loadArg(InstructionList il, Type t,  int pos) {
         
         if (t instanceof BasicType) {

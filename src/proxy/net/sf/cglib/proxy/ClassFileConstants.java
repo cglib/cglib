@@ -80,6 +80,6 @@ import org.apache.bcel.generic.*;
     static final ObjectType NUMBER_OBJECT = new ObjectType(Number.class.getName());
     static final String CONSTRUCTOR_NAME = "<init>";
     static final String SOURCE_FILE = "<generated>";
-  
+    static final String FIND_CLASS = "CGLIB$findClass";
      
 }
