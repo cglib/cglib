@@ -63,12 +63,12 @@ import java.util.*;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.2 2003/05/23 23:22:19 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.3 2003/05/28 03:56:30 herbyderby Exp $
  */
 public class InterfaceMaker {
     private static final Class TYPE = InterfaceMaker.class;
     private static final ClassLoader DEFAULT_LOADER = TYPE.getClassLoader();
-    private static final ClassNameFactory NAME_FACTORY = new ClassNameFactory("InterfaceByCGLIB");
+    private static final ClassNameFactory NAME_FACTORY = new ClassNameFactory("CreatedByCGLIB");
 
     private InterfaceMaker() { }
 
