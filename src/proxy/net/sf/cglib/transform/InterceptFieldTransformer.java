@@ -29,7 +29,7 @@ public class InterceptFieldTransformer extends EmittingTransformer {
     }
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-        if (!TypeUtils.isAbstract(access)) {
+        if (!TypeUtils.isInterface(access)) {
             super.begin_class(access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
                     
             super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,

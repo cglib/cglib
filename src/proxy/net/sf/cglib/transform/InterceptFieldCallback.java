@@ -4,6 +4,7 @@ package net.sf.cglib.transform;
  * @author Juozas Baliuka
  */
 public interface InterceptFieldCallback {
+    
     int writeInt(Object obj, String name, int oldValue, int newValue);
     char writeChar(Object obj, String name, char oldValue, char newValue);
     byte writeByte(Object obj, String name, byte oldValue, byte newValue);
