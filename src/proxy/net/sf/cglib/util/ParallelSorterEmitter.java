@@ -57,19 +57,19 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
-class ParallelSorterEmitter extends Emitter {
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
-    private static final Method SWAP_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
-    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
+class ParallelSorterEmitter extends Emitter2 {
+    private static final Signature NEW_INSTANCE =
+      Signature.parse("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
+    private static final Signature SWAP =
+      Signature.parse("void swap(int, int)");
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
-        Virt.factory_method(this, NEW_INSTANCE);
+        super(v);
+        Ops.begin_class(this, Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
+        Ops.null_constructor(this);
+        Ops.factory_method(this, NEW_INSTANCE);
         generateConstructor(arrays);
         generateSwap(arrays);
         end_class();
@@ -80,15 +80,15 @@ class ParallelSorterEmitter extends Emitter {
     }
 
     private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
-        begin_constructor(TYPES_OBJECT_ARRAY);
+        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT_ARRAY, null);
         load_this();
         super_invoke_constructor();
         load_this();
         load_arg(0);
-        super_putfield("a");
+        super_putfield("a", Types.OBJECT_ARRAY);
         for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            declare_field(Modifier.PRIVATE, type, getFieldName(i));
+            Type type = Type.getType(arrays[i].getClass());
+            declare_field(Modifier.PRIVATE, getFieldName(i), type, null);
             load_this();
             load_arg(0);
             push(i);
@@ -97,15 +97,14 @@ class ParallelSorterEmitter extends Emitter {
             putfield(getFieldName(i));
         }
         return_value();
-        end_method();
     }
 
     private void generateSwap(Object[] arrays) {
-        begin_method(SWAP_METHOD);
+        begin_method(Constants.ACC_PUBLIC, SWAP, null);
         for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            Class component = type.getComponentType();
-            Local T = make_local(type);
+            Type type = Type.getType(arrays[i].getClass());
+            Type component = Emitter2.getComponentType(type);
+            Local2 T = make_local(type);
 
             load_this();
             getfield(getFieldName(i));
@@ -129,6 +128,5 @@ class ParallelSorterEmitter extends Emitter {
             array_store(component);
         }
         return_value();
-        end_method();
     }
 }
