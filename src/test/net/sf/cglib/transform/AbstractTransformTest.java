@@ -1,7 +1,7 @@
 /*
  *
  *
- * $Id: AbstractTransformTest.java,v 1.1 2003/10/05 16:05:30 baliuka Exp $
+ * $Id: AbstractTransformTest.java,v 1.2 2003/10/06 00:58:59 herbyderby Exp $
  */
 
 package net.sf.cglib.transform;
@@ -16,7 +16,9 @@ abstract public class AbstractTransformTest  extends TestCase{
    
     
      /** Creates a new instance of AbstractTransformTest */
-    public AbstractTransformTest() {  }
+    public AbstractTransformTest() {
+        super(null);
+    }
    
     /** Creates a new instance of AbstractTransformTest */
     public AbstractTransformTest(String s) {
