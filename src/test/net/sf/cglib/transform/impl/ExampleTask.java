@@ -29,7 +29,7 @@ public class ExampleTask extends AbstractTransformTask {
             types[i] = TypeUtils.parseType(p.type);
         }
         ClassTransformer t2 = new AddPropertyTransformer(names, types);
-        transformer = new TransformerChain(new ClassTransformer[]{ t1, t2 });
+        transformer = new ClassTransformerChain(new ClassTransformer[]{ t1, t2 });
     }
 
     public static class NewProperty {

@@ -1,7 +1,7 @@
 /*
  *
  *
- * $Id: AbstractTransformTest.java,v 1.4 2003/10/08 23:29:48 herbyderby Exp $
+ * $Id: AbstractTransformTest.java,v 1.5 2003/12/06 19:46:50 herbyderby Exp $
  */
 
 package net.sf.cglib.transform;
@@ -30,7 +30,7 @@ abstract public class AbstractTransformTest  extends TestCase{
      public Class transform()throws Exception{
        
        
-       ClassLoader loader = new TransformingLoader(
+       ClassLoader loader = new TransformingClassLoader(
           AbstractTransformTest.class.getClassLoader(),
           new ClassFilter(){
             public boolean accept(String name){

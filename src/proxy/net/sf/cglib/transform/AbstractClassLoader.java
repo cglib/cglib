@@ -9,11 +9,11 @@ import org.objectweb.asm.util.*;
 
 import java.io.IOException;
 
-abstract public class AbstractLoader extends ClassLoader {
+abstract public class AbstractClassLoader extends ClassLoader {
     private ClassFilter filter;
     private ClassLoader classPath;
     
-    protected AbstractLoader(ClassLoader parent, ClassLoader classPath, ClassFilter filter) {
+    protected AbstractClassLoader(ClassLoader parent, ClassLoader classPath, ClassFilter filter) {
         super(parent);
         this.filter = filter;
         this.classPath = classPath;

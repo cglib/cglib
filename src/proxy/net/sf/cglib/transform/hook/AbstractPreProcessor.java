@@ -18,7 +18,7 @@ abstract public class AbstractPreProcessor implements ClassPreProcessor {
                 return abyte;
             ClassWriter w = new DebuggingClassWriter(true);
             ClassGenerator gen = new ClassReaderGenerator(new ClassReader(abyte), false);
-            gen = new TransformingGenerator(gen, t);
+            gen = new TransformingClassGenerator(gen, t);
             gen.generateClass(w);
             return w.toByteArray();
         } catch (Exception e) {

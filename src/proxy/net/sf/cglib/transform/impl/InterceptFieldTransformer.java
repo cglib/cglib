@@ -12,7 +12,7 @@ import org.objectweb.asm.Type;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class InterceptFieldTransformer extends EmittingTransformer {
+public class InterceptFieldTransformer extends ClassEmitterTransformer {
     private static final String CALLBACK_FIELD = "$CGLIB_READ_WRITE_CALLBACK";
     private static final Type CALLBACK =
       TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldCallback");

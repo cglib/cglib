@@ -2,10 +2,10 @@ package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
 
-public class TransformerChain extends AbstractTransformer {
+public class ClassTransformerChain extends AbstractClassTransformer {
     private ClassTransformer[] chain;
     
-    public TransformerChain(ClassTransformer[] chain) {
+    public ClassTransformerChain(ClassTransformer[] chain) {
         this.chain = (ClassTransformer[])chain.clone();
     }
 

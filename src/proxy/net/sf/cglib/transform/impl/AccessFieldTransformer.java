@@ -7,7 +7,7 @@ import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
-public class AccessFieldTransformer extends EmittingTransformer {
+public class AccessFieldTransformer extends ClassEmitterTransformer {
     private Callback callback;
 
     public AccessFieldTransformer(Callback callback) {

@@ -67,7 +67,7 @@ public class TransformDemo {
                           
               FieldProviderTransformer t4 = new FieldProviderTransformer();                 
         
-              return new TransformerChain( new ClassTransformer[]{t4,t1,t2,t3} );
+              return new ClassTransformerChain( new ClassTransformer[]{t4,t1,t2,t3} );
               
             }catch(Exception e){
               throw new CodeGenerationException(e);
@@ -75,7 +75,7 @@ public class TransformDemo {
            }  
     };
         
-        TransformingLoader loader = new TransformingLoader(
+        TransformingClassLoader loader = new TransformingClassLoader(
           TransformDemo.class.getClassLoader(),
           new ClassFilter(){
             public boolean accept(String name){
