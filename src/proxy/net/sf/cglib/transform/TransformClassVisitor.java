@@ -536,8 +536,10 @@ class TransformClassVisitor implements ClassVisitor{
     }
     
     public void visitField(int access, String name, String desc, Object value) {
-        
-        getFields(name,desc);
+    
+      if(!Modifier.isStatic(access)){
+            
+           getFields(name,desc);
         
         if( filter.acceptRead( Type.getType("L" + className + ";").getClassName(), name)){
             
@@ -549,7 +551,7 @@ class TransformClassVisitor implements ClassVisitor{
             
             addWriteMethod(name, desc);
         }
-        
+      }    
         
         cw.visitField(access, name, desc, value );
     }
