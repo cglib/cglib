@@ -209,7 +209,7 @@ abstract public class BasicCodeGenerator {
             
             if (debugLocation != null) {
                 File file = new File(new File(debugLocation), className + ".class");
-                System.err.println("CGLIB writing " + file);
+                // System.err.println("CGLIB writing " + file);
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
                 out.write(bytes);
                 out.close();
