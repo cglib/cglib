@@ -17,31 +17,33 @@ public class AddPropertyTransformer extends EmittingTransformer {
     protected Emitter getEmitter(ClassVisitor cv) {
         return new Emitter(cv) {
             public void end_class() {
-                Type[] T = new Type[1];
-                for (int i = 0; i < names.length; i++) {
-                    String fieldName = "$cglib_prop_" + names[i];
-                    declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null);
+                if (!TypeUtils.isAbstract(getClassAccess())) {
+                    Type[] T = new Type[1];
+                    for (int i = 0; i < names.length; i++) {
+                        String fieldName = "$cglib_prop_" + names[i];
+                        declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null);
 
-                    String methodName = TypeUtils.upperFirst(names[i]);
-                    begin_method(Constants.ACC_PUBLIC,
-                                 new Signature("get" + methodName,
-                                               types[i],
-                                               Constants.TYPES_EMPTY),
-                                 null);
-                    load_this();
-                    getfield(fieldName);
-                    return_value();
+                        String property = TypeUtils.upperFirst(names[i]);
+                        begin_method(Constants.ACC_PUBLIC,
+                                     new Signature("get" + property,
+                                                   types[i],
+                                                   Constants.TYPES_EMPTY),
+                                     null);
+                        load_this();
+                        getfield(fieldName);
+                        return_value();
 
-                    T[0] = types[i];
-                    begin_method(Constants.ACC_PUBLIC,
-                                 new Signature("set" + methodName,
-                                               Type.VOID_TYPE,
-                                               T),
-                                 null);
-                    load_this();
-                    load_arg(0);
-                    putfield(fieldName);
-                    return_value();
+                        T[0] = types[i];
+                        begin_method(Constants.ACC_PUBLIC,
+                                     new Signature("set" + property,
+                                                   Type.VOID_TYPE,
+                                                   T),
+                                     null);
+                        load_this();
+                        load_arg(0);
+                        putfield(fieldName);
+                        return_value();
+                    }
                 }
                 super.end_class();
             }

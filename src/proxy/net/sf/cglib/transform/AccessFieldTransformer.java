@@ -21,7 +21,7 @@ public class AccessFieldTransformer extends EmittingTransformer {
             public void declare_field(int access, String name, Type type, Object value) {
                 super.declare_field(access, name, type, value);
 
-                String property = callback.getPropertyName(getClassType(), name);
+                String property = TypeUtils.upperFirst(callback.getPropertyName(getClassType(), name));
                 if (property != null) {
                     begin_method(Constants.ACC_PUBLIC,
                                  new Signature("get" + property,
