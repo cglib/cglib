@@ -53,6 +53,7 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 import net.sf.cglib.util.*;
 
@@ -61,31 +62,26 @@ import net.sf.cglib.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.20 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.21 2003/06/24 20:59:05 herbyderby Exp $
+ * @author Chris Nokleberg
  */
 public class Delegator {
-    static final Class TYPE = Delegator.class;
-
-    private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final Map infoCache = new HashMap();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
-    private static final DelegatorKey keyFactory =
+    private static final FactoryCache cache = new FactoryCache(Delegator.class);
+    private static final Map infoCache = Collections.synchronizedMap(new HashMap());
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("DelegatorGenerator(Class, Class[], int[])");
+    private static final DelegatorKey KEY_FACTORY =
       (DelegatorKey)KeyFactory.create(DelegatorKey.class, null);
 
     interface DelegatorKey {
-        public Object newInstance(Class[] classes, boolean multicast);
+        public Object newInstance(Class type, Class[] classes, int[] routing);
     }
 
     private Delegator() { }
     
-    // Inner and private because if the makeDelegator(Object[]) constructor
-    // was used, the required order of the delegates may be different from
-    // what was originally specified, which would be confusion. There is
-    // not much overhead associated with going through the cache, anyway.
-    interface Factory {
+    public interface Factory {
         final Class TYPE = Delegator.Factory.class;
-        public Object cglib_newInstance(Object[] delegates);
+        public Object newInstance(Object[] delegates);
     }
 
     /**
@@ -101,11 +97,51 @@ public class Delegator {
      * @return the dynamically created object
      */
     public static Object create(Class[] interfaces, Object[] delegates, ClassLoader loader) {
-        return makeDelegatorHelper(Object.class, false,
-                                   keyFactory.newInstance(interfaces, false),
-                                   interfaces, delegates, loader, false);
+        return createHelper(null, interfaces, delegates, null, loader);
     }
-    
+
+    /**
+     * Returns an object that implements all of the specified
+     * interfaces. For each interface, all methods are delegated to the
+     * respective object in the delegates argument array.
+     * @param type the Class to extend, uses Object if null
+     * @param interfaces the array of interfaces to implement
+     * @param delegates The array of delegates. Must be the same length
+     * as the interface array, and each delegates must implements the
+     * corresponding interface.
+     * @param loader The ClassLoader to use. If null uses the one that
+     * loaded this class.
+     * @return the dynamically created object
+     */
+    public static Object create(Class type, Class[] interfaces, Object[] delegates, ClassLoader loader) {
+        return createHelper(type, interfaces, delegates, null, loader);
+    }
+
+    /**
+     * Returns an object that implements all of the specified
+     * interfaces. For each interface, all methods are delegated to the
+     * respective object in the delegates argument array.
+     * @param type the Class to extend, uses Object if null
+     * @param interfaces the array of interfaces to implement
+     * @param delegates The array of delegates. If the routing parameter
+     * is null, this must be the same length as the interface array. Each delegate
+     * must implement the interfaces delegated to it.
+     * @param routing An optional routing table. Must be null, or the same length
+     * as the interfaces array. If non null, the values represent which delegate
+     * the corresponding interface should be mapped to. If null, a 1:1 correspondence
+     * is assumed.
+     * @param loader The ClassLoader to use. If null uses the one that
+     * loaded this class.
+     * @return the dynamically created object
+     */
+    public static Object create(Class type,
+                                Class[] interfaces,
+                                Object[] delegates,
+                                int[] routing,
+                                ClassLoader loader) {
+        return createHelper(type, interfaces, delegates, routing, loader);
+    }
+
     /**
      * Returns an object that implements all of the interfaces
      * implemented by the specified objects. For each interface, all
@@ -122,11 +158,7 @@ public class Delegator {
      */
     public static Object create(Object[] delegates, ClassLoader loader) {
         Info info = getInfo(delegates);
-        Object[] remapped = new Object[info.interfaces.length];
-        for (int i = 0; i < remapped.length; i++) {
-            remapped[i] = delegates[info.indexes[i]];
-        }
-        return makeDelegatorHelper(Object.class, false, info.key, info.interfaces, remapped, loader, false);
+        return createHelper(null, info.interfaces, delegates, info.routing, loader);
     }
 
     /**
@@ -143,7 +175,7 @@ public class Delegator {
         Info info = getInfo(delegates);
         Map map = new HashMap();
         for (int i = 0; i < info.interfaces.length; i++) {
-            map.put(info.interfaces[i], delegates[info.indexes[i]]);
+            map.put(info.interfaces[i], delegates[info.routing[i]]);
         }
         return map;
     }
@@ -157,97 +189,79 @@ public class Delegator {
      * @return the dynamically created bean
      */
     public static Object createBean(Object[] beans, ClassLoader loader) {
-        return createBean(Object.class, beans, false, loader);
+        return createBean(null, beans, loader);
     }
 
     /**
      * Combines an array of JavaBeans into a single "super" bean.
      * Calls to the super bean will delegate to the underlying beans.
-     * @param cls the Class to extend, Object is used if null
+     * @param type the Class to extend
      * @param beans the list of beans to delegate to
-     * @param multicast if false, the first bean is used in the case of property name conflicts;
      * if true, "set" methods will set all applicable beans, and "get" will return the value
      * from the last bean in the list.
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
      */
-    static Object createBean(Class cls, Object[] beans, boolean multicast, ClassLoader loader)
-    {
-        Class[] classes = ReflectUtils.getClasses(beans);
-        Object key = keyFactory.newInstance(classes, multicast);
-        return makeDelegatorHelper(cls, multicast, key, classes, beans, loader, true);
+    public static Object createBean(Class type, Object[] beans, ClassLoader loader) {
+        return createHelper(type, ReflectUtils.getClasses(beans), beans, null, loader);
     }
 
-    synchronized private static Info getInfo(Object[] delegates) {
-        Object key = keyFactory.newInstance(ReflectUtils.getClasses(delegates), false);
+    private static Info getInfo(Object[] delegates) {
+        Object key = new ClassesKey(delegates);
         Info info = (Info)infoCache.get(key);
-        if (info == null)
+        if (info == null) {
             infoCache.put(key, info = new Info(delegates));
+        }
         return info;
     }
 
-    private static Object makeDelegatorHelper(Class cls,
-                                              boolean multicast,
-                                              Object key,
-                                              Class[] classes,
-                                              Object[] delegates,
-                                              ClassLoader loader,
-                                              boolean bean) {
-        if (cls == null) {
-            cls = Object.class;
-        }
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        Factory factory;
-        synchronized (cache) {
-            factory = (Factory)cache.get(loader, key);
-            if (factory == null) {
-                String className = nameFactory.getNextName(TYPE);
-                Class result = new DelegatorGenerator(cls, multicast, className, classes, loader, bean).define();
-                factory = (Factory)ReflectUtils.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
-                cache.put(loader, key, factory);
-            }
-        }
-        return factory.cglib_newInstance(delegates);
+    private static Object createHelper(Class type,
+                                       Class[] classes,
+                                       Object[] delegates,
+                                       int[] routing,
+                                       ClassLoader loader) {
+        Factory factory =
+            (Factory)cache.getFactory(loader,
+                                      KEY_FACTORY.newInstance(type, classes, routing),
+                                      GENERATOR,
+                                      type,
+                                      classes,
+                                      routing);
+        return factory.newInstance(delegates);
     }
 
     private static class Info {
-        private Class[] interfaces;
-        private int[] indexes;
-        private Object key;
+        Class[] interfaces;
+        int[] routing;
 
         public Info(Object[] incoming) {
-            Set seenInterfaces = new HashSet();
-            List interfaceList = new LinkedList();
-            List indexList = new LinkedList();
+            Map map = new HashMap();
             for (int i = 0; i < incoming.length; i++) {
-                Object delegate = incoming[i];
-                Class[] delegateInterfaces = getAllInterfaces(delegate.getClass());
-                for (int j = 0; j < delegateInterfaces.length; j++) {
-                    Class iface = delegateInterfaces[j];
-                    if (iface != null && !seenInterfaces.contains(iface)) {
-                        interfaceList.add(iface);
-                        indexList.add(new Integer(i));
-                        seenInterfaces.add(iface);
+                Class delegate = incoming[i].getClass();
+                Iterator it = collectAllInterfaces(delegate, new ArrayList()).iterator();
+                while (it.hasNext()) {
+                    Class iface = (Class)it.next();
+                    if (!map.containsKey(iface)) {
+                        map.put(iface, new Integer(i));
                     }
                 }
             }
-            interfaces = (Class[])interfaceList.toArray(new Class[interfaceList.size()]);
-            indexes = new int[interfaces.length];
-            Iterator it = indexList.iterator();
-            for (int i = 0; it.hasNext(); i++) {
-                indexes[i] = ((Integer)it.next()).intValue();
+            interfaces = new Class[map.size()];
+            routing = new int[map.size()];
+            int index = 0;
+            for (Iterator it = map.keySet().iterator(); it.hasNext();) {
+                Class key = (Class)it.next();
+                interfaces[index] = key;
+                routing[index] = ((Integer)map.get(key)).intValue();
+                index++;
             }
-            key = keyFactory.newInstance(interfaces, false);
         }
     }
 
-    private static Class[] getAllInterfaces(Class clazz) {
-        List interfaces = new ArrayList();
-        while (!clazz.equals(Object.class)) {
-            interfaces.addAll(Arrays.asList(clazz.getInterfaces()));
-            clazz = clazz.getSuperclass();
+    private static List collectAllInterfaces(Class type, List list) {
+        if (!type.equals(Object.class)) {
+            list.addAll(Arrays.asList(type.getInterfaces()));
+            collectAllInterfaces(type.getSuperclass(), list);
         }
-        return (Class[])interfaces.toArray(new Class[interfaces.size()]);
+        return list;
     }
-}    
+}
