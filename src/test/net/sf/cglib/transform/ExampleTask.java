@@ -9,7 +9,7 @@ public class ExampleTask extends AbstractTransformTask {
     private String fieldSuffix = "";
     private ClassTransformer transformer;
 
-    protected ClassTransformer getClassTransformer() {
+    protected ClassTransformer getClassTransformer(String name) {
         return transformer;
     }
     
@@ -29,10 +29,6 @@ public class ExampleTask extends AbstractTransformTask {
         }
         ClassTransformer t2 = new AddPropertyTransformer(names, types);
         transformer = new TransformerChain(new ClassTransformer[]{ t1, t2 });
-    }
-
-    public boolean accept(String name) {
-        return true;
     }
 
     public static class NewProperty {
