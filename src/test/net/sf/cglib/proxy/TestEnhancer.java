@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.42 2004/04/14 16:46:19 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.43 2004/04/18 06:34:20 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -257,7 +257,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
          ClassLoader loader = new ClassLoader(this.getClass().getClassLoader()){};
         
-          enhance( ClassLoader.class , null, TEST_INTERCEPTOR, loader);
+          enhance( Source.class , null, TEST_INTERCEPTOR, loader);
          
          java.lang.ref.Reference ref = new java.lang.ref.WeakReference(loader);
         
