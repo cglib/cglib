@@ -84,7 +84,6 @@ import java.util.*;
     
     private Class[] interfaces;
     private Method wreplace;
-    private MethodInterceptor ih;
     private boolean delegating;
     private MethodFilter filter;
     private Constructor cstruct;
@@ -94,12 +93,11 @@ import java.util.*;
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
-                                     MethodInterceptor ih, ClassLoader loader, 
+                                     ClassLoader loader, 
                                      Method wreplace, boolean delegating,
                                      MethodFilter filter) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
-        this.ih = ih;
         this.wreplace = wreplace;
         this.delegating = delegating;
         this.filter = filter;  
