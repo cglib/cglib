@@ -56,8 +56,8 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * A <code>CallbackFilter</code> that returns the same type for every method.
- * Used internally by <code>Enhancer</code> but not typically needed otherwise
+ * A {@link CallbackFilter} that returns the same type for every method.
+ * Used internally by {@link Enhancer} but not typically needed otherwise
  * since the same thing can be accomplished by using the {@link Enhancer#setCallback} method.
  */
 public class SimpleFilter implements CallbackFilter {

@@ -53,8 +53,16 @@
  */
 package net.sf.cglib;
 
-public interface Dispatcher
-extends Callback
-{
+/**
+ * Dispatching {@link Enhancer} callback.
+ * @see Callbacks#DISPATCH
+ */
+public interface Dispatcher extends Callback {
+    /**
+     * Return the object which the original method invocation should
+     * be dispatched. This method is called for every method invocation.
+     * @return an object that can invoke the method
+     * @throws ClassCastException if the object is incompatible with the method being invoked
+     */
     Object loadObject(String className) throws Exception;
 }

@@ -54,12 +54,10 @@
 package net.sf.cglib;
 
 /**
- * Lazy-loading <code>Enhancer</code> callback.
+ * Lazy-loading {@link Enhancer} callback.
  * @see Callbacks#LAZY_LOAD
  */
-public interface LazyLoader
-extends Callback
-{
+public interface LazyLoader extends Callback {
     /**
      * Return the object which the original method invocation should
      * be dispatched to now and into the future. Called as soon as the
