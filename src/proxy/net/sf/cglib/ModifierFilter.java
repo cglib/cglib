@@ -55,7 +55,7 @@ package net.sf.cglib;
 
 import java.lang.reflect.Member;
 
-class ModifierFilter implements MethodFilter {
+public class ModifierFilter implements MethodFilter {
     private int mask;
     private int value;
 

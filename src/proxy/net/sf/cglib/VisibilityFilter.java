@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
-class VisibilityFilter implements MethodFilter {
+public class VisibilityFilter implements MethodFilter {
     private String pkg;
     
     public VisibilityFilter(Class source) {
