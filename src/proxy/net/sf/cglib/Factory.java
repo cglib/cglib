@@ -56,8 +56,10 @@ package net.sf.cglib;
 
 /**
  * All enhanced instances returned by the Enhancer class implement this interface.
+ * If you want methods called during object construction to be intercepted,
+ * use one of the newInstance methods here instead of via reflection.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.9 2003/05/13 06:17:08 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.10 2003/07/15 17:30:14 herbyderby Exp $
  */
 public interface Factory {
     /**
