@@ -29,6 +29,8 @@ public abstract class Source {
     
     abstract void abstractMethod();
     
+    public synchronized void synchronizedMethod(){}
+    
     public final void finalMethod(){ }
     
     public int intType(int val){

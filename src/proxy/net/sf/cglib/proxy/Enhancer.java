@@ -87,7 +87,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.6 2002/09/22 17:49:55 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.7 2002/09/23 17:24:52 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -201,7 +201,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             cls = Object.class;
         }
         if( loader == null ){
-           loader = ClassLoader.getSystemClassLoader();
+           loader = Enhancer.class.getClassLoader();
         }
         StringBuffer keyBuff = new StringBuffer(cls.getName() + ";");
         if(interfaces != null){
@@ -817,7 +817,8 @@ public class Enhancer implements org.apache.bcel.Constants {
     ConstantPoolGen cp) {
         
         return new MethodGen(
-        ACC_PUBLIC,
+          ACC_FINAL  | (    mtd.getModifiers() 
+               & ~ACC_ABSTRACT & ~ACC_NATIVE & ~ACC_SYNCHRONIZED ),
         toType(mtd.getReturnType()),
         toType(mtd.getParameterTypes()),
         null,

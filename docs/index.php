@@ -32,6 +32,11 @@
      <H5> Documentation </h5>
    <!-- Links on the left -->
       <li><a  href='api/index.html'> API  </a>
+     <H5> Samples </h5>
+   
+      <li><a href='Trace.html'> Trace  </a>
+      <li><a href='Beans.html'> Beans  </a>
+
 
      <H5> Links </h5>
       <li> <a  href='http://jakarta.apache.org/bcel'> BCEL  </a>

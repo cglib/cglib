@@ -65,9 +65,13 @@ import java.lang.reflect.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.4 2002/09/22 17:49:56 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.5 2002/09/23 17:24:52 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
+    
+    private static final MethodInterceptor NOOP_INTERCEPTOR = new NoOpInterceptor();
+    
+    private static final Class [] EMPTY_ARG = new Class[]{};
     
     private boolean invokedProtectedMethod = false;
     
@@ -93,15 +97,14 @@ public class TestEnhancer extends TestCase {
     
     public void testEnhance()throws Throwable{
         
-        MethodInterceptor interceptor =  new NoOpInterceptor();
         
         java.util.Vector vector1 = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
-        new Class[]{java.util.List.class},interceptor );
+        new Class[]{java.util.List.class}, NOOP_INTERCEPTOR );
         
         java.util.Vector vector2  = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
-        new Class[]{java.util.List.class},interceptor );
+        new Class[]{java.util.List.class}, NOOP_INTERCEPTOR );
         
         
         
@@ -143,7 +146,7 @@ public class TestEnhancer extends TestCase {
         
    Source source =  (Source)Enhancer.enhance(
         Source.class,
-        new Class[]{java.util.List.class},interceptor );
+        null,interceptor );
         
         source.callAll();
         assertTrue("protected", invokedProtectedMethod );
@@ -153,10 +156,9 @@ public class TestEnhancer extends TestCase {
  
   public void testEnhanced()throws Throwable{
     
-       MethodInterceptor interceptor =  new NoOpInterceptor();
        Source source =  (Source)Enhancer.enhance(
         Source.class,
-        new Class[]{java.util.List.class}, interceptor );
+        null, NOOP_INTERCEPTOR );
    
        
        TestCase.assertTrue("enhance", Source.class != source.getClass() );
@@ -165,10 +167,9 @@ public class TestEnhancer extends TestCase {
     
   public void testTypes()throws Throwable{
   
-     MethodInterceptor interceptor =  new NoOpInterceptor();
      Source source =  (Source)Enhancer.enhance(
         Source.class,
-        new Class[]{java.util.List.class}, interceptor );
+        null, NOOP_INTERCEPTOR );
    
      
       
@@ -183,6 +184,28 @@ public class TestEnhancer extends TestCase {
    }
    
    
+  public void testModifiers()throws Throwable{
+  
+    Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        null, NOOP_INTERCEPTOR );
+   
+     Class enhancedClass = source.getClass();   
+     
+     assertTrue("isProtected" , Modifier.isProtected( enhancedClass.getDeclaredMethod("protectedMethod", EMPTY_ARG ).getModifiers() ));
+     int mod =  enhancedClass.getDeclaredMethod("packageMethod", EMPTY_ARG ).getModifiers() ;
+     assertTrue("isPackage" , !( Modifier.isProtected(mod)|| Modifier.isPublic(mod) ) ); 
+     
+     //not sure about this (do we need it for performace ?)
+     assertTrue("isFinal" ,  Modifier.isFinal( mod ) );  
+     
+     mod =  enhancedClass.getDeclaredMethod("synchronizedMethod", EMPTY_ARG ).getModifiers() ;  
+     assertTrue("isSynchronized" ,  !Modifier.isSynchronized( mod ) );  
+      
+  
+  }
+  
+  
 }
 
 
