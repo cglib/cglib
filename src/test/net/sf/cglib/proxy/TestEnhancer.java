@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.34 2003/12/02 07:54:17 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.35 2003/12/02 21:58:42 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -559,4 +559,80 @@ public class TestEnhancer extends CodeGenTestCase {
      public void testSql() {
          Enhancer.create(null, new Class[]{ java.sql.PreparedStatement.class }, TEST_INTERCEPTOR);
      }
+
+    public void testEquals() throws Exception {
+        final boolean[] result = new boolean[]{ false };
+        EqualsInterceptor intercept = new EqualsInterceptor();
+        Object obj = Enhancer.create(null, intercept);
+        obj.equals(obj);
+        assertTrue(intercept.called);
+    }
+
+    public static class EqualsInterceptor implements MethodInterceptor {
+        final static Method EQUALS_METHOD = ReflectUtils.findMethod("Object.equals(Object)");
+        boolean called;
+
+        public Object intercept(Object obj,
+                                Method method,
+                                Object[] args,
+                                MethodProxy proxy) throws Throwable {
+            if (method.equals(EQUALS_METHOD)) {
+                return proxy.invoke(this, args);
+            } else {
+                return proxy.invokeSuper(obj, args);
+            }
+        }
+
+        public boolean equals(Object other) {
+            called = true;
+            return super.equals(other);
+        }
+    }
+
+    private static interface ExceptionThrower {
+        void throwsThrowable(int arg) throws Throwable;
+        void throwsException(int arg) throws Exception;
+        void throwsNothing(int arg);
+    }
+
+    private static class MyThrowable extends Throwable { }
+    private static class MyException extends Exception { }
+    private static class MyRuntimeException extends RuntimeException { }
+    
+    public void testExceptions() {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(ExceptionThrower.class);
+        e.setCallback(new MethodInterceptor() {
+            public Object intercept(Object obj,
+                                    Method method,
+                                    Object[] args,
+                                    MethodProxy proxy) throws Throwable {
+                switch (((Integer)args[0]).intValue()) {
+                case 1:
+                    throw new MyThrowable();
+                case 2:
+                    throw new MyException();
+                case 3:
+                    throw new MyRuntimeException();
+                default:
+                    return null;
+                }
+            }
+        });
+        ExceptionThrower et = (ExceptionThrower)e.create();
+        try { et.throwsThrowable(1); } catch (MyThrowable t) { } catch (Throwable t) { fail(); }
+        try { et.throwsThrowable(2); } catch (MyException t) { } catch (Throwable t) { fail(); }
+        try { et.throwsThrowable(3); } catch (MyRuntimeException t) { } catch (Throwable t) { fail(); }
+
+        try { et.throwsException(1); } catch (Throwable t) { assertTrue(t instanceof MyThrowable); }
+        try { et.throwsException(2); } catch (MyException t) { } catch (Throwable t) { fail(); }
+        try { et.throwsException(3); } catch (MyRuntimeException t) { } catch (Throwable t) { fail(); }
+        try { et.throwsException(4); } catch (Throwable t) { fail(); }
+
+        try { et.throwsNothing(1); } catch (Throwable t) { assertTrue(t instanceof MyThrowable); }
+        try { et.throwsNothing(2); } catch (Exception t) { assertTrue(t instanceof MyException); }
+        try { et.throwsNothing(3); } catch (MyRuntimeException t) { } catch (Throwable t) { fail(); }
+        try { et.throwsNothing(4); } catch (Throwable t) { fail(); }
+    }
+
 }
