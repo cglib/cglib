@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.7 2003/09/14 17:39:40 herbyderby Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.8 2003/09/18 11:40:10 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -159,17 +159,27 @@ public class TestTransformVisistor extends TestCase {
        assertEquals(capable.getPersistenceManager(),value);
         
     }
+    
+    public void testDemo()throws Exception{
+        
+      TransformDemo.main(null);
+      
+    }
+    
     public Object transform( Class cls,Class iface,Class impl )throws Exception{
         
         byte data[] ;
         java.io.InputStream is = openStream( cls );
         
         try{
-            
-            TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
+            ClassReader cr = new ClassReader(is);
+            ClassWriter cw = new ClassWriter(true);
+            TransformClassVisitor tv = new TransformClassVisitor(acceptAll);
+            tv.setTarget( cw );
             tv.setClassInit(this.getClass().getMethod("clinit",new Class[]{Class.class}));
             tv.setDelegate(new Class[]{iface}, impl);
-            data = tv.transform();
+            cr.accept(tv,false);
+            data = cw.toByteArray();
            // print(data);
             
         }finally{
