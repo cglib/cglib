@@ -57,19 +57,20 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 class MethodWrapper {
-    private static final MethodWrapperKey keyFactory =
+    private static final MethodWrapperKey KEY_FACTORY =
       (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 
-    
     interface MethodWrapperKey {
-        public Object newInstance(String name, Class[] parameterTypes);
+        public Object newInstance(String name, Class[] parameterTypes, Class returnType);
     }
     
     private MethodWrapper() {
     }
 
     public static Object create(Method method) {
-        return keyFactory.newInstance(method.getName(), method.getParameterTypes());
+        return KEY_FACTORY.newInstance(method.getName(),
+                                       method.getParameterTypes(),
+                                       method.getReturnType());
     }
 
     public static Set createSet(Collection methods) {

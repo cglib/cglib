@@ -53,11 +53,12 @@
  */
 package net.sf.cglib;
 
+import net.sf.cglib.delegates.*;
 import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestMethodProxy.java,v 1.10 2003/02/01 19:44:51 baliuka Exp $
+ * @version $Id: TestMethodProxy.java,v 1.11 2003/09/09 16:15:09 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -66,7 +67,7 @@ public class TestMethodProxy extends CodeGenTestCase {
     }
 
     public void testTypeCheckedConstructor() throws Throwable {
-        StringMaker maker = (StringMaker)ConstructorProxy.create(StringMaker.class, String.class);
+        StringMaker maker = (StringMaker)ConstructorDelegate.create(String.class, StringMaker.class);
         assertTrue("nil".equals(maker.newInstance("vanilla".toCharArray(), 2, 3)));
     }
 

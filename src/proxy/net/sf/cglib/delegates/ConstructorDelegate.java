@@ -51,28 +51,70 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.delegates;
 
-import java.lang.reflect.Member;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.util.ReflectUtils;
+import java.lang.reflect.*;
+import net.sf.cglib.*;
+import net.sf.cglib.util.*;
 
-class VisibilityFilter implements MethodFilter {
-    private String pkg;
+/**
+ * @author Chris Nokleberg
+ * @version $Id: ConstructorDelegate.java,v 1.1 2003/09/09 16:15:10 herbyderby Exp $
+ */
+public abstract class ConstructorDelegate {
+    private static final FactoryCache CACHE = new FactoryCache(ConstructorDelegate.class);
+    private static final ConstructorKey KEY_FACTORY =
+      (ConstructorKey)KeyFactory.create(ConstructorKey.class, null);
     
-    public VisibilityFilter(Class source) {
-        pkg = ReflectUtils.getPackageName(source);
+    interface ConstructorKey {
+        public Object newInstance(Class declaring, Class iface);
+    }
+
+    protected ConstructorDelegate() {
+    }
+   
+    public static Object create(Class declaring, Class iface) {
+        return create(declaring, iface, declaring.getClassLoader());
     }
     
-    public boolean accept(Member member) {
-        int mod = member.getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-            return false;
+    public static Object create(final Class declaring, final Class iface, ClassLoader loader) {
+        Object key = KEY_FACTORY.newInstance(declaring, iface);
+        return CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
+            public BasicCodeGenerator newGenerator() {
+                return new Generator(declaring, iface);
+            }
+        });
+    }
+
+    private static class Generator extends CodeGenerator {
+        private Constructor constructor;
+        private Method newInstance;
+
+        public Generator(Class declaring, Class iface) {
+            try {
+                newInstance = ReflectUtils.findNewInstance(iface);
+                if (!newInstance.getReturnType().isAssignableFrom(declaring)) {
+                    throw new IllegalArgumentException("incompatible return type");
+                }
+                constructor = declaring.getDeclaredConstructor(newInstance.getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("interface does not match any known constructor");
+            }
+            setSuperclass(ConstructorDelegate.class);
+            setNamePrefix(declaring.getName());
+            addInterface(newInstance.getDeclaringClass());
         }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
+
+        protected void generate() {
+            null_constructor();
+
+            begin_method(newInstance);
+            new_instance(constructor.getDeclaringClass());
+            dup();
+            load_args();
+            invoke(constructor);
+            return_value();
+            end_method();
         }
-        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
     }
 }
-

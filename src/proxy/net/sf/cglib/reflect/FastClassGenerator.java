@@ -73,6 +73,7 @@ class FastClassGenerator extends CodeGenerator {
         
     public FastClassGenerator(Class type) {
         setSuperclass(FastClass.class);
+        // we only do public methods, so no need to put generated class in same package (yet)
         // setNamePrefix(type.getName());
         this.type = type;
     }

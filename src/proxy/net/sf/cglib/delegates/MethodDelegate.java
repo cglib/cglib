@@ -51,9 +51,10 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.delegates;
 
 import java.lang.reflect.*;
+import net.sf.cglib.*;
 import net.sf.cglib.util.*;
 
 // TODO: don't require exact match for return type
@@ -137,7 +138,7 @@ import net.sf.cglib.util.*;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.11 2003/07/15 16:38:46 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.1 2003/09/09 16:15:10 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final FactoryCache cache = new FactoryCache(MethodDelegate.class);

@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.34 2003/09/04 19:18:55 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.35 2003/09/09 16:15:09 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -433,12 +433,10 @@ public class TestEnhancer extends CodeGenTestCase {
         String foo();
     }
     public void testConflict() throws Throwable {
-        try {
+        Object foo =
             Enhancer.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
-        } catch (IllegalArgumentException e) {
-            return;
-        }
-        fail("conflicting interface return types should throw exception");
+        ((ConflictA)foo).foo();
+        ((ConflictB)foo).foo();
     }
     
      public void testArgInit() throws Throwable{
