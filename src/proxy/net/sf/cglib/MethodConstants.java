@@ -56,9 +56,9 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: MethodConstants.java,v 1.9 2003/01/28 22:01:44 herbyderby Exp $
+ * @version $Id: MethodConstants.java,v 1.10 2003/01/31 01:18:50 herbyderby Exp $
  */
-abstract /* package */ class MethodConstants {
+abstract class MethodConstants {
     public static final Method EQUALS =
       ReflectUtils.findMethod("Object.equals(Object)");
     public static final Method GET_DECLARED_METHOD =

@@ -57,7 +57,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
 
-/* package */ class DuplicatesFilter implements MethodFilter {
+class DuplicatesFilter implements MethodFilter {
     private Map map = new HashMap();
     
     public boolean accept(Member method) {
@@ -80,4 +80,3 @@ import java.util.*;
         }
     }
 }
-

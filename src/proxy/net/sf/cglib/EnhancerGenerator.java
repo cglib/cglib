@@ -99,11 +99,11 @@ import java.util.*;
     private List constructorList;
     private boolean isProxy;
 
-    /* package */ EnhancerGenerator(String className, Class clazz, 
-                                    Class[] interfaces,
-                                    ClassLoader loader, 
-                                    Method wreplace, boolean delegating,
-                                    MethodFilter filter) {
+    EnhancerGenerator(String className, Class clazz, 
+                      Class[] interfaces,
+                      ClassLoader loader, 
+                      Method wreplace, boolean delegating,
+                      MethodFilter filter) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
         this.wreplace = wreplace;

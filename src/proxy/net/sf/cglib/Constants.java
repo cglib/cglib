@@ -55,9 +55,9 @@ package net.sf.cglib;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.2 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.3 2003/01/31 01:18:51 herbyderby Exp $
  */
-abstract /* package */ class Constants {
+abstract  class Constants {
     public static final Class[] TYPES_OBJECT = { Object.class };
     public static final Class[] TYPES_EMPTY = {};
     public static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
