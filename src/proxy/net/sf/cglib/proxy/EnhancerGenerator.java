@@ -192,6 +192,18 @@ import net.sf.cglib.util.*;
         return_value();
         end_method();
 
+        begin_method(Factory.class.getMethod("setDelegate", OBJECT_CLASS_ARRAY));
+        if (delegating) {
+            load_this();
+            load_arg(0);
+            checkcast(getSuperclass());
+            putfield(DELEGATE_FIELD);
+        } else {
+            throwWrongType();
+        }
+        return_value();
+        end_method();
+
         begin_method(Factory.class.getMethod("getInterceptor", EMPTY_CLASS_ARRAY));
         load_this();
         getfield(INTERCEPTOR_FIELD);
@@ -199,25 +211,26 @@ import net.sf.cglib.util.*;
         end_method();
     }
 
+    private void throwWrongType() {
+        new_instance(UnsupportedOperationException.class);
+        dup();
+        push("Using a delegating enhanced class as non-delegating, or the reverse");
+        invoke_constructor(UnsupportedOperationException.class, new Class[]{ String.class });
+        athrow();
+    }
+
     private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
+        begin_method(Factory.class.getMethod("newInstance", types));
         if (enabled) {
-            begin_method(Factory.class.getMethod("newInstance", types));
             new_instance_this();
             dup();
             load_args();
             invoke_constructor_this(types);
-            return_value();
-            end_method();
         } else {
-            begin_method(Factory.class.getMethod("newInstance", types));
-            new_instance(UnsupportedOperationException.class);
-            dup();
-            push("Using a delegating enhanced class as non-delegating, or the reverse");
-            invoke_constructor(UnsupportedOperationException.class, new Class[]{ String.class });
-            athrow();
-            return_value();
-            end_method();
+            throwWrongType();
         }
+        return_value();
+        end_method();
     }
 
     private void generateWriteReplace() {
@@ -267,7 +280,7 @@ import net.sf.cglib.util.*;
         aconst_null();
         store_local("error");
         
-        if (!isAbstract) {
+        if (delegating || !isAbstract) {
             load_this();
             getfield(INTERCEPTOR_FIELD);
             load_this();

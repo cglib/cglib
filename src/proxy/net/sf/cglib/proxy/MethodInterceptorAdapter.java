@@ -55,26 +55,20 @@
 
 package net.sf.cglib.proxy;
 
-/** All enhanced instances implemet this interface
- * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
- *      baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.6 2002/11/23 00:32:50 herbyderby Exp $
- */
+import java.lang.reflect.Method;
 
-public interface Factory {
-    /**
-     * Creates new instance of the same type as factory
-     * @param ih interceptor
-     * @return instance
-     */     
-    public Object newInstance(MethodInterceptor ih);
+public class MethodInterceptorAdapter implements MethodInterceptor {
 
-    public MethodInterceptor getInterceptor();
-
-    public Object newInstance(MethodInterceptor ih, Object delegate);
-    public Object getDelegate();
-    public void setDelegate(Object delegate);
-}
-   
+    public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
     
-
+        return true;
+    }
+    
+    public Object afterReturn(Object obj, Method method, Object[] args,
+                              boolean invokedSuper, Object retValFromSuper,
+                              Throwable e) throws Throwable {
+        if (e != null)
+            throw e;
+        return retValFromSuper;
+    }
+}
