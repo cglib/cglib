@@ -60,10 +60,12 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.io.*;
 
 public class DebuggingClassWriter extends ClassWriter {
-    
+
     public static final String DEBUG_LOCATION_PROPERTY = "cglib.debugLocation";
     
     private static String debugLocation;
+    private static boolean traceEnabled;
+
     private String className;
     private String superName;
 
@@ -71,6 +73,11 @@ public class DebuggingClassWriter extends ClassWriter {
         debugLocation = System.getProperty(DEBUG_LOCATION_PROPERTY);
         if (debugLocation != null) {
             System.err.println("CGLIB debugging enabled, writing to '" + debugLocation + "'");
+            try {
+                Class.forName("org.objectweb.asm.util.TraceClassVisitor");
+                traceEnabled = true;
+            } catch (Throwable ignore) {
+            }
         }
     }
 
@@ -95,7 +102,7 @@ public class DebuggingClassWriter extends ClassWriter {
     public byte[] toByteArray() {
         byte[] b = super.toByteArray();
         if (debugLocation != null) {
-            String dirs = className.replace('.',File.separatorChar);
+            String dirs = className.replace('.', File.separatorChar);
             try {
                 new File(debugLocation + File.separatorChar + dirs).getParentFile().mkdirs();
                 
@@ -106,18 +113,19 @@ public class DebuggingClassWriter extends ClassWriter {
                 } finally {
                     out.close();
                 }
-               
-                file = new File(new File(debugLocation), dirs + ".asm");
-                out = new BufferedOutputStream(new FileOutputStream(file));
-                try{
-                    ClassReader cr = new ClassReader(b);
-                    PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
-                    TraceClassVisitor tcv = new TraceClassVisitor(null, pw);
-                    cr.accept(tcv, false);
-                    pw.flush();
-                  
-                } finally {
-                    out.close();
+
+                if (traceEnabled) {
+                    file = new File(new File(debugLocation), dirs + ".asm");
+                    out = new BufferedOutputStream(new FileOutputStream(file));
+                    try {
+                        ClassReader cr = new ClassReader(b);
+                        PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
+                        TraceClassVisitor tcv = new TraceClassVisitor(null, pw);
+                        cr.accept(tcv, false);
+                        pw.flush();
+                    } finally {
+                        out.close();
+                    }
                 }
             } catch (IOException e) {
                 throw new CodeGenerationException(e);
