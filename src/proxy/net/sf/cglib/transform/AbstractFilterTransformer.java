@@ -15,8 +15,8 @@ abstract public class AbstractFilterTransformer extends AbstractTransformer {
         return t;
     }
 
-    public void setTarget(ClassVisitor target) {
-        super.setTarget(target);
-        pass.setTarget(target);
+    public void setTarget(ClassVisitor target, ClassVisitor outer) {
+        super.setTarget(target, outer);
+        pass.setTarget(target, outer);
     }
 }
