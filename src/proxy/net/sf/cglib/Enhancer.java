@@ -65,16 +65,7 @@ import java.util.*;
  *        java.util.Vector.<b>class</b>,
  *        new Class[]{java.util.List.<b>class</b>},
  *
- *        new MethodInterceptor(){
- *
- *
- *            <b>public boolean invokeSuper</b>( Object obj,java.lang.reflect.Method method,
- *            Object args[])
- *            throws java.lang.Throwable{
- *                return true;
- *            }
- *
- *
+ *        new BeforeAfterAdapter(){
  *        <b>public</b> Object <b>afterReturn</b>(  Object obj,     java.lang.reflect.Method method,
  *        Object args[],
  *        boolean invokedSuper, Object retValFromSuper,
@@ -87,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.1 2002/11/27 03:05:33 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib";
@@ -99,7 +90,8 @@ public class Enhancer implements ClassFileConstants {
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
 
     /* package */ interface EnhancerKey {
-        public Object newInstance(Class cls, Class[] interfaces, Method wreplace, boolean delegating);
+        public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
+                                  Class interceptor, boolean delegating);
     }
     
     private Enhancer() {}
@@ -214,7 +206,7 @@ public class Enhancer implements ClassFileConstants {
       
       synchronized( cls ){
 
-      Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating);
+      Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
       result = (Class) map.get(key);
 
           

@@ -55,6 +55,10 @@ package net.sf.cglib;
 
 import junit.framework.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: TestDelegator.java,v 1.2 2002/11/27 03:38:06 herbyderby Exp $
+ */
 public class TestDelegator extends TestCase {    
     public void testSimple() throws Exception {
         Object obj = Delegator.makeDelegator(new Class[]{ DI1.class, DI2.class },

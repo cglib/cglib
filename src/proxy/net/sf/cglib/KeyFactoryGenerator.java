@@ -56,6 +56,10 @@ package net.sf.cglib;
 
 import java.lang.reflect.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: KeyFactoryGenerator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method hashCode;
     private static final Method floatToIntBits;

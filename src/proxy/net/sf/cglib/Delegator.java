@@ -56,6 +56,10 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.util.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: Delegator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ */
 public class Delegator implements ClassFileConstants
 {
     private static final String CLASS_NAME = "net.sf.cglib.Delegator$$CreatedByCGLIB$$";

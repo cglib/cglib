@@ -54,7 +54,6 @@
 package net.sf.cglib;
 
 /* package */ interface ClassFileConstants {
-    public static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
     public static final Class OBJECT_CLASS = Object.class;
     public static final Class[] OBJECT_CLASS_ARRAY = { Object.class };
     public static final Class[] EMPTY_CLASS_ARRAY = {};

@@ -57,6 +57,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
+/**
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: DelegatorGenerator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ */
 /* package */ class DelegatorGenerator extends CodeGenerator implements ClassFileConstants {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
 
