@@ -64,6 +64,7 @@ class BulkBeanGenerator extends CodeGenerator {
       ReflectUtils.findMethod("BulkBean.getPropertyValues(Object, Object[])");
     private static final Method SET_PROPERTY_VALUES =
       ReflectUtils.findMethod("BulkBean.setPropertyValues(Object, Object[])");
+    private static final Class[] EXCEPTION_TYPES = { Throwable.class, Integer.TYPE };
         
     private Class target;
     private Method[] getters, setters;
@@ -81,12 +82,12 @@ class BulkBeanGenerator extends CodeGenerator {
     public void generate() throws NoSuchMethodException {
         // constructor
         null_constructor();
-            
+
         // getPropertyValues
         begin_method(GET_PROPERTY_VALUES);
-        Local bean = make_local();
         load_arg(0);
         checkcast(target);
+        Local bean = make_local();
         store_local(bean);
         for (int i = 0; i < getters.length; i++) {
             if (getters[i] != null) {
@@ -103,18 +104,36 @@ class BulkBeanGenerator extends CodeGenerator {
             
         // setPropertyValues
         begin_method(SET_PROPERTY_VALUES);
+        Local index = make_local(Integer.TYPE);
+        push(0);
+        store_local(index);
         load_arg(0);
         checkcast(target);
         load_arg(1);
+        Block handler = begin_block();
+        int lastIndex = 0;
         for (int i = 0; i < setters.length; i++) {
             if (setters[i] != null) {
+                int diff = i - lastIndex;
+                if (diff > 0) {
+                    iinc(index, diff);
+                    lastIndex = i;
+                }
                 dup2();
                 aaload(i);
                 unbox(setters[i].getParameterTypes()[0]);
                 invoke(setters[i]);
             }
         }
+        end_block();
         return_value();
+        catch_exception(handler, ClassCastException.class);
+        new_instance(BulkBeanException.class);
+        dup_x1();
+        swap();
+        load_local(index);
+        invoke_constructor(BulkBeanException.class, EXCEPTION_TYPES);
+        athrow();
         end_method();
     }
 
@@ -124,33 +143,33 @@ class BulkBeanGenerator extends CodeGenerator {
                                  Class[] types,
                                  Method[] getters_out,
                                  Method[] setters_out) {
-        int length = types.length;
-        if (setters.length != length || length != getters.length) {
-            throw new IllegalArgumentException("accessor array length must be equal type array length");
+        int i = -1;
+        if (setters.length != types.length || getters.length != types.length) {
+            throw new BulkBeanException("accessor array length must be equal type array length", i);
         }
-        
-        String last = null;
         try {
-            for (int i = 0; i < types.length; i++) {
+            for (i = 0; i < types.length; i++) {
                 if (getters[i] != null) {
-                    last = getters[i];
-                    Method method = ReflectUtils.findDeclaredMethod(target, last, null);
-                    if (method.getReturnType() != types[i] || Modifier.isPrivate(method.getModifiers())) {
-                        throw new IllegalArgumentException(last);
+                    Method method = ReflectUtils.findDeclaredMethod(target, getters[i], null);
+                    if (method.getReturnType() != types[i]) {
+                        throw new BulkBeanException("Specified type " + types[i] +
+                                                    " does not match declared type " + method.getReturnType(), i);
+                    }
+                    if (Modifier.isPrivate(method.getModifiers())) {
+                        throw new BulkBeanException("Property is private", i);
                     }
                     getters_out[i] = method;
                 }
                 if (setters[i] != null) {
-                    last = setters[i];
-                    Method method = ReflectUtils.findDeclaredMethod(target, last, new Class[]{ types[i] });
+                    Method method = ReflectUtils.findDeclaredMethod(target, setters[i], new Class[]{ types[i] });
                     if (Modifier.isPrivate(method.getModifiers()) ){
-                        throw new IllegalArgumentException(last);
+                        throw new BulkBeanException("Property is private", i);
                     }
                     setters_out[i] = method;
                 }
             }
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(last);
+            throw new BulkBeanException("Cannot find specified property", i);
         }
     }
 }
