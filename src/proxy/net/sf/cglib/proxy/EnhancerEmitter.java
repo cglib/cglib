@@ -64,6 +64,8 @@ import org.objectweb.asm.Type;
 class EnhancerEmitter extends ClassEmitter {
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
+    private static final String SET_THREAD_CALLBACKS_NAME = "CGLIB$SET_THREAD_CALLBACKS";
+
     private static final Type ILLEGAL_STATE_EXCEPTION =
       TypeUtils.parseType("IllegalStateException");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
@@ -78,41 +80,50 @@ class EnhancerEmitter extends ClassEmitter {
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature SET_THREAD_CALLBACKS =
-      TypeUtils.parseSignature("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.proxy.Callbacks)");
+      TypeUtils.parseSignature("void " + SET_THREAD_CALLBACKS_NAME + "(net.sf.cglib.proxy.Callback[])");
     private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Factory newInstance(net.sf.cglib.proxy.Callbacks)");
+      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.proxy.Callback[])");
     private static final Signature MULTIARG_NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Factory newInstance(Class[], Object[], net.sf.cglib.proxy.Callbacks)");
+      TypeUtils.parseSignature("Object newInstance(Class[], Object[], net.sf.cglib.proxy.Callback[])");
     private static final Signature SINGLE_NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Factory newInstance(net.sf.cglib.proxy.Callback)");
+      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.proxy.Callback)");
+    private static final Signature COPY_NEW_INSTANCE =
+      TypeUtils.parseSignature("Object newInstance()");
+    private static final Signature COPY_MULTIARG_NEW_INSTANCE =
+      TypeUtils.parseSignature("Object newInstance(Class[], Object[])");
     private static final Signature SET_CALLBACK =
       TypeUtils.parseSignature("void setCallback(int, net.sf.cglib.proxy.Callback)");
-    private static final Signature SET_CALLBACKS =
-      TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.proxy.Callbacks)");
     private static final Signature GET_CALLBACK =
       TypeUtils.parseSignature("net.sf.cglib.proxy.Callback getCallback(int)");
+    private static final Signature SET_CALLBACKS =
+      TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.proxy.Callback[])");
 
     private static final Signature THREAD_LOCAL_GET =
       TypeUtils.parseSignature("Object get()");
     private static final Signature THREAD_LOCAL_SET =
       TypeUtils.parseSignature("void set(Object)");
-        
-    private final TinyBitSet usedCallbacks = new TinyBitSet();
 
+    private Class[] callbackTypes;
+    
     public EnhancerEmitter(ClassVisitor v,
                            String className,
                            Class superclass,
                            Class[] interfaces,
-                           CallbackFilter filter) throws Exception {
+                           CallbackFilter filter,
+                           Class[] callbackTypes,
+                           boolean useFactory) throws Exception {
         super(v);
         if (superclass == null) {
             superclass = Object.class;
         }
+        this.callbackTypes = callbackTypes;
 
         begin_class(Constants.ACC_PUBLIC,
                     className,
                     Type.getType(superclass),
-                    TypeUtils.add(TypeUtils.getTypes(interfaces), FACTORY),
+                    (useFactory ?
+                     TypeUtils.add(TypeUtils.getTypes(interfaces), FACTORY) :
+                     TypeUtils.getTypes(interfaces)),
                     Constants.SOURCE_FILE);
         
         List clist = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
@@ -142,39 +153,54 @@ class EnhancerEmitter extends ClassEmitter {
         CollectionUtils.filter(methods, new DuplicatesPredicate());
         removeFinal(methods);
 
-        int len = Callbacks.MAX_VALUE + 1;
-        CallbackGenerator[] generators = new CallbackGenerator[len];
-        List[] group = new List[len];
+        Map groups = new HashMap();
+        Map indexes = new HashMap();
         for (Iterator it = methods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
-            int ctype = filter.accept(method);
-            if (ctype > Callbacks.MAX_VALUE) {
-                // TODO: error
+            int index = filter.accept(method);
+            if (index >= callbackTypes.length) {
+                throw new IllegalArgumentException("Callback filter returned an index that is too large: " + index);
             }
-            if (group[ctype] == null) {
-                group[ctype] = new ArrayList(methods.size());
-                generators[ctype] = CallbackUtils.getGenerator(ctype);
+            indexes.put(method, new Integer(index));
+            Object gen = CallbackUtils.getGenerator(callbackTypes[index]);
+            List group = (List)groups.get(gen);
+            if (group == null) {
+                groups.put(gen, group = new ArrayList(methods.size()));
             }
-            group[ctype].add(method);
+            group.add(method);
         }
 
         declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
+        emitMethods(groups, indexes, forcePublic);
         emitConstructors(constructors);
-
-        CallbackGenerator.Context[] contexts = createContexts(generators, group, forcePublic);
-        emitMethods(generators, contexts);
-        emitStatic(generators, contexts);
-
-        final int[] keys = getCallbackKeys();
-        emitGetCallback(keys);
-        emitSetCallback(keys);
-        emitSetCallbacks();
-        emitNewInstanceCallbacks();
-        emitNewInstanceCallback();
-        emitNewInstanceMultiarg(constructors);
-
         emitSetThreadCallbacks();
+
+        if (useFactory) {
+            int[] keys = getCallbackKeys();
+            emitNewInstanceCallbacks();
+            emitNewInstanceCallback();
+            emitNewInstanceMultiarg(constructors);
+            emitNewInstanceCopy();
+            emitNewInstanceMultiargCopy(constructors);
+            emitGetCallback(keys);
+            emitSetCallback(keys);
+            emitSetCallbacks();
+        }
         end_class();
+    }
+
+    static void setThreadCallbacks(Class type, Callback[] callbacks) {
+        // TODO: optimize
+        try {
+            Method setter = type.getDeclaredMethod(SET_THREAD_CALLBACKS_NAME, new Class[]{ Callback[].class });
+            setter.invoke(null, new Object[]{ callbacks });
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException(type + " is not an enhanced class");
+        } catch (IllegalAccessException e) {
+            throw new CodeGenerationException(e);
+        } catch (InvocationTargetException e) {
+            throw new CodeGenerationException(e);
+        }
     }
 
     private void emitConstructors(Constructor[] constructors) {
@@ -190,18 +216,40 @@ class EnhancerEmitter extends ClassEmitter {
             e.super_invoke_constructor(sig);
             e.push(1);
             e.putfield(CONSTRUCTED_FIELD);
+            for (int j = 0; j < callbackTypes.length; j++) {
+                if (callbackTypes[j] != null) {
+                    e.load_this();
+                    e.dup();
+                    e.getfield(getThreadLocal(j));
+                    e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
+                    e.checkcast(Type.getType(callbackTypes[j]));
+                    e.putfield(getCallbackField(j));
+                }
+            }
             e.return_value();
             e.end_method();
         }
     }
     
+    private int[] getCallbackKeys() {
+        int[] keys = new int[callbackTypes.length];
+        for (int i = 0; i < callbackTypes.length; i++) {
+            keys[i] = i;
+        }
+        return keys;
+    }
+
     private void emitGetCallback(int[] keys) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null, null);
         e.load_this();
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                e.getfield(getCallbackField(key));
+                if (callbackTypes[key] != null) {
+                    e.getfield(getCallbackField(key));
+                } else {
+                    processDefault();
+                }
                 e.goTo(end);
             }
             public void processDefault() {
@@ -214,19 +262,29 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitSetCallback(int[] keys) {
-        // Factory.setCallback(int, Callback)
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null, null);
         e.load_this();
         e.load_arg(1);
+        e.dup();
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                e.checkcast(CallbackUtils.getType(key));
-                e.putfield(getCallbackField(key));
+                if (callbackTypes[key] != null) {
+                    // we set thread locals too in case this method is called from within constructor (as Proxy does)
+                    e.getfield(getThreadLocal(key));
+                    e.swap();
+                    e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+                    e.checkcast(Type.getType(callbackTypes[key]));
+                    e.putfield(getCallbackField(key));
+                } else {
+                    processDefault();
+                }
                 e.goTo(end);
             }
             public void processDefault() {
-                e.pop2(); // stack height
+                // stack height
+                e.pop2(); 
+                e.pop();
             }
         });
         e.return_value();
@@ -235,9 +293,17 @@ class EnhancerEmitter extends ClassEmitter {
         
     private void emitSetCallbacks() {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null, null);
+        emitSetThreadCallbacks(e);
         e.load_this();
         e.load_arg(0);
-        emitSetCallbacks(e);
+        for (int i = 0; i < callbackTypes.length; i++) {
+            if (callbackTypes[i] != null) {
+                e.dup2();
+                e.aaload(i);
+                e.checkcast(Type.getType(callbackTypes[i]));
+                e.putfield(getCallbackField(i));
+            }
+        }
         e.return_value();
         e.end_method();
     }
@@ -246,50 +312,68 @@ class EnhancerEmitter extends ClassEmitter {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
         e.load_arg(0);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
+        emitCommonNewInstance(e);
+    }
+
+    private void emitNewInstanceCopy() {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, COPY_NEW_INSTANCE, null, null);
+        emitCopyCallbacks(e);
+        emitCommonNewInstance(e);
+    }
+
+    private void emitCopyCallbacks(CodeEmitter e) {
+        for (int i = 0; i < callbackTypes.length; i++) {
+            if (callbackTypes[i] != null) {
+                e.getfield(getThreadLocal(i));
+                e.load_this();
+                e.getfield(getCallbackField(i));
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            }
+        }
+    }
+
+    private void emitCommonNewInstance(CodeEmitter e) {
         e.new_instance_this();
         e.dup();
         e.invoke_constructor_this();
-        e.dup();
-        e.load_arg(0);
-        emitSetCallbacks(e);
         e.return_value();
         e.end_method();
     }
-
+    
     private void emitNewInstanceCallback() {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SINGLE_NEW_INSTANCE, null, null);
-        switch (usedCallbacks.cardinality()) {
-        case 1:
-            int type = usedCallbacks.length() - 1;
-            e.getfield(getThreadLocal(type));
-            e.load_arg(0);
-            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-            e.new_instance_this();
-            e.dup();
-            e.invoke_constructor_this();
-            e.dup();
-            e.push(type);
-            e.load_arg(0);
-            e.invoke_virtual_this(SET_CALLBACK);
-            break;
+        switch (callbackTypes.length) {
         case 0:
-            // TODO: make sure Callback is null?
-            e.new_instance_this();
-            e.dup();
-            e.invoke_constructor_this();
+            // TODO: make sure Callback is null
             break;
+        case 1:
+            if (callbackTypes[0] != null) {
+                e.getfield(getThreadLocal(0));
+                e.load_arg(0);
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            } else {
+                // TODO: make sure Callback is null
+            }
         default:
             e.throw_exception(ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
         }
-        e.return_value();
-        e.end_method();
+        emitCommonNewInstance(e);
     }
 
     private void emitNewInstanceMultiarg(Constructor[] constructors) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null, null);
-        Label skipSetCallbacks = e.make_label();
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null, null);
         e.load_arg(2);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
+        emitCommonMultiarg(constructors, e);
+    }
+
+    private void emitNewInstanceMultiargCopy(Constructor[] constructors) {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, COPY_MULTIARG_NEW_INSTANCE, null, null);
+        emitCopyCallbacks(e);
+        emitCommonMultiarg(constructors, e);
+    }
+
+    private void emitCommonMultiarg(Constructor[] constructors, final CodeEmitter e) {
         e.new_instance_this();
         e.dup();
         e.load_arg(0);
@@ -310,98 +394,56 @@ class EnhancerEmitter extends ClassEmitter {
                 e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
             }
         });
-        e.load_arg(2);
-        e.ifnull(skipSetCallbacks);
-        e.dup();
-        e.load_arg(2);
-        emitSetCallbacks(e);
-        e.mark(skipSetCallbacks);
         e.return_value();
         e.end_method();
     }
 
-    private void emitSetCallbacks(CodeEmitter e) {
-        if (usedCallbacks.length() == 0) {
-            e.pop2(); // stack height
-        } else {
-            for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-                if (usedCallbacks.get(i)) {
-                    if (i + 1 < usedCallbacks.length()) {
-                        e.dup2();
-                    }
-                    e.push(i);
-                    e.invoke_interface(CALLBACKS, GET_CALLBACK);
-                    e.checkcast(CallbackUtils.getType(i));
-                    e.putfield(getCallbackField(i));
+    private void emitMethods(Map groups, final Map indexes, final Set forcePublic) throws Exception {
+        CodeEmitter e = begin_static();
+        for (int i = 0; i < callbackTypes.length; i++) {
+            if (callbackTypes[i] != null) {
+                declare_field(Constants.ACC_PRIVATE, getCallbackField(i), Type.getType(callbackTypes[i]), null, null);
+                declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
+                
+                e.new_instance(THREAD_LOCAL);
+                e.dup();
+                e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
+                e.putfield(getThreadLocal(i));
+            }
+            
+            CallbackGenerator gen = CallbackUtils.getGenerator(callbackTypes[i]);
+            final List fmethods = (List)groups.get(gen);
+            CallbackGenerator.Context context = new CallbackGenerator.Context() {
+                public Iterator getMethods() {
+                    return fmethods.iterator();
                 }
-            }
-        }
-    }
-
-    private int[] getCallbackKeys() {
-        int c = 0;
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (usedCallbacks.get(i)) {
-                c++;
-            }
-        }
-        int[] keys = new int[c];
-        c = 0;
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (usedCallbacks.get(i)) {
-                keys[c++] = i;
-            }
-        }
-        return keys;
-    }
-
-    private CallbackGenerator.Context[] createContexts(CallbackGenerator[] generators,
-                                                       List[] methods,
-                                                       final Set forcePublic) {
-        CallbackGenerator.Context[] contexts = new CallbackGenerator.Context[Callbacks.MAX_VALUE + 1];
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            final int type = i;
-            final List fmethods = methods[i];
-            if (generators[type] != null) {
-                contexts[type] = new CallbackGenerator.Context() {
-                    public Iterator getMethods() {
-                        return fmethods.iterator();
-                    }
-                    public void emitCallback(CodeEmitter e) {
-                        emitCurrentCallback(e, type);
-                    }
-                    public int getModifiers(Method method) {
-                        int modifiers = Constants.ACC_FINAL
-                            | (method.getModifiers()
-                               & ~Constants.ACC_ABSTRACT
-                               & ~Constants.ACC_NATIVE
-                               & ~Constants.ACC_SYNCHRONIZED);
-                        if (forcePublic.contains(MethodWrapper.create(method))) {
-                            modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
-                        }
-                        return modifiers;
-                    }
-                    // TODO: this is probably slow
-                    public String getUniqueName(Method method) {
-                        return method.getName() + "_" + fmethods.indexOf(method);
-                    }
-                };
-            }
-        }
-        return contexts;
-    }
-
-    private void emitMethods(CallbackGenerator[] generators, CallbackGenerator.Context[] contexts) throws Exception {
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (generators[i] != null) {
-                Type callbackType = CallbackUtils.getType(i);
-                if (callbackType != null) {
-                    declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackType, null, null);
-                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
+                public int getIndex(Method method) {
+                    return ((Integer)indexes.get(method)).intValue();
                 }
-                generators[i].generate(this, contexts[i]);
-            }
+                public void emitCallback(CodeEmitter e, int index) {
+                    emitCurrentCallback(e, index);
+                }
+                public int getModifiers(Method method) {
+                    int modifiers = Constants.ACC_FINAL
+                        | (method.getModifiers()
+                           & ~Constants.ACC_ABSTRACT
+                           & ~Constants.ACC_NATIVE
+                           & ~Constants.ACC_SYNCHRONIZED);
+                    if (forcePublic.contains(MethodWrapper.create(method))) {
+                        modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
+                    }
+                    return modifiers;
+                }
+                // TODO: this is probably slow
+                public String getUniqueName(Method method) {
+                    return method.getName() + "_" + fmethods.indexOf(method);
+                }
+            };
+            gen.generate(this, context);
+            gen.generateStatic(e, context);
         }
+        e.return_value();
+        e.end_method();
     }
 
     private void emitSetThreadCallbacks() {
@@ -409,28 +451,25 @@ class EnhancerEmitter extends ClassEmitter {
                                      SET_THREAD_CALLBACKS,
                                      null,
                                      null);
-        Label end = e.make_label();
-        e.load_arg(0);
-        e.ifnull(end);
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (usedCallbacks.get(i)) {
-                e.load_arg(0);
-                e.push(i);
-                e.invoke_interface(CALLBACKS, GET_CALLBACK);
-                e.getfield(getThreadLocal(i));
-                e.swap();
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-            }
-        }
-        e.mark(end);
+        emitSetThreadCallbacks(e);
         e.return_value();
         e.end_method();
     }
 
-    private void emitCurrentCallback(CodeEmitter e, int type) {
-        usedCallbacks.set(type);
+    private void emitSetThreadCallbacks(CodeEmitter e) {
+        for (int i = 0; i < callbackTypes.length; i++) {
+            if (callbackTypes[i] != null) {
+                e.getfield(getThreadLocal(i));
+                e.load_arg(0);
+                e.aaload(i);
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            }
+        }
+    }
+
+    private void emitCurrentCallback(CodeEmitter e, int index) {
         e.load_this();
-        e.getfield(getCallbackField(type));
+        e.getfield(getCallbackField(index));
         e.dup();
         Label end = e.make_label();
         e.ifnonnull(end);
@@ -438,40 +477,20 @@ class EnhancerEmitter extends ClassEmitter {
         e.getfield(CONSTRUCTED_FIELD);
         e.if_jump(e.NE, end);
         e.pop();
-        e.getfield(getThreadLocal(type));
+        e.getfield(getThreadLocal(index));
         e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
-        e.checkcast(CallbackUtils.getType(type));
+        e.checkcast(Type.getType(callbackTypes[index]));
         e.mark(end);
     }
 
-    private String getCallbackField(int type) {
-        return "CGLIB$CALLBACK_" + type;
+    private static String getCallbackField(int index) {
+        return "CGLIB$CALLBACK_" + index;
     }
 
-    private String getThreadLocal(int type) {
-        return "CGLIB$TL_CALLBACK_" + type;
+    private static String getThreadLocal(int index) {
+        return "CGLIB$TL_CALLBACK_" + index;
     }
-
-    private void emitStatic(CallbackGenerator[] generators,
-                            CallbackGenerator.Context[] contexts) throws Exception {
-        CodeEmitter e = begin_static();
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (usedCallbacks.get(i)) {
-                e.new_instance(THREAD_LOCAL);
-                e.dup();
-                e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
-                e.putfield(getThreadLocal(i));
-            }
-        }
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
-            if (generators[i] != null) {
-                generators[i].generateStatic(e, contexts[i]);
-            }
-        }
-        e.return_value();
-        e.end_method();
-    }
-
+    
     private static void removeFinal(List list) {
         CollectionUtils.filter(list, new Predicate() {
             public boolean evaluate(Object arg) {

@@ -115,7 +115,7 @@ implements CallbackGenerator
                                 ReflectUtils.getExceptionTypes(method),
                                 null);
             Label nullInterceptor = e.make_label();
-            context.emitCallback(e);
+            context.emitCallback(e, context.getIndex(method));
             e.dup();
             e.ifnull(nullInterceptor);
 

@@ -53,6 +53,8 @@
  */
 package net.sf.cglib.core;
 
+import java.util.Set;
+
 /**
  * Customize the generated class name for {@link AbstractClassGenerator}-based utilities.
  */
@@ -63,7 +65,8 @@ public interface NamingPolicy {
      * @param source the fully-qualified class name of the generating class (for example "net.sf.cglib.Enhancer")
      * @param key A key object representing the state of the parameters; for caching to work properly, equal keys should result
      * in the same generated class name. The default policy incorporates <code>key.hashCode()</code> into the class name.
+     * @param names a <code>java.util.Set</code> of class names that have been previously generated in the same ClassLoader.
      * @return the fully-qualified class name
      */
-    String getClassName(String prefix, String source, Object key);
+    String getClassName(String prefix, String source, Object key, Set names);
 }

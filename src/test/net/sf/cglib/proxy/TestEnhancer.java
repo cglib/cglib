@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.29 2003/11/10 16:25:16 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.30 2003/11/10 23:43:07 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -169,7 +169,7 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue(proxy.getName().equals("herby"));
 
         Factory factory = (Factory)proxy;
-        assertTrue(((EA)factory.newInstance(factory)).getName().equals("herby"));
+        assertTrue(((EA)factory.newInstance()).getName().equals("herby"));
     }
 
     class DelegateInterceptor implements MethodInterceptor {
@@ -333,7 +333,6 @@ public class TestEnhancer extends CodeGenTestCase {
                 public Object intercept(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
                     if (method.getName().equals("getFirstName")) {
-                        assertTrue(proxy.getSuperIndex() == 11);
                         assertTrue(MethodProxy.getSuperName(obj.getClass(), method).equals("CGLIB$$ACCESS_getFirstName_0"));
                         return "Christopher";
                     }
@@ -412,15 +411,15 @@ public class TestEnhancer extends CodeGenTestCase {
     
      public void testArgInit() throws Throwable{
     
-         Class f = createClass(ArgInit.class, null, new SimpleFilter(Callbacks.INTERCEPT));
+         Class f = createClass(ArgInit.class, null, null);
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
          assertEquals("test", a.toString());
-         ((Factory)a).setCallback(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
+         ((Factory)a).setCallback(0, TEST_INTERCEPTOR);
          assertEquals("test", a.toString());
-         SimpleCallbacks callbacks = new SimpleCallbacks();
-         callbacks.setCallback(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
+
+         Callback[] callbacks = new Callback[]{ TEST_INTERCEPTOR };
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },
                                                        callbacks);
@@ -443,7 +442,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testSignature() throws Throwable {
         Signature sig = (Signature)Enhancer.create(Signature.class, TEST_INTERCEPTOR);
-        assertTrue(((Factory)sig).getCallback(Callbacks.INTERCEPT) == TEST_INTERCEPTOR);
+        assertTrue(((Factory)sig).getCallback(0) == TEST_INTERCEPTOR);
         assertTrue(sig.interceptor() == 42);
     }
 
@@ -501,7 +500,26 @@ public class TestEnhancer extends CodeGenTestCase {
     public void testNoOpClone() throws Exception {
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(PublicClone.class);
-        enhancer.setCallbackFilter(new SimpleFilter(Callbacks.NO_OP));
         ((PublicClone)enhancer.create()).clone();
+    }
+
+    public void testNoFactory() throws Exception {
+        noFactoryHelper();
+        noFactoryHelper();
+    }
+
+    private void noFactoryHelper() {
+        MethodInterceptor mi = new MethodInterceptor() {
+            public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                return "Foo";
+            }
+        };
+        Enhancer enhancer = new Enhancer();
+        enhancer.setUseFactory(false);
+        enhancer.setSuperclass(AroundDemo.class);
+        enhancer.setCallback(mi);
+        AroundDemo obj = (AroundDemo)enhancer.create();
+        assertTrue(obj.getFirstName().equals("Foo"));
+        assertTrue(!(obj instanceof Factory));
     }
 }

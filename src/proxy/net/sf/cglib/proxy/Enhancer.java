@@ -87,21 +87,30 @@ import org.objectweb.asm.ClassVisitor;
  */
 public class Enhancer extends AbstractClassGenerator
 {
+    private static final Class[] NULL_CLASS_ARRAY = { null };
+    private static final Callback[] NULL_CALLBACK_ARRAY = { null };
     private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.CLASS_BY_NAME);
 
     interface EnhancerKey {
-        public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter, boolean classOnly);
+        public Object newInstance(Class type,
+                                  Class[] interfaces,
+                                  CallbackFilter filter,
+                                  Class[] callbackTypes,
+                                  boolean classOnly,
+                                  boolean useFactory);
     }
 
     private Class[] interfaces;
     private CallbackFilter filter;
-    private Callbacks callbacks;
+    private Callback[] callbacks;
+    private Class[] callbackTypes;
     private boolean classOnly;
     private Class superclass;
     private Class[] argumentTypes;
     private Object[] arguments;
+    private boolean useFactory = true;
 
     /**
      * Create a new <code>Enhancer</code>. A new <code>Enhancer</code>
@@ -142,54 +151,59 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     /**
-     * Set the <code>CallbackFilter</code> used to map the generated class' methods
-     * to a particular callback type. See the <code>Callbacks</code> interface for a
-     * description of the various callback types.
+     * Set the {@link CallbackFilter} used to map the generated class' methods
+     * to a particular callback index.
      * New object instances will always use the same mapping, but may use different
      * actual callback objects.
      * @param filter the callback filter to use when generating a new class
-     * @see Callbacks
+     * @see #setCallbacks
      */
     public void setCallbackFilter(CallbackFilter filter) {
         this.filter = filter;
     }
 
     /**
-     * Set the single <code>Callback</code> to use. This will override any
+     * Set the single {@link Callback} to use. This will override any
      * <code>CallbackFilter</code> that has been specified previously, and
-     * ensure that every applicable method is mapped to the given callback
-     * object.
-     * Ignored if you use <code>createClass</code>.
+     * ensure that every applicable method is mapped to index zero.
+     * Ignored if you use {@link #createClass}.
      * @param callback the callback to use for all methods
      * @see #setCallbackFilter
      * @see #setCallbacks
-     * @see #createClass
      */
     public void setCallback(final Callback callback) {
-        setCallbacks(new Callbacks() {
-            public Callback getCallback(int type) {
-                return callback;
-            }
-        });
-        setCallbackFilter(new SimpleFilter(CallbackUtils.determineType(callback)));
+        setCallbacks(new Callback[]{ callback });
+        setCallbackFilter(CallbackFilter.ALL_ZERO);
     }
 
-    /**
-     * Register the callbacks to use when creating the new object
-     * instance.  For each callback type (see {@link Callbacks})
-     * returned by the registered <code>CallbackFilter</code>, the
-     * <code>Callbacks</code> argument should return a non-null
-     * <code>Callback</code> implementation (where applicable--for
-     * instance the {@link Callbacks#NO_OP} type does not have an
-     * associated implementation).
-     * Ignored if you use <code>createClass</code>.
-     * @param callbacks callback implementations to use for the enhanced object
-     * @see SimpleCallbacks
-     * @see #setCallbackFilter
-     * @see #createClass
-     */
-    public void setCallbacks(Callbacks callbacks) {
+    public void setCallbacks(Callback[] callbacks) {
+        if (callbacks == null || callbacks.length == 0) {
+            callbacks = NULL_CALLBACK_ARRAY;
+        }
         this.callbacks = callbacks;
+        callbackTypes = new Class[callbacks.length];
+        for (int i = 0; i < callbacks.length; i++) {
+            callbackTypes[i] = CallbackUtils.determineType(callbacks[i]);
+        }
+    }
+
+    public void setUseFactory(boolean useFactory) {
+        this.useFactory = useFactory;
+    }
+
+    public void setCallbackType(Class callbackType) {
+        setCallbackTypes(new Class[]{ callbackType });
+        setCallbackFilter(CallbackFilter.ALL_ZERO);
+    }
+
+    public void setCallbackTypes(Class[] callbackTypes) {
+        if (callbacks != null) {
+            throw new IllegalStateException("Cannot call both setCallbacks and setCallbackTypes");
+        }
+        if (callbackTypes == null || callbackTypes.length == 0) {
+            callbackTypes = NULL_CLASS_ARRAY;
+        }
+        this.callbackTypes = callbackTypes;
     }
 
     /**
@@ -242,7 +256,13 @@ public class Enhancer extends AbstractClassGenerator
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
-        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, classOnly);
+        if (callbackTypes == null) {
+            callbackTypes = NULL_CLASS_ARRAY;
+        }
+        if (filter == null) {
+            filter = CallbackFilter.ALL_ZERO;
+        }
+        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, classOnly, useFactory);
         return super.create(key);
     }
 
@@ -257,31 +277,38 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     public void generateClass(ClassVisitor v) throws Exception {
-        new EnhancerEmitter(v, getClassName(), superclass, interfaces, filter);
+        new EnhancerEmitter(v, getClassName(), superclass, interfaces, filter, callbackTypes, useFactory);
     }
 
     protected Object firstInstance(Class type) throws Exception {
         if (classOnly) {
             return type;
-        }
-        
-        ////// this is a hack //////
-        Method setter = type.getDeclaredMethod("CGLIB$SET_THREAD_CALLBACKS", new Class[]{ Callbacks.class });
-        setter.invoke(null, new Object[]{ callbacks });
-        ////////////////////////////
-
-        Object instance;
-        if (argumentTypes != null) {
-            instance = ReflectUtils.newInstance(type, argumentTypes, arguments);
         } else {
-            instance = ReflectUtils.newInstance(type);
-        }            
-        ((Factory)instance).setCallbacks(callbacks);
-        return instance;
+            return createUsingReflection(type);
+        }
     }
 
     protected Object nextInstance(Object instance) {
-        return classOnly ? instance : ((Factory)instance).newInstance(callbacks);
+        if (classOnly) {
+            return instance;
+        } else if (instance instanceof Factory) {
+            if (argumentTypes != null) {
+                return ((Factory)instance).newInstance(argumentTypes, arguments, callbacks);
+            } else {
+                return ((Factory)instance).newInstance(callbacks);
+            }
+        } else {
+            return createUsingReflection(instance.getClass());
+        }
+    }
+
+    private Object createUsingReflection(Class type) {
+        EnhancerEmitter.setThreadCallbacks(type, callbacks);
+        if (argumentTypes != null) {
+            return ReflectUtils.newInstance(type, argumentTypes, arguments);
+        } else {
+            return ReflectUtils.newInstance(type);
+        }            
     }
 
     /**
@@ -323,7 +350,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param filter the callback filter to use when generating a new class
      * @param callbacks callback implementations to use for the enhanced object
      */
-    public static Object create(Class superclass, Class[] interfaces, CallbackFilter filter, Callbacks callbacks) {
+    public static Object create(Class superclass, Class[] interfaces, CallbackFilter filter, Callback[] callbacks) {
         Enhancer e = new Enhancer();
         e.setSuperclass(superclass);
         e.setInterfaces(interfaces);

@@ -66,7 +66,8 @@ interface CallbackGenerator
     interface Context
     {
         Iterator getMethods();
-        void emitCallback(CodeEmitter e);
+        int getIndex(Method method);
+        void emitCallback(CodeEmitter e, int index);
         int getModifiers(Method method);
         String getUniqueName(Method method);
     }
