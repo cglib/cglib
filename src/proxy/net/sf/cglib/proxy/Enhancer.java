@@ -88,35 +88,17 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.19 2002/10/05 19:40:15 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.20 2002/10/08 19:04:23 baliuka Exp $
  */
-public class Enhancer implements org.apache.bcel.Constants {
+public class Enhancer implements ClassFileConstants {
     
-    
-    
-    static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
-    static final ObjectType BOOLEAN_OBJECT =
-    new ObjectType(Boolean.class.getName());
-    static final ObjectType INTEGER_OBJECT =
-    new ObjectType(Integer.class.getName());
-    static final ObjectType CHARACTER_OBJECT =
-    new ObjectType(Character.class.getName());
-    static final ObjectType BYTE_OBJECT = new ObjectType(Byte.class.getName());
-    static final ObjectType SHORT_OBJECT = new ObjectType(Short.class.getName());
-    static final ObjectType LONG_OBJECT = new ObjectType(Long.class.getName());
-    static final ObjectType DOUBLE_OBJECT = new ObjectType(Double.class.getName());
-    static final ObjectType FLOAT_OBJECT = new ObjectType(Float.class.getName());
-    static final ObjectType METHOD_OBJECT =
-    new ObjectType(java.lang.reflect.Method.class.getName());
-    static final ObjectType CLASS_OBJECT = new ObjectType(Class.class.getName());
-    static final ObjectType NUMBER_OBJECT = new ObjectType(Number.class.getName());
-    static final String CONSTRUCTOR_NAME = "<init>";
-    static final String FIELD_NAME = "h";
-    static final String SOURCE_FILE = "<generated>";
-    static final String CLASS_SUFIX = "$$EnhancedByCGLIB$$";
-    static final String CLASS_PREFIX = "net.sf.cglib.proxy";
-    static int index = 0;
-    static java.util.Map factories = new java.util.HashMap();
+    private static final String FIELD_NAME = "h";
+    private static final String CLASS_SUFIX = "$$EnhancedByCGLIB$$";
+    private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
+
+    private static int index = 0;
+    private static java.util.Map factories = new java.util.HashMap();
+    private static java.util.Map cache = new java.util.WeakHashMap();
     
     private static int addAfterConstructionRef(ConstantPoolGen cp) {
         return cp.addMethodref(
@@ -150,8 +132,6 @@ public class Enhancer implements org.apache.bcel.Constants {
         "invokeSuper",
         "(Ljava/lang/Object;Ljava/lang/reflect/Method;[Ljava/lang/Object;)Z");
     }
-    
-    private static java.util.Map cache = new java.util.WeakHashMap();
     
     
     private Enhancer() {}
@@ -201,7 +181,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         if( ih == null ){
             
-            throw new NullPointerException("invalid interceptior");
+            throw new NullPointerException("MethodInterceptor is null");
         }
         
         
@@ -272,19 +252,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             }
             class_name += index++;
             JavaClass clazz = enhance(cls, class_name, interfaces );
-            byte b[] = clazz.getBytes();
-            java.lang.reflect.Method m =
-            ClassLoader.class.getDeclaredMethod(
-            "defineClass",
-            new Class[] { String.class, byte[].class, int.class, int.class });
-            // protected method invocaton
-            boolean flag = m.isAccessible();
-            m.setAccessible(true);
-            result =
-            (Class) m.invoke(
-            loader,
-            new Object[] { clazz.getClassName(), b, new Integer(0), new Integer(b.length)});
-            m.setAccessible(flag);
+            result = ClassFileUtils.defineClass(loader, class_name, clazz.getBytes());
             map.put(key, result);
         }
         
@@ -300,6 +268,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         return factory.newInstance(ih);
         
     }
+    
     
     private static void addConstructor(ClassGen cg) throws Throwable {
         
@@ -318,13 +287,10 @@ public class Enhancer implements org.apache.bcel.Constants {
             
             il.append(new ALOAD(0));
             il.append(
-            factory.createInvoke(
-            parentClass,
-            CONSTRUCTOR_NAME,
-            Type.VOID,
+            factory.createInvoke( parentClass,CONSTRUCTOR_NAME, Type.VOID,
             new Type[] {},
             INVOKESPECIAL));
-            
+           
             
             il.append(new ALOAD(0));
             il.append(new ALOAD(1));
@@ -335,36 +301,33 @@ public class Enhancer implements org.apache.bcel.Constants {
             new ObjectType(INTERCEPTOR_CLASS_NAME),
             PUTFIELD));
             il.append(new RETURN());
-            cg.addMethod(getMethod(costructor));
+            cg.addMethod(ClassFileUtils.getMethod(costructor));
             
             //factory sometimes usefull and has meaning for performance
             
             il = new InstructionList();
-            MethodGen newInstance = toMethodGen(
+            MethodGen newInstance = ClassFileUtils.toMethodGen(
             Factory.class.getMethod("newInstance",
             new Class[]{ MethodInterceptor.class } ),
-            cg.getClassName(),
-            il,
-            cp
-            );
+            cg.getClassName(), il, cp );
             il.append( new NEW(cp.addClass( new ObjectType(cg.getClassName()) )) );
             il.append( new DUP());
             il.append( new ALOAD(1) );
             il.append( new INVOKESPECIAL( addNewInstanceRef(cp, cg.getClassName()) ) ) ;
             il.append( new ARETURN());
-            cg.addMethod(getMethod(newInstance));
+            cg.addMethod(ClassFileUtils.getMethod(newInstance));
             
             
             
             il = new InstructionList();
-            MethodGen getInterceptor = toMethodGen(
+            MethodGen getInterceptor = ClassFileUtils.toMethodGen(
             Factory.class.getMethod( "getInterceptor", new Class[0] ),
             cg.getClassName(), il, cp );
             il.append( new ALOAD(0));
             il.append( new GETFIELD( cp.addFieldref( cg.getClassName(),
             FIELD_NAME, "L" + INTERCEPTOR_CLASS_NAME.replace('.','/') + ";"  ) ) );
             il.append( new ARETURN() );
-            cg.addMethod(getMethod(getInterceptor));
+            cg.addMethod(ClassFileUtils.getMethod(getInterceptor));
             
             //serialization support
             il = new InstructionList();
@@ -376,9 +339,9 @@ public class Enhancer implements org.apache.bcel.Constants {
             
             il.append(new ALOAD(0));
             il.append(new INVOKESTATIC( addWriteReplace(cp) ) );
-            il.append(new  ARETURN());
+            il.append(new ARETURN());
             
-            cg.addMethod(getMethod(writeReplace));
+            cg.addMethod(ClassFileUtils.getMethod(writeReplace));
             
             
             
@@ -425,7 +388,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         java.util.List allMethods = new java.util.ArrayList();
         
-        String packageName = getPackageName( class_name );
+        String packageName = ClassFileUtils.getPackageName( class_name );
         
         // Order is very important: must add parentClass, then
         // its superclass chain, then each interface and
@@ -443,7 +406,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             int mod = m.getModifiers();
             if (!java.lang.reflect.Modifier.isStatic(mod)
             && !java.lang.reflect.Modifier.isFinal(mod)
-            &&  isVisible( m , packageName )   ) {
+            &&  ClassFileUtils.isVisible( m , packageName )   ) {
                 
                 methodSet.add(new MethodWrapper(m));
             }
@@ -464,39 +427,6 @@ public class Enhancer implements org.apache.bcel.Constants {
         return jcl;
     }
     
-    private static String getPackageName( String className  )
-    throws Throwable{
-        
-        int index = className.lastIndexOf('.');
-        if( index == -1 ){
-            return "";
-        }
-        return className.substring( 0, index );
-        
-    }
-    
-    private static boolean isVisible(java.lang.reflect.Method m ,
-    String packageName )throws Throwable{
-        
-        
-        int mod = m.getModifiers();
-        
-        if( java.lang.reflect.Modifier.isPrivate( mod )){
-            
-            return false;
-        }
-        
-        if( java.lang.reflect.Modifier.isProtected( mod ) ||
-        java.lang.reflect.Modifier.isPublic( mod ) ){
-            
-            return true;
-        }
-        
-        //package scope:
-        
-        return getPackageName( m.getDeclaringClass().getName()
-        ).equals( packageName );
-    }
     
     
     private static void addDeclaredMethods(java.util.List methodList, Class clazz) {
@@ -522,385 +452,6 @@ public class Enhancer implements org.apache.bcel.Constants {
     }
     
     
-    private static int createArgArray(
-    InstructionList il,
-    InstructionFactory factory,
-    ConstantPoolGen cp,
-    Type[] args) {
-        
-        int argCount = args.length;
-        if (argCount > 5)
-            il.append(new BIPUSH((byte) argCount));
-        else
-            il.append(new ICONST((byte) argCount));
-        il.append(new ANEWARRAY(cp.addClass(Type.OBJECT)));
-        int load = 1;
-        for (int i = 0; i < argCount; i++) {
-            il.append(new DUP());
-            if (i > 5)
-                il.append(new BIPUSH((byte) i));
-            else
-                il.append(new ICONST((byte) i));
-            if (args[i] instanceof BasicType) {
-                if (args[i].equals(Type.BOOLEAN)) {
-                    il.append(new NEW(cp.addClass(BOOLEAN_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new ILOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Boolean.class.getName(), CONSTRUCTOR_NAME, "(Z)V")));
-                } else if (args[i].equals(Type.INT)) {
-                    il.append(new NEW(cp.addClass(INTEGER_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new ILOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Integer.class.getName(), CONSTRUCTOR_NAME, "(I)V")));
-                } else if (args[i].equals(Type.CHAR)) {
-                    il.append(new NEW(cp.addClass(CHARACTER_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new ILOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Character.class.getName(), CONSTRUCTOR_NAME, "(C)V")));
-                } else if (args[i].equals(Type.BYTE)) {
-                    il.append(new NEW(cp.addClass(BYTE_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new ILOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Byte.class.getName(), CONSTRUCTOR_NAME, "(B)V")));
-                } else if (args[i].equals(Type.SHORT)) {
-                    il.append(new NEW(cp.addClass(SHORT_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new ILOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Short.class.getName(), CONSTRUCTOR_NAME, "(S)V")));
-                } else if (args[i].equals(Type.LONG)) {
-                    il.append(new NEW(cp.addClass(LONG_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new LLOAD(load));
-                    load += 2;
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Long.class.getName(), CONSTRUCTOR_NAME, "(J)V")));
-                } else if (args[i].equals(Type.DOUBLE)) {
-                    il.append(new NEW(cp.addClass(DOUBLE_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new DLOAD(load));
-                    load += 2;
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Double.class.getName(), CONSTRUCTOR_NAME, "(D)V")));
-                } else if (args[i].equals(Type.FLOAT)) {
-                    il.append(new NEW(cp.addClass(FLOAT_OBJECT)));
-                    il.append(new DUP());
-                    il.append(new FLOAD(load++));
-                    il.append(
-                    new INVOKESPECIAL(
-                    cp.addMethodref(Float.class.getName(), CONSTRUCTOR_NAME, "(F)V")));
-                }
-                il.append(new AASTORE());
-            } else {
-                il.append(new ALOAD(load++));
-                il.append(new AASTORE());
-            }
-        }
-        return load;
-    }
-    
-    private static Method getMethod(MethodGen mg) {
-        mg.stripAttributes(true);
-        mg.setMaxLocals();
-        mg.setMaxStack();
-        return mg.getMethod();
-    }
-    
-    private static InstructionHandle generateReturnValue(
-    InstructionList il,
-    InstructionFactory factory,
-    ConstantPoolGen cp,
-    Type returnType,
-    int stack) {
-        
-        
-        if (returnType.equals(Type.VOID)) {
-            return il.append(new RETURN());
-        }
-        il.append(new ASTORE(stack));
-        il.append(new ALOAD(stack));
-        if ((returnType instanceof ObjectType) || ( returnType instanceof ArrayType) ) {
-            if (returnType instanceof ArrayType){
-                il.append(new CHECKCAST(cp.addArrayClass((ArrayType)returnType)));
-                return il.append(new ARETURN());
-            }
-            if (!returnType.equals(Type.OBJECT)){
-                il.append(new CHECKCAST(cp.addClass((ObjectType) returnType)));
-                return il.append(new ARETURN());
-            }else {
-                return il.append(new ARETURN());
-            }
-            
-        }
-        if (returnType instanceof BasicType) {
-            if (returnType.equals(Type.BOOLEAN)) {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new ICONST(0) );
-                il.append(new IRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                il.append(new CHECKCAST(cp.addClass(BOOLEAN_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                Boolean.class.getName(),
-                "booleanValue",
-                Type.BOOLEAN,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new IRETURN());
-            } else if (returnType.equals(Type.CHAR)) {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new ICONST(0) );
-                il.append(new IRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                il.append(new CHECKCAST(cp.addClass(CHARACTER_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                Character.class.getName(),
-                "charValue",
-                Type.CHAR,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new IRETURN());
-            } else if (returnType.equals(Type.LONG)) {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new LCONST(0) );
-                il.append(new LRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                il.append(new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                Number.class.getName(),
-                "longValue",
-                Type.LONG,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new LRETURN());
-            } else if (returnType.equals(Type.DOUBLE)) {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new DCONST(0) );
-                il.append(new DRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                
-                il.append(new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                Number.class.getName(),
-                "doubleValue",
-                Type.DOUBLE,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new DRETURN());
-            } else if (returnType.equals(Type.FLOAT)) {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new FCONST(0) );
-                il.append(new FRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                il.append(new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                java.lang.Number.class.getName(),
-                "floatValue",
-                Type.FLOAT,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new FRETURN());
-            } else {
-                IFNONNULL ifNNull = new IFNONNULL(null);
-                il.append(ifNNull);
-                il.append(new ICONST(0) );
-                il.append(new IRETURN());
-                ifNNull.setTarget(il.append(new ALOAD(stack)));
-                il.append(new CHECKCAST(cp.addClass(NUMBER_OBJECT)));
-                il.append(
-                factory.createInvoke(
-                Number.class.getName(),
-                "intValue",
-                Type.INT,
-                new Type[] {},
-                INVOKEVIRTUAL));
-                return il.append(new IRETURN());
-            }
-        }
-        throw new java.lang.InternalError(returnType.toString());
-    }
-    
-    
-    private static Instruction newWrapper(Type type, ConstantPoolGen cp) {
-        
-        if (type instanceof BasicType) {
-            if (type.equals(Type.BOOLEAN)) {
-                return new NEW(cp.addClass(BOOLEAN_OBJECT));
-            } else if (type.equals(Type.INT)) {
-                return new NEW(cp.addClass(INTEGER_OBJECT));
-            } else if (type.equals(Type.CHAR)) {
-                return new NEW(cp.addClass(CHARACTER_OBJECT));
-            } else if (type.equals(Type.BYTE)) {
-                return new NEW(cp.addClass(BYTE_OBJECT));
-            } else if (type.equals(Type.SHORT)) {
-                return new NEW(cp.addClass(SHORT_OBJECT));
-            } else if (type.equals(Type.LONG)) {
-                return new NEW(cp.addClass(LONG_OBJECT));
-            } else if (type.equals(Type.DOUBLE)) {
-                return new NEW(cp.addClass(DOUBLE_OBJECT));
-            } else if (type.equals(Type.FLOAT)) {
-                return new NEW(cp.addClass(FLOAT_OBJECT));
-            }
-        }
-        return null;
-    }
-    
-    private static Instruction initWrapper(Type type, ConstantPoolGen cp) {
-        
-        if (type instanceof BasicType) {
-            if (type.equals(Type.BOOLEAN)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Boolean.class.getName(), CONSTRUCTOR_NAME, "(Z)V"));
-            } else if (type.equals(Type.INT)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Integer.class.getName(), CONSTRUCTOR_NAME, "(I)V"));
-            } else if (type.equals(Type.CHAR)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Character.class.getName(), CONSTRUCTOR_NAME, "(C)V"));
-            } else if (type.equals(Type.BYTE)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Byte.class.getName(), CONSTRUCTOR_NAME, "(B)V"));
-            } else if (type.equals(Type.SHORT)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Short.class.getName(), CONSTRUCTOR_NAME, "(S)V"));
-            } else if (type.equals(Type.LONG)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Long.class.getName(), CONSTRUCTOR_NAME, "(J)V"));
-            } else if (type.equals(Type.DOUBLE)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Double.class.getName(), CONSTRUCTOR_NAME, "(D)V"));
-            } else if (type.equals(Type.FLOAT)) {
-                return new INVOKESPECIAL(
-                cp.addMethodref(Float.class.getName(), CONSTRUCTOR_NAME, "(F)V"));
-            }
-        }
-        throw new InternalError(type.toString());
-    }
-    
-    private static int loadArg(InstructionList il, Type t, int index, int pos) {
-        
-        if (t instanceof BasicType) {
-            if (t.equals(Type.LONG)) {
-                il.append(new LLOAD(pos));
-                pos += 2;
-                return pos;
-            } else if (t.equals(Type.DOUBLE)) {
-                il.append(new DLOAD(pos));
-                pos += 2;
-                return pos;
-            } else if (t.equals(Type.FLOAT)) {
-                il.append(new FLOAD(pos));
-                return ++pos;
-            } else {
-                il.append(new ILOAD(pos));
-                return ++pos;
-            }
-        } else {
-            il.append(new ALOAD(pos));
-            return ++pos;
-        }
-    }
-    
-    private static Type[] toType(Class cls[]) {
-        
-        Type tp[] = new Type[cls.length];
-        for (int i = 0; i < cls.length; i++) {
-            tp[i] = toType(cls[i]);
-        }
-        return tp;
-    }
-    
-    private static Type toType(Class cls) {
-        
-        if (cls.equals(void.class)) {
-            return Type.VOID;
-        }
-        if (cls.isPrimitive()) {
-            if (int.class.equals(cls)) {
-                return Type.INT;
-            } else if (char.class.equals(cls)) {
-                return Type.CHAR;
-            } else if (short.class.equals(cls)) {
-                return Type.SHORT;
-            } else if (byte.class.equals(cls)) {
-                return Type.BYTE;
-            } else if (long.class.equals(cls)) {
-                return Type.LONG;
-            } else if (float.class.equals(cls)) {
-                return Type.FLOAT;
-            } else if (double.class.equals(cls)) {
-                return Type.DOUBLE;
-            } else if (boolean.class.equals(cls)) {
-                return Type.BOOLEAN;
-            }
-        } else if (cls.isArray()) {
-            return new ArrayType( toType(cls.getComponentType()),cls.getName().lastIndexOf('[') + 1);
-        } else
-            return new ObjectType(cls.getName());
-        throw new java.lang.InternalError(cls.getName());
-    }
-    
-    private static void invokeSuper(ClassGen cg, MethodGen mg, Type args[]) {
-        
-        ConstantPoolGen cp = cg.getConstantPool();
-        InstructionList il = mg.getInstructionList();
-        int pos = 1;
-        il.append(new ALOAD(0)); //this
-        for (int i = 0; i < args.length; i++) { //load args to stack
-            pos = loadArg(il, args[i], i, pos);
-        }
-        il.append(
-        new INVOKESPECIAL(
-        cp.addMethodref(cg.getSuperclassName(), mg.getName(), mg.getSignature())));
-    }
-    
-    
-    private static MethodGen toMethodGen(
-    java.lang.reflect.Method mtd,
-    String className,
-    InstructionList il,
-    ConstantPoolGen cp) {
-        
-        MethodGen mg = new MethodGen(
-        ACC_FINAL  | (    mtd.getModifiers()
-        & ~ACC_ABSTRACT & ~ACC_NATIVE & ~ACC_SYNCHRONIZED ),
-        toType(mtd.getReturnType()),
-        toType(mtd.getParameterTypes()),
-        null,
-        mtd.getName(),
-        className,
-        il,
-        cp);
-        
-        Class [] exeptions = mtd.getExceptionTypes();
-        
-        for( int i = 0 ; i< exeptions.length; i++ ){
-            mg.addException( exeptions[i].getName() );
-        }
-        
-        return mg;
-        
-    }
     
     private static Method generateMethod(
     java.lang.reflect.Method method,
@@ -912,7 +463,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         InstructionList il = new InstructionList();
         InstructionFactory factory = new InstructionFactory(cg);
         ConstantPoolGen cp = cg.getConstantPool();
-        MethodGen mg = toMethodGen(method, cg.getClassName(), il, cp);
+        MethodGen mg = ClassFileUtils.toMethodGen(method, cg.getClassName(), il, cp);
         
         Type types[] = mg.getArgumentTypes();
         int argCount = types.length;
@@ -935,7 +486,7 @@ public class Enhancer implements org.apache.bcel.Constants {
           Object args[]= new Object[]{ arg1, new Integer(arg2)  };
          
          */
-        int loaded = createArgArray(il, factory, cp, mg.getArgumentTypes());
+        int loaded = ClassFileUtils.createArgArray(il, factory, cp, mg.getArgumentTypes());
         int argArray = loaded;
         il.append(new ASTORE(argArray));
         
@@ -973,17 +524,17 @@ public class Enhancer implements org.apache.bcel.Constants {
             il.append(new ICONST(1));
             ehStart = il.append(new ISTORE(superInvoked)); // Ivoked = true
             
-            Instruction wrapper = newWrapper(mg.getReturnType(), cp);
+            Instruction wrapper = ClassFileUtils.newWrapper(mg.getReturnType(), cp);
             if (wrapper != null) {
                 ehStart = il.append(wrapper);
                 il.append(new DUP());
             }
             
-            invokeSuper(cg, mg, types);
+            ClassFileUtils.invokeSuper(cg, mg, types);
             
             
             if (wrapper != null) {
-                il.append(initWrapper(mg.getReturnType(), cp));
+                il.append(ClassFileUtils.initWrapper(mg.getReturnType(), cp));
             }
             if (returnsValue) {
                 ehEnd = il.append(new ASTORE(resultFromSuper));
@@ -1039,7 +590,7 @@ public class Enhancer implements org.apache.bcel.Constants {
          */
         
         InstructionHandle exitMethod =
-        generateReturnValue(il, factory, cp, mg.getReturnType(), ++loaded);
+        ClassFileUtils.generateReturnValue(il, factory, cp, mg.getReturnType(), ++loaded);
         if (!abstractM) {
             mg.addExceptionHandler(ehStart, ehEnd, ehHandled, Type.THROWABLE);
         }
@@ -1113,83 +664,12 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(Throwable.class.getName()) );
         
-        
-        
-        
-        mg.setMaxStack();
-        mg.setMaxLocals();
-        Method result = getMethod(mg);
+        Method result = ClassFileUtils.getMethod(mg);
         
         
         return result;
     }
     
-    private static void loadClass(InstructionList  il, ClassGen cg, ConstantPoolGen cp,Class cls ){
-        
-        Instruction instruction = null;
-        String cln = "Ljava/lang/Class;";
-        String t   = "TYPE";
-        
-        if(cls == int.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref(Integer.class.getName(), t, cln ));
-            
-        }
-        if(cls == byte.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref(Byte.class.getName(), t, cln ));
-            
-        }
-        
-        if(cls == char.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref(Character.class.getName(), t, cln ));
-            
-        }
-        if( cls == short.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref(Short.class.getName(), t, cln ));
-            
-        }
-        
-        if( cls == boolean.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref( Boolean.class.getName(), t, cln) );
-            
-        }
-        if( cls == long.class){
-            
-            instruction = new GETSTATIC( cp.addFieldref( Long.class.getName(), t, cln) );
-            
-        }
-        
-        if( cls == float.class ){
-            
-            instruction = new GETSTATIC( cp.addFieldref( Float.class.getName(), t, cln) );
-            
-        }
-        
-        if( cls == double.class ){
-            
-            instruction = new GETSTATIC( cp.addFieldref( Double.class.getName(), t, cln ));
-            
-        }
-        
-        
-        if( instruction != null ){
-            
-            il.append(instruction);
-            
-        }else{
-            
-            il.append( new LDC( cp.addString( cls.getName()) ) );
-            il.append( new INVOKESTATIC( cp.addMethodref( cg.getClassName(),
-            "findClass","(Ljava/lang/String;)Ljava/lang/Class;")
-            )
-            ) ;
-        }
-        
-    }
     
     private static void generateClInit(ClassGen cg, ConstantPoolGen cp,  java.util.HashMap  methods){
         
@@ -1212,7 +692,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         new Type[] { }, null, // arg names
         "<clinit>", cg.getClassName(), il, cp );
         
-        MethodGen findClass = generateFindClass( cg, cp );
+        MethodGen findClass = ClassFileUtils.generateFindClass( cg, cp );
         
         for( java.util.Iterator i = methods.keySet().iterator(); i.hasNext(); ){
             
@@ -1235,7 +715,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 
                 il.append( new DUP() );
                 il.append( new ICONST(j) );
-                loadClass( il, cg,  cp, args[j] );
+                ClassFileUtils.loadClass( il, cg,  cp, args[j] );
                 il.append(  new AASTORE() );
                 
             }
@@ -1257,68 +737,11 @@ public class Enhancer implements org.apache.bcel.Constants {
         }
         
         il.append( new  RETURN() );
-        cg.addMethod( getMethod( cinit ) );
+        cg.addMethod( ClassFileUtils.getMethod( cinit ) );
         
     }
     
     
-    private static MethodGen generateFindClass( ClassGen cg, ConstantPoolGen cp ){
-        
-        // generates:
-     /*
-   static private Class findClass(String name ) throws Exception{
-      try{
-      
-          return Class.forName(name);
-      
-     }catch( java.lang.ClassNotFoundException cne ){
-      
-          throw new java.lang.NoClassDefFoundError( cne.getMessage() );
-      
-     }
-      
-      
-   }
-      */
-        
-        
-        InstructionList  il = new InstructionList();
-        MethodGen findClass = new MethodGen( ACC_PRIVATE | ACC_STATIC , // access flags
-        CLASS_OBJECT, // return type
-        new Type[] { Type.STRING }, null, // arg names
-        "findClass", cg.getClassName(), il, cp);
-        
-        InstructionHandle start = il.append( new ALOAD(0));
-        
-        il.append( new INVOKESTATIC( cp.addMethodref("java.lang.Class",
-        "forName",
-        "(Ljava/lang/String;)Ljava/lang/Class;" )
-        )
-        );
-        
-        InstructionHandle h1 = il.append( new ARETURN() );
-        
-        InstructionHandle h2 = il.append( new ASTORE(1) );
-        
-        il.append( new NEW(cp.addClass("java.lang.NoClassDefFoundError") ) );
-        il.append( new DUP() );
-        il.append( new ALOAD(1) );
-        il.append( new INVOKEVIRTUAL( cp.addMethodref("java.lang.ClassNotFoundException",
-        "getMessage","()Ljava/lang/String;") )
-        );
-        il.append( new INVOKESPECIAL( cp.addMethodref("java.lang.NoClassDefFoundError",
-        CONSTRUCTOR_NAME,
-        "(Ljava/lang/String;)V" ))
-        );
-        il.append( new ATHROW() );
-        
-        findClass.addExceptionHandler(  start, h1, h2,
-        new ObjectType("java.lang.ClassNotFoundException") );
-        
-        
-        cg.addMethod( getMethod( findClass ) );
-        return findClass;
-    }
     
     static public class InternalReplace implements java.io.Serializable{
         
@@ -1386,57 +809,6 @@ public class Enhancer implements org.apache.bcel.Constants {
         
     }
     
-    
-    static class MethodWrapper {
-        java.lang.reflect.Method method;
-        MethodWrapper(java.lang.reflect.Method method) {
-            if (method == null) {
-                throw new NullPointerException();
-            }
-            this.method = method;
-        }
-        public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof MethodWrapper)) {
-                return false;
-            }
-            return Enhancer.equals(method, ((MethodWrapper) obj).method );
-        }
-        public int hashCode() {
-            return method.getName().hashCode();
-        }
-    }
-    
-    private static boolean equals(
-    java.lang.reflect.Method m1,
-    java.lang.reflect.Method m2) {
-        
-        if (m1 == m2) {
-            
-            return true;
-        }
-        if (m1.getName().equals(m2.getName())) {
-            Class[] params1 = m1.getParameterTypes();
-            Class[] params2 = m2.getParameterTypes();
-            if (params1.length == params2.length) {
-                for (int i = 0; i < params1.length; i++) {
-                    if (!params1[i].getName().equals( params2[i].getName() ) ) {
-                        return false;
-                    }
-                }
-                
-                if(!m1.getReturnType().getName().
-                equals(m2.getReturnType().getName()) ){
-                    throw new java.lang.IllegalArgumentException(
-                    "Can't implement:\n" + m1.getDeclaringClass().getName() +
-                    "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
-                    m1.toString() + "\n" + m2.toString());
-                }
-                return true;
-            }
-        }
-        
-        return false;
-    }
     
     
 }
