@@ -98,11 +98,6 @@ abstract class CodeGenerator {
         this.loader = loader;
         this.className = className;
         this.superclass = superclass;
-        defineResource(superclass);
-        defineResource(ReflectUtils.class);
-        defineResource(MethodConstants.class);
-        defineResource(CodeGenerationException.class);
-        defineResource(BCELBackend.class);
         backend = new  BCELBackend(className, superclass); 
         
     }
@@ -154,110 +149,6 @@ abstract class CodeGenerator {
             throw new CodeGenerationException(t);
         }
     }
-    public void defineResource(Class resource){
-        
-        if(resource != null && resource.isArray()){
-            defineResource(resource.getComponentType()); 
-            return;
-        }    
-        
-        if( resource == null || resource.getClassLoader() == null ||
-            resource.getClassLoader() == loader || definedClasses.contains(resource) ){
-            return;
-        }
-        
-        definedClasses.add(resource);
-        
-        
-        defineResource(resource.getSuperclass());
-        
-        Class classes[] = resource.getInterfaces();
-        for( int i= 0; i < classes.length; i++ ){
-            defineResource(classes[i]);
-        }
-        
-        classes = resource.getDeclaredClasses();
-        for( int i= 0; i < classes.length; i++ ){
-            defineResource(classes[i]);
-        }
-        
-        Method methods[] = resource.getDeclaredMethods();
-        for( int i = 0; i < methods.length; i++ ){
-            defineResource( methods[i].getReturnType() );
-            classes = methods[i].getParameterTypes();
-            for(int j = 0; j < classes.length; j++  ){
-                defineResource( classes[j] );
-            }
-            classes = methods[i].getExceptionTypes();
-            for(int j = 0; j < classes.length; j++  ){
-                defineResource( classes[j] );
-            }
-            
-        }
-        
-        Constructor constructors [] = resource.getDeclaredConstructors();
-        for( int i = 0; i < constructors.length; i++ ){
-            
-            classes = constructors[i].getParameterTypes();
-            for(int j = 0; j < classes.length; j++  ){
-                defineResource( classes[j] );
-            }
-            classes = constructors[i].getExceptionTypes();
-            for(int j = 0; j < classes.length; j++  ){
-                defineResource( classes[j] );
-            }
-            
-        }
-        Field fields[] = resource.getDeclaredFields();
-        for( int i=0; i< fields.length; i++ ){
-            defineResource( fields[i].getType() );
-        }
-        
-        defineDependancy(resource);
-        
-        
-        
-    }
-    private void defineDependancy(Class resource){
-        
-        if( resource != null && resource.getClassLoader() != null &&
-        resource.getClassLoader() != loader ){
-        
-            try{
-                loader.loadClass( resource.getName() );
-                return;
-            }catch(ClassNotFoundException cne){
-                
-            }
-            try{
-                java.io.InputStream is = resource.getClassLoader().getResourceAsStream(
-                resource.getName().replace('.','/') + ".class");
-                if(is == null){
-                  throw new CodeGenerationException(
-                      new ClassNotFoundException(resource.getName())
-                   );
-                }
-                java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-                while( true ){
-                    int b = is.read();
-                    if( b == -1 ){
-                      break;
-                    }
-                    out.write( b );
-                }
-              
-               defineClass(resource.getName(),out.toByteArray(), loader );
-               // System.err.println("DEFINED " + resource.getName());
-              
-            }catch( Exception e ){
-         
-                throw new CodeGenerationException(e);
-                
-            }
-            
-        }
-        
-    }
     
     private static Class defineClass(String className, byte[] b, ClassLoader loader)
     throws Exception {
@@ -307,7 +198,6 @@ abstract class CodeGenerator {
     }
     
     protected void declare_interface(Class iface) {
-        defineResource(iface);
         backend.declare_interface(iface);
     }
     
@@ -571,7 +461,6 @@ abstract class CodeGenerator {
                 backend.baload();
             }
         } else {
-            defineResource(clazz);
             backend.aaload();
         }
     }
@@ -594,7 +483,6 @@ abstract class CodeGenerator {
                 backend.bastore();
             }
         } else {
-            defineResource(clazz);
             backend.aastore();
         }
     }
@@ -618,7 +506,6 @@ abstract class CodeGenerator {
                 throw new CodeGenerationException(e);
             }
         } else {
-            defineResource(clazz);
             load_class_helper(clazz.getName());
         }
     }
@@ -674,7 +561,6 @@ abstract class CodeGenerator {
                 backend.iload(pos);
             }
         } else {
-            defineResource(t);
             backend.aload(pos);
         }
     }
@@ -691,7 +577,6 @@ abstract class CodeGenerator {
                 backend.istore(index);
             }
         } else {
-            defineResource(t);
             backend.astore(index);
         }
     }
@@ -789,9 +674,6 @@ abstract class CodeGenerator {
     
     protected void getfield(Field field) {
         
-        defineResource(field.getType());
-        defineResource(field.getDeclaringClass());
-        
         if (Modifier.isStatic(field.getModifiers())) {
             backend.getstatic(field.getDeclaringClass().getName(),
             field.getName(),
@@ -804,8 +686,6 @@ abstract class CodeGenerator {
     }
     
     protected void putfield(Field field) {
-        defineResource(field.getType());
-        defineResource(field.getDeclaringClass());
         if (Modifier.isStatic(field.getModifiers())) {
             backend.putstatic(field.getDeclaringClass().getName(),
             field.getName(),
@@ -818,12 +698,6 @@ abstract class CodeGenerator {
     }
     
     protected void invoke(Method method) {
-        defineResource(method.getDeclaringClass());
-        defineResource(method.getReturnType());
-        Class types[] = method.getParameterTypes();
-        for( int i = 0; i< types.length; i++  ){
-            defineResource( types[i] );
-        }
         if (method.getDeclaringClass().isInterface()) {
             backend.invoke_interface(method.getDeclaringClass().getName(), method.getName(),
             method.getReturnType(), method.getParameterTypes());
@@ -860,7 +734,6 @@ abstract class CodeGenerator {
     }
     
     protected void invoke_constructor(Class type) {
-        defineResource(type);
         invoke_constructor(type, Constants.TYPES_EMPTY);
     }
     
@@ -913,7 +786,6 @@ abstract class CodeGenerator {
     }
     
     protected void new_instance(Class clazz) {
-        defineResource(clazz);
         new_instance(clazz.getName());
     }
     
@@ -1221,7 +1093,6 @@ abstract class CodeGenerator {
     }
     
     protected void throw_exception(Class type, String msg) {
-        defineResource(type);
         new_instance(type);
         dup();
         push(msg);

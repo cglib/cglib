@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.32 2003/02/01 19:44:50 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.33 2003/02/02 17:43:57 baliuka Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -252,8 +252,8 @@ public class Enhancer {
             List interfaceNames = new ArrayList(interfaces.length);
             
             for (int i = 0; i < interfaces.length; i++) {
-                //skip CGLIB interfaces
-                if (!interfaces[i].getPackage().equals(Enhancer.class.getPackage())) {
+                //skip CGLIB interfaces, getPackage returns null on JDK 1.2
+                if (!interfaces[i].getName().startsWith("net.sf.cglib.")) {
                     interfaceNames.add(interfaces[i].getName());
                 }
             }
@@ -293,6 +293,7 @@ public class Enhancer {
         public ReadResolveException(Throwable cause) {
             super(cause.getMessage());
             this.cause = cause;
+
         }
 
         public Throwable getCause() {
