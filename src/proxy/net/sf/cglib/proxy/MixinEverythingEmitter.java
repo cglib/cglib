@@ -51,14 +51,37 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.core;
+package net.sf.cglib.proxy;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import net.sf.cglib.core.CollectionUtils;
+import net.sf.cglib.core.ReflectUtils;
+import net.sf.cglib.core.RejectModifierPredicate;
+import org.objectweb.asm.ClassVisitor;
 
-public class RemoveStaticPredicate implements Predicate {
-    public static final RemoveStaticPredicate INSTANCE = new RemoveStaticPredicate();
-    
-    public boolean evaluate(Object arg) {
-        return !Modifier.isStatic(((Member)arg).getModifiers());
+/**
+ * @author Chris Nokleberg
+ * @version $Id: MixinEverythingEmitter.java,v 1.1 2004/01/25 22:21:00 herbyderby Exp $
+ */
+class MixinEverythingEmitter extends MixinEmitter {
+
+    public MixinEverythingEmitter(ClassVisitor v, String className, Class[] classes) {
+        super(v, className, classes, null);
+    }
+
+    protected Class[] getInterfaces(Class[] classes) {
+        List list = new ArrayList();
+        for (int i = 0; i < classes.length; i++) {
+            ReflectUtils.addAllInterfaces(classes[i], list);
+        }
+        return (Class[])list.toArray(new Class[list.size()]);
+    }
+
+    protected Method[] getMethods(Class type) {
+        List methods = new ArrayList(Arrays.asList(type.getMethods()));
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Modifier.FINAL));
+        return (Method[])methods.toArray(new Method[methods.size()]);
     }
 }

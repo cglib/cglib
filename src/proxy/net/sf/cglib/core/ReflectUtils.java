@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.14 2004/01/18 13:29:39 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.15 2004/01/25 22:21:18 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -347,6 +347,15 @@ public class ReflectUtils {
         Class[] interfaces = type.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             addAllMethods(interfaces[i], list);
+        }
+        return list;
+    }
+
+    public static List addAllInterfaces(Class type, List list) {
+        Class superclass = type.getSuperclass();
+        if (superclass != null) {
+            list.addAll(Arrays.asList(type.getInterfaces()));
+            addAllInterfaces(superclass, list);
         }
         return list;
     }
