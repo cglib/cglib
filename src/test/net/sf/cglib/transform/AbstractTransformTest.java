@@ -1,7 +1,7 @@
 /*
  *
  *
- * $Id: AbstractTransformTest.java,v 1.2 2003/10/06 00:58:59 herbyderby Exp $
+ * $Id: AbstractTransformTest.java,v 1.3 2003/10/06 17:02:38 baliuka Exp $
  */
 
 package net.sf.cglib.transform;
@@ -36,7 +36,8 @@ abstract public class AbstractTransformTest  extends TestCase{
             public boolean accept(String name){
                 
                 return ! name.startsWith("java") &&
-                       ! name.startsWith("junit") ;
+                       ! name.startsWith("junit") &&
+                       ! name.endsWith("Exclude");
             } 
          },
          getTransformer()

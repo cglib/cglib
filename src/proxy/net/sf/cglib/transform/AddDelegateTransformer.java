@@ -30,8 +30,12 @@ public class AddDelegateTransformer extends EmittingTransformer {
     }
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        
+        if(!TypeUtils.isInterface(access)){
+            
         Type[] all = TypeUtils.add(interfaces, TypeUtils.getTypes(delegateIf));
         super.begin_class(access, className, superType, all, sourceFile);
+        
         declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                       DELEGATE,
                       delegateType,
@@ -43,6 +47,9 @@ public class AddDelegateTransformer extends EmittingTransformer {
                     addDelegate(methods[j]);
                 }
             }
+        }
+        }else{
+           super.begin_class(access, className, superType, interfaces, sourceFile);
         }
     }
 
