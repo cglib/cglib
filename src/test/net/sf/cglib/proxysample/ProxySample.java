@@ -51,37 +51,80 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.proxysample;
 
-import java.lang.reflect.Method;
-import java.util.Map;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.UndeclaredThrowableException;
 
-/**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
- */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
+public final class ProxySample implements ProxySampleInterface_ReturnsObject, ProxySampleInterface_ReturnsBasic {
+	
+	private InvocationHandler handler = null;
 
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+    protected ProxySample(InvocationHandler handler) {
+    	this.handler = handler;
     }
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
-    }
-
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
+    public String getKala(String kalamees) throws Exception {
+    	String result =  null;
+        try {
+        	// invocation is also generated
+            result = (String) handler.invoke(this, ProxySampleInterface_ReturnsObject.class.getMethod("getKala", new Class[] {String.class}), new Object[] {kalamees});
+        } catch (ClassCastException e) {
+        	throw e;
+        } catch (NoSuchMethodException e) {
+            throw new Error(e);
+        } catch (RuntimeException e) {
+        	throw e;
+        } catch (Exception e) {
+        	// generated: catch the exception throwed by interface method and re-throw it
+        	throw e;
+        } catch (Error e) {
+        	throw e;
+        } catch (Throwable e) {
+        	throw new UndeclaredThrowableException(e);
         }
-        return null;
+        return result;
     }
-}
 
+    public int getKala(float kalamees) {
+    	Integer result =  null;
+        try {
+        	// invocation is also generated
+            result = (Integer) handler.invoke(this, ProxySampleInterface_ReturnsBasic.class.getMethod("getKala", new Class[] {Float.TYPE}), new Object[] {new Float(kalamees)});
+        } catch (ClassCastException e) {
+        	throw e;
+        } catch (NoSuchMethodException e) {
+        	// ignore, the method has to be found, as this class is generated
+        } catch (RuntimeException e) {
+        	throw e;
+        } catch (Error e) {
+        	throw e;
+        } catch (Throwable e) {
+        	throw new UndeclaredThrowableException(e);
+        }
+        return result.intValue();
+    }
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        String result =  null;
+        try {
+            // invocation is also generated
+            result = (String) handler.invoke(this, Object.class.getMethod("toString", null), null);
+        } catch (ClassCastException e) {
+            throw e;
+        } catch (NoSuchMethodException e) {
+            // ignore, the method has to be found, as this class is generated
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Error e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new UndeclaredThrowableException(e);
+        }
+        return result;
+    }
+
+}

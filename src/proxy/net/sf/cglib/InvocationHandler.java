@@ -54,34 +54,18 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * java.lang.reflect.InvocationHandler replacement (unavailable under JDK 1.2).
+ *
+ *@author     Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
+ *@version    $Id: InvocationHandler.java,v 1.1 2003/01/28 11:52:23 nemecec Exp $
  */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
+public interface InvocationHandler {
 
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
-    }
+    /**
+     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object)
+     */
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable;
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
-    }
-
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
-        }
-        return null;
-    }
 }
-

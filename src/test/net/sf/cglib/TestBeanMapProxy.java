@@ -53,35 +53,36 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.util.Map;
+import junit.framework.*;
+import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * @version $Id: TestBeanMapProxy.java,v 1.1 2003/01/28 11:54:56 nemecec Exp $
  */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
-
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+public class TestBeanMapProxy extends CodeGenTestCase {
+    public void testBeanMap() throws Exception {
+        HashMap identity = new HashMap();
+        Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });
+        person.setName("Chris");
+        assertTrue("Chris".equals(person.getName()));
+        assertTrue("Chris".equals(identity.get("Name")));
     }
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
+   public interface Person {
+        public String getName();
+        public void setName(String name);
     }
 
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
-        }
-        return null;
+    public TestBeanMapProxy(String testName) {
+        super(testName);
+    }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestBeanMapProxy.class);
     }
 }
-
