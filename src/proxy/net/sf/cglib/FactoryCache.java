@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: FactoryCache.java,v 1.3 2002/12/25 22:13:05 baliuka Exp $
+ * @version $Id: FactoryCache.java,v 1.4 2002/12/29 21:38:21 herbyderby Exp $
  */
 /* package */ class FactoryCache {
     private final Map cache = new WeakHashMap();
@@ -77,27 +77,5 @@ import java.util.*;
             cache.put(loader, factories = new HashMap());
         }
         return factories;
-    }
-
-    public static Class forName(String name, ClassLoader loader) {
-        try {
-            return Class.forName(name, false, loader);
-        } catch (ClassNotFoundException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
-    public static Object newInstance(Class clazz, Class[] parameterTypes, Object[] args) {
-        try {
-            return clazz.getConstructor(parameterTypes).newInstance(args);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        } catch (InstantiationException e) {
-            throw new CodeGenerationException(e);
-        } catch (IllegalAccessException e) {
-            throw new CodeGenerationException(e);
-        } catch (InvocationTargetException e) {
-            throw new CodeGenerationException(e.getTargetException());
-        }
     }
 }
