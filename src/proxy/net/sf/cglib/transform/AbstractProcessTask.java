@@ -32,6 +32,7 @@ abstract public class AbstractProcessTask extends Task {
     }
 
     public void execute() throws BuildException {
+        init();
         for (Iterator it = getFiles().iterator(); it.hasNext();) {
             try {
                 processFile((File)it.next());

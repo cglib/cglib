@@ -46,9 +46,9 @@ public class TransformDemo {
     
     public static void main( String args [] )throws Exception{
     
-     TransformingLoader.ClassTransformerFactory transformation =  
+     ClassTransformerFactory transformation =  
      
-        new TransformingLoader.ClassTransformerFactory (){
+        new ClassTransformerFactory (){
         
            public ClassTransformer newInstance(){
             try{       

@@ -8,16 +8,10 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
 abstract public class AbstractTransformTask extends AbstractProcessTask implements ClassFilter {
-    private ClassTransformer transformer;
     private boolean verbose;
 
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
-    }
-
-    public void execute() throws BuildException {
-        transformer = getClassTransformer();
-        super.execute();
     }
 
     private static class EarlyExitException extends RuntimeException { }
@@ -46,7 +40,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask implemen
         InputStream in = new BufferedInputStream(new FileInputStream(file));
         ClassReader r = new ClassReader(in);
         CaptureNameWriter w = new CaptureNameWriter(true);
-        ClassTransformer t = (ClassTransformer)transformer.clone();
+        ClassTransformer t = getClassTransformer();
         try {
             new TransformingGenerator(new ClassReaderGenerator(r, true), t).generateClass(w);
             in.close();
