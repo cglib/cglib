@@ -87,7 +87,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
             fc.invoke("foo", new Class[0], ts, new Object[0]);
             fail("expected exception");
         } catch (InvocationTargetException e) {
-            assertTrue(e.getCause() instanceof IOException);
+            assertTrue(e.getTargetException() instanceof IOException);
         }
     }
 
@@ -613,14 +613,15 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public void testReallyBigClass() throws IOException {
         FastClass.Generator gen = new FastClass.Generator();
         gen.setType(ReallyBigClass.class);
-        final PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream("/home/cjn/cvs/cglib/Dump.java")));
+      /*  final PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream("/home/cjn/cvs/cglib/Dump.java")));
         gen.setStrategy(new DefaultGeneratorStrategy() {
                 protected ClassGenerator transform(ClassGenerator cg) throws Exception {
                     return new TransformingClassGenerator(cg, new ClassTransformerTee(new DumpClassVisitor(out)));
                 }
             });
+       */
         FastClass fc = gen.create();
-        out.close();
+       // out.close();
     }
 
     public TestFastClass(String testName) {

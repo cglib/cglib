@@ -40,6 +40,10 @@
 
       <li/>"<a href="http://forge.objectweb.org/projects/asm" >ASM</a> is a Java bytecode manipulation framework. It offers similar functionalities as BCEL or SERP, but is much more smaller and faster than these tools." 
 
+      <li/>"<a href="http://proxool.sourceforge.net/">Proxool</a> is a Java connection pool."
+
+
+
     </ul>
 
    </p>
