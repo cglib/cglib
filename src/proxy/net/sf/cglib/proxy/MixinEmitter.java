@@ -23,7 +23,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.5 2004/06/24 21:15:20 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.6 2004/09/18 21:22:22 herbyderby Exp $
  */
 class MixinEmitter extends ClassEmitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -37,7 +37,8 @@ class MixinEmitter extends ClassEmitter {
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         super(v);
 
-        begin_class(Constants.ACC_PUBLIC,
+        begin_class(Constants.V1_2,
+                    Constants.ACC_PUBLIC,
                     className,
                     MIXIN,
                     TypeUtils.getTypes(getInterfaces(classes)),

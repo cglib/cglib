@@ -47,13 +47,13 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     private int access;
     private Map fields;
     
-    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isAbstract(access)) {
             interfaces = TypeUtils.add(interfaces, FIELD_PROVIDER);
         }
         this.access = access;
         fields = new HashMap();
-        super.begin_class(access, className, superType, interfaces, sourceFile);
+        super.begin_class(version, access, className, superType, interfaces, sourceFile);
     }
 
     public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {

@@ -20,6 +20,7 @@ import java.util.*;
 import net.sf.cglib.core.*;
 import org.apache.tools.ant.BuildException;
 import org.objectweb.asm.*;
+import org.objectweb.asm.attrs.Attributes;
 
 abstract public class AbstractTransformTask extends AbstractProcessTask {
     private boolean verbose;
@@ -38,15 +39,14 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     abstract protected ClassTransformer getClassTransformer( String[] classInfo);
 
     protected Attribute[] attributes() {
-        return null;
+        return Attributes.getDefaultAttributes();
     }
 
     protected void processFile(File file) throws Exception {
         
         ClassReader reader = getClassReader(file);
         String name[] = ClassNameReader.getClassInfo(reader);
-        int[] version = reader.getVersion();
-        ClassWriter w = new DebuggingClassWriter(true, version[0], version[1]);
+        ClassWriter w = new DebuggingClassWriter(true);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
             new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), attributes(), skipDebug()), t).generateClass(w);

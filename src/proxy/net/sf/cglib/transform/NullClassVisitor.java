@@ -23,7 +23,7 @@ import org.objectweb.asm.Label;
 public class NullClassVisitor implements ClassVisitor {
     public static final NullClassVisitor INSTANCE = new NullClassVisitor();
     
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) { }
+    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) { }
     public void visitEnd() { }
     public void visitField(int access, String name, String desc, Object value, Attribute attrs) { }
     public void visitInnerClass(String name, String outerName, String innerName, int access) { }

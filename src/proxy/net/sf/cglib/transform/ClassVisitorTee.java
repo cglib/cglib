@@ -27,9 +27,9 @@ public class ClassVisitorTee implements ClassVisitor {
         this.cv2 = cv2;
     }
 
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        cv1.visit(access, name, superName, interfaces, sourceFile);
-        cv2.visit(access, name, superName, interfaces, sourceFile);
+    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+        cv1.visit(version, access, name, superName, interfaces, sourceFile);
+        cv2.visit(version, access, name, superName, interfaces, sourceFile);
     }
 
     public void visitEnd() {

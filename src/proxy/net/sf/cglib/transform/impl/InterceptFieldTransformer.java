@@ -44,9 +44,9 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         this.filter = filter;
     }
     
-    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isInterface(access)) {
-            super.begin_class(access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
+            super.begin_class(version, access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
                     
             super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                                 CALLBACK_FIELD,
@@ -68,7 +68,7 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
             e.return_value();
             e.end_method();
         } else {
-            super.begin_class(access, className, superType, interfaces, sourceFile);
+            super.begin_class(version, access, className, superType, interfaces, sourceFile);
         }
     }
 

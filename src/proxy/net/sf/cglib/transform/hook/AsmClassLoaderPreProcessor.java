@@ -39,8 +39,8 @@ public class AsmClassLoaderPreProcessor implements ClassLoaderPreProcessor {
         try {
             ClassWriter w = new ClassWriter(true) {
                 private boolean flag;
-                public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-                    super.visit(access, name, superName, interfaces, sourceFile);
+                public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+                    super.visit(version, access, name, superName, interfaces, sourceFile);
                     flag = name.equals("java/lang/ClassLoader"); // is this ok?
                 }
                 public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {

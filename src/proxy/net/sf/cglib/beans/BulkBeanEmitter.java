@@ -47,7 +47,7 @@ class BulkBeanEmitter extends ClassEmitter {
         Method[] setters = new Method[setterNames.length];
         validate(target, getterNames, setterNames, types, getters, setters);
 
-        begin_class(Constants.ACC_PUBLIC, className, BULK_BEAN, null, Constants.SOURCE_FILE);
+        begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, BULK_BEAN, null, Constants.SOURCE_FILE);
         EmitUtils.null_constructor(this);
         generateGet(target, getters);
         generateSet(target, setters);

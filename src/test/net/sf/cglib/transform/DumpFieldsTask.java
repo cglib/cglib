@@ -96,7 +96,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 
 
 
-            public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
+            public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
 
                 className = name.replace('/', '.');
 

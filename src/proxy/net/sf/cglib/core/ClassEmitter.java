@@ -58,7 +58,7 @@ public class ClassEmitter extends ClassAdapter {
         return classInfo;
     }
 
-    public void begin_class(final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
         final Type classType = Type.getType("L" + className.replace('.', '/') + ";");
         classInfo = new ClassInfo() {
             public Type getType() {
@@ -74,7 +74,8 @@ public class ClassEmitter extends ClassAdapter {
                 return access;
             }
         };
-        cv.visit(access,
+        cv.visit(version,
+                 access,
                  classInfo.getType().getInternalName(),
                  classInfo.getSuperType().getInternalName(),
                  TypeUtils.toInternalNames(interfaces),
@@ -239,8 +240,9 @@ public class ClassEmitter extends ClassAdapter {
         }
     }
 
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        begin_class(access,
+    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+        begin_class(version,
+                    access,
                     name.replace('/', '.'),
                     TypeUtils.fromInternalName(superName),
                     TypeUtils.fromInternalNames(interfaces),

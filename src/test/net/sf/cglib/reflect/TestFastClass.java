@@ -26,7 +26,6 @@ import net.sf.cglib.core.DefaultGeneratorStrategy;
 import net.sf.cglib.transform.ClassTransformerTee;
 import net.sf.cglib.transform.NullClassVisitor;
 import net.sf.cglib.transform.TransformingClassGenerator;
-import org.objectweb.asm.util.DumpClassVisitor;
 
 public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public static class Simple {

@@ -52,7 +52,7 @@ class FastClassEmitter extends ClassEmitter {
     public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
       
-        begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
+        begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null, null);

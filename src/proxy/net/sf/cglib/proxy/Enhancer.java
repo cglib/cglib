@@ -457,7 +457,8 @@ public class Enhancer extends AbstractClassGenerator
 
 
         ClassEmitter e = new ClassEmitter(v);
-        e.begin_class(Constants.ACC_PUBLIC,
+        e.begin_class(Constants.V1_2,
+                      Constants.ACC_PUBLIC,
                       getClassName(),
                       Type.getType(sc),
                       (useFactory ?
@@ -640,7 +641,7 @@ public class Enhancer extends AbstractClassGenerator
         private List methods;
         private boolean collect;
 
-        public void begin_class(final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
+        public void begin_class(int version, final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
             Type[] useInterfaces = interfaces;
             if (TypeUtils.isInterface(access) || isExcluded(superType)) {
                 collect = false;
@@ -682,7 +683,7 @@ public class Enhancer extends AbstractClassGenerator
                     useInterfaces = TypeUtils.add(interfaces, FACTORY);
                 }
             }
-            super.begin_class(access, className, superType, useInterfaces, sourceFile);
+            super.begin_class(version, access, className, superType, useInterfaces, sourceFile);
         }
 
         public CodeEmitter begin_method(final int access, final Signature sig, final Type[] exceptions, final Attribute attrs) {

@@ -45,7 +45,7 @@ class BeanMapEmitter extends ClassEmitter {
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int require) {
         super(v);
 
-        begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
+        begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
         EmitUtils.null_constructor(this);
         EmitUtils.factory_method(this, NEW_INSTANCE);
         generateConstructor();
