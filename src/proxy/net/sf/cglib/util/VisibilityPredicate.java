@@ -51,30 +51,30 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-public class MemberSwitchBean {
-    public int init = -1;
-    
-    public MemberSwitchBean() { init = 0; }
-    public MemberSwitchBean(double foo) { init = 1; }
-    public MemberSwitchBean(int foo) { init = 2; }
-    public MemberSwitchBean(int foo, String bar, String baz) { init = 3; }
-    public MemberSwitchBean(int foo, String bar, double baz) { init = 4; }
-    public MemberSwitchBean(int foo, short bar, long baz) { init = 5; }
-    public MemberSwitchBean(int foo, String bar) { init = 6; }
+import java.lang.reflect.*;
 
-    public int foo() { return 0; }
-    public int foo(double foo) { return 1; }
-    public int foo(int foo) { return 2; }
-    public int foo(int foo, String bar, String baz) { return 3; }
-    public int foo(int foo, String bar, double baz) { return 4; }
-    public int foo(int foo, short bar, long baz) { return 5; }
-    public int foo(int foo, String bar) { return 6; }
+public class VisibilityPredicate implements Predicate {
+    final boolean protectedOk;
+    final String pkg;
 
-    public int bar() { return 7; }
-    public int bar(double foo) { return 8; }
+    public VisibilityPredicate(Class source, boolean protectedOk) {
+        this.protectedOk = protectedOk;
+        pkg = ReflectUtils.getPackageName(source);
+    }
 
-    int pkg() { return 9; }
+    public boolean evaluate(Object arg) {
+        int mod = ((Member)arg).getModifiers();
+        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
+            return false;
+        } else if (Modifier.isPublic(mod)) {
+            return true;
+        } else if (Modifier.isProtected(mod)) {
+            return protectedOk;
+        } else {
+            return pkg.equals(ReflectUtils.getPackageName(((Member)arg).getDeclaringClass()));
+        }
+    }
 }
 

@@ -55,10 +55,19 @@ package net.sf.cglib.reflect;
 
 import java.lang.reflect.Method;
 
-public class FastMethod extends FastMember
+public class FastMethod extends FastMember implements Invocable
 {
     FastMethod(FastClass fc, Method method) {
-        super(fc, method, fc.getIndex(method.getName(), method.getParameterTypes()));
+        super(fc, method, helper(fc, method));
+    }
+
+    private static int helper(FastClass fc, Method method) {
+        try {
+            return fc.getIndex(method.getName(), method.getParameterTypes());
+        } catch (Error e) {
+            System.err.println("Caught error " + e + " LOOKING UP INDEX name=" + method.getName() + " types=" + java.util.Arrays.asList(method.getParameterTypes()) + " in class " + fc.getClass().getName());
+            throw e;
+        }
     }
 
     public Class getReturnType() {
@@ -73,7 +82,8 @@ public class FastMethod extends FastMember
         return ((Method)member).getExceptionTypes();
     }
 
-    public Object invoke(Object obj, Object[] args) {
+    // TODO: change throws clause
+    public Object invoke(Object obj, Object[] args) throws Throwable {
         return fc.invoke(index, obj, args);
     }
 

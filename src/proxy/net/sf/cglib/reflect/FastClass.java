@@ -87,15 +87,18 @@ abstract public class FastClass
         });
     }
 
-    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) {
+    // TODO: change throws clause
+    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws Throwable {
         return invoke(getIndex(name, parameterTypes), obj, args);
     }
 
-    public Object newInstance() {
+    // TODO: change throws clause
+    public Object newInstance() throws Throwable {
         return newInstance(getIndex(Constants.TYPES_EMPTY), null);
     }
 
-    public Object newInstance(Class[] parameterTypes, Object[] args) {
+    // TODO: change throws clause
+    public Object newInstance(Class[] parameterTypes, Object[] args) throws Throwable {
         return newInstance(getIndex(parameterTypes), args);
     }
     
@@ -148,6 +151,6 @@ abstract public class FastClass
     
     abstract public int getIndex(String name, Class[] parameterTypes);
     abstract public int getIndex(Class[] parameterTypes);
-    abstract public Object invoke(int index, Object obj, Object[] args);
-    abstract public Object newInstance(int index, Object[] args);
+    abstract public Object invoke(int index, Object obj, Object[] args) throws Throwable;
+    abstract public Object newInstance(int index, Object[] args) throws Throwable;
 }

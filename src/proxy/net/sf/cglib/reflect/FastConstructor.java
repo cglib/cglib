@@ -69,11 +69,13 @@ public class FastConstructor extends FastMember
         return ((Constructor)member).getExceptionTypes();
     }
 
-    public Object newInstance() {
+    // TODO: change throws clause
+    public Object newInstance() throws Throwable {
         return fc.newInstance(index, null);
     }
 
-    public Object newInstance(Object[] args) {
+    // TODO: change throws clause
+    public Object newInstance(Object[] args) throws Throwable {
         return fc.newInstance(index, args);
     }
 

@@ -747,6 +747,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     member_helper_size((List)buckets.get(key), callback, cached, def, end);
                 }
                 public void processDefault() throws Exception {
+                    // pop deferred
                     goTo(def);
                 }
             });
@@ -778,6 +779,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 member_helper_type(bucket, callback, typer, def, end, new BitSet(types.length));
             }
             public void processDefault() throws Exception {
+                // pop deferred
                 goTo(def);
             }
         });
@@ -801,6 +803,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     push(types[i].getName());
                     invoke(MethodConstants.EQUALS);
                     ifeq(def);
+                    // pop deferred
                 }
             }
             pop();
@@ -822,8 +825,11 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     index = i;
                 }
             }
+            if (buckets == null) {
+                // must have two methods with same name, types, and different return types
+                throw new RuntimeException("assertion failed index=" + index + " m1=" + members.get(0));
+            }
             checked.set(index);
-            // TODO: assert unique > 1
 
             dup();
             aaload(index);
@@ -837,6 +843,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
                 }
                 public void processDefault() throws Exception {
+                    // pop deferred
                     goTo(def);
                 }
             });

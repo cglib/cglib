@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.9 2003/09/09 16:15:10 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.10 2003/09/10 17:49:10 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -396,6 +396,10 @@ public class ReflectUtils {
         throw new NoSuchMethodException(methodName);
     }
 
+    public static String getMethodDescriptor(Method method) {
+        return getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
+    }
+    
     public static String getMethodDescriptor(Class returnType, Class[] parameterTypes) {
         StringBuffer buf = new StringBuffer();
         buf.append('(');
@@ -450,6 +454,21 @@ public class ReflectUtils {
                 buf.append(d.getName());
                 buf.append(';');
                 return;
+            }
+        }
+    }
+
+    public static Object[] filter(Object[] a, Predicate p) {
+        List c = new ArrayList(Arrays.asList(a));
+        filter(c, p);
+        return c.toArray((Object[])Array.newInstance(a.getClass().getComponentType(), c.size()));
+    }
+
+    public static void filter(Collection c, Predicate p) {
+        Iterator it = c.iterator();
+        while (it.hasNext()) {
+            if (!p.evaluate(it.next())) {
+                it.remove();
             }
         }
     }
