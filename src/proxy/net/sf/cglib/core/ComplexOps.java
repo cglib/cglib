@@ -107,17 +107,6 @@ public class ComplexOps {
     private static final Signature GET_DECLARED_METHOD =
       TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
 
-//     private static final Signature CSTRUCT_STRING =
-//       TypeUtils.parseConstructor("String");
-//     private static final Signature FIND_CLASS =
-//       TypeUtils.parseSignature("Class CGLIB$findClass(String)");
-//     private static final Signature GET_MESSAGE =
-//       TypeUtils.parseSignature("String getMessage()");
-//     private static final Type NO_CLASS_DEF_FOUND_ERROR =
-//       TypeUtils.parseType("NoClassDefFoundError");
-//     private static final Type CLASS_NOT_FOUND_EXCEPTION =
-//       TypeUtils.parseType("ClassNotFoundException");
-
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
     private ComplexOps() {
@@ -358,41 +347,24 @@ public class ComplexOps {
         }
     }
 
-    private static void load_class_helper(CodeEmitter e, Type type) {
-//         e.register(FIND_CLASS, new ClassEmitter.EndClassCallback() {
-//             public void process() {
-//                 generateFindClass(e);
-//             }
-//         });
-        e.push(TypeUtils.emulateClassGetName(type));
-        e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
-//         e.invoke_static_this(FIND_CLASS);
+    private static void load_class_helper(CodeEmitter e, final Type type) {
+        if (e.isStaticHook()) {
+            // have to fall back on non-optimized load
+            e.push(TypeUtils.emulateClassGetName(type));
+            e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
+        } else {
+            ClassEmitter ce = e.getClassEmitter();
+            String fieldName = "CGLIB$load_class$" + type.getClassName().replace('.', '_');
+            if (!ce.isFieldDeclared(fieldName)) {
+                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null);
+                CodeEmitter hook = ce.getStaticHook();
+                hook.push(TypeUtils.emulateClassGetName(type));
+                hook.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
+                hook.putstatic(ce.getClassType(), fieldName, Constants.TYPE_CLASS);
+            }
+            e.getfield(fieldName);
+        }
     }
-
-//     private static void generateFindClass(Emitter e) {
-//         /* generates:
-//            static private Class findClass(String name) throws Exception {
-//                try {
-//                    return Class.forName(name);
-//                } catch (java.lang.ClassNotFoundException cne) {
-//                    throw new java.lang.NoClassDefFoundError(cne.getMessage());
-//                }
-//            }
-//          */
-//         e.begin_method(Constants.PRIVATE_FINAL_STATIC, FIND_CLASS, null);
-//         Block block = e.begin_block();
-//         e.load_arg(0);
-//         e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
-//         e.return_value();
-//         e.end_block();
-//         e.catch_exception(block, CLASS_NOT_FOUND_EXCEPTION);
-//         e.invoke_virtual(Constants.TYPE_THROWABLE, GET_MESSAGE);
-//         e.new_instance(NO_CLASS_DEF_FOUND_ERROR);
-//         e.dup_x1();
-//         e.swap();
-//         e.invoke_constructor(NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
-//         e.athrow();
-//     }
 
     public static void push_array(CodeEmitter e, Object[] array) {
         e.push(array.length);

@@ -61,16 +61,26 @@ import org.objectweb.asm.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class ClassEmitter extends ClassAdapter {
-    private static final Signature STATIC =
-      TypeUtils.parseSignature("void <clinit>()");
+    private static final Signature STATIC_HOOK =
+      TypeUtils.parseSignature("void CGLIB$STATIC_HOOK()");
 
     private int access;
     private Type classType;
     private Type superType;
     private Map fieldInfo;
+    private boolean seenStatic;
+    private ClassEmitter rec;
+    private CodeEmitter hook;
+    private boolean useHook = true;
 
     public ClassEmitter(ClassVisitor cv) {
         super(null);
+        setTarget(cv);
+    }
+
+    public ClassEmitter(ClassVisitor cv, boolean useHook) {
+        super(null);
+        this.useHook = useHook;
         setTarget(cv);
     }
 
@@ -78,26 +88,38 @@ public class ClassEmitter extends ClassAdapter {
         super(null);
     }
 
-    ClassVisitor getTarget() {
-        return cv;
-    }
-
     public void setTarget(ClassVisitor cv) {
-        this.cv = cv;
+        if (useHook) {
+            this.cv = new ClassVisitorTee(rec = new ClassEmitter(new ClassRecorder(), false), cv);
+        } else {
+            this.cv = cv;
+        }
+        fieldInfo = new HashMap();
+        seenStatic = false;
+        hook = null;
     }
 
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         this.access = access;
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
         this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
-        fieldInfo = new HashMap();
-        
         cv.visit(access,
                  this.classType.getInternalName(),
                  this.superType.getInternalName(),
                  TypeUtils.toInternalNames(interfaces),
                  sourceFile);
         init();
+    }
+
+    public CodeEmitter getStaticHook() {
+        if (!useHook || TypeUtils.isInterface(access)) {
+            throw new IllegalStateException("static hook is invalid for this class");
+        }
+        if (hook == null) { 
+            hook = rec.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
+            hook.setStaticHook(true);
+        }
+        return hook;
     }
 
     protected void init() {
@@ -116,43 +138,105 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public void end_class() {
+        if (useHook) {
+            if (hook != null && !seenStatic) {
+                CodeEmitter e = begin_static();
+                e.return_value();
+                e.end_method();
+            }
+            
+            if (seenStatic) {
+                CodeEmitter e = begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
+                if (hook != null) {
+                    ((ClassRecorder)rec.cv).generateCode(STATIC_HOOK, e);
+                }
+                e.return_value();
+                e.end_method();
+            }
+        }
         cv.visitEnd();
         cv = null; // for safety
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        return new CodeEmitter(this, access, sig, exceptions);
+        CodeVisitor v = super.visitMethod(access,
+                                          sig.getName(),
+                                          sig.getDescriptor(),
+                                          TypeUtils.toInternalNames(exceptions));
+        CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
+        if (useHook) {
+            if (sig.equals(Constants.SIG_STATIC)) {
+                seenStatic = true;
+                e.invoke_static_this(STATIC_HOOK);
+                return e;
+            }
+        }
+        return e;
     }
 
     public CodeEmitter begin_static() {
-        return begin_method(Constants.ACC_STATIC, STATIC, null);
+        return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null);
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
-        if (fieldInfo.get(name) != null) {
-            throw new IllegalArgumentException("Field \"" + name + "\" already exists");
+        FieldInfo existing = (FieldInfo)fieldInfo.get(name);
+        FieldInfo info = new FieldInfo(access, name, type, value);
+        if (existing != null) {
+            if (!info.equals(existing)) {
+                throw new IllegalArgumentException("Field \"" + name + "\" has been declared differently");
+            }
+        } else {
+            fieldInfo.put(name, info);
+            cv.visitField(access, name, type.getDescriptor(), value);
         }
-        fieldInfo.put(name, new FieldInfo(TypeUtils.isStatic(access), type));
-        cv.visitField(access, name, type.getDescriptor(), value);
-        
+    }
+
+    // TODO: make public?
+    boolean isFieldDeclared(String name) {
+        return fieldInfo.get(name) != null;
     }
 
     FieldInfo getFieldInfo(String name) {
         FieldInfo field = (FieldInfo)fieldInfo.get(name);
         if (field == null) {
-            
             throw new IllegalArgumentException("Field " + name + " is not declared in " + classType.getClassName());
         }
         return field;
     }
     
     static class FieldInfo {
-        boolean isStatic;
+        int access;
+        String name;
         Type type;
+        Object value;
         
-        public FieldInfo(boolean isStatic, Type type) {
-            this.isStatic = isStatic;
+        public FieldInfo(int access, String name, Type type, Object value) {
+            this.access = access;
+            this.name = name;
             this.type = type;
+            this.value = value;
+        }
+
+        public boolean equals(Object o) {
+            if (o == null)
+                return false;
+            if (!(o instanceof FieldInfo))
+                return false;
+            FieldInfo other = (FieldInfo)o;
+            if (access != other.access ||
+                !name.equals(other.name) ||
+                !type.equals(other.type)) {
+                return false;
+            }
+            if ((value == null) ^ (other.value == null))
+                return false;
+            if (value != null && !value.equals(other.value))
+                return false;
+            return true;
+        }
+
+        public int hashCode() {
+            return access ^ name.hashCode() ^ type.hashCode() ^ ((value == null) ? 0 : value.hashCode());
         }
     }
 
