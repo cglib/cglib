@@ -68,16 +68,8 @@ abstract public class ParallelSorter extends SorterTemplate {
       ReflectUtils.findMethod("ParallelSorter.cglib_newInstance(Object[])");
     private static final Method SWAP_METHOD =
       ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
-    private static final Comparator DEFAULT_COMPARATOR = new DefaultComparator();
-    private static final Object[] emptyArgs = { new Object[0] };
 
     protected Object[] a;
-
-    private static class DefaultComparator implements Comparator {
-        public final int compare(Object o1, Object o2) {
-            return ((Comparable)o1).compareTo(o2);
-        }
-    }
 
     // should be package-protected but causes problems on jdk1.2
     public interface ParallelSorterKey {
