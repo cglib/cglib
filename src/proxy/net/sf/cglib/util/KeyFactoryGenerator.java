@@ -165,11 +165,19 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     private void hash_code(Class clazz) {
         if (clazz.isArray()) {
+            String isNull = newLabel();
+            String end = newLabel();
+            dup();
+            ifnull(isNull);
             process_array(clazz, hashCallback);
+            goTo(end);
+            nop(isNull);
+            pop();
+            nop(end);
         } else {
             if (clazz.isPrimitive()) {
                 if (clazz.equals(Boolean.TYPE)) {
-                    // (f ? 0 : 1)
+                    // f ? 0 : 1
                     push(1);
                     ixor();
                 } else if (clazz.equals(Double.TYPE)) {
@@ -185,8 +193,17 @@ class KeyFactoryGenerator extends CodeGenerator {
                     // (int)f
                 }
             } else {
-                // f.hashCode()
+                // (f == null) ? 0 : f.hashCode()
+                String isNull = newLabel();
+                String end = newLabel();
+                dup();
+                ifnull(isNull);
                 invoke(hashCode);
+                goTo(end);
+                nop(isNull);
+                pop();
+                push(0);
+                nop(end);
             }
             iadd();
             swap();
