@@ -381,7 +381,7 @@ public class EmitUtils {
         if (arrayCount >= 0) {
             typeName = "ARRAY" + arrayCount + "$" + typeName;
         }
-        typeName = typeName.replace('[', '_');
+        typeName = typeName.replace('[', '_').replace(';','$');
         return "CGLIB$load_class$" + typeName;
     }
 

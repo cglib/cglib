@@ -137,6 +137,11 @@ public abstract class Source implements java.io.Serializable{
       return val;
     }
     
+    public String [] arrayType(String val[]){
+      return val;
+    }
+    
+    
     
     public Object objectType(Object val){
       return val;

@@ -59,7 +59,7 @@ import java.lang.reflect.Modifier;
 
 /**
  *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- *@version $Id: TestInterceptor.java,v 1.1 2003/10/29 03:45:38 herbyderby Exp $
+ *@version $Id: TestInterceptor.java,v 1.2 2003/12/11 17:50:04 baliuka Exp $
  */
 public class TestInterceptor implements MethodInterceptor, Serializable {
     String value;
@@ -76,6 +76,7 @@ public class TestInterceptor implements MethodInterceptor, Serializable {
     }
 
     public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        System.out.println( method );
         Throwable e = null;                                                                            
         boolean invokedSuper = false;                                                                  
         Object retValFromSuper = null;
