@@ -59,7 +59,7 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.8 2003/01/31 01:18:51 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.9 2003/02/10 19:22:39 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -106,26 +106,21 @@ class DelegatorGenerator extends CodeGenerator {
 
     private static Method[] getBeanMethods(Class clazz) {
         try {
-            BeanInfo info = Introspector.getBeanInfo(clazz, Introspector.IGNORE_ALL_BEANINFO);
+            BeanInfo info = Introspector.getBeanInfo(clazz, Object.class);
             PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
             List methods = new ArrayList(descriptors.length * 2);
             for (int i = 0; i < descriptors.length; i++) {
                 PropertyDescriptor pd = descriptors[i];
-                addBeanMethod(methods, pd.getReadMethod());
-                addBeanMethod(methods, pd.getWriteMethod());
+                Method read = pd.getReadMethod();
+                if (read != null)
+                    methods.add(read);
+                Method write = pd.getWriteMethod();
+                if (write != null)
+                    methods.add(write);
             }
             return (Method[])methods.toArray(new Method[methods.size()]);
         } catch (IntrospectionException e) {
             throw new CodeGenerationException(e);
-        }
-    }
-
-    private static void addBeanMethod(List methods, Method method) {
-        if (method != null) {
-            int mod = method.getModifiers();
-            if (!(Modifier.isFinal(mod) || Modifier.isAbstract(mod))) {
-                methods.add(method);
-            }
         }
     }
 
