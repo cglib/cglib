@@ -62,7 +62,7 @@ abstract class SorterTemplate {
     abstract protected void swap(int i, int j);
     abstract protected int compare(int i, int j);
 
-    public void quickSort(int lo, int hi) {
+    protected void quickSort(int lo, int hi) {
         quickSortHelper(lo, hi);
         insertionSort(lo, hi);
     }
@@ -122,7 +122,7 @@ abstract class SorterTemplate {
         }
     }
 
-    public void mergeSort(int lo, int hi) {
+    protected void mergeSort(int lo, int hi) {
         int diff = hi - lo;
         if (diff <= MERGESORT_THRESHOLD) {
             insertionSort(lo, hi);
