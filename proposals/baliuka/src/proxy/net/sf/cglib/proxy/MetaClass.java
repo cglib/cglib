@@ -129,8 +129,10 @@ public abstract class MetaClass implements ClassFileConstants{
            il.append( new ALOAD(1) ); // arg1
            il.append( new CHECKCAST( cp.addClass(target.getName()) ) );
            il.append( new ASTORE(2) ); // local1
-           if( getters.length <= 5 ){ 
+           if( types.length <= 5 ){ 
                 il.append( new  ICONST( types.length ) );
+               }else if ( types.length < Byte.MAX_VALUE ) {
+                 il.append( new  BIPUSH( (byte)types.length ) ); 
                }else{
                  il.append( new  SIPUSH( (short)types.length ) ); 
                }
@@ -142,9 +144,11 @@ public abstract class MetaClass implements ClassFileConstants{
             
                if( i<= 5 ){ 
                 il.append( new  ICONST( i ) );
-               }else{
-                 il.append( new  SIPUSH( (short)i ) ); 
-               } 
+               }else if ( i < Byte.MAX_VALUE ) {
+                    il.append( new  BIPUSH( (byte)i ) ); 
+               } else {
+                   il.append( new  SIPUSH( (short)i ) ); 
+               }
             
             Type returnType = ClassFileUtils.toType(types[i]);
             Instruction wrapper = ClassFileUtils.newWrapper( returnType,cp );
@@ -189,8 +193,10 @@ public abstract class MetaClass implements ClassFileConstants{
                 il.append( new  ALOAD(2) ); // arg2
                if( i<= 5 ){ 
                 il.append( new  ICONST( i ) );
+               }else  if ( i < Byte.MAX_VALUE){
+                  il.append( new  BIPUSH((byte)i ) ); 
                }else{
-                 il.append( new  SIPUSH((short)i ) ); 
+                  il.append( new  SIPUSH((short)i ) ); 
                } 
                 il.append( new  AALOAD() ); // arg2[i]
            

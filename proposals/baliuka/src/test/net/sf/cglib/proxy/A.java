@@ -9,6 +9,8 @@ public class A {
 	private Long id;
 
 	private String name;
+        
+      	private String privateName;
 
         /** Holds value of property intP. */
         private int intP;        
@@ -103,6 +105,19 @@ public class A {
      return null;
    }
 
+   	 String getPrivateName() {
+
+		return privateName;
+
+	}
+
+ 	void setPrivateName(String name) {
+
+		this.privateName = name;
+
+	}
+
+    
    /** Getter for property intP.
     * @return Value of property intP.
     */
