@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.43 2003/09/29 23:08:52 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.44 2003/10/05 17:38:42 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -92,11 +92,11 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testEnhance()throws Throwable{
         
-        java.util.Vector vector1 = (java.util.Vector)Helpers.enhance(
+        java.util.Vector vector1 = (java.util.Vector)Enhancer.create(
         java.util.Vector.class,
         new Class[]{java.util.List.class}, TEST_INTERCEPTOR );
         
-        java.util.Vector vector2  = (java.util.Vector)Helpers.enhance(
+        java.util.Vector vector2  = (java.util.Vector)Enhancer.create(
         java.util.Vector.class,
         new Class[]{java.util.List.class}, TEST_INTERCEPTOR );
         
@@ -138,7 +138,7 @@ public class TestEnhancer extends CodeGenTestCase {
         };
         
         
-        Source source =  (Source)Helpers.enhance(
+        Source source =  (Source)Enhancer.create(
         Source.class,
         null,interceptor );
         
@@ -150,7 +150,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testEnhanced()throws Throwable{
         
-        Source source =  (Source)Helpers.enhance(
+        Source source =  (Source)Enhancer.create(
         Source.class,
         null, TEST_INTERCEPTOR );
         
@@ -163,7 +163,7 @@ public class TestEnhancer extends CodeGenTestCase {
         EA obj = new EA();
         EA save = obj;
         obj.setName("herby");
-        EA proxy = (EA)Helpers.enhance( EA.class,  new DelegateInterceptor(save) );
+        EA proxy = (EA)Enhancer.create( EA.class,  new DelegateInterceptor(save) );
      
         assertTrue(proxy.getName().equals("herby"));
     }
@@ -181,7 +181,7 @@ public class TestEnhancer extends CodeGenTestCase {
     public void testEnhanceObjectDelayed() throws Throwable {
         
         DelegateInterceptor mi = new DelegateInterceptor(null);
-        EA proxy = (EA)Helpers.enhance( EA.class, mi);
+        EA proxy = (EA)Enhancer.create( EA.class, mi);
         EA obj = new EA();
         obj.setName("herby");
         mi.delegate = obj;
@@ -191,7 +191,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testTypes()throws Throwable{
         
-        Source source =  (Source)Helpers.enhance(
+        Source source =  (Source)Enhancer.create(
         Source.class,
         null, TEST_INTERCEPTOR );
         TestCase.assertTrue("intType",   1   == source.intType(1));
@@ -207,7 +207,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testModifiers()throws Throwable{
         
-        Source source =  (Source)Helpers.enhance(
+        Source source =  (Source)Enhancer.create(
         Source.class,
         null, TEST_INTERCEPTOR );
         
@@ -228,7 +228,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testObject()throws Throwable{
         
-        Object source =  Helpers.enhance(
+        Object source =  Enhancer.create(
         null,
         null, TEST_INTERCEPTOR );
         
@@ -239,7 +239,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testSystemClassLoader()throws Throwable{
         
-        Object source =  Helpers.enhance(
+        Object source =  enhance(
         null,
         null, TEST_INTERCEPTOR , ClassLoader.getSystemClassLoader());
         source.toString();
@@ -253,13 +253,13 @@ public class TestEnhancer extends CodeGenTestCase {
         
         ClassLoader custom = new ClassLoader(this.getClass().getClassLoader()){};
         
-        Object source =  Helpers.enhance( null, null, TEST_INTERCEPTOR, custom);
+        Object source =  enhance( null, null, TEST_INTERCEPTOR, custom);
         source.toString();
         assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
         custom = new ClassLoader(){};
         
-        source =  Helpers.enhance( null, null, TEST_INTERCEPTOR, custom);
+        source =  enhance( null, null, TEST_INTERCEPTOR, custom);
         source.toString();
         assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
@@ -268,7 +268,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testRuntimException()throws Throwable{
     
-        Source source =  (Source)Helpers.enhance(
+        Source source =  (Source)Enhancer.create(
         Source.class,
         null, TEST_INTERCEPTOR );
         
@@ -299,20 +299,20 @@ public class TestEnhancer extends CodeGenTestCase {
     
   public void testCast()throws Throwable{
     
-    CastTest castTest =  (CastTest)Helpers.enhance(CastTest.class, null, new  CastTestInterceptor());
+    CastTest castTest =  (CastTest)Enhancer.create(CastTest.class, null, new  CastTestInterceptor());
   
     assertTrue(castTest.getInt() == 0);
     
   }
   
    public void testABC() throws Throwable{
-       Helpers.enhance(EA.class, null, TEST_INTERCEPTOR);
-       Helpers.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
-       ((EB)Helpers.enhance(EB.class, null, TEST_INTERCEPTOR)).finalTest();
-       assertTrue("abstract method",( (EC1)Helpers.enhance(EC1.class,
+       Enhancer.create(EA.class, null, TEST_INTERCEPTOR);
+       Enhancer.create(EC1.class, null, TEST_INTERCEPTOR).toString();
+       ((EB)Enhancer.create(EB.class, null, TEST_INTERCEPTOR)).finalTest();
+       assertTrue("abstract method",( (EC1)Enhancer.create(EC1.class,
                      null, TEST_INTERCEPTOR) ).compareTo( new EC1() ) == -1 );
-       Helpers.enhance(ED.class, null, TEST_INTERCEPTOR).toString();
-       Helpers.enhance(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.create(ED.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.create(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
    }
 
     public static class AroundDemo {
@@ -325,7 +325,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
 
     public void testAround() throws Throwable {
-        AroundDemo demo = (AroundDemo)Helpers.enhance(AroundDemo.class, null, new MethodInterceptor() {
+        AroundDemo demo = (AroundDemo)Enhancer.create(AroundDemo.class, null, new MethodInterceptor() {
                 public Object intercept(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
                     if (method.getName().equals("getFirstName"))
@@ -350,12 +350,12 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testClone() throws Throwable{
     
-      TestClone testClone = (TestClone)Helpers.enhance( TestCloneImpl.class,
+      TestClone testClone = (TestClone)Enhancer.create( TestCloneImpl.class,
                                                           TEST_INTERCEPTOR );
       assertTrue( testClone.clone() != null );  
       
             
-      testClone = (TestClone)Helpers.enhance( TestClone.class,
+      testClone = (TestClone)Enhancer.create( TestClone.class,
          new MethodInterceptor(){
       
            public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
@@ -385,7 +385,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
 
     public void testFinal() throws Throwable {
-        ((FinalA)Helpers.enhance(FinalB.class, TEST_INTERCEPTOR)).foo();
+        ((FinalA)Enhancer.create(FinalB.class, TEST_INTERCEPTOR)).foo();
     }
 
     public static interface ConflictA {
@@ -398,14 +398,14 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testConflict() throws Throwable {
         Object foo =
-            Helpers.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
+            Enhancer.create(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
         ((ConflictA)foo).foo();
         ((ConflictB)foo).foo();
     }
     
      public void testArgInit() throws Throwable{
     
-         Class f = Helpers.enhanceClass(ArgInit.class, null, new SimpleFilter(Callbacks.INTERCEPT));
+         Class f = Enhancer.createClass(ArgInit.class, null, new SimpleFilter(Callbacks.INTERCEPT));
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
@@ -435,7 +435,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
 
     public void testSignature() throws Throwable {
-        Signature sig = (Signature)Helpers.enhance(Signature.class, TEST_INTERCEPTOR);
+        Signature sig = (Signature)Enhancer.create(Signature.class, TEST_INTERCEPTOR);
         assertTrue(((Factory)sig).getCallback(Callbacks.INTERCEPT) == TEST_INTERCEPTOR);
         assertTrue(sig.interceptor() == 42);
     }
@@ -450,7 +450,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testAbstractMethodCallInConstructor() throws Throwable {
 	AbstractMethodCallInConstructor obj = (AbstractMethodCallInConstructor)
-	    Helpers.enhance(AbstractMethodCallInConstructor.class,
+	    Enhancer.create(AbstractMethodCallInConstructor.class,
 			     TEST_INTERCEPTOR);
 	obj.foo();
     }
@@ -461,12 +461,21 @@ public class TestEnhancer extends CodeGenTestCase {
                     return "boop";
                 }
             };
-        DI1 d = (DI1)Helpers.enhance(DI1.class, new MethodInterceptor() {
+        DI1 d = (DI1)Enhancer.create(DI1.class, new MethodInterceptor() {
                 public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
                                         MethodProxy proxy) throws Throwable {
                     return proxy.invoke(other, args);
                 }
             });
         assertTrue("boop".equals(d.herby()));
+    }
+
+    public static Factory enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(cls);
+        e.setInterfaces(interfaces);
+        e.setCallback(callback);
+        e.setClassLoader(loader);
+        return e.create();
     }
 }

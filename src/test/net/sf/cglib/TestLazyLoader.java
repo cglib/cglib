@@ -65,7 +65,7 @@ public class TestLazyLoader extends CodeGenTestCase {
                     return "foo";
                 }
             };
-        Object obj = Helpers.enhance(Object.class, loader);
+        Object obj = Enhancer.create(Object.class, loader);
         assertTrue("foo".equals(obj.toString()));
     }
 
