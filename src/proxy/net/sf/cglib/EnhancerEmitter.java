@@ -66,6 +66,14 @@ class EnhancerEmitter extends Emitter {
       Signature.parse("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
+    private static final Type ILLEGAL_STATE_EXCEPTION =
+      Signature.parseType("IllegalStateException");
+    private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
+      Signature.parseType("IllegalArgumentException");
+    private static final Type THREAD_LOCAL =
+      Signature.parseType("ThreadLocal");
+    
+
 //     private static final Signature NEW_INSTANCE =
 //       Signature.parse("Object newInstance(net.sf.cglib.Callbacks)");
 //     private static final Signature MULTIARG_NEW_INSTANCE =
@@ -259,7 +267,7 @@ class EnhancerEmitter extends Emitter {
             invoke_constructor_this();
             break;
         default:
-            throw_exception(Constants.TYPE_ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
+            throw_exception(ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
         }
         return_value();
         
@@ -285,7 +293,7 @@ class EnhancerEmitter extends Emitter {
                 goTo(end);
             }
             public void processDefault() {
-                throw_exception(Constants.TYPE_ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
+                throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
             }
         });
         load_arg(2);
@@ -369,7 +377,7 @@ class EnhancerEmitter extends Emitter {
                 Type callbackType = CallbackUtils.getType2(i);
                 if (callbackType != null) {
                     declare_field(Modifier.PRIVATE, getCallbackField(i), callbackType, null);
-                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), Constants.TYPE_THREAD_LOCAL, null);
+                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null);
                 }
                 generators[i].generate(this, contexts[i]);
             }
@@ -427,9 +435,9 @@ class EnhancerEmitter extends Emitter {
         begin_static();
         for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
             if (usedCallbacks.get(i)) {
-                new_instance(Constants.TYPE_THREAD_LOCAL);
+                new_instance(THREAD_LOCAL);
                 dup();
-                invoke_constructor(Constants.TYPE_THREAD_LOCAL, Constants.TYPE_EMPTY);
+                invoke_constructor(THREAD_LOCAL, Constants.TYPES_EMPTY);
                 putfield(getThreadLocal(i));
             }
         }

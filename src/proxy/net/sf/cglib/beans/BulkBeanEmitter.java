@@ -70,7 +70,10 @@ class BulkBeanEmitter extends Emitter {
       Signature.parseType("net.sf.cglib.beans.BulkBean");
     private static final Type BULK_BEAN_EXCEPTION =
       Signature.parseType("net.sf.cglib.beans.BulkBeanException");
-    private static final Type[] EXCEPTION_TYPES = { Constants.TYPE_THROWABLE, Type.INT_TYPE };
+    private static final Type CLASS_CAST_EXCEPTION =
+      Signature.parseType("ClassCastException");
+    private static final Type[] EXCEPTION_TYPES =
+      Signature.parseTypes("Throwable, int");
         
     public BulkBeanEmitter(ClassVisitor v,
                            String className,
@@ -136,7 +139,7 @@ class BulkBeanEmitter extends Emitter {
         }
         end_block();
         return_value();
-        catch_exception(handler, Constants.TYPE_CLASS_CAST_EXCEPTION);
+        catch_exception(handler, CLASS_CAST_EXCEPTION);
         new_instance(BULK_BEAN_EXCEPTION);
         dup_x1();
         swap();

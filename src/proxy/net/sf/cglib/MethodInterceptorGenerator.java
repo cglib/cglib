@@ -64,6 +64,8 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
+    private static final Type ABSTRACT_METHOD_ERROR =
+      Signature.parseType("AbstractMethodError");
     private static final Method MAKE_PROXY =
       ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
     private static final Method AROUND_ADVICE =
@@ -98,7 +100,7 @@ implements CallbackGenerator
                                 method.getParameterTypes(),
                                 method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            e.throw_exception(Constants.TYPE_ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+            e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
             e.load_args();

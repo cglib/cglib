@@ -75,7 +75,9 @@ class FastClassEmitter extends Emitter {
       Signature.parse("Object newInstance(int, Object[])");
     private static final Type FAST_CLASS =
       Signature.parseType("net.sf.cglib.reflect.FastClass");
-
+    private static final Type NO_SUCH_METHOD_ERROR =
+      Signature.parseType("NoSuchMethodError");
+    
     public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
         super(v);
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
@@ -165,7 +167,7 @@ class FastClassEmitter extends Emitter {
             }
 
             public void processDefault() {
-                throw_exception(Constants.TYPE_NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
+                throw_exception(NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
             }
         });
     }

@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.6 2003/09/20 20:23:26 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.7 2003/09/20 21:20:57 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -246,7 +246,7 @@ public class ReflectUtils {
     }
 
     public static Object newInstance(Class type) {
-        return newInstance(type, Constants.TYPES_EMPTY, null);
+        return newInstance(type, Constants.EMPTY_CLASS_ARRAY, null);
     }
 
     public static Object newInstance(Class type, Class[] parameterTypes, Object[] args) {
