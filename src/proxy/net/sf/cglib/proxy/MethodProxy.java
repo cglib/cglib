@@ -66,7 +66,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.8 2003/12/02 21:58:18 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.9 2003/12/07 00:54:36 herbyderby Exp $
  */
 public class MethodProxy {
     private Signature sig;
@@ -168,14 +168,6 @@ public class MethodProxy {
         }
     }
 
-    /**
-     * @deprecated use {@link #find} instead
-     */
-    public static String getSuperName(Class type, Method method) {
-        MethodProxy proxy = MethodProxy.find(type, ReflectUtils.getSignature(method));
-        return (proxy == null) ? null : proxy.getSuperName();
-    }
-    
     /**
      * Invoke the original method, on a different object of the same type.
      * @param obj the compatible object; recursion will result if you use the object passed as the first

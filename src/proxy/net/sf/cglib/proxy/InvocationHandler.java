@@ -56,9 +56,11 @@ package net.sf.cglib.proxy;
 import java.lang.reflect.Method;
 
 /**
- * java.lang.reflect.InvocationHandler replacement (unavailable under JDK 1.2).
+ * {@link java.lang.reflect.InvocationHandler} replacement (unavailable under JDK 1.2).
+ * This callback type is primarily for use by the {@link Proxy} class but
+ * may be used with {@link Enhancer} as well.
  * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
- * @version $Id: InvocationHandler.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
+ * @version $Id: InvocationHandler.java,v 1.2 2003/12/07 00:54:36 herbyderby Exp $
  */
 public interface InvocationHandler
 extends Callback

@@ -55,6 +55,11 @@ package net.sf.cglib.proxy;
 
 /**
  * All callback interfaces used by {@link Enhancer} extend this interface.
+ * @see MethodInterceptor
+ * @see LazyLoader
+ * @see Dispatcher
+ * @see InvocationHandler
+ * @see NoOp
  */
 public interface Callback
 {

@@ -171,13 +171,21 @@ public class Enhancer extends AbstractClassGenerator
      * Set the single {@link Callback} to use.
      * Ignored if you use {@link #createClass}.
      * @param callback the callback to use for all methods
-     * @see #setCallbackFilter
      * @see #setCallbacks
      */
     public void setCallback(final Callback callback) {
         setCallbacks(new Callback[]{ callback });
     }
 
+    /**
+     * Set the array of callbacks to use.
+     * Ignored if you use {@link #createClass}.
+     * You must use a {@link CallbackFilter} to specify the index into this
+     * array for each method in the proxied class.
+     * @param callbacks the callback array
+     * @see #setCallbackFilter
+     * @see #setCallback
+     */
     public void setCallbacks(Callback[] callbacks) {
         if (callbacks != null && callbacks.length == 0) {
             throw new IllegalArgumentException("Array cannot be empty");
@@ -187,20 +195,38 @@ public class Enhancer extends AbstractClassGenerator
 
     /**
      * Set whether the enhanced object instances should implement
-     * the {@link Factory} interface. The default is <code>true</code>.
+     * the {@link Factory} interface.
      * This was added for tools that need for proxies to be more
      * indistinguishable from their targets. Also, in some cases it may
      * be necessary to disable the <code>Factory</code> interface to
      * prevent code from changing the underlying callbacks.
+     * @param useFactory whether to implement <code>Factory</code>; default is <code>true</code>
      */
     public void setUseFactory(boolean useFactory) {
         this.useFactory = useFactory;
     }
 
+    /**
+     * Set the single type of {@link Callback} to use.
+     * This may be used instead of {@link #setCallback} when calling
+     * {@link #createClass}, since it may not be possible to have
+     * an array of actual callback instances.
+     * @param callbackType the type of callback to use for all methods
+     * @see #setCallbackTypes
+     */     
     public void setCallbackType(Class callbackType) {
         setCallbackTypes(new Class[]{ callbackType });
     }
 
+    /**
+     * Set the array of callback types to use.
+     * This may be used instead of {@link #setCallbacks} when calling
+     * {@link #createClass}, since it may not be possible to have
+     * an array of actual callback instances.
+     * You must use a {@link CallbackFilter} to specify the index into this
+     * array for each method in the proxied class.
+     * @param callbackTypes the array of callback types
+     */
     public void setCallbackTypes(Class[] callbackTypes) {
         if (callbackTypes != null && callbackTypes.length == 0) {
             throw new IllegalArgumentException("Array cannot be empty");
@@ -352,7 +378,7 @@ public class Enhancer extends AbstractClassGenerator
 
     /**
      * Helper method to create an intercepted object.
-     * For finer control over the generated instance, use a new instance of Enhancer
+     * For finer control over the generated instance, use a new instance of <code>Enhancer</code>
      * instead of this static method.
      * @param type class to extend or interface to implement
      * @param callback the callback to use for all methods
@@ -366,7 +392,7 @@ public class Enhancer extends AbstractClassGenerator
 
     /**
      * Helper method to create an intercepted object.
-     * For finer control over the generated instance, use a new instance of Enhancer
+     * For finer control over the generated instance, use a new instance of <code>Enhancer</code>
      * instead of this static method.
      * @param type class to extend or interface to implement
      * @param interfaces array of interfaces to implement, or null
@@ -382,7 +408,7 @@ public class Enhancer extends AbstractClassGenerator
 
     /**
      * Helper method to create an intercepted object.
-     * For finer control over the generated instance, use a new instance of Enhancer
+     * For finer control over the generated instance, use a new instance of <code>Enhancer</code>
      * instead of this static method.
      * @param type class to extend or interface to implement
      * @param interfaces array of interfaces to implement, or null

@@ -55,12 +55,12 @@
 package net.sf.cglib.proxy;
 
 /**
- * All enhanced instances returned by the Enhancer class implement this interface.
- * Using this interface for new instances is faster than going through the Enhancer
+ * All enhanced instances returned by the {@link Enhancer} class implement this interface.
+ * Using this interface for new instances is faster than going through the <code>Enhancer</code>
  * interface or using reflection. In addition, to intercept methods called during
  * object construction you <b>must</b> use these methods instead of reflection.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.10 2003/11/10 23:43:09 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.11 2003/12/07 00:54:36 herbyderby Exp $
  */
 public interface Factory {
     /**

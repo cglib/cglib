@@ -54,9 +54,9 @@
 package net.sf.cglib.proxy;
 
 /**
- * Callback that can be registered with an enhanced class.
+ * General-purpose {@link Enhancer} callback which provides for "around advice".
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.6 2003/10/29 03:45:39 herbyderby Exp $
+ * @version $Id: MethodInterceptor.java,v 1.7 2003/12/07 00:54:36 herbyderby Exp $
  */
 public interface MethodInterceptor
 extends Callback

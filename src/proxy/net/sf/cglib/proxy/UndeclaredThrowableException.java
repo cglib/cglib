@@ -57,7 +57,8 @@ package net.sf.cglib.proxy;
 import net.sf.cglib.core.CodeGenerationException;
 
 /**
- * @author  baliuka
+ * Used by {@link Proxy} as a replacement for <code>java.lang.reflect.UndeclaredThrowableException</code>.
+ * @author Juozas Baliuka
  */
 public class UndeclaredThrowableException extends CodeGenerationException {
     /**

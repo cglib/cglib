@@ -67,6 +67,7 @@ abstract public class FastClass
     protected FastClass(Class type) {
         this.type = type;
     }
+
     public static FastClass create(Class type) {
         Generator gen = new Generator();
         gen.setType(type);
@@ -168,16 +169,55 @@ abstract public class FastClass
         }
         return type.equals(((FastClass)o).type);
     }
-    
+
+    /**
+     * Return the index of the matching method. The index may be used
+     * later to invoke the method with less overhead. If more than one
+     * method matches (i.e. they differ by return type only), one is
+     * chosen arbitrarily.
+     * @see #invoke(int, Object, Object[])
+     * @param name the method name
+     * @param parameterTypes the parameter array
+     * @return the index, or <code>-1</code> if none is found.
+     */
     abstract public int getIndex(String name, Class[] parameterTypes);
+
+    /**
+     * Return the index of the matching constructor. The index may be used
+     * later to create a new instance with less overhead.
+     * @see #newInstance(int, Object[])
+     * @param parameterTypes the parameter array
+     * @return the constructor index, or <code>-1</code> if none is found.
+     */
     abstract public int getIndex(Class[] parameterTypes);
+
+    /**
+     * Invoke the method with the specified index.
+     * @see getIndex(name, Class[])
+     * @param index the method index
+     * @param obj the object the underlying method is invoked from
+     * @param args the arguments used for the method call
+     * @throws java.lang.reflect.InvocationTargetException if the underlying method throws an exception
+     */
     abstract public Object invoke(int index, Object obj, Object[] args) throws InvocationTargetException;
+
+    /**
+     * Create a new instance using the specified constructor index and arguments.
+     * @see getIndex(Class[])
+     * @param index the constructor index
+     * @param args the arguments passed to the constructor
+     * @throws java.lang.reflect.InvocationTargetException if the constructor throws an exception
+     */
     abstract public Object newInstance(int index, Object[] args) throws InvocationTargetException;
 
     abstract public int getIndex(Signature sig);
+
+    /**
+     * Returns the maximum method index for this class.
+     */
     abstract public int getMaxIndex();
 
-    /* protected */ static String getSignatureWithoutReturnType(String name, Class[] parameterTypes) {
+    protected static String getSignatureWithoutReturnType(String name, Class[] parameterTypes) {
         StringBuffer sb = new StringBuffer();
         sb.append(name);
         sb.append('(');
