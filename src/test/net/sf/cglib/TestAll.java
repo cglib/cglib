@@ -56,11 +56,12 @@ package net.sf.cglib;
 
 import junit.framework.*;
 import net.sf.cglib.proxy.*;
+import net.sf.cglib.metaclass.*;
 
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.4 2002/11/02 12:02:25 baliuka Exp $
+ *@version    $Id: TestAll.java,v 1.5 2002/11/09 16:19:31 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -72,6 +73,7 @@ public class TestAll extends TestCase {
         System.getProperties().list(System.out);
         TestSuite suite = new TestSuite();
         suite.addTest(TestEnhancer.suite());
+        suite.addTest(TestMetaClass.suite());
            
         return suite;
     }

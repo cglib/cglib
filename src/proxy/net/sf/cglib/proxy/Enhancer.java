@@ -57,8 +57,13 @@ package net.sf.cglib.proxy;
 import java.io.*;
 import java.util.Arrays;
 
+
+import net.sf.cglib.util.*;
+
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
+
+
 /**
  *
  * this code returns Enhanced Vector to intercept  all methods for tracing
@@ -89,7 +94,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.29 2002/11/06 18:50:07 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.30 2002/11/09 16:19:31 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
