@@ -78,14 +78,13 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.5 2002/12/03 06:49:01 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.6 2002/12/03 07:08:11 herbyderby Exp $
  */
 public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
     private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
     private static int index = 0;
-    private static final Map factories = new HashMap();
-    private static final Map cache =  new WeakHashMap();
+    private static final Map cache = new WeakHashMap();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
@@ -204,7 +203,7 @@ public class Enhancer {
     }
 
     
-    private synchronized static Object enhanceHelper(boolean delegating,
+    private static Object enhanceHelper(boolean delegating,
                                         Object obj,
                                         Class cls,
                                         Class[] interfaces,
@@ -231,52 +230,49 @@ public class Enhancer {
             loader = defaultLoader;
         }
 
-        Map map = (Map)cache.get(loader);
-        if (map == null) {
-            map = new Hashtable();
-            cache.put(loader, map);
-        }
-
-      
-      Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
-      Class result = (Class) map.get(key);
-
-          
-        if ( result == null ) {
-            String class_name = cls.getName() + CLASS_SUFFIX;
-            if (class_name.startsWith("java")) {
-                class_name = CLASS_PREFIX + class_name;
+        Factory factory;
+        synchronized (cache) {
+            Map factories = (Map)cache.get(loader);
+            if (factories == null) {
+                cache.put(loader, factories = new HashMap());
             }
-            class_name += index++;
-            result = new EnhancerGenerator(class_name, cls, interfaces, ih, loader, wreplace, delegating).define();
-            map.put(key, result);
-        }
-      
-
-      
-        Factory factory = (Factory)factories.get(result);
-        if (factory == null) {
-            try {
-                Class mi = Class.forName(methodInterceptorName, true, loader);
-                if (delegating) {
-                    factory = (Factory)result.getConstructor(new Class[]{ mi, Constants.TYPE_OBJECT })
-                        .newInstance(new Object[] { null, null });
-                } else {
-                    factory = (Factory)result.getConstructor(new Class[]{ mi })
-                        .newInstance(new Object[] { null });
+            Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
+            factory = (Factory)factories.get(key);
+            if (factory == null) {
+                Class result = new EnhancerGenerator(getNextName(cls), cls, interfaces,
+                                                     ih, loader, wreplace, delegating).define();
+                try {
+                    Class mi = Class.forName(methodInterceptorName, true, loader);
+                    if (delegating) {
+                        factory = (Factory)result.getConstructor(new Class[]{ mi, Constants.TYPE_OBJECT })
+                            .newInstance(new Object[]{ null, null });
+                    } else {
+                        factory = (Factory)result.getConstructor(new Class[]{ mi })
+                            .newInstance(new Object[]{ null });
+                    }
+                    factories.put(key, factory);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new CodeGenerationException(e);
                 }
-                factories.put(result,factory);
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new CodeGenerationException(e);
             }
         }
+
         if (delegating) {
             return factory.newInstance(ih, obj);
         } else {
             return factory.newInstance(ih);
         }
+    }
+
+    private static String getNextName(Class cls) {
+        String class_name = cls.getName() + CLASS_SUFFIX;
+        if (class_name.startsWith("java")) {
+            class_name = CLASS_PREFIX + class_name;
+        }
+        class_name += index++;
+        return class_name;
     }
 
     public static class InternalReplace implements Serializable {
