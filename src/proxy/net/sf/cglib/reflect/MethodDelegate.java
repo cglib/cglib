@@ -55,8 +55,8 @@ package net.sf.cglib.reflect;
 
 import java.lang.reflect.*;
 import net.sf.cglib.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.core.KeyFactory;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 // TODO: don't require exact match for return type
 
@@ -139,153 +139,149 @@ import net.sf.cglib.core.KeyFactory;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.2 2003/09/14 17:14:04 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.3 2003/09/15 17:25:32 herbyderby Exp $
  */
 abstract public class MethodDelegate {
-    private static final FactoryCache cache = new FactoryCache(MethodDelegate.class);
     private static final MethodDelegateKey KEY_FACTORY =
       (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class);
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("MethodDelegate.newInstance(Object)");
+
+    protected Object target;
+    protected String eqMethod;
 
     interface MethodDelegateKey {
         Object newInstance(Class delegateClass, String methodName, Class iface);
     }
 
-    protected Object delegate;
-    protected String eqMethod;
+    public static MethodDelegate createStatic(Class targetClass, String methodName, Class iface) {
+        Generator gen = new Generator();
+        gen.setTargetClass(targetClass);
+        gen.setMethodName(methodName);
+        gen.setInterface(iface);
+        return gen.create();
+    }
+
+    public static MethodDelegate create(Object target, String methodName, Class iface) {
+        Generator gen = new Generator();
+        gen.setTarget(target);
+        gen.setMethodName(methodName);
+        gen.setInterface(iface);
+        return gen.create();
+    }
 
     public boolean equals(Object obj) {
         MethodDelegate other = (MethodDelegate)obj;
-        return delegate == other.delegate && eqMethod.equals(other.eqMethod);
+        return target == other.target && eqMethod.equals(other.eqMethod);
     }
 
     public int hashCode() {
-        return delegate.hashCode() ^ eqMethod.hashCode();
+        return target.hashCode() ^ eqMethod.hashCode();
     }
 
-    public Object getInvocationTarget() {
-        return delegate;
+    public Object getTarget() {
+        return target;
     }
 
-    protected MethodDelegate() {
-    }
+    abstract protected Object newInstance(Object target);
 
-    abstract protected MethodDelegate newInstance(Object delegate);
-
-    public static MethodDelegate createStatic(Class clazz, String methodName, Class iface) {
-        return createHelper(null, clazz, methodName, iface, null);
-    }
-
-    public static MethodDelegate createStatic(Class clazz, String methodName, Class iface, ClassLoader loader) {
-        return createHelper(null, clazz, methodName, iface, loader);
-    }
-
-    public static MethodDelegate create(Object delegate, String methodName, Class iface) {
-        return createHelper(delegate, delegate.getClass(), methodName, iface, null);
-    }
-
-    public static MethodDelegate create(Object delegate, String methodName, Class iface, ClassLoader loader) {
-        return createHelper(delegate, delegate.getClass(), methodName, iface, loader);
-    }
-
-    private static MethodDelegate createHelper(final Object delegate,
-                                               final Class type,
-                                               final String methodName,
-                                               final Class iface,
-                                               ClassLoader loader) {
-        Object key = KEY_FACTORY.newInstance(type, methodName, iface);
-        return (MethodDelegate)cache.get(loader, key, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new Generator(type, methodName, iface);
-                }
-                public Object newInstance(Object factory, boolean isNew) {
-                    return ((MethodDelegate)factory).newInstance(delegate);
-                }
-            });
-    }
-
-    static Method findInterfaceMethod(Class iface) {
-        if (!iface.isInterface()) {
-            throw new IllegalArgumentException(iface + " is not an interface");
-        }
-        Method[] methods = iface.getDeclaredMethods();
-        if (methods.length != 1) {
-            throw new IllegalArgumentException("expecting exactly 1 method in " + iface);
-        }
-        return methods[0];
-    }
-
-    private static Method findProxiedMethod(Class type, String methodName, Class iface) {
-        try {
-            Method proxy = findInterfaceMethod(iface);
-            Method method = type.getMethod(methodName, proxy.getParameterTypes());
-            if (!proxy.getReturnType().isAssignableFrom(method.getReturnType())) {
-                throw new IllegalArgumentException("incompatible return types");
-            }
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
-    private static class Generator extends CodeGenerator {
-        private Method method;
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(MethodDelegate.class, true);
+        private static final Method NEW_INSTANCE =
+          ReflectUtils.findMethod("MethodDelegate.newInstance(Object)");
+        
+        private Object target;
+        private Class targetClass;
+        private String methodName;
         private Class iface;
-
-        public Generator(Class type, String methodName, Class iface) {
-            setSuperclass(MethodDelegate.class);
-            setNamePrefix(type.getName());
-
-            this.iface = iface;
-            method = findProxiedMethod(type, methodName, iface);            
-            addInterface(iface);
+        
+        public Generator() {
+            super(SOURCE);
         }
 
-        protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
-            null_constructor();
+        public void setTarget(Object target) {
+            this.target = target;
+            this.targetClass = target.getClass();
+        }
+
+        public void setTargetClass(Class targetClass) {
+            this.targetClass = targetClass;
+        }
+
+        public void setMethodName(String methodName) {
+            this.methodName = methodName;
+        }
+
+        public void setInterface(Class iface) {
+            this.iface = iface;
+        }
+
+        public MethodDelegate create() {
+            Object key = KEY_FACTORY.newInstance(targetClass, methodName, iface);
+            return (MethodDelegate)super.create(key);
+        }
+
+        protected Object firstInstance(Class type) {
+            return ((MethodDelegate)ReflectUtils.newInstance(type)).newInstance(target);
+        }
+
+        protected Object nextInstance(Object instance) {
+            return ((MethodDelegate)instance).newInstance(target);
+        }
+
+        public void generateClass(ClassVisitor v) throws NoSuchFieldException {
+            setNamePrefix(targetClass.getName());
+            
+            Method proxy, method;
+            try {
+                proxy = ReflectUtils.findInterfaceMethod(iface);
+                method = targetClass.getMethod(methodName, proxy.getParameterTypes());
+                if (!proxy.getReturnType().isAssignableFrom(method.getReturnType())) {
+                    throw new IllegalArgumentException("incompatible return types");
+                }
+            } catch (NoSuchMethodException e) {
+                throw new CodeGenerationException(e);
+            }
+
+            boolean isStatic = Modifier.isStatic(method.getModifiers());
+            if ((target == null) ^ isStatic) {
+                throw new IllegalArgumentException("Static method " + (isStatic ? "not " : "") + "expected");
+            }
+
+            Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), MethodDelegate.class, new Class[]{ iface });
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, String.class, "eqMethod");
+            Virt.null_constructor(e);
 
             // generate proxied method
-            begin_method(iface.getDeclaredMethods()[0]);
-            load_this();
-            super_getfield("delegate");
-            checkcast(method.getDeclaringClass());
-            load_args();
-            invoke(method);
-            return_value();
-            end_method();
+            e.begin_method(iface.getDeclaredMethods()[0]);
+            e.load_this();
+            e.super_getfield("target");
+            e.checkcast(method.getDeclaringClass());
+            e.load_args();
+            e.invoke(method);
+            e.return_value();
+            e.end_method();
 
             // newInstance
-            begin_method(NEW_INSTANCE);
-            new_instance_this();
-            dup();
-            dup2();
-            invoke_constructor_this();
-            getfield("eqMethod");
-            super_putfield("eqMethod");
-            load_arg(0);
-            super_putfield("delegate");
-            return_value();
-            end_method();
+            e.begin_method(NEW_INSTANCE);
+            e.new_instance_this();
+            e.dup();
+            e.dup2();
+            e.invoke_constructor_this();
+            e.getfield("eqMethod");
+            e.super_putfield("eqMethod");
+            e.load_arg(0);
+            e.super_putfield("target");
+            e.return_value();
+            e.end_method();
 
             // static initializer
-            begin_static();
-            push(getSignature(method));
-            putfield("eqMethod");
-            return_value();
-            end_method();
-        }
-
-        private String getSignature(Method method) {
-            StringBuffer sb = new StringBuffer();
-            sb.append(method.getDeclaringClass().getName()).append('.');
-            sb.append(method.getName()).append('(');
-            Class[] types = method.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
-                sb.append(types[i].getName());
-            }
-            return sb.toString();
+            e.begin_static();
+            e.push(method.getName() + ReflectUtils.getMethodDescriptor(method));
+            e.putfield("eqMethod");
+            e.return_value();
+            e.end_method();
+            
+            e.end_class();
         }
     }
 }

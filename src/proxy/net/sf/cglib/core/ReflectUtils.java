@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.3 2003/09/14 03:27:53 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.4 2003/09/15 17:25:33 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -467,5 +467,16 @@ public class ReflectUtils {
                & ~Modifier.ABSTRACT
                & ~Modifier.NATIVE
                & ~Modifier.SYNCHRONIZED);
+    }
+
+    public static Method findInterfaceMethod(Class iface) {
+        if (!iface.isInterface()) {
+            throw new IllegalArgumentException(iface + " is not an interface");
+        }
+        Method[] methods = iface.getDeclaredMethods();
+        if (methods.length != 1) {
+            throw new IllegalArgumentException("expecting exactly 1 method in " + iface);
+        }
+        return methods[0];
     }
 }
