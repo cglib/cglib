@@ -61,7 +61,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.5 2003/09/21 20:27:27 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.6 2003/09/21 20:49:37 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -73,15 +73,13 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
     };
 
     private ClassTransformer getExampleTransformer(String name, Class type) {
-        return new ExampleTransformer(new String[]{ name }, new Class[]{ type });
+        return new AddPropertiesTransformer(new String[]{ name }, new Class[]{ type });
     }
 
     public void testExample() throws Exception {
         ClassTransformer t1 = getExampleTransformer("herby", String.class);
         ClassTransformer t2 = getExampleTransformer("derby", Double.TYPE);
         ClassTransformer chain = new TransformerChain(new ClassTransformer[]{ t1, t2 });
-        System.err.println("chain=" + chain);
-
         Class loaded = loadHelper(chain, Example.class);
         Object obj = loaded.newInstance();
         String value = "HELLO";
