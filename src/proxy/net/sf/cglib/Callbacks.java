@@ -60,7 +60,7 @@ public interface Callbacks
     public static final int JDK_PROXY = 2;
     public static final int LAZY_LOAD = 3;
     public static final int DISPATCH = 4;
-    public static final int MAX_VALUE = 4; // should be set to current max index
+    static final int MAX_VALUE = 4; // should be set to current max index
     
     Callback get(int type);
 }
