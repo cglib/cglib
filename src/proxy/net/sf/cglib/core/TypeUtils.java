@@ -70,7 +70,15 @@ public class TypeUtils {
             return copy;
         }
     }
-    
+
+    public static Type[] add(Type[] t1, Type[] t2) {
+        // TODO: set semantics?
+        Type[] all = new Type[t1.length + t2.length];
+        System.arraycopy(t1, 0, all, 0, t1.length);
+        System.arraycopy(t2, 0, all, t1.length, t2.length);
+        return all;
+    }
+
     public static Type fromInternalName(String name) {
         // TODO; primitives?
         return Type.getType("L" + name + ";");

@@ -1,178 +1,100 @@
-
 package net.sf.cglib.transform;
-
-import net.sf.cglib.core.*;
 
 import java.lang.reflect.*;
 import java.util.*;
-
-import org.objectweb.asm.*;
-import org.objectweb.asm.Constants;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeAdapter;
+import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.Type;
 
 /**
- *
- * @author  baliuka
+ * @author Juozas Baliuka
  */
-public class AddDelegateTransformer extends ClassTransformer {
+public class AddDelegateTransformer extends EmittingTransformer {
     
-    static final String DELEGATE = "$CGLIB_DELEGATE";
+    private static final String DELEGATE = "$CGLIB_DELEGATE";
+    private static final Signature CSTRUCT_OBJECT =
+      TypeUtils.parseSignature("void <init>(Object)");
     
-    Class delegateIf[] = null ;
-    Class delegateImpl = null ;
-    String className;
+    private Class[] delegateIf;
+    private Class delegateImpl;
+    private Type delegateType;
     
     /** Creates a new instance of AddDelegateTransformer */
     public AddDelegateTransformer(Class delegateIf[], Class delegateImpl) {
-        try{
-            delegateImpl.getConstructor( new Class[]{Object.class});
+        try {
+            delegateImpl.getConstructor(new Class[]{ Object.class });
             this.delegateIf = delegateIf;
             this.delegateImpl = delegateImpl;
-            
-        }catch(Exception e){
+            delegateType = Type.getType(delegateImpl);
+        } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
     }
     
-    
-    public void visit(int access, String name, String superName, String[] ifaces, String sourceFile) {
-        
-        try{
-            className = name;
-            List interfaces = new ArrayList();
-            interfaces.addAll(Arrays.asList(ifaces));
-            
-            
-            for(int i = 0; i< delegateIf.length; i++){
-                interfaces.add( Type.getInternalName(delegateIf[i]) );
-            }
-            
-            
-            super.visit(
-            access,
-            name,
-            superName,
-            (String[])interfaces.toArray( new String[]{}),
-            sourceFile
-            );
-            
-       super.visitField(
-        Modifier.PRIVATE|Modifier.TRANSIENT,
-        DELEGATE,
-        Type.getDescriptor(Object.class) ,
-        null
-        );
-      
-            
-            implementDelegate();
-            
-            
-        }catch(Exception e){
-            throw new CodeGenerationException(e);
-        }
-    }
-    private void addDelegate(Method m)throws Exception{
-        
-        
-        List exeptions = new ArrayList(m.getExceptionTypes().length);
-        for(int i = 0; i< m.getExceptionTypes().length; i++ ){
-            exeptions.add(Type.getInternalName( m.getExceptionTypes()[i]) );
-        }
-        
-        Method delegate = delegateImpl.getMethod(m.getName(), m.getParameterTypes() );
-        if(!delegate.getReturnType().getName().equals(m.getReturnType().getName())){
-            throw  new IllegalArgumentException( "invalid  delegate signature  " + delegate);
-        }
-        
-        CodeVisitor cv =  super.visitMethod( Modifier.PUBLIC,
-        m.getName(),
-        Type.getMethodDescriptor(m),
-        (String[])exeptions.toArray(new String[]{}) );
-        
-        cv.visitVarInsn(Constants.ALOAD, 0 );
-        cv.visitFieldInsn( Constants.GETFIELD,
-        className,
-        DELEGATE,
-        Type.getDescriptor(Object.class));
-        cv.visitTypeInsn( Constants.CHECKCAST,
-                          Type.getInternalName(delegateImpl)
-                         );
-        
-        for(int i = 1; i <= m.getParameterTypes().length; i++){
-            Type type = Type.getType(m.getParameterTypes()[ i - 1]);
-            cv.visitVarInsn(type.getOpcode(Constants.ILOAD), i );
-        }
-        
-        cv.visitMethodInsn(
-        Constants.INVOKEVIRTUAL,
-        Type.getInternalName(delegateImpl),
-        m.getName(),
-        Type.getMethodDescriptor(delegate)
-        );
-        Type type = Type.getType(m.getReturnType());
-        cv.visitInsn(type.getOpcode(Constants.IRETURN));
-        cv.visitMaxs( 0, 0 );
-        
-    }
-    
-    private void implementDelegate()throws Exception{
-        for( int i = 0; i <  delegateIf.length; i++ ){
-            Method methods[] = delegateIf[i].getMethods();
-            for( int j = 0; j < methods.length; j++  ){
-                if( Modifier.isAbstract(methods[j].getModifiers()) ){
-                    addDelegate(methods[j]);
+    protected Emitter getEmitter(ClassVisitor cv) {
+        return new Emitter(cv) {
+            public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+                Type[] all = TypeUtils.add(interfaces, TypeUtils.getTypes(delegateIf));
+                super.begin_class(access, className, superType, all, sourceFile);
+                declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
+                              DELEGATE,
+                              delegateType,
+                              null);
+                for (int i = 0; i < delegateIf.length; i++) {
+                    Method[] methods = delegateIf[i].getMethods();
+                    for (int j = 0; j < methods.length; j++) {
+                        if (Modifier.isAbstract(methods[j].getModifiers())) {
+                            addDelegate(methods[j]);
+                        }
+                    }
                 }
             }
-        }
-        
-    }
-    
-     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        CodeVisitor cv = super.visitMethod(access, name, desc, exceptions  );
-        if(name.equals("<init>")){
-           return new TransformInit(cv);
-        }else{
-            return cv;
-        }
-    }
-   
-    
-   class TransformInit extends CodeAdapter {
-    
-    boolean transFormInit;
-    CodeVisitor cv;
-    /** Creates a new instance of TransformCodeVisitor */
-    public TransformInit( CodeVisitor cv) {
-        super(cv);
-        this.cv = cv;
-        transFormInit = true;
-    }
-    
-    
-    
-    
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-        
-        cv.visitMethodInsn(opcode, owner, name, desc );
-        //transform constructors
-        if(transFormInit && opcode == Constants.INVOKESPECIAL){
-          cv.visitVarInsn( Constants.ALOAD, 0 );  
-          cv.visitTypeInsn(Constants.NEW, Type.getInternalName(delegateImpl));
-          cv.visitInsn( Constants.DUP );
-          cv.visitVarInsn( Constants.ALOAD, 0 );
-          cv.visitMethodInsn(Constants.INVOKESPECIAL,Type.getInternalName(delegateImpl), "<init>", "(Ljava/lang/Object;)V"); 
-          cv.visitFieldInsn(Constants.PUTFIELD,className,DELEGATE, Type.getDescriptor(Object.class) );
-          transFormInit = false;  
-        }
-        
-        
-    }
-    
-    
-    
-}
 
-     
-     
+            public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
+                CodeVisitor v = super.begin_method(access, sig, exceptions);
+                if (sig.getName().equals(Constants.STATIC_NAME)) {
+                    return new CodeAdapter(v) {
+                        private boolean transformInit = true;
+                        public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+                            super.visitMethodInsn(opcode, owner, name, desc);
+                            if (transformInit && opcode == Constants.INVOKESPECIAL) {
+                                load_this();
+                                new_instance(delegateType);
+                                dup();
+                                load_this();
+                                invoke_constructor(delegateType, CSTRUCT_OBJECT);
+                                putfield(DELEGATE);
+                                transformInit = false;
+                            }
+                        }
+                    };
+                }
+                return v;
+            }
+
+            private void addDelegate(Method m) {
+                Method delegate;
+                try {
+                    delegate = delegateImpl.getMethod(m.getName(), m.getParameterTypes());
+                    if (!delegate.getReturnType().getName().equals(m.getReturnType().getName())){
+                        throw new IllegalArgumentException("Invalid delegate signature " + delegate);
+                    }
+                } catch (NoSuchMethodException e) {
+                    throw new CodeGenerationException(e);
+                }
+
+                Signature sig = ReflectUtils.getSignature(m);
+                begin_method(Constants.ACC_PUBLIC, sig, TypeUtils.getTypes(m.getExceptionTypes()));
+                load_this();
+                getfield(DELEGATE);
+                load_args();
+                invoke_virtual(delegateType, sig);
+                return_value();
+            }
+        };
+    }
 }
 
 
