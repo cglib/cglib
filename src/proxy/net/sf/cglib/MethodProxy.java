@@ -63,16 +63,22 @@ import net.sf.cglib.util.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.21 2003/06/24 21:00:09 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.22 2003/06/24 21:33:11 herbyderby Exp $
  */
 abstract public class MethodProxy {
     private static final FactoryCache cache = new FactoryCache(MethodProxy.class);
     private static final Constructor GENERATOR =
       ReflectUtils.findConstructor("MethodProxy$Generator(Method, Method)");
+    private static final MethodProxyKey KEY_FACTORY =
+      (MethodProxyKey)KeyFactory.create(MethodProxyKey.class, null);
     private static final Method INVOKE_SUPER =
       ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
     private static final Method INVOKE =
       ReflectUtils.findMethod("MethodProxy.invoke(Object, Object[])");
+
+    interface MethodProxyKey {
+        Object newInstance(Method m1, Method m2);
+    }
 
     /**
      * Invoke the original (super) method on the specified object.
@@ -110,14 +116,15 @@ abstract public class MethodProxy {
         if (loader == null) {
             loader = superMethod.getDeclaringClass().getClassLoader();
         }
-        return (MethodProxy)cache.getFactory(loader, null, GENERATOR, superMethod, method);
+        Object key = KEY_FACTORY.newInstance(method, superMethod);
+        return (MethodProxy)cache.getFactory(loader, key, GENERATOR, method, superMethod);
     }
 
     static class Generator extends CodeGenerator {
         private Method method;
         private Method superMethod;
         
-        public Generator(Method superMethod, Method method) {
+        public Generator(Method method, Method superMethod) {
             setSuperclass(MethodProxy.class);
             setNamePrefix(superMethod.getDeclaringClass().getName());
             this.superMethod = superMethod;
