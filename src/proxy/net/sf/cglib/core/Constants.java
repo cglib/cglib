@@ -57,18 +57,17 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.5 2003/09/20 20:56:49 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.6 2003/09/20 21:20:57 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
 
-    public static final Type[] TYPE_EMPTY = {};
+    public static final Type[] TYPES_EMPTY = {};
+    public static final Class[] EMPTY_CLASS_ARRAY = {};
 
     public static final Type TYPE_OBJECT_ARRAY = Signature.parseType("Object[]");
     public static final Type TYPE_OBJECT = Signature.parseType("Object");
     public static final Type TYPE_CLASS = Signature.parseType("Class");
-    public static final Type TYPE_BIG_INTEGER = Signature.parseType("java.math.BigInteger");
-    public static final Type TYPE_BIG_DECIMAL = Signature.parseType("java.math.BigDecimal");
     public static final Type TYPE_CHARACTER = Signature.parseType("Character");
     public static final Type TYPE_BOOLEAN = Signature.parseType("Boolean");
     public static final Type TYPE_DOUBLE = Signature.parseType("Double");
@@ -79,54 +78,13 @@ public class Constants implements org.objectweb.asm.Constants {
     public static final Type TYPE_BYTE = Signature.parseType("Byte");
     public static final Type TYPE_NUMBER = Signature.parseType("Number");
     public static final Type TYPE_STRING = Signature.parseType("String");
-    public static final Type TYPE_THREAD_LOCAL = Signature.parseType("ThreadLocal");
     public static final Type TYPE_THROWABLE = Signature.parseType("Throwable");
-    public static final Type TYPE_ERROR = Signature.parseType("Error");
-    public static final Type TYPE_EXCEPTION = Signature.parseType("Exception");
-    public static final Type TYPE_RUNTIME_EXCEPTION = Signature.parseType("RuntimeException");
-    public static final Type TYPE_METHOD = Signature.parseType("java.lang.reflect.Method");
-    public static final Type TYPE_ILLEGAL_STATE_EXCEPTION = Signature.parseType("IllegalStateException");
-    public static final Type TYPE_ILLEGAL_ARGUMENT_EXCEPTION = Signature.parseType("IllegalArgumentException");
-    public static final Type TYPE_NO_CLASS_DEF_FOUND_ERROR = Signature.parseType("NoClassDefFoundError");
-    public static final Type TYPE_CLASS_NOT_FOUND_EXCEPTION = Signature.parseType("ClassNotFoundException");
-    public static final Type TYPE_ABSTRACT_METHOD_ERROR = Signature.parseType("AbstractMethodError");
-    public static final Type TYPE_CLASS_CAST_EXCEPTION = Signature.parseType("ClassCastException");
-    public static final Type TYPE_NO_SUCH_METHOD_ERROR = Signature.parseType("NoSuchMethodError");
-    
-    public static final Class[] TYPES_EMPTY = {};
+
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String SOURCE_FILE = "<generated>";
-    public static final String STATIC_NAME = "<clinit>";
+
     public static final int PRIVATE_FINAL_STATIC = ACC_PRIVATE | ACC_FINAL | ACC_STATIC;
 
-//////////////////////////////////////////////////
-    // get rid of this
-    
-     private static final int NEWARRAY_BOOLEAN = 4;
-     private static final int NEWARRAY_CHAR = 5;
-     private static final int NEWARRAY_FLOAT = 6;
-     private static final int NEWARRAY_DOUBLE = 7;
-     private static final int NEWARRAY_BYTE = 8;
-     private static final int NEWARRAY_SHORT = 9;
-     private static final int NEWARRAY_INT = 10;
-     private static final int NEWARRAY_LONG = 11;
-
-     public static int newarray(Class clazz) {
-         switch (clazz.getName().charAt(0)) {
-         case 'B': return NEWARRAY_BYTE;
-         case 'C': return NEWARRAY_CHAR;
-         case 'D': return NEWARRAY_DOUBLE;
-         case 'F': return NEWARRAY_FLOAT;
-         case 'I': return NEWARRAY_INT;
-         case 'J': return NEWARRAY_LONG;
-         case 'S': return NEWARRAY_SHORT;
-         case 'Z': return NEWARRAY_BOOLEAN;
-         }
-         return -1; // error
-     }
-
-    //////////////////////////////////////////////////
-    
     public static int ICONST(int value) {
         switch (value) {
         case -1: return ICONST_M1;

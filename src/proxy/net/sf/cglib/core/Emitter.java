@@ -93,7 +93,7 @@ public class Emitter {
     private ClassVisitor classv;
     private Type classType;
     private Type superType;
-    private Map finalizeCallbacks = new HashMap();
+    private Map endClassCallbacks = new HashMap();
     private Map fieldInfo = new HashMap();    
 
     // current method
@@ -146,8 +146,8 @@ public class Emitter {
     }
 
     public void end_class() {
-        for (Iterator it = finalizeCallbacks.values().iterator(); it.hasNext();) {
-            ((FinalizeCallback)it.next()).process();
+        for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
+            ((EndClassCallback)it.next()).process();
         }
         classv.visitEnd();
 
@@ -155,8 +155,8 @@ public class Emitter {
         classv = null; // for safety
     }
 
-    public void register(Object key, FinalizeCallback callback) {
-        finalizeCallbacks.put(key, callback);
+    public void register(Object key, EndClassCallback callback) {
+        endClassCallbacks.put(key, callback);
     }
     
     private static boolean isStatic(int access) {
@@ -669,7 +669,7 @@ public class Emitter {
     }
 
     public void invoke_constructor(Type type) {
-        invoke_constructor(type, Constants.TYPE_EMPTY);
+        invoke_constructor(type, Constants.TYPES_EMPTY);
     }
 
     // TODO: change to signature variant
@@ -685,7 +685,7 @@ public class Emitter {
     }
 
     public void super_invoke_constructor() {
-        invoke_constructor(superType, Constants.TYPE_EMPTY);
+        invoke_constructor(superType, Constants.TYPES_EMPTY);
     }
     
     public void super_invoke_constructor(Type[] argumentTypes) {
@@ -693,7 +693,7 @@ public class Emitter {
     }
     
     public void invoke_constructor_this() {
-        invoke_constructor_this(Constants.TYPE_EMPTY);
+        invoke_constructor_this(Constants.TYPES_EMPTY);
     }
     
     public void invoke_constructor_this(Type[] argumentTypes) {
@@ -854,7 +854,7 @@ public class Emitter {
         mark(end);
     }
 
-    public interface FinalizeCallback {
+    public interface EndClassCallback {
         void process();
     }
 
@@ -908,7 +908,7 @@ public class Emitter {
     }
 
     public void null_constructor() {
-        begin_constructor(Constants.ACC_PUBLIC, Constants.TYPE_EMPTY, null);
+        begin_constructor(Constants.ACC_PUBLIC, Constants.TYPES_EMPTY, null);
         load_this();
         super_invoke_constructor();
         return_value();

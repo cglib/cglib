@@ -72,6 +72,10 @@ public class Ops {
       Signature.parse("String getMessage()");
     private static final Signature CSTRUCT_STRING =
       Signature.parse("void <init>(String)");
+    private static final Type NO_CLASS_DEF_FOUND_ERROR =
+      Signature.parseType("NoClassDefFoundError");
+    private static final Type CLASS_NOT_FOUND_EXCEPTION =
+      Signature.parseType("ClassNotFoundException");
     
     public static final int SWITCH_STYLE_TRIE = 0;
     public static final int SWITCH_STYLE_HASH = 1;
@@ -409,7 +413,7 @@ public class Ops {
     }
 
     private static void load_class_helper(final Emitter e, Type type) {
-        e.register(FIND_CLASS, new Emitter.FinalizeCallback() {
+        e.register(FIND_CLASS, new Emitter.EndClassCallback() {
             public void process() {
                 generateFindClass(e);
             }
@@ -434,12 +438,12 @@ public class Ops {
         e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
         e.return_value();
         e.end_block();
-        e.catch_exception(block, Constants.TYPE_CLASS_NOT_FOUND_EXCEPTION);
+        e.catch_exception(block, CLASS_NOT_FOUND_EXCEPTION);
         e.invoke_virtual(Constants.TYPE_THROWABLE, GET_MESSAGE);
-        e.new_instance(Constants.TYPE_NO_CLASS_DEF_FOUND_ERROR);
+        e.new_instance(NO_CLASS_DEF_FOUND_ERROR);
         e.dup_x1();
         e.swap();
-        e.invoke_constructor(Constants.TYPE_NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
+        e.invoke_constructor(NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
         e.athrow();
     }
 }

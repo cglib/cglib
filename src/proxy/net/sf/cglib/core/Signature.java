@@ -89,9 +89,11 @@ public class Signature {
         String returnType = s.substring(0, space);
         String methodName = s.substring(space + 1, lparen);
         StringBuffer sb = new StringBuffer();
-
+        int mark = lparen + 1;
         sb.append('(');
-        parseTypes(s, lparen + 1, rparen, sb);
+        for (Iterator it = parseTypes(s, lparen + 1, rparen).iterator(); it.hasNext();) {
+            sb.append(it.next());
+        }
         sb.append(')');
         sb.append(map(returnType));
         return new Signature(methodName, sb.toString());
@@ -101,24 +103,30 @@ public class Signature {
         return Type.getType(map(s));
     }
 
-//     public static Type[] parseTypes(String s) {
-//     }
+    public static Type[] parseTypes(String s) {
+        List names = parseTypes(s, 0, s.length());
+        Type[] types = new Type[names.size()];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = Type.getType((String)names.get(i));
+        }
+        return types;
+    }
 
-    private static void parseTypes(String s, int start, int end, StringBuffer sb) {
-        int mark = start;
+    private static List parseTypes(String s, int mark, int end) {
+        List types = new ArrayList(5);
         for (;;) {
             int next = s.indexOf(',', mark);
             if (next < 0) {
                 break;
             }
-            sb.append(map(s.substring(mark, next)));
+            types.add(map(s.substring(mark, next).trim()));
             mark = next + 1;
         }
-        sb.append(map(s.substring(mark, end)));
+        types.add(map(s.substring(mark, end).trim()));
+        return types;
     }
 
     private static String map(String type) {
-        type = type.trim();
         if (type.equals("")) {
             return type;
         }

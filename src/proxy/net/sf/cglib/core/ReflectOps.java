@@ -14,6 +14,11 @@ public class ReflectOps {
       Signature.parse("String getName()");
     private static final Signature EQUALS =
       Signature.parse("boolean equals(Object)");
+    private static final Type BIG_INTEGER =
+      Signature.parseType("java.math.BigInteger");
+    private static final Type BIG_DECIMAL =
+      Signature.parseType("java.math.BigDecimal");
+    
 
     private ReflectOps() {
     }
@@ -293,48 +298,19 @@ public class ReflectOps {
                 e.push((String)obj);
             } else if (obj instanceof Class) {
                 Ops.load_class(e, Type.getType((Class)obj));
-//             } else if (obj instanceof Method) {
-//                 load_method(e, (Method)obj);
             } else if (obj instanceof BigInteger) {
-                e.new_instance(Constants.TYPE_BIG_INTEGER);
+                e.new_instance(BIG_INTEGER);
                 e.dup();
                 e.push(obj.toString());
-                e.invoke_constructor(Constants.TYPE_BIG_INTEGER);
+                e.invoke_constructor(BIG_INTEGER);
             } else if (obj instanceof BigDecimal) {
-                e.new_instance(Constants.TYPE_BIG_DECIMAL);
+                e.new_instance(BIG_DECIMAL);
                 e.dup();
                 e.push(obj.toString());
-                e.invoke_constructor(Constants.TYPE_BIG_DECIMAL);
-//             } else if (obj instanceof Number) {
-//                 push_unboxed(e, obj);
-//             } else {
+                e.invoke_constructor(BIG_DECIMAL);
+            } else {
                 throw new IllegalArgumentException("unknown type: " + obj.getClass());
             }
         }
     }
-
-//      /**
-//       * If the object is a Number, Boolean, or Character, pushes the equivalent primitive
-//       * value onto the stack. Otherwise, calls push_object(obj).
-//       */
-//      public static void push_unboxed(Emitter e, Object obj)
-//      {
-//          if (obj instanceof Boolean) {
-//              e.push(((Boolean)obj).booleanValue() ? 1 : 0);
-//          } else if (obj instanceof Character) {
-//              e.push((short)((Character)obj).charValue());
-//          } else if (obj instanceof Long) {
-//              e.push(((Long)obj).longValue());
-//          } else if (obj instanceof Double) {
-//              e.push(((Double)obj).doubleValue());
-//          } else if (obj instanceof Float) {
-//              e.push(((Float)obj).floatValue());
-//          } else if ((obj instanceof Integer) ||
-//                     (obj instanceof Short) ||
-//                     (obj instanceof Byte)) {
-//              e.push(((Number)obj).intValue());
-//          } else {
-//              push_object(e, obj);
-//          }
-//      }
 }

@@ -12,8 +12,14 @@ implements CallbackGenerator
 
     private static final Type INVOCATION_HANDLER =
       Signature.parseType("net.sf.cglib.InvocationHandler");
-    public static final Type UNDECLARED_THROWABLE_EXCEPTION =
+    private static final Type UNDECLARED_THROWABLE_EXCEPTION =
       Signature.parseType("net.sf.cglib.UndeclaredThrowableException");
+    private static final Type ERROR =
+      Signature.parseType("Error");
+    private static final Type RUNTIME_EXCEPTION =
+      Signature.parseType("RuntimeException");
+    private static final Type METHOD =
+      Signature.parseType("java.lang.reflect.Method");
     private static final Signature CSTRUCT_THROWABLE =
       Signature.parse("void <init>(Throwable)");
     private static final Signature INVOKE =
@@ -28,7 +34,7 @@ implements CallbackGenerator
             Method method = (Method)it.next();
 
             String fieldName = getFieldName(context, method);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_METHOD, null);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
 
             ReflectOps.begin_method(e, method, context.getModifiers(method));
             Block handler = e.begin_block();
@@ -68,11 +74,11 @@ implements CallbackGenerator
         if (!(exceptionSet.contains(Exception.class) ||
               exceptionSet.contains(Throwable.class))) {
             if (!exceptionSet.contains(RuntimeException.class)) {
-                e.catch_exception(handler, Constants.TYPE_RUNTIME_EXCEPTION);
+                e.catch_exception(handler, RUNTIME_EXCEPTION);
                 e.athrow();
             }
             if (!exceptionSet.contains(Error.class)) {
-                e.catch_exception(handler, Constants.TYPE_ERROR);
+                e.catch_exception(handler, ERROR);
                 e.athrow();
             }
             for (int i = 0; i < exceptionTypes.length; i++) {

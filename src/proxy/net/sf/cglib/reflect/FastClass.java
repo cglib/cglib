@@ -115,7 +115,7 @@ abstract public class FastClass
 
     // TODO: change throws clause
     public Object newInstance() throws Throwable {
-        return newInstance(getIndex(Constants.TYPES_EMPTY), null);
+        return newInstance(getIndex(Constants.EMPTY_CLASS_ARRAY), null);
     }
 
     // TODO: change throws clause
