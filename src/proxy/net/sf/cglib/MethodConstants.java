@@ -58,13 +58,15 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodConstants.java,v 1.3 2003/01/05 09:09:48 baliuka Exp $
+ * @version $Id: MethodConstants.java,v 1.4 2003/01/12 20:46:52 baliuka Exp $
  */
 abstract /* package */ class MethodConstants {
     public static final Method EQUALS =
       ReflectUtils.findMethod("Object.equals(Object)");
     public static final Method GET_DECLARED_METHOD =
       ReflectUtils.findMethod("Class.getDeclaredMethod(String, Class[])");
+    public static final Method GET_DECLARED_CONSTRUCTOR = 
+      ReflectUtils.findMethod("Class.getDeclaredConstructor(Class[])");
     public static final Method HASH_CODE =
       ReflectUtils.findMethod("Object.hashCode()");
     public static final Method FLOAT_TO_INT_BITS =
@@ -89,5 +91,6 @@ abstract /* package */ class MethodConstants {
       ReflectUtils.findMethod("Number.floatValue()");
     public static final Method INT_VALUE =
       ReflectUtils.findMethod("Number.intValue()");
-
+    public static final Method MAP_PUT =
+      ReflectUtils.findMethod("java.util.Map.put(Object,Object)");
 }
