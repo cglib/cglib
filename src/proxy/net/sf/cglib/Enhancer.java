@@ -91,12 +91,10 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.41 2003/06/24 21:00:10 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.42 2003/07/15 16:39:03 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("EnhancerGenerator(Class, Class[], Method, MethodFilter)");
     private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
    
@@ -187,39 +185,46 @@ public class Enhancer {
      * @param loader ClassLoader for enhanced class, uses "current" if null
      * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
      */
-    public static Class enhanceClass(Class cls, Class[] interfaces,
-                                     ClassLoader loader, MethodFilter filter) {
-        if (cls == null) {
-            cls = Object.class;
-        }
-        return cache.getClass(loader,
-                              KEY_FACTORY.newInstance(cls, interfaces, null, filter),
-                              GENERATOR,
-                              cls,
-                              interfaces,
-                              null,
-                              filter);
+    public static Class enhanceClass(Class cls,
+                                     final Class[] interfaces,
+                                     ClassLoader loader,
+                                     final MethodFilter filter) {
+        final Class base = (cls == null) ? Object.class : cls;
+        return (Class)
+            cache.get(loader,
+                      KEY_FACTORY.newInstance(base, interfaces, null, filter),
+                      new FactoryCache.ClassOnlyCallback() {
+                          public BasicCodeGenerator newGenerator() {
+                              return new EnhancerGenerator(base, interfaces, null, filter, null);
+                          }
+                      });
     }
 
-    private static Object enhanceHelper(Class cls,
-                                        Class[] interfaces, MethodInterceptor ih,
-                                        ClassLoader loader, Method wreplace,
-                                        MethodFilter filter) {
+    private static Object enhanceHelper(final Class cls,
+                                        final Class[] interfaces,
+                                        final MethodInterceptor ih,
+                                        ClassLoader loader,
+                                        final Method wreplace,
+                                        final MethodFilter filter) {
         if (ih == null) {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
-        if (cls == null) {
-            cls = Object.class;
-        }
-        Factory factory =
-            (Factory)cache.getFactory(loader,
-                                      KEY_FACTORY.newInstance(cls, interfaces, wreplace, filter),
-                                      GENERATOR,
-                                      cls,
-                                      interfaces,
-                                      wreplace,
-                                      filter);
-        return factory.newInstance(ih);
+        final Class base = (cls == null) ? Object.class : cls;
+
+        Object key = KEY_FACTORY.newInstance(base, interfaces, wreplace, filter);
+        return cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new EnhancerGenerator(base, interfaces, wreplace, filter, ih);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    if (isNew) {
+                        ((Factory)factory).interceptor(ih);
+                        return factory;
+                    } else {
+                        return ((Factory)factory).newInstance(ih);
+                    }
+                }
+            });
     }
 
     /**
