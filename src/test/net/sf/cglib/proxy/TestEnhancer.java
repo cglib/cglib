@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.12 2002/09/27 15:50:06 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.13 2002/09/27 15:54:34 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -244,22 +244,6 @@ public class TestEnhancer extends TestCase {
         
     }
     
-    public void testCheckedException()throws Throwable{
-        
-        Source source =  (Source)Enhancer.enhance(
-        Source.class,
-        null, NOOP_INTERCEPTOR );
-        
-        try{
-            
-            source.throwChecked();
-            fail("lost exeption");
-            
-        }catch( Source.CheckedException e  ){
-            
-        }
-        
-    }
     
     public void testUndeclaredException()throws Throwable{
         
@@ -281,19 +265,19 @@ public class TestEnhancer extends TestCase {
         try{
             
             source.throwChecked();
-            fail("must throw exeption");
+            fail("must throw an exception");
             
         }catch( Exception cnse  ){
             
             if( !( cnse instanceof java.lang.reflect.UndeclaredThrowableException ) ){
                 
-                fail("invalid exeption");
+                fail("invalid exception type");
             }
             
             if( !( ((java.lang.reflect.UndeclaredThrowableException)cnse).getUndeclaredThrowable()
             instanceof Source.UndeclaredException ) ){
                 
-                fail("invalid exeption");
+                fail("invalid exception type");
             }
             
             
