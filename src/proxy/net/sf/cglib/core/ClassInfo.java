@@ -66,7 +66,7 @@ public class ClassInfo {
         this.modifiers = modifiers;
         this.superType = superType;
         this.interfaces = interfaces;
-        type = TypeUtils.parseType(name);
+        type = Type.getType("L" + name.replace('.', '/') + ";");
     }
 
     public Type getType() {

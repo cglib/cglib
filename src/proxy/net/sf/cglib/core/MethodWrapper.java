@@ -60,7 +60,8 @@ public class MethodWrapper {
     private static final MethodWrapperKey KEY_FACTORY =
       (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, KeyFactory.CLASS_BY_NAME);
 
-    interface MethodWrapperKey {
+    /** Internal interface, only public due to ClassLoader issues. */
+    public interface MethodWrapperKey {
         public Object newInstance(String name, Class[] parameterTypes, Class returnType);
     }
     

@@ -62,7 +62,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.24 2004/04/08 16:15:37 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.25 2004/04/08 20:58:03 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -83,13 +83,16 @@ public class ReflectUtils {
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 try {
-                    DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass",
-                                                                       new Class[]{ String.class,
-                                                                                    byte[].class,
-                                                                                    int.class,
-                                                                                    int.class,
-                                                                                    java.security.ProtectionDomain.class });
+                    Class loader = Class.forName("java.lang.ClassLoader"); // JVM crash w/o this
+                    DEFINE_CLASS = loader.getDeclaredMethod("defineClass",
+                                                            new Class[]{ String.class,
+                                                                         byte[].class,
+                                                                         Integer.TYPE,
+                                                                         Integer.TYPE,
+                                                                         ProtectionDomain.class });
                     DEFINE_CLASS.setAccessible(true);
+                } catch (ClassNotFoundException e) {
+                    throw new CodeGenerationException(e);
                 } catch (NoSuchMethodException e) {
                     throw new CodeGenerationException(e);
                 }
@@ -424,6 +427,7 @@ public class ReflectUtils {
                               null);
     }
 
+    // TODO: add a cache to improve performance?
     public static ClassInfo getClassInfo(Class clazz) {
         Class sc = clazz.getSuperclass();
         return new ClassInfo(clazz.getModifiers(),

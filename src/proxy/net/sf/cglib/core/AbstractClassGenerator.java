@@ -161,6 +161,9 @@ implements ClassGenerator
             t = getClass().getClassLoader();
         }
         if (t == null) {
+            t = Thread.currentThread().getContextClassLoader();
+        }
+        if (t == null) {
             throw new IllegalStateException("Cannot determine classloader");
         }
         return t;
