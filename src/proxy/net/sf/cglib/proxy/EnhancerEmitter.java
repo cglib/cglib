@@ -402,34 +402,36 @@ class EnhancerEmitter extends ClassEmitter {
             if (!seenGen.contains(gen)) {
                 seenGen.add(gen);
                 final List fmethods = (List)groups.get(gen);
-                CallbackGenerator.Context context = new CallbackGenerator.Context() {
-                    public Iterator getMethods() {
-                        return fmethods.iterator();
-                    }
-                    public int getIndex(Method method) {
-                        return ((Integer)indexes.get(method)).intValue();
-                    }
-                    public void emitCallback(CodeEmitter e, int index) {
-                        emitCurrentCallback(e, index);
-                    }
-                    public int getModifiers(Method method) {
-                        int modifiers = Constants.ACC_FINAL
-                            | (method.getModifiers()
-                               & ~Constants.ACC_ABSTRACT
-                               & ~Constants.ACC_NATIVE
-                               & ~Constants.ACC_SYNCHRONIZED);
-                        if (forcePublic.contains(MethodWrapper.create(method))) {
-                            modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
+                if (fmethods != null) {
+                    CallbackGenerator.Context context = new CallbackGenerator.Context() {
+                        public Iterator getMethods() {
+                            return fmethods.iterator();
                         }
-                        return modifiers;
-                    }
-                    // TODO: this is probably slow
-                    public String getUniqueName(Method method) {
-                        return method.getName() + "_" + fmethods.indexOf(method);
-                    }
-                };
-                gen.generate(this, context);
-                gen.generateStatic(e, context);
+                        public int getIndex(Method method) {
+                            return ((Integer)indexes.get(method)).intValue();
+                        }
+                        public void emitCallback(CodeEmitter e, int index) {
+                            emitCurrentCallback(e, index);
+                        }
+                        public int getModifiers(Method method) {
+                            int modifiers = Constants.ACC_FINAL
+                                | (method.getModifiers()
+                                   & ~Constants.ACC_ABSTRACT
+                                   & ~Constants.ACC_NATIVE
+                                   & ~Constants.ACC_SYNCHRONIZED);
+                            if (forcePublic.contains(MethodWrapper.create(method))) {
+                                modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
+                            }
+                            return modifiers;
+                        }
+                        // TODO: this is probably slow
+                        public String getUniqueName(Method method) {
+                            return method.getName() + "_" + fmethods.indexOf(method);
+                        }
+                    };
+                    gen.generate(this, context);
+                    gen.generateStatic(e, context);
+                }
             }
         }
         e.return_value();
