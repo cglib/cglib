@@ -60,9 +60,9 @@ implements CallbackGenerator
         return impl.getName() + "$Proxy";
     }
 
-    public void generate(ClassEmitter ce, Context context) {
+    public void generate(ClassEmitter ce, Context context, List methods) {
         Map sigMap = new HashMap();
-        for (Iterator it = context.getMethods(); it.hasNext();) {
+        for (Iterator it = methods.iterator(); it.hasNext();) {
             MethodInfo method = (MethodInfo)it.next();
             Signature impl = context.getImplSignature(method);
 
@@ -76,24 +76,22 @@ implements CallbackGenerator
             CodeEmitter e;
 
             // access method
-            if (!context.isTransforming()) {
-                e = ce.begin_method(Constants.ACC_FINAL,
-                                    impl,
-                                    method.getExceptionTypes(),
-                                    null);
-                if (TypeUtils.isAbstract(method.getModifiers())) {
-                    e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
-                } else {
-                    e.load_this();
-                    e.load_args();
-                    e.super_invoke(method.getSignature());
-                }
-                e.return_value();
-                e.end_method();
+            e = ce.begin_method(Constants.ACC_FINAL,
+                                impl,
+                                method.getExceptionTypes(),
+                                null);
+            if (TypeUtils.isAbstract(method.getModifiers())) {
+                e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+            } else {
+                e.load_this();
+                e.load_args();
+                e.super_invoke(method.getSignature());
             }
+            e.return_value();
+            e.end_method();
 
             // around method
-            e = EmitUtils.begin_method(ce, method);
+            e = context.beginMethod(ce, method);
             Label nullInterceptor = e.make_label();
             context.emitCallback(e, context.getIndex(method));
             e.dup();
@@ -116,18 +114,14 @@ implements CallbackGenerator
             e.mark(nullInterceptor);
             e.load_this();
             e.load_args();
-            if (context.isTransforming()) {
-                e.invoke_virtual_this(impl);
-            } else {
-                e.super_invoke(method.getSignature());
-            }
+            e.super_invoke(method.getSignature());
             e.return_value();
             e.end_method();
         }
         generateFindProxy(ce, sigMap);
     }
 
-    public void generateStatic(CodeEmitter e, final Context context) {
+    public void generateStatic(CodeEmitter e, Context context, List methods) {
         /* generates:
            static {
              Class cls = findClass("java.lang.Object");
@@ -148,7 +142,7 @@ implements CallbackGenerator
         e.newarray();
         e.putfield(EMPTY_ARGS_NAME);
         
-        for (Iterator it = context.getMethods(); it.hasNext();) {
+        for (Iterator it = methods.iterator(); it.hasNext();) {
             e.dup();
             MethodInfo method = (MethodInfo)it.next();
             Signature impl = context.getImplSignature(method);

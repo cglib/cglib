@@ -27,7 +27,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.65 2004/12/10 08:48:46 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.66 2004/12/23 03:46:25 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     
@@ -82,7 +82,6 @@ public class TestAll extends TestCase {
         suite.addTest(TestAddDelegate.suite());
         suite.addTest(TestInterceptFields.suite());
         suite.addTest(TestDemo.suite());
-        suite.addTest(TestEnhancerTransform.suite());
 
         // performance
         // suite.addTest(TestReflectPerf.suite());

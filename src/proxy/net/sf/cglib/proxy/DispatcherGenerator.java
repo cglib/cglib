@@ -36,18 +36,15 @@ class DispatcherGenerator implements CallbackGenerator {
 
     private boolean proxyRef;
 
-    private DispatcherGenerator(boolean proxyRef)
-    {
+    private DispatcherGenerator(boolean proxyRef) {
         this.proxyRef = proxyRef;
     }
 
-    public void generate(ClassEmitter ce, final Context context) {
-        for (Iterator it = context.getMethods(); it.hasNext();) {
+    public void generate(ClassEmitter ce, Context context, List methods) {
+        for (Iterator it = methods.iterator(); it.hasNext();) {
             MethodInfo method = (MethodInfo)it.next();
-            if (TypeUtils.isProtected(method.getModifiers())) {
-                // ignore protected methods
-            } else {
-                CodeEmitter e = EmitUtils.begin_method(ce, method);
+            if (!TypeUtils.isProtected(method.getModifiers())) {
+                CodeEmitter e = context.beginMethod(ce, method);
                 context.emitCallback(e, context.getIndex(method));
                 if (proxyRef) {
                     e.load_this();
@@ -64,5 +61,5 @@ class DispatcherGenerator implements CallbackGenerator {
         }
     }
 
-    public void generateStatic(CodeEmitter e, Context context) { }
+    public void generateStatic(CodeEmitter e, Context context, List methods) { }
 }

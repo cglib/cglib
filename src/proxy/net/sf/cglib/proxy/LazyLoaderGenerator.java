@@ -28,16 +28,16 @@ class LazyLoaderGenerator implements CallbackGenerator {
     private static final Type LAZY_LOADER =
       TypeUtils.parseType("net.sf.cglib.proxy.LazyLoader");
 
-    public void generate(ClassEmitter ce, final Context context) {
+    public void generate(ClassEmitter ce, Context context, List methods) {
         Set indexes = new HashSet();
-        for (Iterator it = context.getMethods(); it.hasNext();) {
+        for (Iterator it = methods.iterator(); it.hasNext();) {
             MethodInfo method = (MethodInfo)it.next();
             if (TypeUtils.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
                 int index = context.getIndex(method);
                 indexes.add(new Integer(index));
-                CodeEmitter e = EmitUtils.begin_method(ce, method);
+                CodeEmitter e = context.beginMethod(ce, method);
                 e.load_this();
                 e.dup();
                 e.invoke_virtual_this(loadMethod(index));
@@ -85,5 +85,5 @@ class LazyLoaderGenerator implements CallbackGenerator {
                              Constants.TYPES_EMPTY);
     }
 
-    public void generateStatic(CodeEmitter e, Context context) { }
+    public void generateStatic(CodeEmitter e, Context context, List methods) { }
 }
