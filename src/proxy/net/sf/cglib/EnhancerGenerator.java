@@ -65,6 +65,8 @@ import java.util.*;
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
     private static final Method AROUND_ADVICE;
     private static final Method MAKE_PROXY;
+    private static final Method GET_DECLARED_METHOD;
+
 
     static {
         try {
@@ -73,6 +75,9 @@ import java.util.*;
 
             types = new Class[]{ Method.class };
             MAKE_PROXY = MethodProxy.class.getDeclaredMethod("generate", types);
+
+            types = new Class[]{ String.class, Class[].class };
+            GET_DECLARED_METHOD = Class.class.getDeclaredMethod("getDeclaredMethod", types);
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
@@ -95,14 +100,14 @@ import java.util.*;
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
              !Modifier.isPublic(wreplace.getModifiers()) ||
-             wreplace.getReturnType() != Object.class || 
+             wreplace.getReturnType() != TYPE_OBJECT || 
              wreplace.getParameterTypes().length != 1 ||
-             wreplace.getParameterTypes()[0] != Object.class)) {
+             wreplace.getParameterTypes()[0] != TYPE_OBJECT)) {
             throw new IllegalArgumentException(wreplace.toString());
         }
 
         try {
-            Constructor construct = clazz.getDeclaredConstructor( new Class[0] );
+            Constructor construct = clazz.getDeclaredConstructor(TYPES_EMPTY);
             int mod = construct.getModifiers();
                 
             if (!(Modifier.isPublic(mod) ||
@@ -133,7 +138,7 @@ import java.util.*;
 
     protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
-            wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", OBJECT_CLASS_ARRAY);
+            wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", TYPES_OBJECT);
         }
         
         declare_interface(Factory.class);
@@ -248,7 +253,7 @@ import java.util.*;
         generateFactoryHelper(NORMAL_ARGS, !delegating);
         generateFactoryHelper(DELEGATE_ARGS, delegating);
 
-        begin_method(Factory.class.getMethod("getDelegate", EMPTY_CLASS_ARRAY));
+        begin_method(Factory.class.getMethod("getDelegate", null));
         if (delegating) {
             load_this();
             getfield(DELEGATE_FIELD);
@@ -258,7 +263,7 @@ import java.util.*;
         return_value();
         end_method();
 
-        begin_method(Factory.class.getMethod("setDelegate", OBJECT_CLASS_ARRAY));
+        begin_method(Factory.class.getMethod("setDelegate", TYPES_OBJECT));
         if (delegating) {
             load_this();
             load_arg(0);
@@ -270,7 +275,7 @@ import java.util.*;
         return_value();
         end_method();
 
-        begin_method(Factory.class.getMethod("getInterceptor", EMPTY_CLASS_ARRAY));
+        begin_method(Factory.class.getMethod("getInterceptor", null));
         load_this();
         getfield(INTERCEPTOR_FIELD);
         return_value();
@@ -303,7 +308,7 @@ import java.util.*;
         begin_method(Modifier.PRIVATE,
                      Object.class, 
                      "writeReplace",
-                     EMPTY_CLASS_ARRAY,
+                     TYPES_EMPTY,
                      new Class[]{ ObjectStreamException.class });
         load_this();
         invoke(wreplace);
@@ -400,7 +405,7 @@ import java.util.*;
             new_instance(UndeclaredThrowableException.class);
             dup_x1();
             swap();
-            invoke_constructor(UndeclaredThrowableException.class, new Class[]{ Throwable.class });
+            invoke_constructor(UndeclaredThrowableException.class, TYPES_THROWABLE);
             athrow();
         }
     }
@@ -418,9 +423,6 @@ import java.util.*;
              CGLIB$ACCESS_0 = MethodProxy.generate(proxied);
            }
         */
-        Method getDeclaredMethod =
-            Class.class.getDeclaredMethod("getDeclaredMethod",
-                                          new Class[]{ String.class, Class[].class });
         begin_static();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
@@ -428,7 +430,7 @@ import java.util.*;
 
             Class[] args = method.getParameterTypes();
             push(method.getDeclaringClass().getName());
-            invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
+            invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
             store_local("cls");
             push(args.length);
             newarray(Class.class);
@@ -444,15 +446,15 @@ import java.util.*;
             load_local("cls");
             push(method.getName());
             load_local("args");
-            invoke(getDeclaredMethod);
+            invoke(GET_DECLARED_METHOD);
             putstatic(fieldName);
 
             String accessName = getAccessName(method, i);
             push(getClassName());
-            invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
+            invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
             push(accessName);
             load_local("args");
-            invoke(getDeclaredMethod);
+            invoke(GET_DECLARED_METHOD);
             invoke(MAKE_PROXY);
             putstatic(accessName);
         }

@@ -58,13 +58,14 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.3 2002/11/27 21:29:53 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method hashCode;
     private static final Method floatToIntBits;
     private static final Method doubleToLongBits;
-
+    private static final Class TYPE_KEY_FACTORY = KeyFactory.class;
+    
     static {
         try {
             hashCode = Object.class.getDeclaredMethod("hashCode", new Class[]{});
@@ -87,7 +88,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         };
 
     public KeyFactoryGenerator(String className, Class keyInterface, ClassLoader loader) {
-        super(className, KeyFactory.class, loader);
+        super(className, KeyFactory.TYPE, loader);
         this.keyInterface = keyInterface;
     }
 
@@ -107,7 +108,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         if (newInstance == null) {
             throw new IllegalArgumentException("Missing newInstance method");
         }
-        if (!newInstance.getReturnType().equals(Object.class)) {
+        if (!newInstance.getReturnType().equals(TYPE_OBJECT)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
         parameterTypes = newInstance.getParameterTypes();
@@ -237,7 +238,7 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void generateEquals() {
-        begin_method(equalsMethod);
+        begin_method(EQUALS_METHOD);
         for (int i = 0; i < numArgs; i++) {
             String fieldName = "FIELD_" + i;
             load_this();

@@ -53,12 +53,15 @@
  */
 package net.sf.cglib;
 
-/* package */ interface ClassFileConstants {
-    public static final Class OBJECT_CLASS = Object.class;
-    public static final Class[] OBJECT_CLASS_ARRAY = { Object.class };
-    public static final Class[] EMPTY_CLASS_ARRAY = {};
-    public static final Class OBJECT_ARRAY_CLASS = Object[].class;
-    public static final Class[] OBJECT_ARRAY_CLASS_ARRAY = { Object[].class };
-    public static final Class[] STRING_CLASS_ARRAY = { String.class };
-    public static final Object[] EMPTY_OBJECT_ARRAY = {};
+/**
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: Constants.java,v 1.1 2002/12/03 06:49:01 herbyderby Exp $
+ */
+public interface Constants extends org.apache.bcel.Constants {
+    public static final Class[] TYPES_OBJECT = { Object.class };
+    public static final Class[] TYPES_EMPTY = {};
+    public static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
+    public static final Class[] TYPES_STRING = { String.class };
+    public static final Class[] TYPES_THROWABLE = { Throwable.class };
+    public static final Class TYPE_OBJECT = Object.class;
 }

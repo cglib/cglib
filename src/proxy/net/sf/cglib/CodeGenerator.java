@@ -57,33 +57,35 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.security.PrivilegedAction;
 import java.util.*;
-import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
 
 /**
  * Abstract base class for code generators
  * @author  baliuka
  */
-public abstract class CodeGenerator implements Constants, ClassFileConstants {
+public abstract class CodeGenerator implements Constants {
     protected static final String CONSTRUCTOR_NAME = "<init>";
     protected static final String SOURCE_FILE = "<generated>";
     protected static final String FIND_CLASS = "CGLIB$findClass";
     protected static final String STATIC_NAME = "<clinit>";
-    protected static final Method equalsMethod;
+    protected static final Method EQUALS_METHOD;
 
     private static final String PRIVATE_PREFIX = "PRIVATE_";
-    private static final Type[] EMPTY_TYPE_ARRAY = {};
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static final Method forName;
     private static final Method getMessage;
     private static String debugLocation;
+
+    private static final Class[] TYPES_DEFINE_CLASS = {
+        String.class, byte[].class, int.class, int.class
+    };
 	
-	protected final ClassGen cg;
-	protected final InstructionList il = new InstructionList();
-	protected final ConstantPoolGen cp;
-    protected final ClassLoader loader;
-	protected MethodGen mg;
+	private final ClassGen cg;
+	private final InstructionList il = new InstructionList();
+	private final ConstantPoolGen cp;
+    private final ClassLoader loader;
+	private MethodGen mg;
 	private Class returnType;
     private Class superclass;
     
@@ -105,9 +107,9 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
 
     static {
         try {
-            forName = Class.class.getDeclaredMethod("forName", STRING_CLASS_ARRAY);
-            getMessage = Throwable.class.getDeclaredMethod("getMessage", EMPTY_CLASS_ARRAY);
-    } catch (Exception e) {
+            forName = Class.class.getDeclaredMethod("forName", TYPES_STRING);
+            getMessage = Throwable.class.getDeclaredMethod("getMessage", null);
+        } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
     }
@@ -175,8 +177,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         return new PrivilegedAction() {
             public Object run() {
                 try {
-                    Class[] types = new Class[]{ String.class, byte[].class, int.class, int.class };
-                    Method m = ClassLoader.class.getDeclaredMethod("defineClass", types);
+                    Method m = ClassLoader.class.getDeclaredMethod("defineClass", TYPES_DEFINE_CLASS);
 
                     // protected method invocaton
                     boolean flag = m.isAccessible();
@@ -195,16 +196,16 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
 
     static {
         try {
-            primitiveMethods.put(Boolean.TYPE, Boolean.class.getDeclaredMethod("booleanValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Character.TYPE, Character.class.getDeclaredMethod("charValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Long.TYPE, Number.class.getDeclaredMethod("longValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Double.TYPE, Number.class.getDeclaredMethod("doubleValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Float.TYPE, Number.class.getDeclaredMethod("floatValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Short.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Integer.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
-            primitiveMethods.put(Byte.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
+            primitiveMethods.put(Boolean.TYPE, Boolean.class.getDeclaredMethod("booleanValue", null));
+            primitiveMethods.put(Character.TYPE, Character.class.getDeclaredMethod("charValue", null));
+            primitiveMethods.put(Long.TYPE, Number.class.getDeclaredMethod("longValue", null));
+            primitiveMethods.put(Double.TYPE, Number.class.getDeclaredMethod("doubleValue", null));
+            primitiveMethods.put(Float.TYPE, Number.class.getDeclaredMethod("floatValue", null));
+            primitiveMethods.put(Short.TYPE, Number.class.getDeclaredMethod("intValue", null));
+            primitiveMethods.put(Integer.TYPE, Number.class.getDeclaredMethod("intValue", null));
+            primitiveMethods.put(Byte.TYPE, Number.class.getDeclaredMethod("intValue", null));
 
-            equalsMethod = Object.class.getDeclaredMethod("equals", new Class[]{ Object.class });
+            EQUALS_METHOD = Object.class.getDeclaredMethod("equals", new Class[]{ Object.class });
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
@@ -281,13 +282,13 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
 
     protected void begin_constructor() {
-        begin_constructor(EMPTY_CLASS_ARRAY);
+        begin_constructor(TYPES_EMPTY);
     }
 
     protected void begin_constructor(Class[] parameterTypes) {
         checkInMethod();
         returnType = Void.TYPE;	
-        mg = new MethodGen(ACC_PUBLIC, Type.VOID,getTypes(parameterTypes), null,
+        mg = new MethodGen(ACC_PUBLIC, Type.VOID, getTypes(parameterTypes), null,
                            CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
         setNextLocal();
     }
@@ -295,7 +296,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     protected void begin_static() {
         checkInMethod();
         returnType = Void.TYPE;
-        mg = new MethodGen(ACC_STATIC, Type.VOID, EMPTY_TYPE_ARRAY, null,
+        mg = new MethodGen(ACC_STATIC, Type.VOID, new Type[0], null,
                            STATIC_NAME, cg.getClassName(), il, cp);
         setNextLocal();
     }
@@ -533,7 +534,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
   
     protected void newarray() {
-        newarray(OBJECT_CLASS);
+        newarray(Object.class);
     }
 
     protected void newarray(Class clazz) {
@@ -598,7 +599,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
             push(clazz.getName());
             int ref = cp.addMethodref(cg.getClassName(),
                                       FIND_CLASS,
-                                      getMethodSignature(Class.class, STRING_CLASS_ARRAY));
+                                      getMethodSignature(Class.class, TYPES_STRING));
             append(new INVOKESTATIC(ref));
         }
     }
@@ -835,7 +836,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
    
     protected void invoke_constructor(Class type) {
-        invoke_constructor(type, EMPTY_CLASS_ARRAY);
+        invoke_constructor(type, TYPES_EMPTY);
     }
 
     protected void invoke_constructor(Class type, Class[] parameterTypes) {
@@ -940,7 +941,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
 
     protected void super_invoke_constructor() {
-        invoke_constructor_helper(cg.getSuperclassName(), EMPTY_CLASS_ARRAY);
+        invoke_constructor_helper(cg.getSuperclassName(), TYPES_EMPTY);
     }
 
     protected void super_invoke_constructor(Class[] parameterTypes) {
@@ -948,7 +949,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
 
     protected void invoke_constructor_this() {
-        invoke_constructor_this(EMPTY_CLASS_ARRAY);
+        invoke_constructor_this(TYPES_EMPTY);
     }
 
     protected void invoke_constructor_this(Class[] parameterTypes) {
@@ -1079,9 +1080,9 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     }
 
     /**
-     * If the argument is a primitive class, replaces the primitive
-     * value on the top of the stack with the wrapped (Object)
-     * equivalent. For example, char -> Character.
+     * If the argument is a primitive class, replaces the primitive value
+     * on the top of the stack with the wrapped (Object) equivalent. For
+     * example, char -> Character.
      * If the class is Void, a null is pushed onto the stack instead.
      * @param clazz the class indicating the current type of the top stack value
      */
@@ -1197,7 +1198,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         begin_method(Modifier.PRIVATE | Modifier.STATIC,
                      Class.class,
                      FIND_CLASS,
-                     STRING_CLASS_ARRAY,
+                     TYPES_STRING,
                      null);
         int eh = begin_handler();
         load_this();
@@ -1210,7 +1211,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         new_instance(NoClassDefFoundError.class);
         dup_x1();
         swap();
-        invoke_constructor(NoClassDefFoundError.class, STRING_CLASS_ARRAY);
+        invoke_constructor(NoClassDefFoundError.class, TYPES_STRING);
         athrow();
         end_method();
     }
@@ -1369,7 +1370,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     /**
      * If both objects on the top of the stack are non-null, does nothing.
      * If one is null, or both are null, both are popped off and execution
-     * branchess to the respective label.
+     * branches to the respective label.
      * @param oneNull label to branch to if only one of the objects is null
      * @param bothNull label to branch to if both of the objects are null
      */

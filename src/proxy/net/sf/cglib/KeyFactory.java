@@ -58,11 +58,14 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
  */
 abstract public class KeyFactory {
+    /* package */ static final Class TYPE = KeyFactory.class;
+    
     private static final String CLASS_SUFFIX = ".KeyFactory$$CreatedByCGLIB$$";
     private static int index = 0;
+    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
 
     protected int hashConstant;
     protected int hashMultiplier;
@@ -73,7 +76,7 @@ abstract public class KeyFactory {
     public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
         // TODO: caching
         if (loader == null) {
-            loader = KeyFactory.class.getClassLoader();
+            loader = defaultLoader;
         }
         try {
             Class clazz = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),

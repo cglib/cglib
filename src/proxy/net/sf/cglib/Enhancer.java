@@ -78,16 +78,18 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.4 2002/11/30 12:44:19 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.5 2002/12/03 06:49:01 herbyderby Exp $
  */
-public class Enhancer implements ClassFileConstants {
+public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
     private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
     private static int index = 0;
-    private static Map factories = new HashMap();
-    private static Map cache =  new WeakHashMap();
+    private static final Map factories = new HashMap();
+    private static final Map cache =  new WeakHashMap();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
+    private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
+    private static final String methodInterceptorName = MethodInterceptor.class.getName();
 
     /* package */ interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
@@ -219,14 +221,14 @@ public class Enhancer implements ClassFileConstants {
 
         if (cls == null) {
             if (obj == null) {
-                cls = Object.class;
+                cls = Constants.TYPE_OBJECT;
             } else {
                 cls = obj.getClass();
             }
         }
 
         if (loader == null) {
-            loader = Enhancer.class.getClassLoader();
+            loader = defaultLoader;
         }
 
         Map map = (Map)cache.get(loader);
@@ -255,9 +257,9 @@ public class Enhancer implements ClassFileConstants {
         Factory factory = (Factory)factories.get(result);
         if (factory == null) {
             try {
-                Class mi = Class.forName(MethodInterceptor.class.getName(), true, loader);
+                Class mi = Class.forName(methodInterceptorName, true, loader);
                 if (delegating) {
-                    factory = (Factory)result.getConstructor(new Class[]{ mi, Object.class })
+                    factory = (Factory)result.getConstructor(new Class[]{ mi, Constants.TYPE_OBJECT })
                         .newInstance(new Object[] { null, null });
                 } else {
                     factory = (Factory)result.getConstructor(new Class[]{ mi })

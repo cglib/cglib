@@ -54,12 +54,11 @@
 
 package net.sf.cglib;
 
-/** All enhanced instances implemet this interface
- * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
- *      baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.2 2002/11/30 12:41:29 baliuka Exp $
+/**
+ * All enhanced instances implement this interface.
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: Factory.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
  */
-
 public interface Factory {
     /**
      * Creates new instance of the same type as factory
