@@ -114,12 +114,6 @@ public abstract class CodeGenerator implements ClassFileConstants {
                     generate();
                     String name = cg.getClassName();
                     byte[] b = cg.getJavaClass().getBytes();
-
-                    // DEBUG
-                    OutputStream debug = new FileOutputStream("/tmp/" + name);
-                    debug.write(b);
-                    debug.close();
-
                     PrivilegedAction action = getDefineClassAction(name, b, loader);
                     return (Class)java.security.AccessController.doPrivileged(action);
                 } catch (WrappedException e) {
