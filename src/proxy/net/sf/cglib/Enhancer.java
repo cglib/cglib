@@ -55,7 +55,6 @@ package net.sf.cglib;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.util.*;
 
 /**
  *
@@ -78,7 +77,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.19 2003/01/21 17:38:14 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.20 2003/01/23 11:15:08 nemecec Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -307,7 +306,7 @@ public class Enhancer {
         public InternalReplace() {
         }
         
-        private InternalReplace(String parentClassName, String[] interfaces,
+        private InternalReplace(String parentClassName, String[] interfaceNames,
                                 MethodInterceptor mi) {
             this.parentClassName = parentClassName;
             this.interfaceNames   = interfaceNames;
