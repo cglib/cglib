@@ -1,6 +1,6 @@
 package net.sf.cglib;
 
-public class EB extends EA {
+public class EB extends EA implements Comparable{
 	private int count;
 
 	public int getCount() {

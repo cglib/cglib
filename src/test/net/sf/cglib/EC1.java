@@ -1,6 +1,6 @@
 package net.sf.cglib;
 
-public class EC1 extends EB {
+public class EC1 extends EB implements Comparable{
 	private String address;
 	private ED ed;
 
