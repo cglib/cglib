@@ -72,7 +72,7 @@ public final class ProxySample implements ProxySampleInterface_ReturnsObject, Pr
         } catch (ClassCastException e) {
         	throw e;
         } catch (NoSuchMethodException e) {
-            throw new Error(e);
+            throw new Error(e.getMessage());
         } catch (RuntimeException e) {
         	throw e;
         } catch (Exception e) {

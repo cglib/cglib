@@ -69,7 +69,7 @@ import java.lang.reflect.Method;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.5 2003/01/29 16:43:31 nemecec Exp $
+ * @version $Id: Proxy.java,v 1.6 2003/02/01 19:44:50 baliuka Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
@@ -80,6 +80,7 @@ public class Proxy implements Serializable {
             this.handler = handler;
         }
 
+
         public Object aroundAdvice(Object obj, Method method, Object[] args,
                                    MethodProxy proxy) throws Throwable {
             return handler.invoke(obj, method, args);
@@ -87,7 +88,7 @@ public class Proxy implements Serializable {
     }
 
     protected Proxy(InvocationHandler h) {
-        ((Factory)this).setInterceptor(new HandlerAdapter(h));
+        ((Factory)this).interceptor(new HandlerAdapter(h));
     }
 
     // private for security of isProxyClass
@@ -98,11 +99,13 @@ public class Proxy implements Serializable {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((HandlerAdapter)((Factory)proxy).getInterceptor()).handler;
+        return ((HandlerAdapter)((Factory)proxy).interceptor()).handler;
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
+        
         return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, null);
+
     }
 
     public static boolean isProxyClass(Class cl) {

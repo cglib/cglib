@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestMethodProxy.java,v 1.9 2003/01/25 00:43:59 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.10 2003/02/01 19:44:51 baliuka Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -73,7 +73,7 @@ public class TestMethodProxy extends CodeGenTestCase {
     public void testSimple() throws Throwable {
         Class[] types = new Class[]{ Integer.TYPE, Integer.TYPE };
         Method substring = String.class.getDeclaredMethod("substring", types);
-        MethodProxy proxy = MethodProxy.create(substring);
+        MethodProxy proxy = MethodProxy.create(substring,substring);
         Object[] args = new Object[]{ new Integer(2), new Integer(4) };
         assertTrue("LI".equals(proxy.invokeSuper("CGLIB", args)));
     }
@@ -204,7 +204,7 @@ public class TestMethodProxy extends CodeGenTestCase {
 
         Class[] types = new Class[]{ String.class, Integer.TYPE };
         Method indexOf = String.class.getDeclaredMethod("indexOf", types);
-        MethodProxy proxy = MethodProxy.create(indexOf);
+        MethodProxy proxy = MethodProxy.create(indexOf,indexOf);
         args = new Object[]{ "ab", new Integer(1) };
 
         IndexOf fast = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);

@@ -54,13 +54,18 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
- * @version $Id: MethodProxy.java,v 1.12 2003/01/24 19:53:44 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.13 2003/02/01 19:44:50 baliuka Exp $
  */
 abstract public class MethodProxy {
+    
     private static final Method INVOKE_SUPER =
       ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
+        private static final Method INVOKE =
+      ReflectUtils.findMethod("MethodProxy.invoke(Object, Object[])");
+
 
     private static final ClassNameFactory NAME_FACTORY =
       new ClassNameFactory("ProxiedByCGLIB");
@@ -69,10 +74,12 @@ abstract public class MethodProxy {
       MethodProxy.class.getClassLoader();
 
     abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
+    
+    abstract public Object invoke(Object obj, Object[] args) throws Throwable;
 
     protected MethodProxy() { }
 
-    public static MethodProxy create(Method method) {
+    public static MethodProxy create( Method method, Method superMethod  ) {
         try {
             Class declaring = method.getDeclaringClass();
             String className = NAME_FACTORY.getNextName(declaring);
@@ -80,7 +87,7 @@ abstract public class MethodProxy {
             if (loader == null) {
                 loader = DEFAULT_LOADER;
             }
-            Class gen = new Generator(className, method, loader).define();
+            Class gen = new Generator(className, superMethod, method , loader).define();
             return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
         } catch (RuntimeException e) {
             throw e;
@@ -91,15 +98,26 @@ abstract public class MethodProxy {
 
     private static class Generator extends CodeGenerator {
         private Method method;
+        private Method superMethod;
         
-        public Generator(String className, Method method, ClassLoader loader) {
+        public Generator(String className, Method superMethod, Method method, ClassLoader loader) {
             super(className, MethodProxy.class, loader);
             this.method = method;
+            this.superMethod = superMethod;
         }
 
-        protected void generate() {
-            generateNullConstructor();
-            begin_method(INVOKE_SUPER);
+       protected void generate() {
+         generateNullConstructor();  
+         generate(MethodProxy.INVOKE,method);
+         generate(MethodProxy.INVOKE_SUPER,superMethod);
+       }
+       protected void generate(Method proxyMethod, Method method) {
+            
+            begin_method(proxyMethod);
+            if( !Modifier.isPublic( method.getModifiers() ) && 
+                MethodProxy.INVOKE == proxyMethod){
+              throw_exception(IllegalAccessException.class, "not public method: " + method );
+            }else{
             load_arg(0);
             checkcast(method.getDeclaringClass());
             Class[] types = method.getParameterTypes();
@@ -109,8 +127,9 @@ abstract public class MethodProxy {
                 aaload();
                 unbox(types[i]);
             }
-            invoke(method);
+            this.invoke(method);
             box(method.getReturnType());
+            }
             return_value();
             end_method();
         }

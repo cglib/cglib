@@ -59,19 +59,17 @@ import java.util.*;
 
 /*package*/ class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
-    private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
+    
     private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
 
     private static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
 
-    private static final Method NORMAL_NEW_INSTANCE =
+    private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor)");
-    private static final Method DELEGATE_NEW_INSTANCE =
-      ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor, Object)");
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
     private static final Method MAKE_PROXY =
-      ReflectUtils.findMethod("MethodProxy.create(Method)");
+      ReflectUtils.findMethod("MethodProxy.create(Method,Method)");
     private static final Method MAKE_CONSTRUCTOR_PROXY =
       ReflectUtils.findMethod("ConstructorProxy.create(Constructor)");
     private static final Method INTERNAL_WRITE_REPLACE =
@@ -82,18 +80,13 @@ import java.util.*;
      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
     private static final Method MULTIARG_NEW_INSTANCE = 
       ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], MethodInterceptor)");
-    private static final Method SET_DELEGATE =
-      ReflectUtils.findMethod("Factory.setDelegate(Object)");
-    private static final Method GET_DELEGATE =
-      ReflectUtils.findMethod("Factory.getDelegate()");
     private static final Method GET_INTERCEPTOR =
-      ReflectUtils.findMethod("Factory.getInterceptor()");
+      ReflectUtils.findMethod("Factory.interceptor()");
     private static final Method SET_INTERCEPTOR =
-      ReflectUtils.findMethod("Factory.setInterceptor(MethodInterceptor)");
+      ReflectUtils.findMethod("Factory.interceptor(MethodInterceptor)");
 
     private Class[] interfaces;
     private Method wreplace;
-    private boolean delegating;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
@@ -102,12 +95,11 @@ import java.util.*;
     EnhancerGenerator(String className, Class clazz, 
                       Class[] interfaces,
                       ClassLoader loader, 
-                      Method wreplace, boolean delegating,
+                      Method wreplace, 
                       MethodFilter filter) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
         this.wreplace = wreplace;
-        this.delegating = delegating;
         this.filter = filter;
 
         isProxy = hasSuperclass(clazz, "net.sf.cglib.Proxy");
@@ -170,10 +162,6 @@ import java.util.*;
         }
         declare_interface(Factory.class);
         declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
-        if (delegating) {
-            declare_field(Modifier.PRIVATE, getSuperclass(), DELEGATE_FIELD);
-        }
-
         generateConstructors();
         generateFactory();
 
@@ -197,9 +185,10 @@ import java.util.*;
         }
 
         filterMembers(methods, new VisibilityFilter(getSuperclass()));
-        if (delegating) {
+    /*    if (delegating) {
             filterMembers(methods, new ModifierFilter(Modifier.PROTECTED, 0));
         }
+     */
         filterMembers(methods, new DuplicatesFilter());
         filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
         if (filter != null) {
@@ -272,19 +261,9 @@ import java.util.*;
         putfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
-        
-        if (delegating) {
-            throwWrongType(NORMAL_NEW_INSTANCE);
-            throwWrongType(MULTIARG_NEW_INSTANCE);
-            generateFactoryHelper(DELEGATE_NEW_INSTANCE);
-            generateGetSetDelegate();
-        } else {
-            throwWrongType(DELEGATE_NEW_INSTANCE);
-            throwWrongType(SET_DELEGATE);
-            throwWrongType(GET_DELEGATE);
-            generateFactoryHelper(NORMAL_NEW_INSTANCE);
-            generateMultiArgFactory();
-        }
+        generateFactoryHelper(NEW_INSTANCE);
+        generateMultiArgFactory();
+    
     }
 
     private void generateFactoryHelper(Method method) {
@@ -295,32 +274,12 @@ import java.util.*;
         dup();
         load_arg(0);
         putfield(INTERCEPTOR_FIELD);
-        if (method == DELEGATE_NEW_INSTANCE) {
-            dup();
-            load_arg(1);
-            invoke(SET_DELEGATE);
-        }
         return_value();
         end_method();
 
     }
 
-    private void generateGetSetDelegate() {
-        begin_method(GET_DELEGATE);
-        load_this();
-        getfield(DELEGATE_FIELD);
-        return_value();
-        end_method();
-
-        begin_method(SET_DELEGATE);
-        load_this();
-        load_arg(0);
-        checkcast(getSuperclass());
-        putfield(DELEGATE_FIELD);
-        return_value();
-        end_method();
-    }
-
+   
     private void generateMultiArgFactory() {
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         begin_method(MULTIARG_NEW_INSTANCE);
@@ -387,12 +346,7 @@ import java.util.*;
                      accessName,
                      method.getParameterTypes(),
                      method.getExceptionTypes());
-        if (delegating) {
-            load_this();
-            getfield(DELEGATE_FIELD);
-            load_args();
-            invoke(method);
-        } else if (Modifier.isAbstract(method.getModifiers())) {
+        if( Modifier.isAbstract(method.getModifiers()) ) {
             throw_exception(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
@@ -504,6 +458,7 @@ import java.util.*;
             dup();
             store_local(args);
             invoke(MethodConstants.GET_DECLARED_METHOD);
+            dup();
             putfield(fieldName);
 
             String accessName = getAccessName(method, i);
@@ -511,11 +466,13 @@ import java.util.*;
             push(accessName);
             load_local(args);
             invoke(MethodConstants.GET_DECLARED_METHOD);
+            
+            
             invoke(MAKE_PROXY);
             putfield(accessName);
         }
 
-        if (!delegating) {
+       // if (!delegating) {
             new_instance(HashMap.class);
             dup();
             dup();
@@ -534,7 +491,7 @@ import java.util.*;
                 invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
                 invoke(MAKE_CONSTRUCTOR_PROXY);//value
                 invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
-            }
+         //   }
         }
         
         return_value();
