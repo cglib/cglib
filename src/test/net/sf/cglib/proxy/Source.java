@@ -13,6 +13,7 @@ public abstract class Source {
      protectedMethod();
      packageMethod();
      abstractMethod();
+     synchronizedMethod();
      finalMethod();
      intType(1);
      longType(1L);
