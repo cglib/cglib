@@ -27,7 +27,7 @@ public class Beans implements MethodInterceptor {
     public static  Object newInstance( Class clazz ){
         try{
             Beans interceptor = new Beans();
-            Object bean = Enhancer.enhance( clazz, null, interceptor );
+            Object bean = Enhancer.enhance(clazz, interceptor);
             interceptor.propertySupport = new PropertyChangeSupport( bean );
             return bean;
         }catch( Throwable e ){

@@ -91,7 +91,7 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.48 2003/09/09 18:01:36 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.49 2003/09/09 18:18:20 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
@@ -99,8 +99,7 @@ public class Enhancer {
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
    
     interface EnhancerKey {
-        public Object newInstance(Class type, Class[] interfaces,
-                                  CallbackFilter filter);
+        public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter);
     }
     
     private Enhancer() { }
@@ -116,23 +115,15 @@ public class Enhancer {
     public static Factory enhance(Class cls, Callback callback) {
         return (Factory)enhanceHelper(cls.isInterface() ? null : cls,
                                       cls.isInterface() ? new Class[]{ cls } : null,
-                                      callback, cls.getClassLoader(), null );
+                                      callback, null, cls.getClassLoader());
     }
      
-    /**
-     * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, null, null);</pre>
-     * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
-     */
     public static Factory enhance(Class cls, Class interfaces[], Callback callback) {
         return enhanceHelper(cls, interfaces, callback, null, null);
     }
 
-    /**
-     * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, loader, null);</pre>
-     * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
-     */
     public static Factory enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
-        return enhanceHelper(cls, interfaces, callback, loader, null);
+        return enhanceHelper(cls, interfaces, callback, null, loader);
     } 
 
     /**
@@ -149,8 +140,8 @@ public class Enhancer {
      * @see Factory
      */
     public static Factory enhance(Class cls, Class[] interfaces, Callbacks callbacks,
-                                 ClassLoader loader, CallbackFilter filter) {
-        return enhanceHelper(cls, interfaces, callbacks, loader, filter);
+                                  CallbackFilter filter, ClassLoader loader) {
+        return enhanceHelper(cls, interfaces, callbacks, filter, loader);
     }
     
     /**
@@ -163,8 +154,8 @@ public class Enhancer {
      */
     public static Class enhanceClass(Class cls,
                                      final Class[] interfaces,
-                                     ClassLoader loader,
-                                     final CallbackFilter filter) {
+                                     final CallbackFilter filter,
+                                     ClassLoader loader) {
         if (filter == null) {
             throw new IllegalArgumentException("CallbackFilter is required for enhanceClass");
         }
@@ -182,8 +173,8 @@ public class Enhancer {
     private static Factory enhanceHelper(Class cls,
                                          Class[] interfaces,
                                          final Callback callback,
-                                         ClassLoader loader,
-                                         CallbackFilter filter) {
+                                         CallbackFilter filter,
+                                         ClassLoader loader) {
         Callbacks callbacks = new Callbacks() {
             public Callback get(int type) {
                 return callback;
@@ -192,14 +183,14 @@ public class Enhancer {
         if (filter == null) {
             filter = new SimpleFilter(CallbackUtils.determineType(callback));
         }
-        return enhanceHelper(cls, interfaces, callbacks, loader, filter);
+        return enhanceHelper(cls, interfaces, callbacks, filter, loader);
     }
     
     private static Factory enhanceHelper(Class cls,
                                          final Class[] interfaces,
                                          final Callbacks callbacks,
-                                         ClassLoader loader,
-                                         final CallbackFilter filter) {
+                                         final CallbackFilter filter,
+                                         ClassLoader loader) {
         final Class base = (cls == null) ? Object.class : cls;
         Object key = KEY_FACTORY.newInstance(base, interfaces, filter);
         return (Factory)cache.get(loader, key, new FactoryCache.AbstractCallback() {
