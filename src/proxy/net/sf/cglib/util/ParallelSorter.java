@@ -188,17 +188,6 @@ abstract public class ParallelSorter extends SorterTemplate {
         super.mergeSort(lo, hi - 1);
     }
     
-    private static void validate(Class[] classes) {
-        if (classes.length == 0) {
-            throw new IllegalArgumentException("No arrays specified to sort");
-        }
-        for (int i = 0; i < classes.length; i++) {
-            if (!classes[i].isArray()) {
-                throw new IllegalArgumentException(classes[i] + " is not an array");
-            }
-        }
-    }
-
     private void chooseComparer(int index, Comparator cmp) {
         Object array = a[index];
         Class type = array.getClass().getComponentType();
@@ -299,7 +288,6 @@ abstract public class ParallelSorter extends SorterTemplate {
         public int compare(int i, int j) { return a[i] - a[j]; }
     }
 
-
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(ParallelSorter.class.getName());
 
@@ -322,6 +310,14 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
+            if (arrays.length == 0) {
+                throw new IllegalArgumentException("No arrays specified to sort");
+            }
+            for (int i = 0; i < array.length; i++) {
+                if (!arrays[i].getClass().isArray()) {
+                    throw new IllegalArgumentException(arrays[i].getClass() + " is not an array");
+                }
+            }
             new ParallelSorterEmitter(v, getClassName(), arrays);
         }
         
@@ -331,6 +327,10 @@ abstract public class ParallelSorter extends SorterTemplate {
 
         protected Object nextInstance(Object instance) {
             return ((ParallelSorter)instance).newInstance(arrays);
+        }
+
+        private static void validate(Class[] classes) {
+            if (classes.length == 0) {
         }
     }
 }

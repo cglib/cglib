@@ -63,13 +63,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class ComplexOps {
-    private static final Type NO_CLASS_DEF_FOUND_ERROR =
-      TypeUtils.parseType("NoClassDefFoundError");
-    private static final Type CLASS_NOT_FOUND_EXCEPTION =
-      TypeUtils.parseType("ClassNotFoundException");
-
-    private static final Signature CSTRUCT_STRING =
-      TypeUtils.parseConstructor("String");
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature CSTRUCT_THROWABLE =
@@ -77,8 +70,6 @@ public class ComplexOps {
 
     private static final Signature GET_NAME =
       TypeUtils.parseSignature("String getName()");
-    private static final Signature FIND_CLASS =
-      TypeUtils.parseSignature("Class CGLIB$findClass(String)");
     private static final Signature HASH_CODE =
       TypeUtils.parseSignature("int hashCode()");
     private static final Signature EQUALS =
@@ -89,8 +80,6 @@ public class ComplexOps {
       TypeUtils.parseSignature("char charAt(int)");
     private static final Signature FOR_NAME =
       TypeUtils.parseSignature("Class forName(String)");
-    private static final Signature GET_MESSAGE =
-      TypeUtils.parseSignature("String getMessage()");
     private static final Signature DOUBLE_TO_LONG_BITS =
       TypeUtils.parseSignature("long doubleToLongBits(double)");
     private static final Signature FLOAT_TO_INT_BITS =
@@ -117,6 +106,17 @@ public class ComplexOps {
       TypeUtils.parseSignature("void setLength(int)");
     private static final Signature GET_DECLARED_METHOD =
       TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
+
+//     private static final Signature CSTRUCT_STRING =
+//       TypeUtils.parseConstructor("String");
+//     private static final Signature FIND_CLASS =
+//       TypeUtils.parseSignature("Class CGLIB$findClass(String)");
+//     private static final Signature GET_MESSAGE =
+//       TypeUtils.parseSignature("String getMessage()");
+//     private static final Type NO_CLASS_DEF_FOUND_ERROR =
+//       TypeUtils.parseType("NoClassDefFoundError");
+//     private static final Type CLASS_NOT_FOUND_EXCEPTION =
+//       TypeUtils.parseType("ClassNotFoundException");
 
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
@@ -511,9 +511,9 @@ public class ComplexOps {
         e.cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
     }
 
-    public static void not_equals(CodeEmitter e, Type type, Label notEquals) {
-        not_equals(e, type, notEquals, null);
-    }
+//     public static void not_equals(CodeEmitter e, Type type, Label notEquals) {
+//         not_equals(e, type, notEquals, null);
+//     }
     
     /**
      * Branches to the specified label if the top two items on the stack
@@ -797,7 +797,6 @@ public class ComplexOps {
         e.process_switch(ComplexOps.getSwitchKeys(buckets), new ProcessSwitchCallback() {
             public void processCase(int key, Label dontUseEnd) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
-                Class[] types = typer.getParameterTypes(bucket.get(0));
                 member_helper_type(e, bucket, callback, typer, def, end, new TinyBitSet());
             }
             public void processDefault() throws Exception {

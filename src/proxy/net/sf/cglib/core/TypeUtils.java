@@ -127,7 +127,6 @@ public class TypeUtils {
         String returnType = s.substring(0, space);
         String methodName = s.substring(space + 1, lparen);
         StringBuffer sb = new StringBuffer();
-        int mark = lparen + 1;
         sb.append('(');
         for (Iterator it = parseTypes(s, lparen + 1, rparen).iterator(); it.hasNext();) {
             sb.append(it.next());
