@@ -247,14 +247,17 @@ public abstract class CodeGenerator implements Constants {
         setNextLocal();
     }
 
-    protected void begin_method(Method method) {
+    protected int getDefaultModifiers(Method method) {
         int modifiers = method.getModifiers();
-        modifiers = Modifier.FINAL
+        return Modifier.FINAL
             | (modifiers
                & ~Modifier.ABSTRACT
                & ~Modifier.NATIVE
                & ~Modifier.SYNCHRONIZED);
-        begin_method(method, modifiers);
+    }
+
+    protected void begin_method(Method method) {
+        begin_method(method, getDefaultModifiers(method));
     }
 
     protected void begin_method(Method method, int modifiers) {
@@ -957,7 +960,7 @@ public abstract class CodeGenerator implements Constants {
         return Type.getMethodSignature(getType(returnType), getTypes(parameterTypes));
     }
 
-    private void invoke_virtual(Method method) {
+    protected void invoke_virtual(Method method) {
         append(new INVOKEVIRTUAL(addMethodref(method)));
     }
 
@@ -1253,21 +1256,6 @@ public abstract class CodeGenerator implements Constants {
         invoke_constructor(NoClassDefFoundError.class, TYPES_STRING);
         athrow();
         end_method();
-    }
-
-    protected boolean isVisible(Member member, Package packageName) {
-        int mod = member.getModifiers();
-        if (Modifier.isPrivate(mod)) {
-            return false;
-        }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
-        }
-        
-        Package p = member.getDeclaringClass().getPackage();
-        return ( null == packageName ? p == null : 
-                                       packageName.equals(p) ); 
-                                                    
     }
 
     protected interface ProcessArrayCallback {

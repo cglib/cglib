@@ -56,6 +56,8 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+// TODO: don't require exact match for return type
+
 /**
  * Delegates are a typesafe pointer to another method.  Since Java does not
  * have language support for such a construct, this utility will construct
@@ -134,7 +136,7 @@ import java.lang.reflect.Modifier;
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
  * @author <a href="mailto:bloritsch@apache.org">Berin Loritsch</a>
  * @author <a href="mailto:leo.sutic@inspireinfrastructure.com">Leo Sutic</a>
- * @version $Id: MethodDelegate.java,v 1.2 2002/12/29 23:50:25 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.3 2003/01/06 21:34:40 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     /* package */ static final Class TYPE = MethodDelegate.class;

@@ -54,6 +54,7 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
+import java.util.*;
 
 /* package */ class MethodWrapper {
     private static final MethodWrapperKey keyFactory =
@@ -67,7 +68,15 @@ import java.lang.reflect.Method;
     private MethodWrapper() {
     }
 
-    public static Object newInstance(Method method) {
+    public static Object create(Method method) {
         return keyFactory.newInstance(method.getName(), method.getParameterTypes());
+    }
+
+    public static Set createSet(Collection methods) {
+        Set set = new HashSet();
+        for (Iterator it = methods.iterator(); it.hasNext();) {
+            set.add(create((Method)it.next()));
+        }
+        return set;
     }
 }

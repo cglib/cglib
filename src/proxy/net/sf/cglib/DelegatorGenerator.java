@@ -60,7 +60,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: DelegatorGenerator.java,v 1.4 2002/12/04 00:41:13 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.5 2003/01/06 21:34:41 herbyderby Exp $
  */
 /* package */ class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -94,7 +94,7 @@ import java.util.*;
             }
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
-                Object methodKey = MethodWrapper.newInstance(method);
+                Object methodKey = MethodWrapper.create(method);
                 if (!methodSet.contains(methodKey)) {
                     methodSet.add(methodKey);
                     generateProxy(clazz, method, i);

@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.14 2003/01/05 09:09:48 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.15 2003/01/06 21:34:30 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -377,7 +377,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
     public static class TestCloneImpl implements TestClone{
      public Object clone()throws java.lang.CloneNotSupportedException{
-       return super.clone();
+         return super.clone();
      }
     }
     
@@ -410,5 +410,33 @@ public class TestEnhancer extends CodeGenTestCase {
         samples.Trace.main(new String[]{});
         samples.Beans.main(new String[]{});
     }
-    
+
+    public static interface FinalA {
+        void foo();
+    }
+
+    public static class FinalB implements FinalA {
+        final public void foo() { }
+    }
+
+    public void testFinal() throws Throwable {
+        ((FinalA)Enhancer.override(FinalB.class, TEST_INTERCEPTOR)).foo();
+    }
+
+    public static interface ConflictA {
+        int foo();
+    }
+
+    public static interface ConflictB {
+        String foo();
+    }
+
+    public void testConflict() throws Throwable {
+        try {
+            Enhancer.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        fail("conflicting interface return types should throw exception");
+    }
 }
