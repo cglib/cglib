@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.9 2003/09/18 15:23:56 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.10 2003/09/19 06:13:59 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -176,7 +176,7 @@ public class TestTransformVisistor extends TestCase {
         try{
             ClassReader cr = new ClassReader(is);
             ClassWriter cw = new ClassWriter(true);
-            TransformClassVisitor t1 = new TransformClassVisitor(acceptAll);
+            FieldTransformer t1 = new FieldTransformer(acceptAll);
             
             
             AddClintTransformer t2 = new   AddClintTransformer(
