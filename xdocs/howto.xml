@@ -89,9 +89,11 @@
   </section>
   
   <section name="Optimizing Proxies" >
+   <p>
     Filter unused methods with CallbackFilter and use light Callback version if
     possible. It can help to avoid hash lookup on method object if you use per method
     interceptors too.
+   </p>
   </section>
   
     
