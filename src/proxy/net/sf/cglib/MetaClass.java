@@ -60,130 +60,78 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- *
- * @author  baliuka
+ * @author Juozas Baliuka
  */
-
-public abstract class MetaClass  {
+abstract public class MetaClass  {
     private static final FactoryCache cache = new FactoryCache(MetaClass.class);
     private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("MetaClass$Generator(Class, String[], String[], Class[])");
+      ReflectUtils.findConstructor("MetaClassGenerator(Class, String[], String[], Class[])");
     private static final MetaClassKey KEY_FACTORY =
       (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
     private static final MemberKey MEMBER_KEY_FACTORY =
-    (MemberKey)KeyFactory.create(MemberKey.class, null);
+      (MemberKey)KeyFactory.create(MemberKey.class, null);
     
     protected Class target;
     protected String[] getters, setters;
     protected Class[] types;
     protected Map members = new HashMap();
     
-    
-     interface MetaClassKey {
-        public Object newInstance(Class target, String[] getters,
-        String[] setters, Class[] types);
+    interface MetaClassKey {
+        public Object newInstance(Class target, String[] getters, String[] setters, Class[] types);
     }
     
-     interface MemberKey {
-        public Object newInstance( Class target, String name, Class types[]  );
+    interface MemberKey {
+        public Object newInstance(Class target, String name, Class[] types);
     }
 
     protected MetaClass() { }
+
+    abstract public Object newInstance();
+    abstract public Object[] getPropertyValues(Object bean);
+    abstract public void setPropertyValues(Object bean, Object[] values);
         
-    public Class[] getPropertyTypes(){
-        
+    public Class[] getPropertyTypes() {
         return (Class[])types.clone();
     }
     
-    private void addMembers(){
-        
-        java.lang.reflect.Method [] methods = target.getMethods();
-        for(int i = 0; i < methods.length; i++ ){
-            Object key = MEMBER_KEY_FACTORY.newInstance(target, methods[i].getName(),
-            methods[i].getParameterTypes() );
-            members.put(key, MethodProxy.create(methods[i],methods[i]));
+    private void addMembers() {
+        Method[] methods = target.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method m = methods[i];
+            members.put(methodKey(m.getName(), m.getParameterTypes()), MethodProxy.create(m, m));
         }
         
-        java.lang.reflect.Constructor [] constructors = target.getConstructors();
-        for(int i = 0; i < constructors.length; i++ ){
-            Object key = MEMBER_KEY_FACTORY.newInstance(target, "<init>" ,
-            constructors[i].getParameterTypes() );
-            members.put(key, ConstructorProxy.create(constructors[i]));
+        Constructor[] constructors = target.getConstructors();
+        for (int i = 0; i < constructors.length; i++) {
+            Constructor c = constructors[i];
+            members.put(cstructKey(c.getParameterTypes()), ConstructorProxy.create(c));
         }
     }
-    
-    public MethodProxy getMethod( String name, Class[] types  ){
-        Object key = MEMBER_KEY_FACTORY.newInstance(target, name, types );
-        return (MethodProxy)members.get(key);
+
+    public MethodProxy getMethod(String name, Class[] types) {
+        return (MethodProxy)members.get(methodKey(name, types));
     }
     
-    public ConstructorProxy getConstructor( Class[] types  ){
-        Object key = MEMBER_KEY_FACTORY.newInstance(target, "<init>" , types );
-        return (ConstructorProxy)members.get(key);
+    public ConstructorProxy getConstructor(Class[] types) {
+        return (ConstructorProxy)members.get(cstructKey(types));
+    }
+
+    private Object methodKey(String methodName, Class[] parameterTypes) {
+        return MEMBER_KEY_FACTORY.newInstance(target, methodName, parameterTypes);
+    }
+
+    private Object cstructKey(Class[] parameterTypes) {
+        return MEMBER_KEY_FACTORY.newInstance(target, "<init>", parameterTypes);
     }
     
-    
-    public String[] getGetters(){
-        
+    public String[] getGetters() {
         return (String[])getters.clone();
     }
     
-    public String[] getSetters(){
-        
+    public String[] getSetters() {
         return (String[])setters.clone();
     }
-    
         
-    private static void validate( Class target, String getters[],
-    String setters[], Class types[],
-    Method getters_out[], Method setters_out[] ){
-        
-        
-        
-        int length = types.length;
-        
-        if( setters.length != length || length != getters.length ){
-            
-            throw new IllegalArgumentException("accessor array length must be equal type array length");
-            
-        }
-        String last = null;
-        try{
-            
-            for(int i=0; i< types.length; i++ ){
-                
-                if( getters[i] != null ){
-                    last = getters[i];
-                    Method method = ReflectUtils.findDeclaredMethod(target,last,new Class[]{});
-                    
-                    int mod = method.getModifiers();
-                    
-                    if(method.getReturnType() != types[i] || Modifier.isPrivate(mod) ){
-                        throw new IllegalArgumentException(last);
-                    }
-                    getters_out[i] = method;
-                }
-                
-                if( setters[i] != null ){
-                    last = setters[i];
-                    Method method = ReflectUtils.findDeclaredMethod( target, last, new Class[]{ types[i] });
-                    if( Modifier.isPrivate(method.getModifiers()) ){
-                        throw new IllegalArgumentException(last);
-                    }
-                    setters_out[i] = method;
-                }
-                
-                
-            }
-            
-        }catch( NoSuchMethodException nesme ){
-            
-            throw new IllegalArgumentException(last);
-            
-        }
-        
-    }
-    
     public static MetaClass getInstance(ClassLoader loader,
                                         Class target,
                                         String[] getters,
@@ -201,12 +149,12 @@ public abstract class MetaClass  {
             if (singleton.target == null) {
                 singleton.target = target;
 
-                int len = getters.length;
-                singleton.getters = new String[len];
-                System.arraycopy(getters, 0, singleton.getters, 0, len);
+                int length = getters.length;
+                singleton.getters = new String[length];
+                System.arraycopy(getters, 0, singleton.getters, 0, length);
 
-                singleton.setters = new String[len];
-                System.arraycopy(setters, 0, singleton.setters, 0, len);
+                singleton.setters = new String[length];
+                System.arraycopy(setters, 0, singleton.setters, 0, length);
                                                
                 singleton.types = new Class[types.length];
                 System.arraycopy(types, 0, singleton.types, 0, types.length);
@@ -216,109 +164,4 @@ public abstract class MetaClass  {
             return singleton;
         }
     }
-
-    public abstract Object newInstance();
-    
-    public abstract Object[] getPropertyValues( Object bean );
-    
-    public abstract void setPropertyValues( Object bean, Object[] values );
-    
-    
-    
-    static private class Generator extends CodeGenerator {
-        
-        
-        private Class target;
-        private Method [] getters, setters;
-        
-        public Generator(Class target, String[] getters, String[] setters, Class[] types) {
-            setSuperclass(MetaClass.class);
-            setNamePrefix(target.getName());
-
-            this.target = target;
-            this.getters = new Method[getters.length];
-            this.setters = new Method[setters.length];
-            validate(target, getters, setters, types, this.getters, this.setters);
-        }
-        
-        public  void generate() throws NoSuchMethodException {
-            
-            //------------- Generate constructor -------------
-
-            null_constructor();
-            
-            //------------- newInstance -------------------------
-            
-            Method newInstance = MetaClass.class.getMethod("newInstance",new Class[]{});
-            
-            begin_method( newInstance );
-            
-            new_instance(target);
-            dup();
-            invoke_constructor(target);
-            return_value();
-            
-            end_method();
-            
-            //------------- getPropertyValues -------------------------
-            
-            Method getPropertyValues =
-            MetaClass.class.getMethod("getPropertyValues", new Class[]{ Object.class });
-            
-            begin_method(getPropertyValues);
-            
-            Local bean = make_local();
-            load_arg(0);
-            checkcast(target);
-            store_local(bean);
-            push(getters.length);
-            newarray();
-            
-            for( int i = 0; i < getters.length; i++  ){
-                if( getters[i] != null ){
-                    dup();
-                    push(i);
-                    load_local(bean);
-                    invoke(getters[i]);
-                    box(getters[i].getReturnType());
-                    aastore();
-                }//write only
-            }
-            return_value();
-            
-            end_method();
-            
-            //------------- setPropertyValues -------------------------
-            
-            
-            Method setPropertyValues =
-            MetaClass.class.getMethod("setPropertyValues",
-            new Class[]{ Object.class, Object[].class } );
-            
-            begin_method(setPropertyValues);
-            
-            load_arg(0);
-            checkcast(target);
-            load_arg(1);
-            
-            for( int i = 0; i < setters.length; i++  ){
-                
-                if(setters[i] != null){
-                    dup2();
-                    aaload(i);
-                    unbox(setters[i].getParameterTypes()[0]);
-                    invoke(setters[i]);
-                }//read only
-            }
-            return_value();
-            
-            end_method();
-        }
-        
-        
-        
-    }
-    
-    
-    
 }
