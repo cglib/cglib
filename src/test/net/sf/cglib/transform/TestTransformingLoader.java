@@ -62,7 +62,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.8 2003/09/22 03:59:19 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.9 2003/10/05 16:05:30 baliuka Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -131,9 +131,17 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 //         } catch (IllegalArgumentException ignore) { }
     }
 
-    private static Class loadHelper(ClassTransformer t, Class target) throws ClassNotFoundException {
+    private static Class loadHelper( final ClassTransformer t, Class target) throws ClassNotFoundException {
         ClassLoader parent = TestTransformingLoader.class.getClassLoader();
-        TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER, t);
+        TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER,
+        
+           new TransformingLoader.ClassTransformerFactory(){
+                  public ClassTransformer  newInstance(){
+                     return t;
+                  }
+        }
+        
+        );
         return loader.loadClass(target.getName());
     }
 

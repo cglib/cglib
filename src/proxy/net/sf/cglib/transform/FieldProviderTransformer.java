@@ -30,19 +30,21 @@ public class FieldProviderTransformer extends EmittingTransformer {
       TypeUtils.parseSignature("void cglib$initFieldProvider()");
     
     private boolean generatedClassInit = false;
-    private Map fields;
+    private int access;
+    private Map fields = new HashMap();
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isAbstract(access)) {
             interfaces = TypeUtils.add(interfaces, FIELD_PROVIDER);
-            fields = new HashMap();
         }
+        this.access = access;
         super.begin_class(access, className, superType, interfaces, sourceFile);
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
         super.declare_field(access, name, type, value);
-        if (fields != null && !TypeUtils.isStatic(access)) {
+        
+        if ( !TypeUtils.isStatic(access)) {
             fields.put(name, type);
         }
     }
@@ -57,20 +59,23 @@ public class FieldProviderTransformer extends EmittingTransformer {
     }
 
     public void end_class() {
+      if (!TypeUtils.isInterface(access)) {  
         if (!generatedClassInit) {
             CodeEmitter e = begin_static();
             e.return_value();
             e.end_method();
         }
         try {
-            if (fields != null) {
+            
                 generate();
-            }
+              //  fields.clear();        
+                
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
+      }//interface
         super.end_class();
     }
 

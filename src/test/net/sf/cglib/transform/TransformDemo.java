@@ -2,6 +2,7 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.*;
+import net.sf.cglib.core.*;
 
 import java.util.*;
 
@@ -45,23 +46,34 @@ public class TransformDemo {
     
     public static void main( String args [] )throws Exception{
     
+     TransformingLoader.ClassTransformerFactory transformation =  
+     
+        new TransformingLoader.ClassTransformerFactory (){
         
-       InterceptFieldTransformer t1 = new InterceptFieldTransformer( new Filter() );
+           public ClassTransformer newInstance(){
+            try{       
+              InterceptFieldTransformer t1 = new InterceptFieldTransformer( new Filter() );
         
         
-        AddStaticInitTransformer t2 = new   AddStaticInitTransformer(
-             TransformDemo.class.getMethod("register",new Class[]{Class.class}) 
-        );                                   
+              AddStaticInitTransformer t2 = new   AddStaticInitTransformer(
+                TransformDemo.class.getMethod("register",new Class[]{Class.class}) 
+              );                                   
         
         
-         AddDelegateTransformer t3 = new AddDelegateTransformer(
+              AddDelegateTransformer t3 = new AddDelegateTransformer(
                           new Class[]{PersistenceCapable.class},
                           PersistenceCapableImpl.class
                     );    
                           
-        FieldProviderTransformer t4 = new FieldProviderTransformer();                 
+              FieldProviderTransformer t4 = new FieldProviderTransformer();                 
         
-        TransformerChain transformation = new TransformerChain( new ClassTransformer[]{t4,t1,t2,t3} );
+              return new TransformerChain( new ClassTransformer[]{t4,t1,t2,t3} );
+              
+            }catch(Exception e){
+              throw new CodeGenerationException(e);
+            } 
+           }  
+    };
         
         TransformingLoader loader = new TransformingLoader(
           TransformDemo.class.getClassLoader(),

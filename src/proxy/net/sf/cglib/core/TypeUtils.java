@@ -32,6 +32,11 @@ public class TypeUtils {
     public static boolean isAbstract(int access) {
         return (Constants.ACC_ABSTRACT & access) != 0;
     }
+    
+    public static boolean isInterface(int access) {
+        return (Constants.ACC_INTERFACE & access) != 0;
+    }
+
 
     // getPackage returns null on JDK 1.2
     public static String getPackageName(Type type) {

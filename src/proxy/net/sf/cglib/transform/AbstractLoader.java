@@ -20,6 +20,7 @@ abstract public class AbstractLoader extends ClassLoader {
     public Class loadClass(String name) throws ClassNotFoundException {
         
         Class loaded = findLoadedClass(name);
+        
         if( loaded != null ){
             if( loaded.getClassLoader() == this ){
                return loaded;
@@ -29,7 +30,6 @@ abstract public class AbstractLoader extends ClassLoader {
         if (!filter.accept(name)) {
             return super.loadClass(name);
         }
-
         ClassReader r;
         try {
             
