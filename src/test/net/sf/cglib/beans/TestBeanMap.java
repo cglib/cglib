@@ -55,6 +55,7 @@ package net.sf.cglib.beans;
 
 import net.sf.cglib.proxy.*;
 import net.sf.cglib.core.Constants;
+import net.sf.cglib.core.ReflectUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 import junit.framework.*;
@@ -137,6 +138,16 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         ((TestBean)bean).setFoo("hello");
         assertTrue(bean instanceof Map);
         assertTrue(((Map)bean).get("foo").equals("hello"));
+    }
+
+    public void testRequire() {
+        BeanMap.Generator gen = new BeanMap.Generator();
+        gen.setBeanClass(TestBean.class);
+        gen.setRequire(BeanMap.REQUIRE_GETTER);
+        BeanMap map = gen.create();
+        assertTrue(map.containsKey("foo"));
+        assertTrue(map.containsKey("bar"));
+        assertTrue(!map.containsKey("baz"));
     }
 
     public static Object mixinMapIntoBean(final Object bean) {
