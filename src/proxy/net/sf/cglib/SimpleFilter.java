@@ -75,4 +75,8 @@ public class SimpleFilter implements CallbackFilter {
             && (obj instanceof SimpleFilter)
             && type == ((SimpleFilter)obj).type;
     }
+
+    public String toString() {
+        return "SimpleFilter(" + type + ")";
+    }
 }

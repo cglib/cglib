@@ -63,6 +63,8 @@ import org.objectweb.asm.Type;
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
+    private static final String KEY_FIELD = "CGLIB$ACGKEY";
+    
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
         public String getClassName(String prefix, String source, Object key) {
             StringBuffer sb = new StringBuffer();
@@ -140,17 +142,30 @@ implements ClassGenerator
                 }
                 if (instance == null) {
                     this.key = key;
+                    final String keyFieldValue = key.toString(); // TODO: add generator name, etc?
                     String className = getClassName();
                     Class gen = null;
                     try {
                         gen = loader.loadClass(className);
                         if (gen.getClassLoader() != loader) {
                             gen = null;
+                        } else if (!keyFieldValue.equals(getKeyField(gen))) {
+                            // TODO: log?
+                            gen = null;
                         }
                     } catch (ClassNotFoundException e) {
                     }
                     if (gen == null) {
-                        DebuggingClassWriter w = new DebuggingClassWriter(true);
+                        // TODO: per-loader cache of names to prevent duplicates
+                        DebuggingClassWriter w = new DebuggingClassWriter(true) {
+                            public void visitEnd() {
+                                visitField(Constants.ACC_STATIC | Constants.ACC_PUBLIC,
+                                           KEY_FIELD,
+                                           Constants.TYPE_STRING.getDescriptor(),
+                                           keyFieldValue);
+                                super.visitEnd();
+                            }
+                        };
                         generateClass(w);
                         byte[] b = w.toByteArray();
                         if (!className.equals(w.getClassName())) {
@@ -168,6 +183,16 @@ implements ClassGenerator
             throw e;
         } catch (Error e) {
             throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
+    private static String getKeyField(Class type) {
+        try {
+            return (String)type.getDeclaredField(KEY_FIELD).get(null);
+        } catch (NoSuchFieldException e) {
+            return null;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
