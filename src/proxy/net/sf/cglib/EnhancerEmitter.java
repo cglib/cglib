@@ -80,11 +80,11 @@ class EnhancerEmitter extends ClassEmitter {
     private static final Signature SET_THREAD_CALLBACKS =
       TypeUtils.parseSignature("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
     private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("net.sf.cglib.Factory newInstance(net.sf.cglib.Callbacks)");
     private static final Signature MULTIARG_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("net.sf.cglib.Factory newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
     private static final Signature SINGLE_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.Callback)");
+      TypeUtils.parseSignature("net.sf.cglib.Factory newInstance(net.sf.cglib.Callback)");
     private static final Signature GET_CALLBACK =
       TypeUtils.parseSignature("net.sf.cglib.Callback getCallback(int)");
     private static final Signature SET_CALLBACK =

@@ -56,37 +56,57 @@ package net.sf.cglib;
 
 /**
  * All enhanced instances returned by the Enhancer class implement this interface.
- * If you want methods called during object construction to be intercepted,
- * use one of the newInstance methods here instead of via reflection.
+ * Using this interface for new instances is faster than going through the Enhancer
+ * interface or using reflection. In addition, to intercept methods called during
+ * object construction you <b>must</b> use these methods.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.12 2003/09/04 18:53:46 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.13 2003/10/15 05:27:02 herbyderby Exp $
  */
 public interface Factory {
     /**
      * Creates new instance of the same type, using the no-arg constructor.
-     * @param ih the new interceptor to use
-     * @return new instance
+     * The class of this object must have been created using a single Callback type (or none).
+     * If multiple callbacks are required an exception will be thrown.
+     * @see newInstance(Callbacks)
+     * @param callback the new interceptor to use
+     * @return new instance of the same type
      */     
-    Object newInstance(Callback callback);
-    Object newInstance(Callbacks callbacks);
+    Factory newInstance(Callback callback);
+
+    /**
+     * Creates new instance of the same type, using the no-arg constructor.
+     * @param callbacks the new callbacks(s) to use
+     * @return new instance of the same type
+     */     
+    Factory newInstance(Callbacks callbacks);
 
     /**
      * Creates a new instance of the same type, using the constructor
      * matching the given signature.
-     * @param types the constructor signature
+     * @param types the constructor argument types
      * @param args the constructor arguments
-     * @param ih the new interceptor to use
+     * @param callbacks the new interceptor(s) to use
+     * @return new instance of the same type
      */
-    Object newInstance(Class[] types, Object[] args, Callbacks callbacks);
+    Factory newInstance(Class[] types, Object[] args, Callbacks callbacks);
     
     /**
-     * Returns the current interceptor in use.
+     * Returns the current callback in use for the given type;
+     * @param type the callback type
+     * @see Callbacks
      */
     Callback getCallback(int type);
 
     /**
-     * Set the current interceptor for this object.
+     * Set the callback for this object for the given type.
+     * @param type the callback type to replace
+     * @param callback the new callback
      */
     void setCallback(int type, Callback callback);
+
+    /**
+     * Replace all of the callbacks for this object at once.
+     * @param callbacks the new callbacks(s) to use
+     */
     void setCallbacks(Callbacks callbacks);
 }

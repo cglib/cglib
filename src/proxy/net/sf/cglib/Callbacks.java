@@ -53,14 +53,56 @@
  */
 package net.sf.cglib;
 
+/**
+ * Provides a method to map from callback types (as defined per-method by a {@link CallbackFilter})
+ * to a particular {@link Callback} implementation. The callback type constants are defined here as well.
+ * In practice it should be rare to need to implement this interface. See {@link SimpleCallbacks} for
+ * a simple implementation.
+ */
 public interface Callbacks
 {
+    /**
+     * No-op callback type. Does not generate an intercepted method
+     * in the subclass--the "super" method will be called directly instead.
+     * No associated <code>Callback</code> implementation.
+     */
     public static final int NO_OP = 0;
+
+    /**
+     * Generic interceptor callback type. <code>Callback</code> implementation is {@link MethodInterceptor}.
+     * @see MethodInterceptor
+     */
     public static final int INTERCEPT = 1;
+
+    /**
+     * Special callback type used by the {@link Proxy} class for
+     * <code>java.lang.reflect.Proxy</code> compatibility. You probably don't
+     * want to use this directly. <code>Callback</code> implementation is {@link InvocationHandler}.
+     * @see Proxy
+     * @see InvocationHandler
+     */
     public static final int JDK_PROXY = 2;
+
+    /**
+     * Callback type used to load an implementation as soon as the first method is called,
+     * <code>Callback</code> implementation is {@link LazyLoader}.
+     * @see LazyLoader
+     */
     public static final int LAZY_LOAD = 3;
+
+    /**
+     * Callback type used to load an implementation for every single method invocation.
+     * <code>Callback</code> implementation is {@link Dispatcher}.
+     * @see Dispatcher
+     */
     public static final int DISPATCH = 4;
+
     static final int MAX_VALUE = 4; // should be set to current max index
-    
+
+    /**
+     * Return the actual <code>Callback</code> implementation for the specified callback type.
+     * @param type the callback type
+     * @return the callback implementation
+     */
     Callback get(int type);
 }

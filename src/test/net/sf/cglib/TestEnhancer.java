@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.44 2003/10/05 17:38:42 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.45 2003/10/15 05:26:59 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -405,7 +405,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
      public void testArgInit() throws Throwable{
     
-         Class f = Enhancer.createClass(ArgInit.class, null, new SimpleFilter(Callbacks.INTERCEPT));
+         Class f = createClass(ArgInit.class, null, new SimpleFilter(Callbacks.INTERCEPT));
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
@@ -477,5 +477,13 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setCallback(callback);
         e.setClassLoader(loader);
         return e.create();
+    }
+
+    public static Class createClass(Class superclass, Class[] interfaces, CallbackFilter filter) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(filter);
+        return e.createClass();
     }
 }
