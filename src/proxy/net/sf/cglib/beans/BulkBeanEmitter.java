@@ -72,8 +72,6 @@ class BulkBeanEmitter extends ClassEmitter {
       TypeUtils.parseType("net.sf.cglib.beans.BulkBean");
     private static final Type BULK_BEAN_EXCEPTION =
       TypeUtils.parseType("net.sf.cglib.beans.BulkBeanException");
-    private static final Type CLASS_CAST_EXCEPTION =
-      TypeUtils.parseType("ClassCastException");
         
     public BulkBeanEmitter(ClassVisitor v,
                            String className,
@@ -143,7 +141,7 @@ class BulkBeanEmitter extends ClassEmitter {
             }
             handler.end();
             e.return_value();
-            e.catch_exception(handler, CLASS_CAST_EXCEPTION);
+            e.catch_exception(handler, Constants.TYPE_THROWABLE);
             e.new_instance(BULK_BEAN_EXCEPTION);
             e.dup_x1();
             e.swap();
