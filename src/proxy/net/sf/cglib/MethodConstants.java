@@ -54,54 +54,39 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodConstants.java,v 1.1 2002/12/21 20:21:54 herbyderby Exp $
+ * @version $Id: MethodConstants.java,v 1.2 2002/12/29 21:36:42 herbyderby Exp $
  */
-abstract public class MethodConstants {
-    public static final Method EQUALS;
-    public static final Method GET_DECLARED_METHOD;
-    public static final Method HASH_CODE;
-    public static final Method FLOAT_TO_INT_BITS;
-    public static final Method DOUBLE_TO_LONG_BITS;
-    public static final Method FOR_NAME;
-    public static final Method THROWABLE_GET_MESSAGE;
-    public static final Method DEFINE_CLASS;
-    public static final Method BOOLEAN_VALUE;
-    public static final Method CHAR_VALUE;
-    public static final Method LONG_VALUE;
-    public static final Method DOUBLE_VALUE;
-    public static final Method FLOAT_VALUE;
-    public static final Method INT_VALUE;
-    public static final Method SHORT_INT_VALUE;
-    public static final Method BYTE_INT_VALUE;
-
-    static {
-        try {
-            EQUALS = Object.class.getDeclaredMethod("equals", Constants.TYPES_OBJECT);
-            HASH_CODE = Object.class.getDeclaredMethod("hashCode", null);
-            FLOAT_TO_INT_BITS = Float.class.getDeclaredMethod("floatToIntBits", new Class[]{ float.class });
-            DOUBLE_TO_LONG_BITS = Double.class.getDeclaredMethod("doubleToLongBits", new Class[]{ double.class });
-            FOR_NAME = Class.class.getDeclaredMethod("forName", Constants.TYPES_STRING);
-            THROWABLE_GET_MESSAGE = Throwable.class.getDeclaredMethod("getMessage", null);
-
-            Class[] types = new Class[]{ String.class, Class[].class };
-            GET_DECLARED_METHOD = Class.class.getDeclaredMethod("getDeclaredMethod", types);
-
-            types = new Class[]{ String.class, byte[].class, int.class, int.class };
-            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", types);
-                                                               
-            BOOLEAN_VALUE = Boolean.class.getDeclaredMethod("booleanValue", null);
-            CHAR_VALUE = Character.class.getDeclaredMethod("charValue", null);
-            LONG_VALUE = Number.class.getDeclaredMethod("longValue", null);
-            DOUBLE_VALUE = Number.class.getDeclaredMethod("doubleValue", null);
-            FLOAT_VALUE = Number.class.getDeclaredMethod("floatValue", null);
-            INT_VALUE = Number.class.getDeclaredMethod("intValue", null);
-            SHORT_INT_VALUE = Number.class.getDeclaredMethod("intValue", null);
-            BYTE_INT_VALUE = Number.class.getDeclaredMethod("intValue", null);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e); // impossible
-        }
-    }
+abstract /* package */ class MethodConstants {
+    public static final Method EQUALS =
+      ReflectUtils.findMethod("Object.equals(Object)");
+    public static final Method GET_DECLARED_METHOD =
+      ReflectUtils.findMethod("Class.getDeclaredMethod(String, Class[])");
+    public static final Method HASH_CODE =
+      ReflectUtils.findMethod("Object.hashCode()");
+    public static final Method FLOAT_TO_INT_BITS =
+      ReflectUtils.findMethod("Float.floatToIntBits(float)");
+    public static final Method DOUBLE_TO_LONG_BITS =
+      ReflectUtils.findMethod("Double.doubleToLongBits(double)");
+    public static final Method FOR_NAME =
+      ReflectUtils.findMethod("Class.forName(String)");
+    public static final Method THROWABLE_GET_MESSAGE =
+      ReflectUtils.findMethod("Throwable.getMessage()");
+    public static final Method DEFINE_CLASS =
+      ReflectUtils.findMethod("ClassLoader.defineClass(String, byte[], int, int)");
+    public static final Method BOOLEAN_VALUE =
+      ReflectUtils.findMethod("Boolean.booleanValue()");
+    public static final Method CHAR_VALUE =
+      ReflectUtils.findMethod("Character.charValue()");
+    public static final Method LONG_VALUE =
+      ReflectUtils.findMethod("Number.longValue()");
+    public static final Method DOUBLE_VALUE =
+      ReflectUtils.findMethod("Number.doubleValue()");
+    public static final Method FLOAT_VALUE =
+      ReflectUtils.findMethod("Number.floatValue()");
+    public static final Method INT_VALUE =
+      ReflectUtils.findMethod("Number.intValue()");
 }
