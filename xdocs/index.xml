@@ -6,25 +6,32 @@
   </properties>
 
   <body>
-    <section name="Code Generation Library">
+    <section name="cglib">
       <p>
-
-          This project is inspired by java.lang.reflect.Proxy, 
-          but CGLIB proxy generator is more powerfull 
-          and can be used by JDO/ODMG or EJB implementations. 
-          It can extend any not final class and implement interfaces at runtime.
-
-
-          CGLIB outputs generated classes. Byte code generation and class file
-          format manipulation is hidden in static methods. 
-          It was designed to implement Transparent Persistence for JAVA, 
-          but can be used to implement aspects like Security or Validation. 
-
-
-        
+       cglib is a powerful, high performance and quality Code Generation Library,
+       It is used to extend JAVA  classes and implements interfaces at runtime.
+       See <a href="xref/samples/index.html">samples</a> and <a href="apidocs/index.html">API documentation</a> 
+       to learn more about features.
       </p>
-
-  
+      <p>
+       This library is <a href="http://www.apache.org/foundation/licence-FAQ.html">free software,</a>
+       freely reusable for personal or commercial purposes.
+      </p>
     </section>
+    
+   <section name="Projects"> 
+   <p>
+     Open source projects use cglib and used by cglib:
+  
+   <ul>
+      <li/>  "The <a href="http://jakarta.apache.org/bcel"> Byte Code Engineering Library </a>(formerly known as JavaClass) is intended to give users a convenient possibility to analyze, create, and manipulate (binary) Java class files (those ending with .class)."
+        Used by cglib for Class file format manipulation.
+      <li/> "<a href="http://xorm.sourceforge.net">XORM</a> is an extensible object-relational mapping layer for Java applications. It provides interface-based persistence to RDBMSs while allowing developers to focus on the object model, not the physical layer."
+        Uses cglib to generate persistent classes. 
+      <li/>"<a href="http://hibernate.sourceforge.net">Hibernate</a> is a powerful, ultra-high performance object/relational persistence and query service for Java. Hibernate lets you develop persistent objects following common Java idiom, including association, inheritance, polymorphism, composition and the Java collections framework." 
+        Uses cglib to generate  proxies  for persistent classes.
+   </ul>
+   </p>
+   </section> 
   </body>
 </document>

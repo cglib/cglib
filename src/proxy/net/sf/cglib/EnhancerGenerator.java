@@ -517,12 +517,13 @@ import java.util.*;
         dup();
         invoke_constructor(HashMap.class);
         putstatic(CONSTRUCTOR_PROXY_MAP);
-        store_local("args");//reuses alocal for map
+        final String LOCAL_MAP = "map";
+        store_local(LOCAL_MAP);
         for( Iterator i = constructorTypes.iterator(); i.hasNext(); ){
             Object[] pair    = (Object[])i.next();
             Class[] cTypes   = (Class[])pair[0]; 
             Class[] keyTypes = (Class[])pair[1]; 
-            load_local("args");
+            load_local(LOCAL_MAP);
             push_object(keyTypes);
             invoke(NEW_CALSS_KEY);//key
             load_class_this();
