@@ -892,7 +892,7 @@ abstract class CodeGenerator {
             if (!clazz.equals(Void.TYPE)) {
                 Class wrapper = (Class)primitiveToWrapper.get(clazz);
                 Method convert = (Method)primitiveMethods.get(clazz);
-                checkcast(wrapper);
+                checkcast(convert.getDeclaringClass());
                 invoke(convert);
             }
         } else {

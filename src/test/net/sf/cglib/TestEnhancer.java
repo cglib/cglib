@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.24 2003/01/31 01:05:04 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.25 2003/02/01 19:44:51 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -162,17 +162,29 @@ public class TestEnhancer extends CodeGenTestCase {
         EA obj = new EA();
         EA save = obj;
         obj.setName("herby");
-        EA proxy = (EA)Enhancer.enhance(obj, null, null, TEST_INTERCEPTOR, null, null);
-        assertTrue(((Factory)proxy).getDelegate() == save);
+        EA proxy = (EA)Enhancer.enhance( EA.class,  new DelegateInterceptor(save) );
+     
         assertTrue(proxy.getName().equals("herby"));
     }
 
+    class DelegateInterceptor implements MethodInterceptor {
+      Object delegate;
+        DelegateInterceptor(Object delegate){
+          this.delegate = delegate;
+        }
+        public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+            return proxy.invoke(delegate,args);
+        }
+        
+    }
     public void testEnhanceObjectDelayed() throws Throwable {
-        EA proxy = (EA)Enhancer.enhance(null, EA.class, null, TEST_INTERCEPTOR, null, null);
+        
+        DelegateInterceptor mi = new DelegateInterceptor(null);
+        EA proxy = (EA)Enhancer.enhance( EA.class, null, mi , null, null);
         EA obj = new EA();
         obj.setName("herby");
-        ((Factory)proxy).setDelegate(obj);
-        assertTrue(proxy.getName().equals("herby"));
+        mi.delegate = obj;
+       assertTrue(proxy.getName().equals("herby"));
     }
     
     
@@ -181,16 +193,13 @@ public class TestEnhancer extends CodeGenTestCase {
         Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, TEST_INTERCEPTOR );
-        
-        
-        
         TestCase.assertTrue("intType",   1   == source.intType(1));
         TestCase.assertTrue("longType",  1L  == source.longType(1L));
         TestCase.assertTrue("floatType", 1.1f  == source.floatType(1.1f));
         TestCase.assertTrue("doubleType",1.1 == source.doubleType(1.1));
         TestCase.assertEquals("objectType","1", source.objectType("1") );
         TestCase.assertEquals("objectType","",  source.toString() );
-        
+        source.arrayType( new int[]{} );    
         
     }
     
@@ -239,6 +248,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
+    //fails for some reason
     
     public void testCustomClassLoader()throws Throwable{
         
@@ -338,6 +348,28 @@ public class TestEnhancer extends CodeGenTestCase {
         assertEquals("testValue", testValue, interceptor.getValue()  );
     }
 
+  static abstract class CastTest{
+     CastTest(){} 
+    abstract int getInt();
+  }
+  
+  class CastTestInterceptor implements MethodInterceptor{
+     
+      public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+          return new Short((short)0);
+      }
+      
+  }  
+  
+    
+  public void testCast()throws Throwable{
+    
+    CastTest castTest =  (CastTest)Enhancer.enhance(CastTest.class, null, new  CastTestInterceptor());
+  
+    assertTrue(castTest.getInt() == 0);
+    
+  }
+  
    public void testABC() throws Throwable{
        Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR);
        Enhancer.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
@@ -386,12 +418,12 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testClone() throws Throwable{
     
-      TestClone testClone = (TestClone)Enhancer.override( TestCloneImpl.class,
+      TestClone testClone = (TestClone)Enhancer.enhance( TestCloneImpl.class,
                                                           TEST_INTERCEPTOR );
       assertTrue( testClone.clone() != null );  
       
             
-      testClone = (TestClone)Enhancer.override( TestClone.class,
+      testClone = (TestClone)Enhancer.enhance( TestClone.class,
          new MethodInterceptor(){
       
            public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
@@ -422,7 +454,7 @@ public class TestEnhancer extends CodeGenTestCase {
     }
 
     public void testFinal() throws Throwable {
-        ((FinalA)Enhancer.override(FinalB.class, TEST_INTERCEPTOR)).foo();
+        ((FinalA)Enhancer.enhance(FinalB.class, TEST_INTERCEPTOR)).foo();
     }
 
     public static interface ConflictA {
@@ -448,7 +480,7 @@ public class TestEnhancer extends CodeGenTestCase {
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
          assertEquals("test", a.toString());
-         ((Factory)a).setInterceptor(TEST_INTERCEPTOR);
+          ((Factory)a).interceptor(TEST_INTERCEPTOR);
          assertEquals("test", a.toString());
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },

@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.31 2003/01/31 01:04:26 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.32 2003/02/01 19:44:50 baliuka Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -92,37 +92,17 @@ public class Enhancer {
 
     // should be package-protected but causes problems on jdk1.2
     public interface EnhancerKey {
-        public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
-                                   boolean delegating, Object filter);
+        public Object newInstance( Class cls, Class[] interfaces, 
+                                   Method wreplace,Object filter);
     }
     
     private Enhancer() {}
 
     public static MethodInterceptor getMethodInterceptor(Object enhanced){
       
-            return ((Factory)enhanced).getInterceptor();
+            return ((Factory)enhanced).interceptor();
         
     }
-    
-    /**
-     *  implements decorator  for the first parameter,
-     *  returned instance extends obj.getClass() and implements Factory interface,
-     *  MethodProxy delegates calls to obj methods
-     *  @param obj object to decorate
-     *  @param interceptor interceptor used to handle implemented methods
-     *  @return decorated instanse of obj.getClass()  class
-     */
-    
-    
-     public static Factory decorate(Object obj, MethodInterceptor interceptor ){
-     
-         return (Factory)enhanceHelper(true, obj,
-                                       obj.getClass().isInterface() ? null : obj.getClass(),
-                                       obj.getClass().isInterface() ? new Class[]{obj.getClass()} : null,
-                                       interceptor,
-                                       obj.getClass().getClassLoader(),
-                                       null, null );
-     }
     
     
     /**
@@ -135,9 +115,9 @@ public class Enhancer {
      */
     
      
-      public static Factory override(Class clazz, MethodInterceptor interceptor ){
+      public static Factory enhance(Class clazz, MethodInterceptor interceptor ){
           
-         return (Factory)enhanceHelper(false, null , clazz.isInterface() ? null : clazz,
+         return (Factory)enhanceHelper( clazz.isInterface() ? null : clazz,
                                        clazz.isInterface() ? new Class[]{clazz} : null ,
                                        interceptor, clazz.getClassLoader(), null, null );
      }
@@ -179,28 +159,15 @@ public class Enhancer {
      */
     public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
                                  ClassLoader loader, Method wreplace) {
-        return enhanceHelper( false, null, cls, interfaces,
+        return enhanceHelper( cls, interfaces,
                               ih, loader, wreplace, null);
     }
 
-    public static Object enhance(Object obj, Class cls, Class[] interfaces,
-                                 MethodInterceptor ih, ClassLoader loader,
-                                 Method wreplace) {
-        return enhanceHelper( true, obj, cls, interfaces, ih,
-                               loader, wreplace, null);
-    }
-
+    
    public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
                                  ClassLoader loader, Method wreplace, MethodFilter filter) {
-        return enhanceHelper( false, null, cls, interfaces,
+        return enhanceHelper(  cls, interfaces,
                               ih, loader, wreplace, filter );
-    }
-
-    public static Object enhance(Object obj, Class cls, Class[] interfaces,
-                                 MethodInterceptor ih, ClassLoader loader,
-                                 Method wreplace, MethodFilter filter) {
-        return enhanceHelper( true, obj, cls, interfaces, ih,
-                               loader, wreplace, filter );
     }
 
     /**
@@ -215,10 +182,10 @@ public class Enhancer {
         if (loader == null) {
             loader = defaultLoader;
         }
-        return enhanceClassHelper(false, cls, interfaces, loader, null, filter);
+        return enhanceClassHelper( cls, interfaces, loader, null, filter);
     }
 
-    private static Object enhanceHelper(boolean delegating, Object obj, Class cls,
+    private static Object enhanceHelper(Class cls,
                                         Class[] interfaces, MethodInterceptor ih,
                                         ClassLoader loader, Method wreplace,
                                         MethodFilter filter) {
@@ -226,36 +193,29 @@ public class Enhancer {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
         if (cls == null) {
-            if (obj == null) {
                 cls = Object.class;
-            } else {
-                cls = obj.getClass();
-            }
         }
         if (loader == null) {
             loader = defaultLoader;
         }
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, filter);
         Factory factory;
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
-                Class gen = enhanceClassHelper(delegating, cls, interfaces, loader, wreplace, filter);
+                Class gen = enhanceClassHelper(cls, interfaces, loader, wreplace, filter);
                 factory = (Factory)ReflectUtils.newInstance(gen);
                 cache.put(loader, key, factory);
             }
         }
-        if (delegating) {
-            return factory.newInstance(ih, obj);
-        } else {
             return factory.newInstance(ih);
-        }
+       
     }
 
-    private static Class enhanceClassHelper(boolean delegating, Class cls,
+    private static Class enhanceClassHelper(Class cls,
                                             Class[] interfaces, ClassLoader loader, Method wreplace,
                                             MethodFilter filter) {
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace,  filter);
         Class result;
         synchronized (classCache) {
             result = (Class)classCache.get(loader, key);
@@ -263,7 +223,7 @@ public class Enhancer {
                 String className = nameFactory.getNextName(cls);
                 result = new EnhancerGenerator(className, cls,
                                                interfaces, loader, wreplace, 
-                                               delegating, filter).define();
+                                               filter).define();
                 classCache.put(loader, key, result);
             }
         }

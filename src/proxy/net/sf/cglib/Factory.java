@@ -57,7 +57,7 @@ package net.sf.cglib;
 /**
  * All enhanced instances implement this interface.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.7 2003/01/25 08:22:32 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.8 2003/02/01 19:44:50 baliuka Exp $
  */
 public interface Factory {
     /**
@@ -67,17 +67,11 @@ public interface Factory {
      */     
     public Object newInstance(MethodInterceptor ih);
 
-    public MethodInterceptor getInterceptor();
+    public MethodInterceptor interceptor();
 
-    public Object newInstance(MethodInterceptor ih, Object delegate);
-    
     public Object newInstance( Class types[], Object args[], MethodInterceptor ih);
     
-    public Object getDelegate();
-    
-    public void setDelegate(Object delegate);
-
-    public void setInterceptor(MethodInterceptor ih);
+    public void interceptor(MethodInterceptor ih);
 }
    
     

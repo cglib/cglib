@@ -116,7 +116,7 @@ public abstract class MetaClass  {
         for(int i = 0; i < methods.length; i++ ){
             Object key = memberKeyFactory.newInstance(target, methods[i].getName(),
             methods[i].getParameterTypes() );
-            memebers.put(key, MethodProxy.create(methods[i]));
+            memebers.put(key, MethodProxy.create(methods[i],methods[i]));
         }
         
         java.lang.reflect.Constructor [] constructors = target.getConstructors();
