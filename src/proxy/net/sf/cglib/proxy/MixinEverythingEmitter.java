@@ -63,7 +63,7 @@ import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEverythingEmitter.java,v 1.1 2004/01/25 22:21:00 herbyderby Exp $
+ * @version $Id: MixinEverythingEmitter.java,v 1.2 2004/01/25 22:31:49 herbyderby Exp $
  */
 class MixinEverythingEmitter extends MixinEmitter {
 
@@ -81,7 +81,7 @@ class MixinEverythingEmitter extends MixinEmitter {
 
     protected Method[] getMethods(Class type) {
         List methods = new ArrayList(Arrays.asList(type.getMethods()));
-        CollectionUtils.filter(methods, new RejectModifierPredicate(Modifier.FINAL));
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Modifier.FINAL | Modifier.STATIC));
         return (Method[])methods.toArray(new Method[methods.size()]);
     }
 }
