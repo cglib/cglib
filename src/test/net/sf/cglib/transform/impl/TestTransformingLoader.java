@@ -63,7 +63,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.2 2003/12/06 19:46:47 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.3 2003/12/20 23:22:11 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -99,7 +99,9 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
     public void testAddStatic() throws Exception {
         Method m = ReflectUtils.findMethod("net.sf.cglib.transform.impl.TestTransformingLoader.initStatic(Class)");
-        Class loaded = loadHelper(new AddStaticInitTransformer(m), Example.class);
+        ClassTransformer t = new AddStaticInitTransformer(m);
+        // t = new ClassTransformerChain(new ClassTransformer[]{ t, new ClassTransformerTee(new org.objectweb.asm.util.TraceClassVisitor(null, new java.io.PrintWriter(System.out))) });
+        Class loaded = loadHelper(t, Example.class);
         Object obj = loaded.newInstance();
         // TODO
     }

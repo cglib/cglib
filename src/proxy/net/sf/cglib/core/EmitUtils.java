@@ -363,7 +363,9 @@ public class EmitUtils {
         } else {
             ClassEmitter ce = e.getClassEmitter();
             String typeName = TypeUtils.emulateClassGetName(type);
-            String fieldName = getFieldName(typeName);
+
+            // TODO: can end up with duplicated field names when using chained transformers; incorporate static hook # somehow
+            String fieldName = "CGLIB$load_class$" + escapeType(typeName);
             if (!ce.isFieldDeclared(fieldName)) {
                 ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null, null);
                 CodeEmitter hook = ce.getStaticHook();
@@ -373,10 +375,6 @@ public class EmitUtils {
             }
             e.getfield(fieldName);
         }
-    }
-
-    private static String getFieldName(String typeName) {
-        return "CGLIB$load_class$" + escapeType(typeName);
     }
 
     private static String escapeType(String s) {
@@ -918,5 +916,48 @@ public class EmitUtils {
         e.putfield(fieldName);
         e.return_value();
         e.end_method();
+    }
+
+    /* generates:
+       } catch (RuntimeException e) {
+         throw e;
+       } catch (Error e) {
+         throw e;
+       } catch (<DeclaredException> e) {
+         throw e;
+       } catch (Throwable e) {
+         throw new <Wrapper>(e);
+       }
+    */
+    public static void wrap_undeclared_throwable(CodeEmitter e, Block handler, Type[] exceptions, Type wrapper) {
+        Set set = (exceptions == null) ? Collections.EMPTY_SET : new HashSet(Arrays.asList(exceptions));
+
+        if (set.contains(Constants.TYPE_THROWABLE))
+            return;
+
+        boolean needThrow = exceptions != null;
+        if (!set.contains(Constants.TYPE_RUNTIME_EXCEPTION)) {
+            e.catch_exception(handler, Constants.TYPE_RUNTIME_EXCEPTION);
+            needThrow = true;
+        }
+        if (!set.contains(Constants.TYPE_ERROR)) {
+            e.catch_exception(handler, Constants.TYPE_ERROR);
+            needThrow = true;
+        }
+        if (exceptions != null) {
+            for (int i = 0; i < exceptions.length; i++) {
+                e.catch_exception(handler, exceptions[i]);
+            }
+        }
+        if (needThrow) {
+            e.athrow();
+        }
+        // e -> eo -> oeo -> ooe -> o
+        e.catch_exception(handler, Constants.TYPE_THROWABLE);
+        e.new_instance(wrapper);
+        e.dup_x1();
+        e.swap();
+        e.invoke_constructor(wrapper, CSTRUCT_THROWABLE);
+        e.athrow();
     }
 }

@@ -11,7 +11,7 @@ public class ClassTransformerTee extends ClassAdapter implements ClassTransforme
         this.branch = branch;
     }
     
-    public void setTarget(ClassVisitor target, ClassVisitor outer) {
+    public void setTarget(ClassVisitor target) { 
         cv = new ClassVisitorTee(branch, target);
     }
 }

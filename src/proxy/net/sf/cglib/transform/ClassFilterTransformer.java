@@ -2,12 +2,18 @@ package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
 
-public class ClassFilterTransformer extends AbstractFilterTransformer {
+public class ClassFilterTransformer extends AbstractClassTransformer {
+    private ClassTransformer pass;
     private ClassFilter filter;
     private ClassVisitor target;
+
+    public void setTarget(ClassVisitor target) {
+        super.setTarget(target);
+        pass.setTarget(target);
+    }
     
     public ClassFilterTransformer(ClassFilter filter, ClassTransformer pass) {
-        super(pass);
+        this.pass = pass;
         this.filter = filter;
     }
 

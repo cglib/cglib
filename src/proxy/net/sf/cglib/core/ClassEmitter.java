@@ -61,35 +61,37 @@ import org.objectweb.asm.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class ClassEmitter extends ClassAdapter {
-    private static final Signature STATIC_HOOK =
-      TypeUtils.parseSignature("void CGLIB$STATIC_HOOK()");
-    private static final String STATIC_HOOK_FLAG = "CGLIB$STATIC_HOOK_FLAG";
-
     private int access;
     private Type classType;
     private Type superType;
     private Map fieldInfo;
-    private boolean seenStatic;
-    private CodeEmitter hook;
-    private boolean ended;
-    private ClassVisitor outer;
+
+    private static int hookCounter;
+    private CodeVisitor rawStaticInit;
+    private CodeEmitter staticInit;
+    private CodeEmitter staticHook;
+    private Signature staticHookSig;
 
     public ClassEmitter(ClassVisitor cv) {
         super(null);
-        setTarget(cv, this);
+        setTarget(cv);
     }
 
     public ClassEmitter() {
         super(null);
     }
 
-    public void setTarget(ClassVisitor cv, ClassVisitor outer) {
+    public void setTarget(ClassVisitor cv) {
         this.cv = cv;
-        this.outer = outer;
         fieldInfo = new HashMap();
-        seenStatic = false;
-        hook = null;
-        ended = false;
+
+        // just to be safe
+        staticInit = staticHook = null;
+        staticHookSig = null;
+    }
+
+    synchronized private static int getNextHook() {
+        return ++hookCounter;
     }
 
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
@@ -108,19 +110,17 @@ public class ClassEmitter extends ClassAdapter {
          if (TypeUtils.isInterface(access)) {
              throw new IllegalStateException("static hook is invalid for this class");
          }
-         if (hook == null) {
-             ClassEmitter oe = new ClassEmitter(outer);
-             oe.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE, null, null);
-             CodeEmitter e = oe.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null, null);
-             Label ok = e.make_label();
-             e.getstatic(classType, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE);
-             e.if_jump(e.EQ, ok);
-             e.return_value();
-             e.mark(ok);
-             e.push(true);
-             e.putstatic(classType, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE);
+         if (staticHook == null) {
+             staticHookSig = new Signature("CGLIB$STATICHOOK" + getNextHook(), "()V");
+             staticHook = begin_method(Constants.ACC_STATIC,
+                                       staticHookSig,
+                                       null,
+                                       null);
+             if (staticInit != null) {
+                 staticInit.invoke_static_this(staticHookSig);
+             }
          }
-         return hook;
+         return staticHook;
     }
 
     protected void init() {
@@ -139,56 +139,57 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public void end_class() {
-        if (seenStatic && hook == null) {
-            getStaticHook(); // force hook method creation
+        if (staticHook != null && staticInit == null) {
+            // force creation of static init
+            begin_static();
         }
-        if (hook != null) {
-            if (!seenStatic) {
-                CodeVisitor v = outer.visitMethod(Constants.ACC_STATIC,
-                                                  Constants.SIG_STATIC.getName(),
-                                                  Constants.SIG_STATIC.getDescriptor(),
-                                                  null,
-                                                  null);
-                v.visitInsn(Constants.RETURN);
-                v.visitMaxs(0, 0);
-            }
-            ended = true;
-            hook.return_value();
-            hook.end_method();
+        if (staticInit != null) {
+            staticHook.return_value();
+            staticHook.end_method();
+            rawStaticInit.visitInsn(Constants.RETURN);
+            rawStaticInit.visitMaxs(0, 0);
+            staticInit = staticHook = null;
+            staticHookSig = null;
         }
         cv.visitEnd();
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
+        if (classType == null)
+            throw new IllegalStateException("classtype is null! " + this);
         CodeVisitor v = cv.visitMethod(access,
                                        sig.getName(),
                                        sig.getDescriptor(),
                                        TypeUtils.toInternalNames(exceptions),
                                        attrs);
-        if (sig.equals(STATIC_HOOK)) {
-            hook = new CodeEmitter(this, v, access, sig, exceptions) {
-                public boolean isStaticHook() {
-                    return true;
-                }
+        if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(this.access)) {
+            rawStaticInit = v;
+            CodeVisitor wrapped = new CodeAdapter(v) {
                 public void visitMaxs(int maxStack, int maxLocals) {
-                    if (ended) {
-                        super.visitMaxs(maxStack, maxLocals);
-                    }
+                    // ignore
                 }
                 public void visitInsn(int insn) {
-                    if (insn != Constants.RETURN || ended) {
+                    if (insn != Constants.RETURN) {
                         super.visitInsn(insn);
                     }
                 }
             };
-            return hook;
-        } else {
-            CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
-            if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(this.access)) {
-                seenStatic = true;
-                e.invoke_static_this(STATIC_HOOK);
+            staticInit = new CodeEmitter(this, wrapped, access, sig, exceptions);
+            if (staticHook == null) {
+                // force static hook creation
+                getStaticHook();
+            } else {
+                staticInit.invoke_static_this(staticHookSig);
             }
-            return e;
+            return staticInit;
+        } else if (sig.equals(staticHookSig)) {
+            return new CodeEmitter(this, v, access, sig, exceptions) {
+                public boolean isStaticHook() {
+                    return true;
+                }
+            };
+        } else {
+            return new CodeEmitter(this, v, access, sig, exceptions);
         }
     }
 
