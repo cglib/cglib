@@ -57,14 +57,14 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.7 2003/01/25 00:12:09 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.8 2003/01/25 00:44:01 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
 
     private static final Method NEW_INSTANCE_HACK = 
-      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],Object)");
+      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[], Object)");
     
     private static final ClassNameFactory NAME_FACTORY = 
       new ClassNameFactory("ConstructorProxiedByCGLIB");
@@ -87,15 +87,38 @@ public abstract class ConstructorProxy {
     protected ConstructorProxy() {
     }
    
-    public static ConstructorProxy create(Constructor constructor) throws Throwable {
-        Class declaring = constructor.getDeclaringClass();
-        String className = NAME_FACTORY.getNextName(declaring);
-        ClassLoader loader = declaring.getClassLoader();
-        if (loader == null) {
-            loader = DEFAULT_LOADER;
+    public static ConstructorProxy create(Constructor constructor) {
+        return createHelper(constructor, null);
+    }
+
+    public static ConstructorProxy create(Class iface, Class declaring) {
+        try {
+            Method newInstance = ReflectUtils.findNewInstance(iface);
+            if (!newInstance.getReturnType().isAssignableFrom(declaring)) {
+                throw new IllegalArgumentException("incompatible return type");
+            }
+            Constructor constructor = declaring.getDeclaredConstructor(newInstance.getParameterTypes());
+            return createHelper(constructor, newInstance);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException("interface does not match any known constructor");
         }
-        Class gen = new Generator(className, constructor, loader).define();
-        return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
+    }
+
+    private static ConstructorProxy createHelper(Constructor constructor, Method newInstance) {
+        try {
+            Class declaring = constructor.getDeclaringClass();
+            String className = NAME_FACTORY.getNextName(declaring);
+            ClassLoader loader = declaring.getClassLoader();
+            if (loader == null) {
+                loader = DEFAULT_LOADER;
+            }
+            Class gen = new Generator(className, constructor, loader, newInstance).define();
+            return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        }
     }
 
     public abstract Object newInstance(Object[] args);
@@ -103,16 +126,29 @@ public abstract class ConstructorProxy {
     
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
+        private Method newInstance;
         
-        public Generator(String className, Constructor constructor, ClassLoader loader) {
+        public Generator(String className, Constructor constructor, ClassLoader loader, Method newInstance) {
             super(className, ConstructorProxy.class, loader);
             this.constructor = constructor;
+            this.newInstance = newInstance;
         }
 
         protected void generate() {
             generateNullConstructor();
             generateNewInstanceHelper(NEW_INSTANCE, false);
             generateNewInstanceHelper(NEW_INSTANCE_HACK, true);
+
+            if (newInstance != null) {
+                declare_interface(newInstance.getDeclaringClass());
+                begin_method(newInstance);
+                new_instance(constructor.getDeclaringClass());
+                dup();
+                load_args();
+                invoke(constructor);
+                return_value();
+                end_method();
+            }
         }
 
         private void generateNewInstanceHelper(Method method, boolean isHack) {
@@ -129,7 +165,7 @@ public abstract class ConstructorProxy {
             }
             if (isHack) {
                 load_arg(1);
-                checkcast(types[stop]);
+                unbox(types[stop]);
             }
             invoke(constructor);
             return_value();

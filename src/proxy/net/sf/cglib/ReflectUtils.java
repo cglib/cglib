@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.4 2003/01/24 19:53:41 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.5 2003/01/25 00:44:01 herbyderby Exp $
  */
 abstract /* package */ class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -192,5 +192,25 @@ abstract /* package */ class ReflectUtils {
             classes[i] = objects[i].getClass();
         }
         return classes;
+    }
+
+    public static Method findNewInstance(Class iface) {
+        if (!iface.isInterface()) {
+            throw new IllegalArgumentException(iface + " is not an interface");
+        }
+        Method newInstance = null;
+        Method[] methods = iface.getDeclaredMethods();
+        for (int i = 0; i < methods.length; i++) {
+            if (methods[i].getName().equals("newInstance")) {
+                if (newInstance != null) {
+                    throw new IllegalArgumentException("Multiple newInstance methods");
+                }
+                newInstance = methods[i];
+            }
+        }
+        if (newInstance == null) {
+            throw new IllegalArgumentException("Missing newInstance method");
+        }
+        return newInstance;
     }
 }
