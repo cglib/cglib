@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.4 2002/12/21 21:44:25 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.5 2002/12/21 23:45:16 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
@@ -93,6 +93,10 @@ abstract public class MethodClosure {
     }
 
     abstract public MethodClosure newInstance(Object delegate);
+
+    public Object getDelegate() {
+        return delegate;
+    }
 
     public static MethodClosure generate(Object delegate, String methodName, Class iface) {
         return generate(delegate, methodName, iface, null);
