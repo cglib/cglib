@@ -58,7 +58,7 @@ import junit.framework.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.14 2003/01/30 00:59:00 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.15 2003/05/23 23:18:43 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -78,6 +78,7 @@ public class TestAll extends TestCase {
         suite.addTest(TestProxy.suite());
         suite.addTest(TestMethodProxy.suite());
         suite.addTest(TestParallelSorter.suite());
+        suite.addTest(TestInterface.suite());
            
         return suite;
     }

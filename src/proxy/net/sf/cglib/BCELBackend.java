@@ -56,6 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import org.apache.bcel.generic.*;
+import org.apache.bcel.classfile.AccessFlags;
 
 class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Constants {
     private final ClassGen cg;
@@ -70,6 +71,14 @@ class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Consta
         super(className, superclass);
         cg = new ClassGen(className, superclass.getName(), Constants.SOURCE_FILE, ACC_PUBLIC, null); 
         cp = cg.getConstantPool();
+    }
+
+    public void setInterface(boolean flag) {
+        if (flag) {
+            cg.setAccessFlags(cg.getAccessFlags() | Modifier.INTERFACE);
+        } else {
+            cg.setAccessFlags(cg.getAccessFlags() & ~Modifier.INTERFACE);
+        }
     }
 
     public byte[] getBytes() {

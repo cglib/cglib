@@ -97,7 +97,10 @@ abstract class CodeGenerator {
         this.className = className;
         this.superclass = superclass;
         backend = new  BCELBackend(className, superclass); 
-        
+    }
+
+    protected void setInterface(boolean flag) {
+        backend.setInterface(flag);
     }
     
     protected void setDebug(boolean debug) {
