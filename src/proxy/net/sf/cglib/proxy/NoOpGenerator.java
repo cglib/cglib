@@ -53,14 +53,36 @@
  */
 package net.sf.cglib.proxy;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Iterator;
 import net.sf.cglib.core.ClassEmitter;
 import net.sf.cglib.core.CodeEmitter;
+import net.sf.cglib.core.ReflectUtils;
 
 class NoOpGenerator
 implements CallbackGenerator
 {
     public static final NoOpGenerator INSTANCE = new NoOpGenerator();
 
-    public void generate(ClassEmitter e, Context context) { }
+    public void generate(ClassEmitter ce, Context context) {
+        for (Iterator it = context.getMethods(); it.hasNext();) {
+            Method method = (Method)it.next();
+            int access1 = method.getModifiers();
+            int access2 = context.getModifiers(method);
+            if (Modifier.isProtected(access1) && Modifier.isPublic(access2)) {
+                CodeEmitter e = ce.begin_method(access2,
+                                    ReflectUtils.getSignature(method),
+                                    ReflectUtils.getExceptionTypes(method),
+                                    null);
+                e.load_this();
+                e.load_args();
+                e.super_invoke();
+                e.return_value();
+                e.end_method();
+            }
+        }
+    }
+    
     public void generateStatic(CodeEmitter e, Context context) { }
 }
