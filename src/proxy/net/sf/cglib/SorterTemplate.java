@@ -62,7 +62,6 @@ abstract class SorterTemplate {
 
     private static class DefaultComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            System.err.println("comparing " + o1 + " with " + o2);
             return ((Comparable)o1).compareTo(o2);
         }
     }
@@ -171,11 +170,11 @@ abstract class SorterTemplate {
 
     private void rotate(Object[] a, int lo, int mid, int hi) {
         int lot, hit;
-        lot = lo; hit = mid - t;
+        lot = lo; hit = mid - 1;
         while (lot < hit) swap(lot++, hit--);
-        lot = mid; hit = hi - t;
+        lot = mid; hit = hi - 1;
         while (lot < hit) swap(lot++, hit--);
-        lot = lo; hit = hi - t;
+        lot = lo; hit = hi - 1;
         while (lot < hit) swap(lot++, hit--);
     }
 
