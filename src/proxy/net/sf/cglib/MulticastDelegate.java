@@ -58,9 +58,8 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 abstract public class MulticastDelegate implements Cloneable {
-    /* package */ static final Class TYPE = MulticastDelegate.class;
     private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
+    private static final ClassLoader defaultLoader = MulticastDelegate.class.getClassLoader();
     private static final ClassNameFactory nameFactory = new ClassNameFactory("MulticastByCGLIB");
 
     private static final MulticastDelegateKey keyFactory =
@@ -68,6 +67,10 @@ abstract public class MulticastDelegate implements Cloneable {
 
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("MulticastDelegate.cglib_newInstance()");
+    private static final Method ADD =
+      ReflectUtils.findMethod("MulticastDelegate.add(Object)");
+    private static final Method ADD_HELPER =
+      ReflectUtils.findMethod("MulticastDelegate.cglib_addHelper(Object)");
 
     // should be package-protected but causes problems on jdk1.2
     public interface MulticastDelegateKey {
@@ -83,7 +86,9 @@ abstract public class MulticastDelegate implements Cloneable {
         return new ArrayList(Arrays.asList(delegates));
     }
 
-    public MulticastDelegate add(Object delegate) {
+    abstract public MulticastDelegate add(Object delegate);
+
+    protected MulticastDelegate cglib_addHelper(Object delegate) {
         MulticastDelegate copy = cglib_newInstance();
         copy.delegates = new Object[delegates.length + 1];
         System.arraycopy(delegates, 0, copy.delegates, 0, delegates.length);
@@ -175,6 +180,15 @@ abstract public class MulticastDelegate implements Cloneable {
             new_instance_this();
             dup();
             invoke_constructor_this();
+            return_value();
+            end_method();
+
+            // add
+            begin_method(ADD);
+            load_this();
+            load_arg(0);
+            checkcast(iface);
+            invoke(ADD_HELPER);
             return_value();
             end_method();
         }
