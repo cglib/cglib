@@ -55,22 +55,35 @@
 package net.sf.cglib;
 
 /**
- * All enhanced instances implement this interface.
+ * All enhanced instances returned by the Enhancer class implement this interface.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.8 2003/02/01 19:44:50 baliuka Exp $
+ * @version $Id: Factory.java,v 1.9 2003/05/13 06:17:08 herbyderby Exp $
  */
 public interface Factory {
     /**
-     * Creates new instance of the same type as factory
-     * @param ih interceptor
-     * @return instance
+     * Creates new instance of the same type, using the no-arg constructor.
+     * @param ih the new interceptor to use
+     * @return new instance
      */     
     public Object newInstance(MethodInterceptor ih);
 
+    /**
+     * Returns the current interceptor in use.
+     */
     public MethodInterceptor interceptor();
 
-    public Object newInstance( Class types[], Object args[], MethodInterceptor ih);
-    
+    /**
+     * Creates a new instance of the same type, using the constructor
+     * matching the given signature.
+     * @param types the constructor signature
+     * @param args the constructor arguments
+     * @param ih the new interceptor to use
+     */
+    public Object newInstance(Class types[], Object args[], MethodInterceptor ih);
+
+    /**
+     * Set the current interceptor for this object.
+     */
     public void interceptor(MethodInterceptor ih);
 }
    

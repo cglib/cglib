@@ -56,8 +56,10 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
+ * An implementation of MethodInterceptor provides separate callbacks for
+ * code to execute before and after the original method execution.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: BeforeAfterInterceptor.java,v 1.8 2003/02/02 07:00:48 baliuka Exp $
+ * @version $Id: BeforeAfterInterceptor.java,v 1.9 2003/05/13 06:17:09 herbyderby Exp $
  */
 abstract public class BeforeAfterInterceptor implements MethodInterceptor {
 
