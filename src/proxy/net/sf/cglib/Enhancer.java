@@ -91,7 +91,7 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.49 2003/09/09 18:18:20 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.50 2003/09/09 19:49:03 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
@@ -117,7 +117,8 @@ public class Enhancer {
                                       cls.isInterface() ? new Class[]{ cls } : null,
                                       callback, null, cls.getClassLoader());
     }
-     
+
+    // TODO: try to remove this
     public static Factory enhance(Class cls, Class interfaces[], Callback callback) {
         return enhanceHelper(cls, interfaces, callback, null, null);
     }
@@ -133,8 +134,8 @@ public class Enhancer {
      * @param cls class to extend, uses Object.class if null
      * @param interfaces interfaces to implement, can be null or empty
      * @param ih interceptor used to handle implemented methods
-     * @param loader ClassLoader for enhanced class, uses "current" if null
      * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
+     * @param loader ClassLoader for enhanced class, uses "current" if null
      * @return an instance of the enhanced class. Will extend the source class and implement the given
      * interfaces, plus the CGLIB Factory interface.
      * @see Factory

@@ -60,11 +60,11 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestDelegator.java,v 1.8 2003/07/10 00:07:26 herbyderby Exp $
+ * @version $Id: TestMixin.java,v 1.1 2003/09/09 19:49:01 herbyderby Exp $
  */
-public class TestDelegator extends CodeGenTestCase {
+public class TestMixin extends CodeGenTestCase {
     public void testSimple() throws Exception {
-        Object obj = Delegator.create(new Class[]{ DI1.class, DI2.class },
+        Object obj = Mixin.create(new Class[]{ DI1.class, DI2.class },
                                       new Object[]{ new D1(), new D2() },
                                       null);
         assertTrue(((DI1)obj).herby().equals("D1"));
@@ -72,32 +72,33 @@ public class TestDelegator extends CodeGenTestCase {
     }
 
     public void testDetermineInterfaces() throws Exception {
-        Object obj = Delegator.create(new Object[]{ new D1(), new D2() }, null);
+        Object obj = Mixin.create(new Object[]{ new D1(), new D2() }, null);
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
     }
  
     public void testOverride() throws Exception {
-        Object obj = Delegator.create(new Object[]{ new D1(), new D4() }, null);
+        Object obj = Mixin.create(new Object[]{ new D1(), new D4() }, null);
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D4"));
     }
 
     public void testNonOverride() throws Exception {
-        Object obj = Delegator.create(new Object[]{ new D4(), new D1() }, null);
+        Object obj = Mixin.create(new Object[]{ new D4(), new D1() }, null);
         assertTrue(((DI1)obj).herby().equals("D4"));
         assertTrue(((DI2)obj).derby().equals("D4"));
     }
 
     public void testSubclass() throws Exception {
-        Object obj = Delegator.create(new Object[]{ new D3(), new D1() }, null);
+        Object obj = Mixin.create(new Object[]{ new D3(), new D1() }, null);
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
         assertTrue(((DI3)obj).extra().equals("D3"));
     }
 
+    /*
     public void testBeans() throws Exception {
-        Object obj = Delegator.createBean(new Object[]{ new DBean1(), new DBean2() }, null);
+        Object obj = Mixin.createBean(new Object[]{ new DBean1(), new DBean2() }, null);
         Set getters = getGetters(obj.getClass());
         assertTrue(getters.size() == 3); // name, age, class
         assertTrue(getters.contains("name"));
@@ -126,8 +127,9 @@ public class TestDelegator extends CodeGenTestCase {
         }
         return null;
     }
+    */
 
-    public TestDelegator(String testName) {
+    public TestMixin(String testName) {
         super(testName);
     }
     
@@ -136,6 +138,6 @@ public class TestDelegator extends CodeGenTestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestDelegator.class);
+        return new TestSuite(TestMixin.class);
     }
 }
