@@ -82,7 +82,7 @@ public class TestBeanGenerator extends TestCase {
 
         assertTrue(bean instanceof MA);
         assertTrue(BeanMap.create(bean).keySet().contains("sin"));
-    }    
+    }
 
     public TestBeanGenerator(String testName) {
         super(testName);
