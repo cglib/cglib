@@ -174,4 +174,5 @@ abstract public class FastClass
     abstract public Object newInstance(int index, Object[] args) throws InvocationTargetException;
 
     abstract public int getIndex(String methodSignature);
+    abstract public int getMaxIndex();
 }
