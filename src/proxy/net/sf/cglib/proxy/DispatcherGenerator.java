@@ -65,7 +65,7 @@ class DispatcherGenerator implements CallbackGenerator {
     private static final Type DISPATCHER =
       TypeUtils.parseType("net.sf.cglib.proxy.Dispatcher");
     private static final Signature LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject(String)");
+      TypeUtils.parseSignature("Object loadObject()");
 
     public void generate(ClassEmitter ce, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
@@ -78,7 +78,6 @@ class DispatcherGenerator implements CallbackGenerator {
                                                 ReflectUtils.getExceptionTypes(method),
                                                 null);
                 context.emitCallback(e, context.getIndex(method));
-                e.push(method.getDeclaringClass().getName());
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();

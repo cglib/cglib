@@ -399,12 +399,17 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitMethods(Map groups, final Map indexes, final Set forcePublic) throws Exception {
-        CodeEmitter e = begin_static();
         for (int i = 0; i < callbackTypes.length; i++) {
             if (callbackTypes[i] != null) {
                 declare_field(Constants.ACC_PRIVATE, getCallbackField(i), Type.getType(callbackTypes[i]), null, null);
                 declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
-                
+            }
+        }
+
+        Set seenGen = new HashSet();
+        CodeEmitter e = begin_static();
+        for (int i = 0; i < callbackTypes.length; i++) {
+            if (callbackTypes[i] != null) {
                 e.new_instance(THREAD_LOCAL);
                 e.dup();
                 e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
@@ -412,35 +417,38 @@ class EnhancerEmitter extends ClassEmitter {
             }
             
             CallbackGenerator gen = CallbackUtils.getGenerator(callbackTypes[i]);
-            final List fmethods = (List)groups.get(gen);
-            CallbackGenerator.Context context = new CallbackGenerator.Context() {
-                public Iterator getMethods() {
-                    return fmethods.iterator();
-                }
-                public int getIndex(Method method) {
-                    return ((Integer)indexes.get(method)).intValue();
-                }
-                public void emitCallback(CodeEmitter e, int index) {
-                    emitCurrentCallback(e, index);
-                }
-                public int getModifiers(Method method) {
-                    int modifiers = Constants.ACC_FINAL
-                        | (method.getModifiers()
-                           & ~Constants.ACC_ABSTRACT
-                           & ~Constants.ACC_NATIVE
-                           & ~Constants.ACC_SYNCHRONIZED);
-                    if (forcePublic.contains(MethodWrapper.create(method))) {
-                        modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
+            if (!seenGen.contains(gen)) {
+                seenGen.add(gen);
+                final List fmethods = (List)groups.get(gen);
+                CallbackGenerator.Context context = new CallbackGenerator.Context() {
+                    public Iterator getMethods() {
+                        return fmethods.iterator();
                     }
-                    return modifiers;
-                }
-                // TODO: this is probably slow
-                public String getUniqueName(Method method) {
-                    return method.getName() + "_" + fmethods.indexOf(method);
-                }
-            };
-            gen.generate(this, context);
-            gen.generateStatic(e, context);
+                    public int getIndex(Method method) {
+                        return ((Integer)indexes.get(method)).intValue();
+                    }
+                    public void emitCallback(CodeEmitter e, int index) {
+                        emitCurrentCallback(e, index);
+                    }
+                    public int getModifiers(Method method) {
+                        int modifiers = Constants.ACC_FINAL
+                            | (method.getModifiers()
+                               & ~Constants.ACC_ABSTRACT
+                               & ~Constants.ACC_NATIVE
+                               & ~Constants.ACC_SYNCHRONIZED);
+                        if (forcePublic.contains(MethodWrapper.create(method))) {
+                            modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
+                        }
+                        return modifiers;
+                    }
+                    // TODO: this is probably slow
+                    public String getUniqueName(Method method) {
+                        return method.getName() + "_" + fmethods.indexOf(method);
+                    }
+                };
+                gen.generate(this, context);
+                gen.generateStatic(e, context);
+            }
         }
         e.return_value();
         e.end_method();

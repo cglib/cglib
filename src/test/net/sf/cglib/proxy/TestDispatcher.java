@@ -61,24 +61,63 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestDispatcher.java,v 1.1 2003/10/29 03:45:38 herbyderby Exp $
+ * @version $Id: TestDispatcher.java,v 1.2 2003/11/11 04:30:17 herbyderby Exp $
  */
 public class TestDispatcher extends CodeGenTestCase {
-    public void testSimple() throws Exception {
-        final Map map = new HashMap();
-        map.put(DI1.class.getName(), new D1());
-        map.put(DI2.class.getName(), new D2());
+    interface Foo {
+        String foo();
+    }
 
-        Dispatcher callback = new Dispatcher() {
-            public Object loadObject(String className) {
-                return map.get(className);
+    interface Bar {
+        String bar();
+    }
+    
+    public void testSimple() throws Exception {
+        final Object[] impls = new Object[]{
+            new Foo() {
+                public String foo() {
+                    return "foo1";
+                }
+            },
+            new Bar() {
+                public String bar() {
+                    return "bar1";
+                }
             }
         };
-        Object obj = Enhancer.create(Object.class,
-                                     new Class[]{ DI1.class, DI2.class },
-                                     callback);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
+
+        Callback[] callbacks = new Callback[]{
+            new Dispatcher() {
+                public Object loadObject() {
+                    return impls[0];
+                }
+            },
+            new Dispatcher() {
+                public Object loadObject() {
+                    return impls[1];
+                }
+            }
+        };
+
+        Enhancer e = new Enhancer();
+        e.setInterfaces(new Class[]{ Foo.class, Bar.class });
+        e.setCallbacks(callbacks);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return (method.getDeclaringClass().equals(Foo.class)) ? 0 : 1;
+            }
+        });
+        Object obj = e.create();
+        
+        assertTrue(((Foo)obj).foo().equals("foo1"));
+        assertTrue(((Bar)obj).bar().equals("bar1"));
+
+        impls[0] = new Foo() {
+            public String foo() {
+                return "foo2";
+            }
+        };
+        assertTrue(((Foo)obj).foo().equals("foo2"));
     }
 
     public TestDispatcher(String testName) {
