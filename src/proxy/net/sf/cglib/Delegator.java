@@ -62,7 +62,7 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.8 2002/12/07 15:36:49 baliuka Exp $
+ * @version $Id: Delegator.java,v 1.9 2002/12/16 20:50:53 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -219,11 +219,6 @@ public class Delegator {
                 Class[] delegateInterfaces = getAllInterfaces(delegate.getClass());
                 for (int j = 0; j < delegateInterfaces.length; j++) {
                     Class iface = delegateInterfaces[j];
-                    // get first superinterface that has declared methods
-                    // this weeds out interfaces with no methods and helps caching
-                    while (iface != null && iface.getDeclaredMethods().length == 0) {
-                        iface = iface.getSuperclass();
-                    }
                     if (iface != null && !seenInterfaces.contains(iface)) {
                         interfaceList.add(iface);
                         indexList.add(new Integer(i));
