@@ -360,10 +360,12 @@ public static Instruction getIntConst( int i, ConstantPoolGen cp){
         new INVOKESPECIAL(
         cp.addMethodref(cg.getSuperclassName(), mg.getName(), mg.getSignature())));
     }
+
+    public static String getSignature(java.lang.reflect.Method m) {
+        return Type.getMethodSignature(toType(m.getReturnType()), toType(m.getParameterTypes()));
+    }
     
-    
-    
-   public static Instruction newReturn( Type t ){
+    public static Instruction newReturn( Type t ){
         
         if (t instanceof BasicType) {
             if (t.equals(Type.LONG)) {

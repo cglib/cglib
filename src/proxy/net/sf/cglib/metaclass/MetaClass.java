@@ -216,9 +216,7 @@ public abstract class MetaClass  {
     protected Class define(){
       return super.define();
     }
-    public  void generate(){
-       
-      try{
+     public  void generate() throws NoSuchMethodException {
         
       //------------- Generate constructor -------------
         
@@ -233,9 +231,9 @@ public abstract class MetaClass  {
 	        load_this();
 	        load_args();
 	        super_invoke(constructor);
-    	    return_value(Void.TYPE);
-        
-        end_method(); 
+            return_value(Void.TYPE);
+
+        end_method();
         
         //------------- newInstance -------------------------
         
@@ -245,7 +243,7 @@ public abstract class MetaClass  {
         
         	new_instance(target);
 	        dup();
-	        invoke_costructor(target);    
+	        invoke_null_constructor(target);    
 	        return_value(target);
         
         end_method();
@@ -319,13 +317,6 @@ public abstract class MetaClass  {
           return_value(Void.TYPE);
           
         end_method(); 
-          
-         
-      }catch( Exception e ){
-      	 e.printStackTrace();
-         throw new ClassFormatError( e.getMessage() );
-      }       
-   
    }
  
  
