@@ -55,7 +55,7 @@ package net.sf.cglib;
 
 import java.util.*;
 
-abstract /* package */ class SorterTemplate {
+abstract class SorterTemplate {
     private static final int QUICKSORT_THRESHOLD = 7;
 
     abstract protected void swap(int i, int j);

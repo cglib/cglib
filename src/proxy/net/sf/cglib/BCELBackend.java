@@ -344,7 +344,7 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
     }
   
     // this is taken from BCEL CVS: Type.getType(Class)
-    /* package */ static Type getType(Class clazz) {
+    private static Type getType(Class clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("Class must not be null");
         }

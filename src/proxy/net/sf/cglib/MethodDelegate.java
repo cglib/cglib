@@ -137,10 +137,10 @@ import java.lang.reflect.Modifier;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.5 2003/01/24 19:53:44 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.6 2003/01/31 01:18:50 herbyderby Exp $
  */
 abstract public class MethodDelegate {
-    /* package */ static final Class TYPE = MethodDelegate.class;
+     static final Class TYPE = MethodDelegate.class;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
     private static final ClassNameFactory nameFactory = new ClassNameFactory("DelegatedByCGLIB");
@@ -213,7 +213,7 @@ abstract public class MethodDelegate {
         return factory.cglib_newInstance(delegate);
     }
 
-    /* package */ static Method findInterfaceMethod(Class iface) {
+    static Method findInterfaceMethod(Class iface) {
         if (!iface.isInterface()) {
             throw new IllegalArgumentException(iface + " is not an interface");
         }

@@ -60,7 +60,7 @@ import java.util.*;
  * Abstract base class for code generators
  * @author  baliuka
  */
-/* package */ abstract class CodeGenerator {
+abstract class CodeGenerator {
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
@@ -742,7 +742,7 @@ import java.util.*;
         return (type.equals(Double.TYPE) || type.equals(Long.TYPE)) ? 2 : 1;
     }
 
-    /* package */ static int getStackSize(Class[] classes) {
+    static int getStackSize(Class[] classes) {
         int size = 0;
         for (int i = 0; i < classes.length; i++) {
             size += getStackSize(classes[i]);

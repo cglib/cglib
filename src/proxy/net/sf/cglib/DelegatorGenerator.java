@@ -59,9 +59,9 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.7 2003/01/24 19:53:47 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.8 2003/01/31 01:18:51 herbyderby Exp $
  */
-/* package */ class DelegatorGenerator extends CodeGenerator {
+class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Delegator$Factory.cglib_newInstance(Object[])");

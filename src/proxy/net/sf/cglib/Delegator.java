@@ -59,11 +59,10 @@ import java.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.14 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.15 2003/01/31 01:18:51 herbyderby Exp $
  */
 public class Delegator {
-    /* package */ static final Class TYPE = Delegator.class;
+    static final Class TYPE = Delegator.class;
 
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();

@@ -54,9 +54,9 @@
 package net.sf.cglib;
 
 /**
- * @version $Id: ClassNameFactory.java,v 1.3 2003/01/24 19:53:48 herbyderby Exp $
+ * @version $Id: ClassNameFactory.java,v 1.4 2003/01/31 01:18:51 herbyderby Exp $
  */
-/* package */ class ClassNameFactory {
+class ClassNameFactory {
     private final String suffix;
     private int index = 0;
 

@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 import java.util.Comparator;
 
 abstract public class ParallelSorter extends SorterTemplate {
-    /* package */ static final Class TYPE = ParallelSorter.class;
+    static final Class TYPE = ParallelSorter.class;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
     private static final ClassNameFactory nameFactory = new ClassNameFactory("SortedByCGLIB");

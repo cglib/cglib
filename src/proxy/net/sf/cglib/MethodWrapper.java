@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.util.*;
 
-/* package */ class MethodWrapper {
+class MethodWrapper {
     private static final MethodWrapperKey keyFactory =
       (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 

@@ -56,9 +56,9 @@ package net.sf.cglib;
 import java.util.*;
 
 /**
- * @version $Id: FactoryCache.java,v 1.8 2003/01/28 17:26:17 herbyderby Exp $
+ * @version $Id: FactoryCache.java,v 1.9 2003/01/31 01:18:51 herbyderby Exp $
  */
-/* package */ class FactoryCache {
+class FactoryCache {
     private final Map cache;
 
     public FactoryCache() {
