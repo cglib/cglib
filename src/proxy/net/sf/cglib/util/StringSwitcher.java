@@ -68,13 +68,14 @@ abstract public class StringSwitcher {
       (StringSwitcherKey)KeyFactory.create(StringSwitcherKey.class);
 
     interface StringSwitcherKey {
-        public Object newInstance(String[] strings, int[] ints);
+        public Object newInstance(String[] strings, int[] ints, boolean fixedInput);
     }
 
-    public static StringSwitcher create(String[] strings, int[] ints) {
+    public static StringSwitcher create(String[] strings, int[] ints, boolean fixedInput) {
         Generator gen = new Generator();
         gen.setStrings(strings);
         gen.setInts(ints);
+        gen.setFixedInput(fixedInput);
         return gen.create();
     }
 
@@ -88,6 +89,7 @@ abstract public class StringSwitcher {
 
         private String[] strings;
         private int[] ints;
+        private boolean fixedInput;
         
         public Generator() {
             super(SOURCE);
@@ -101,13 +103,17 @@ abstract public class StringSwitcher {
             this.ints = ints;
         }
 
+        public void setFixedInput(boolean fixedInput) {
+            this.fixedInput = fixedInput;
+        }
+
         protected ClassLoader getDefaultClassLoader() {
             return getClass().getClassLoader();
         }
 
         public StringSwitcher create() {
             setNamePrefix(StringSwitcher.class.getName());
-            Object key = KEY_FACTORY.newInstance(strings, ints);
+            Object key = KEY_FACTORY.newInstance(strings, ints, fixedInput);
             return (StringSwitcher)super.create(key);
         }
 
@@ -122,7 +128,8 @@ abstract public class StringSwitcher {
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, INT_VALUE, null);
             e.load_arg(0);
             final List stringList = Arrays.asList(strings);
-            ComplexOps.string_switch(e, strings, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+            int style = fixedInput ? Constants.SWITCH_STYLE_HASHONLY : Constants.SWITCH_STYLE_HASH;
+            ComplexOps.string_switch(e, strings, style, new ObjectSwitchCallback() {
                 public void processCase(Object key, Label end) {
                     e.push(ints[stringList.indexOf(key)]);
                     e.return_value();
