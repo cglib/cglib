@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.25 2003/02/01 19:44:51 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.26 2003/02/02 01:10:47 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -496,16 +496,15 @@ public class TestEnhancer extends CodeGenTestCase {
          }
     }
 
-    private static class ConstructorIntercept {
-        public ConstructorIntercept() {
-            foo();
-        }
-        public void foo() {
+    public static class Signature {
+        public int interceptor() {
+            return 42;
         }
     }
 
-    public void testConstructorIntercept() throws Throwable {
-        Enhancer.enhance(ConstructorIntercept.class, null, TEST_INTERCEPTOR);
+    public void testSignature() throws Throwable {
+        Signature sig = (Signature)Enhancer.enhance(Signature.class, TEST_INTERCEPTOR);
+        assertTrue(((Factory)sig).interceptor() == TEST_INTERCEPTOR);
+        assertTrue(sig.interceptor() == 42);
     }
-   
 }
