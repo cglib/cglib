@@ -8,6 +8,10 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class FieldProviderTransformer extends EmittingTransformer {
+    
+    private static final String FIELD_NAMES = "CGLIB$FIELD_NAMES";
+    private static final String FIELD_TYPES = "CGLIB$FIELD_TYPES";
+    
     private static final Type FIELD_PROVIDER =
       TypeUtils.parseType("net.sf.cglib.transform.FieldProvider");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
@@ -16,8 +20,23 @@ public class FieldProviderTransformer extends EmittingTransformer {
       TypeUtils.parseSignature("Object getField(String)");
     private static final Signature PROVIDER_SET =
       TypeUtils.parseSignature("void setField(String, Object)");
+    
+    private static final Signature PROVIDER_SET_BY_INDEX =
+      TypeUtils.parseSignature("void setField(int, Object)");
+    
+    private static final Signature PROVIDER_GET_BY_INDEX =
+      TypeUtils.parseSignature("Object getField(int)");
+    
+    private static final Signature PROVIDER_GET_TYPES =
+      TypeUtils.parseSignature("Class[] getFieldTypes()");
+    
+    private static final Signature PROVIDER_GET_NAMES =
+      TypeUtils.parseSignature("String[] getFieldNames()");
+   
+    
 
     private Map fields;
+    
     
     protected Emitter getEmitter(ClassVisitor cv) {
         return new Emitter(cv) {
@@ -31,7 +50,9 @@ public class FieldProviderTransformer extends EmittingTransformer {
 
             public void declare_field(int access, String name, Type type, Object value) {
                 super.declare_field(access, name, type, value);
-                fields.put(name, type);
+                if( (access & Constants.ACC_STATIC) == 0 ){
+                    fields.put(name, type);
+                }
             }
 
             public void end_class() {
@@ -39,8 +60,108 @@ public class FieldProviderTransformer extends EmittingTransformer {
                     super.end_class();
                     return;
                 }
-                String[] names = (String[])fields.keySet().toArray(new String[fields.size()]);
+               final String[] names = (String[])fields.keySet().toArray(new String[fields.size()]);
+               
+               int indexes[] = new int[names.length];
+               for(int i = 0; i < indexes.length; i++ ){ indexes[i] = i; }
+                    
                 try {
+                    super.declare_field(
+                                         Constants.ACC_PRIVATE|Constants.ACC_STATIC,
+                                         FIELD_NAMES, 
+                                         Type.getType( String[].class ), null 
+                               );
+                    super.declare_field(
+                                         Constants.ACC_PRIVATE|Constants.ACC_STATIC,
+                                         FIELD_TYPES, 
+                                         Type.getType( Class[].class ), null 
+                               );
+              
+                    
+                    begin_static();
+                    push(names.length);
+                    newarray(Type.getType(String.class));
+                    dup();
+                    
+                    for(int i = 0; i < names.length; i++ ){ 
+                       dup();
+                       push(i);
+                       push(names[i]);
+                       aastore();
+                    }
+                    
+                    putstatic(getClassType(),FIELD_NAMES, Type.getType( String[].class )); 
+                    
+                    push(names.length);
+                    newarray(Type.getType(Class.class));
+                    dup();
+                    
+                    for(int i = 0; i < names.length; i++ ){ 
+                       dup();
+                       push(i);
+                       Type type = (Type)fields.get(names[i]);
+                       ComplexOps.load_class( this, type );
+                       aastore();
+                    }
+                    
+                    putstatic(getClassType(),FIELD_TYPES, Type.getType( Class[].class )); 
+                    return_value();
+                    
+                    begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
+                    getstatic(getClassType(), FIELD_NAMES, Type.getType(String[].class) );
+                    return_value();
+                    
+                    begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
+                    getstatic(getClassType(), FIELD_TYPES, Type.getType(Class[].class) );
+                    return_value();
+                    
+                    
+                    begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null);
+                    load_this();
+                    load_arg(1);
+                    load_arg(0);
+                  
+                    
+                    process_switch( indexes, new ProcessSwitchCallback(){
+                        
+                          public void processCase(int key, Label end) throws Exception{
+                          
+                              Type type = (Type)fields.get(names[key]);
+                               unbox(type);
+                               putfield(names[key]);
+                               return_value();
+                          
+                          }
+                          public void processDefault() throws Exception{
+                             throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+                          }
+
+                    }
+                    );
+                    
+                    
+                    
+                    begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null);
+                    load_this();
+                    load_arg(0);
+                    
+                    process_switch( indexes,new ProcessSwitchCallback(){
+                        
+                          public void processCase(int key, Label end) throws Exception{
+                          
+                              Type type = (Type)fields.get(names[key]);
+                               getfield(names[key]);
+                               box(type);
+                               return_value();
+                          
+                          }
+                          public void processDefault() throws Exception{
+                             throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+                          }
+
+                    }
+                    );
+                    
                     begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null);
                     load_this();
                     load_arg(0);
