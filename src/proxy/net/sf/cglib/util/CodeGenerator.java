@@ -293,7 +293,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         null);
 
         Block block = begin_block();
-        load_this();
+        load_arg(0);
         invoke(MethodConstants.FOR_NAME);
         return_value();
         end_block();
