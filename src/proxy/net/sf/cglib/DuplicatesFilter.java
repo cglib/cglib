@@ -53,6 +53,7 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -62,11 +63,11 @@ import java.util.*;
     public DuplicatesFilter() {
     }
     
-    public boolean accept(Method method) {
-        Object key = MethodWrapper.create(method);
+    public boolean accept(Member method) {
+        Object key = MethodWrapper.create((Method)method);
         Method value = (Method)map.get(key);
         if (value != null) {
-            checkReturnTypesEqual(method, value);
+            checkReturnTypesEqual((Method)method, value);
             return false;
         } else {
             map.put(key, method);

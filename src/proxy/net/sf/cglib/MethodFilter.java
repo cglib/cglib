@@ -58,6 +58,6 @@ package net.sf.cglib;
 */
 public interface MethodFilter {
  
-    public boolean accept( java.lang.reflect.Method method );
+    public boolean accept( java.lang.reflect.Member method );
     
 }

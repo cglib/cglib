@@ -53,7 +53,7 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 /* package */ class ModifierFilter implements MethodFilter {
@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
         this.value = value;
     }
     
-    public boolean accept(Method method) {
+    public boolean accept(Member method) {
         return (method.getModifiers() & mask) == value;
     }
 }

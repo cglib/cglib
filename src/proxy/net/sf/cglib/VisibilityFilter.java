@@ -64,7 +64,7 @@ import java.lang.reflect.Modifier;
         pkg = source.getPackage();
     }
     
-    public boolean accept(Method method) {
+    public boolean accept(Member method) {
         return accept(method, pkg);
     }
 
