@@ -53,6 +53,7 @@
  */
 package net.sf.cglib.core;
 
+// TODO: use KeyFactory w/Customizer
 public class ClassesKey {
     private Transformer GET_CLASS_TRANSFORMER = new Transformer() {
         public Object transform(Object value) {
