@@ -90,6 +90,7 @@ import java.util.*;
     private Constructor cstruct;
     private List constructorList;
     private List constructorTypes = new ArrayList();
+   
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -118,10 +119,14 @@ import java.util.*;
             try {
                 cstruct = clazz.getDeclaredConstructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
             } catch (NoSuchMethodException e) {
+                try {
                 cstruct = clazz.getDeclaredConstructor(TYPES_EMPTY);
+                }catch (NoSuchMethodException e2) {
+                    cstruct = null;
+                }
             }
 
-            if (!VisibilityFilter.accept(cstruct, clazz.getPackage())) {
+            if ( cstruct == null || !VisibilityFilter.accept(cstruct, clazz.getPackage())) {
                  cstruct = null;
             }
 
@@ -152,8 +157,6 @@ import java.util.*;
                     loader.loadClass(interfaces[i].getName());
                 }
             }
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
         } catch (ClassNotFoundException e) {
             throw new CodeGenerationException(e);
         }
