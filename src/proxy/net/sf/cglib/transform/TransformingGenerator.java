@@ -1,6 +1,7 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.ClassGenerator;
+import net.sf.cglib.core.Transformer;
 import org.objectweb.asm.ClassVisitor;
 
 public class TransformingGenerator implements ClassGenerator {
@@ -15,5 +16,13 @@ public class TransformingGenerator implements ClassGenerator {
     public void generateClass(ClassVisitor v) throws Exception {
         t.setTarget(v);
         gen.generateClass(t);
+    }
+
+    public static Transformer adapt(final ClassTransformer t) {
+        return new Transformer() {
+            public Object transform(Object value) {
+                return new TransformingGenerator((ClassGenerator)value, t);
+            }
+        };
     }
 }
