@@ -54,7 +54,7 @@ public class AddDelegateTransformer extends EmittingTransformer {
 
             public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
                 CodeVisitor v = super.begin_method(access, sig, exceptions);
-                if (sig.getName().equals(Constants.STATIC_NAME)) {
+                if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
                     return new CodeAdapter(v) {
                         private boolean transformInit = true;
                         public void visitMethodInsn(int opcode, String owner, String name, String desc) {

@@ -21,6 +21,7 @@ public class PersistenceCapableImpl implements PersistenceCapable {
    public void setPersistenceManager( Object manager){
         
       persistenceManager = manager;
+      System.out.println("setPersistenceManager:" + manager);
     }
     
    public Object getPersistenceManager(){

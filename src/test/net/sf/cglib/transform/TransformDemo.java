@@ -38,6 +38,8 @@ public class TransformDemo {
         FieldProvider provider = (FieldProvider)obj;
         System.out.println("Field Names " + Arrays.asList(provider.getFieldNames()) );
         System.out.println("Field Types " + Arrays.asList(provider.getFieldTypes()) );
+        PersistenceCapable pc = (PersistenceCapable)obj;
+        pc.setPersistenceManager("Manager");
     
     }
     
