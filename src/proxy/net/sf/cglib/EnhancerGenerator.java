@@ -63,7 +63,6 @@ import java.util.*;
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
-    private static int index = 0;
 
     private Class[] interfaces;
     private Method wreplace;
@@ -317,7 +316,6 @@ import java.util.*;
     }
 
     private void generateMethod(String fieldName, Method method, Method invokeSuper, Method afterReturn) {
-        Class[] args = method.getParameterTypes();
         Class returnType = method.getReturnType();
         boolean returnsValue = !returnType.equals(Void.TYPE);
         int mod = method.getModifiers();

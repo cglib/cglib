@@ -798,7 +798,6 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     // --------------- Invoke method ----------------
   
     protected void invoke(Method method) {
-        Class clazz = method.getDeclaringClass();
         if (method.getDeclaringClass().isInterface()) {
             invoke_interface(method);
         } else if (Modifier.isStatic(method.getModifiers())) {
