@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.6 2003/09/04 18:53:45 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.7 2003/09/05 23:45:46 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -392,5 +392,63 @@ public class ReflectUtils {
             }
         }
         throw new NoSuchMethodException(methodName);
+    }
+
+    public static String getMethodDescriptor(Class returnType, Class[] parameterTypes) {
+        StringBuffer buf = new StringBuffer();
+        buf.append('(');
+        if (parameterTypes != null) {
+            for (int i = 0; i < parameterTypes.length; ++i) {
+                getDescriptor(buf, parameterTypes[i]);
+            }
+        }
+        buf.append(')');
+        getDescriptor(buf, returnType);
+        return buf.toString();
+    }
+
+    public static String getDescriptor(Class type) {
+        StringBuffer buf = new StringBuffer();
+        getDescriptor(buf, type);
+        return buf.toString();
+    }
+
+    // adapted from ASM Type class
+    public static void getDescriptor(final StringBuffer buf, final Class c) {
+        Class d = c;
+        while (true) {
+            if (d.isPrimitive()) {
+                char car;
+                if (d == Integer.TYPE) {
+                    car = 'I';
+                } else if (d == Void.TYPE) {
+                    car = 'V';
+                } else if (d == Boolean.TYPE) {
+                    car = 'Z';
+                } else if (d == Byte.TYPE) {
+                    car = 'B';
+                } else if (d == Character.TYPE) {
+                    car = 'C';
+                } else if (d == Short.TYPE) {
+                    car = 'S';
+                } else if (d == Double.TYPE) {
+                    car = 'D';
+                } else if (d == Float.TYPE) {
+                    car = 'F';
+                } else /*if (d == Long.TYPE)*/ {
+                    car = 'J';
+                }
+                buf.append(car);
+                return;
+            } else if (d.isArray()) {
+                buf.append('[');
+                d = d.getComponentType();
+            } else {
+                buf.append('L');
+                buf.append(d.getName());
+                buf.append(';');
+                return;
+            }
+        }
     }
 }
