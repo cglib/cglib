@@ -59,8 +59,8 @@ import java.util.*;
 import junit.framework.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestDelegator.java,v 1.7 2003/06/24 21:00:09 herbyderby Exp $
+ * @author Chris Nokleberg
+ * @version $Id: TestDelegator.java,v 1.8 2003/07/10 00:07:26 herbyderby Exp $
  */
 public class TestDelegator extends CodeGenTestCase {
     public void testSimple() throws Exception {
