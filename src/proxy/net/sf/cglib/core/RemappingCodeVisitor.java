@@ -66,16 +66,32 @@ public class RemappingCodeVisitor extends CodeAdapter {
         if (var < state.firstLocal) {
             return var;
         }
-        check.key = (size == 2) ? ~var : var;
-        Integer value = (Integer)state.locals.get(check);
+        Integer value = remapHelper(var, (size == 0) ? 1 : size);
         if (value == null) {
-            IntRef ref = new IntRef();
-            ref.key = check.key;
-            state.locals.put(ref, value = new Integer(nextLocal(size)));
+            if (size == 0) {
+                value = remapHelper(var, 2);
+                if (value == null) {
+                    throw new IllegalStateException("Unknown local variable " + var);
+                }
+            } else {
+                IntRef ref = new IntRef();
+                ref.key = getKey(var, size);
+                state.locals.put(ref, value = new Integer(nextLocal(size)));
+            }
         }
+        // System.err.println("remap(" + var + ", " + size + ") -> " + value.intValue());
         return value.intValue();
     }
-        
+
+    private Integer remapHelper(int var, int size) {
+        check.key = getKey(var, size);
+        return (Integer)state.locals.get(check);
+    }
+
+    private int getKey(int var, int size) {
+        return (size == 2) ? ~var : var;
+    }
+
     public void visitIincInsn(int var, int increment) {
         cv.visitIincInsn(remap(var, 1), increment);
     }
