@@ -54,10 +54,8 @@
 package net.sf.cglib;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-
+import java.util.*;
+import java.lang.reflect.Method;
 
 /**
  * This class is meant to be used as a implementation of
@@ -75,51 +73,59 @@ import java.util.WeakHashMap;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
- * @version $Id: Proxy.java,v 1.1 2003/01/28 11:52:23 nemecec Exp $
+ * @version $Id: Proxy.java,v 1.2 2003/01/28 20:11:44 herbyderby Exp $
  */
 public class Proxy implements Serializable {
-    private static final Class TYPE = Proxy.class;
-    private static Map generatedClasses = Collections.synchronizedMap(new WeakHashMap());
-    private static final FactoryCache cache = new FactoryCache(Collections.synchronizedMap(new WeakHashMap()));
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("CGLIB$Proxy");
+    private static final Class IMPL_TYPE = ProxyImpl.class;
+    private static final HandlerAdapter NULL_INTERCEPTOR = new HandlerAdapter(null);
 
-    private InvocationHandler ih;
+    protected InvocationHandler h;
 
-    protected Proxy(InvocationHandler ih) {
-        this.ih = ih;
+    private static class HandlerAdapter implements MethodInterceptor {
+        private InvocationHandler handler;
+        public HandlerAdapter(InvocationHandler handler) {
+            this.handler = handler;
+        }
+
+        public Object aroundAdvice(Object obj, Method method, Object[] args,
+                                   MethodProxy proxy) throws Throwable {
+            return handler.invoke(obj, method, args);
+        }
+    }
+
+    protected Proxy(InvocationHandler h) {
+        this.h = h;
+        ((Factory)this).setInterceptor(new HandlerAdapter(h));
+    }
+
+    // private for security of isProxyClass
+    private static class ProxyImpl extends Proxy {
+        protected ProxyImpl(InvocationHandler h) {
+            super(h);
+        }
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((Proxy) proxy).ih;
+        return ((Proxy)proxy).h;
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        Class clazz = (Class) cache.get(loader, interfaces);
-        if (clazz == null) {
-            try {
-                ProxyGenerator generator = new ProxyGenerator(nameFactory.getNextName(TYPE), interfaces, loader);
-                clazz = generator.define();
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-            cache.put(loader, interfaces, clazz);
-            generatedClasses.put(clazz, null);
-        }
-        return clazz;
+        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, null);
     }
 
     public static boolean isProxyClass(Class cl) {
-        return generatedClasses.containsKey(cl);
+        return cl.getSuperclass().equals(IMPL_TYPE);
     }
 
-    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler ih) {
-        Class clazz = getProxyClass(loader, interfaces);
+    // TODO: optimize away reflection via ConstructorProxy? (maybe not necessary)
+    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
         try {
-            return clazz.getConstructor(new Class[] { InvocationHandler.class }).newInstance(new Object[] { ih });
+            Class clazz = getProxyClass(loader, interfaces);
+            return clazz.getConstructor(new Class[]{ InvocationHandler.class }).newInstance(new Object[]{ h });
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            throw new Error(e);
+            throw new CodeGenerationException(e);
         }
-    }        
+    }
 }

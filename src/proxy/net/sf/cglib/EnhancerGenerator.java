@@ -398,7 +398,11 @@ import java.util.*;
         create_arg_array();
         getfield(accessName);
         invoke(AROUND_ADVICE);
-        unbox_or_zero(method.getReturnType());
+        if (Proxy.class.isAssignableFrom(getSuperclass())) {
+            unbox(method.getReturnType());
+        } else {
+            unbox_or_zero(method.getReturnType());
+        }
         return_value();
 
         nop("null_interceptor");
