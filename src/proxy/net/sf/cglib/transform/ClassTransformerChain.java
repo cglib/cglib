@@ -9,11 +9,11 @@ public class ClassTransformerChain extends AbstractClassTransformer {
         this.chain = (ClassTransformer[])chain.clone();
     }
 
-    public void setTarget(ClassVisitor v, ClassVisitor outer) {
-        super.setTarget(chain[0], outer);
+    public void setTarget(ClassVisitor v) {
+        super.setTarget(chain[0]);
         ClassVisitor next = v;
         for (int i = chain.length - 1; i >= 0; i--) {
-            chain[i].setTarget(next, outer);
+            chain[i].setTarget(next);
             next = chain[i];
         }
     }

@@ -9,7 +9,7 @@ abstract public class AbstractClassTransformer extends ClassAdapter implements C
         super(null);
     }
 
-    public void setTarget(ClassVisitor target, ClassVisitor outer) {
+    public void setTarget(ClassVisitor target) {
         cv = target;
     }
 }

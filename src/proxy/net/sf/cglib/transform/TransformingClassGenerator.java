@@ -14,7 +14,7 @@ public class TransformingClassGenerator implements ClassGenerator {
     }
     
     public void generateClass(ClassVisitor v) throws Exception {
-        t.setTarget(v, t);
+        t.setTarget(v);
         gen.generateClass(t);
     }
 }

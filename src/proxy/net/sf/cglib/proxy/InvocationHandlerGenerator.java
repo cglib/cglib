@@ -32,9 +32,10 @@ implements CallbackGenerator
             String fieldName = getFieldName(context, method);
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
 
+            Type[] exceptions = ReflectUtils.getExceptionTypes(method);
             CodeEmitter e = ce.begin_method(context.getModifiers(method),
                                             ReflectUtils.getSignature(method),
-                                            ReflectUtils.getExceptionTypes(method),
+                                            exceptions,
                                             null);
             Block handler = e.begin_block();
             context.emitCallback(e, context.getIndex(method));
@@ -45,42 +46,7 @@ implements CallbackGenerator
             e.unbox(Type.getType(method.getReturnType()));
             e.return_value();
             handler.end();
-
-            /* generates:
-               } catch (RuntimeException e) {
-               throw e;
-               } catch (Error e) {
-               throw e;
-               } catch (<DeclaredException> e) {
-               throw e;
-               } catch (Throwable e) {
-               throw new UndeclaredThrowableException(e);
-               }
-            */
-            Class[] exceptionTypes = method.getExceptionTypes();
-            Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
-            if (!(exceptionSet.contains(Exception.class) ||
-                  exceptionSet.contains(Throwable.class))) {
-                if (!exceptionSet.contains(RuntimeException.class)) {
-                    e.catch_exception(handler, Constants.TYPE_RUNTIME_EXCEPTION);
-                    e.athrow();
-                }
-                if (!exceptionSet.contains(Error.class)) {
-                    e.catch_exception(handler, Constants.TYPE_ERROR);
-                    e.athrow();
-                }
-                for (int i = 0; i < exceptionTypes.length; i++) {
-                    e.catch_exception(handler, Type.getType(exceptionTypes[i]));
-                    e.athrow();
-                }
-                // e -> eo -> oeo -> ooe -> o
-                e.catch_exception(handler, Constants.TYPE_THROWABLE);
-                e.new_instance(UNDECLARED_THROWABLE_EXCEPTION);
-                e.dup_x1();
-                e.swap();
-                e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, CSTRUCT_THROWABLE);
-                e.athrow();
-            }
+            EmitUtils.wrap_undeclared_throwable(e, handler, exceptions, UNDECLARED_THROWABLE_EXCEPTION);
             e.end_method();
         }
     }
