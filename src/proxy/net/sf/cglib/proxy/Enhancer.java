@@ -336,19 +336,18 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private void validate(boolean transforming) {
-        if (transforming) {
-            if (filter != null && !(filter instanceof CallbackFilter2)) {
-                throw new IllegalArgumentException("CallbackFilter2 must be used when transforming");
-            }
-        } else if (classOnly ^ (callbacks == null)) {
-            if (classOnly) {
-                throw new IllegalStateException("createClass does not accept callbacks");
+        if (transforming && filter != null && !(filter instanceof CallbackFilter2)) {
+            throw new IllegalArgumentException("CallbackFilter2 must be used when transforming");
+        }
+        if ((classOnly || transforming) ^ (callbacks == null)) {
+            if (classOnly || transforming) {
+                throw new IllegalStateException("createClass and createTransformer do not accept callbacks");
             } else {
-                throw new IllegalStateException("callbacks are required unless using createClass");
+                throw new IllegalStateException("Callbacks are required");
             }
         }
-        if (callbacks == null && callbackTypes == null) {
-            throw new IllegalStateException("Either callbacks or callback types are always required");
+        if ((classOnly || transforming) && callbackTypes == null) {
+            throw new IllegalStateException("Callback types are required");
         }
         if (callbacks != null && callbackTypes != null) {
             if (callbacks.length != callbackTypes.length) {
@@ -508,6 +507,15 @@ public class Enhancer extends AbstractClassGenerator
         setThreadCallbacks(generatedClass, callbacks);
     }
 
+    public static boolean isEnhanced(Class type) {
+        try {
+            getCallbacksSetter(type, SET_THREAD_CALLBACKS_NAME);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
     private static void setThreadCallbacks(Class type, Callback[] callbacks) {
         setCallbacksHelper(type, callbacks, SET_THREAD_CALLBACKS_NAME);
     }
@@ -519,7 +527,7 @@ public class Enhancer extends AbstractClassGenerator
     private static void setCallbacksHelper(Class type, Callback[] callbacks, String methodName) {
         // TODO: optimize
         try {
-            Method setter = type.getDeclaredMethod(methodName, new Class[]{ Callback[].class });
+            Method setter = getCallbacksSetter(type, methodName);
             setter.invoke(null, new Object[]{ callbacks });
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(type + " is not an enhanced class");
@@ -528,6 +536,10 @@ public class Enhancer extends AbstractClassGenerator
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    private static Method getCallbacksSetter(Class type, String methodName) throws NoSuchMethodException {
+        return type.getDeclaredMethod(methodName, new Class[]{ Callback[].class });
     }
 
     private Object createUsingReflection(Class type) {
