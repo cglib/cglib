@@ -57,8 +57,12 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
+ * <code>Delegator</code> provides a number of static methods that allow
+ * multiple objects to be combined into a single larger object. The
+ * methods in the generated object simply call the original methods in the
+ * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.6 2002/12/04 00:55:46 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.7 2002/12/06 19:16:43 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -152,7 +156,7 @@ public class Delegator {
     /**
      * Combines an array of JavaBeans into a single "super" bean.
      * Calls to the super bean will delegate to the underlying beans.
-     * In the case of a property name conflicts, the last bean in the list
+     * In the case of a property name conflicts, the first bean in the list
      * that has the troublesome property will be chosen as the delegate.
      * @param beans the list of beans to delegate to
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
