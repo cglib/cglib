@@ -61,7 +61,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestDispatcher.java,v 1.2 2003/11/11 04:30:17 herbyderby Exp $
+ * @version $Id: TestDispatcher.java,v 1.3 2003/11/11 04:35:13 herbyderby Exp $
  */
 public class TestDispatcher extends CodeGenTestCase {
     interface Foo {
@@ -118,6 +118,7 @@ public class TestDispatcher extends CodeGenTestCase {
             }
         };
         assertTrue(((Foo)obj).foo().equals("foo2"));
+        assertTrue(((Foo)((Factory)obj).newInstance()).foo().equals("foo2"));
     }
 
     public TestDispatcher(String testName) {
