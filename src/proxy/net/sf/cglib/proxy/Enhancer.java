@@ -58,6 +58,7 @@ package net.sf.cglib.proxy;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
 /**
+ *
  * this code returns Enhanced Vector to intercept  all methods for tracing
  *   <pre>
  *         java.util.Vector vector = (java.util.Vector)Enhancer.enhance(
@@ -86,7 +87,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.5 2002/09/22 15:17:04 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.6 2002/09/22 17:49:55 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -147,7 +148,7 @@ public class Enhancer implements org.apache.bcel.Constants {
     private static java.util.Map cache = new java.util.WeakHashMap();
     
     
-    protected Enhancer() {}
+    private Enhancer() {}
     
     public static MethodInterceptor getMethodInterceptor(Object enhanced){
         try{
@@ -162,17 +163,34 @@ public class Enhancer implements org.apache.bcel.Constants {
     
     
     
+    /**
+     *  implemented as 
+     * return enhance(cls,interfaces,ih, null);
+    */    
     public static Object enhance(
     Class cls,
     Class interfaces[],
     MethodInterceptor ih)
     throws Throwable {
+        
         return enhance(
         cls,
         interfaces,
         ih,
-        Thread.currentThread().getContextClassLoader());
+        null);
     }
+    /** enhances public not final class,
+     * source class must have public no args constructor.
+     * Code generated for protected and public not final methods,
+     * package scope methods supported from source class package.
+     * Defines new class in  source class package, if it not java*.
+     * @param cls class to extend, uses Object.class if null
+     * @param interfaces interfaces to implement, can be null
+     * @param ih valid interceptor implementation
+     * @param loader classloater for enhanced class, uses System ClassLoader if null
+     * @throws Throwable on error
+     * @return instanse of enhanced  class
+     */    
     public synchronized static Object enhance(
     Class cls,
     Class interfaces[],
@@ -182,7 +200,9 @@ public class Enhancer implements org.apache.bcel.Constants {
         if (cls == null) {
             cls = Object.class;
         }
-        
+        if( loader == null ){
+           loader = ClassLoader.getSystemClassLoader();
+        }
         StringBuffer keyBuff = new StringBuffer(cls.getName() + ";");
         if(interfaces != null){
             for(int i = 0; i< interfaces.length; i++ ){
@@ -242,42 +262,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         return factory.newInstance(ih);
         
     }
-    private static void addConstructors(ClassGen cg, Class superClass)
-    throws Throwable {
-        addConstructor(cg); //default
-        java.lang.reflect.Constructor constructors[] = superClass.getConstructors();
-        String parentClass = cg.getSuperclassName();
-        InstructionFactory factory = new InstructionFactory(cg);
-        ConstantPoolGen cp = cg.getConstantPool(); // cg creates constant pool
-        for (int i = 0; i < constructors.length; i++) {
-            Class parmTypes[] = constructors[i].getParameterTypes();
-            if (parmTypes.length == 1
-            && parmTypes[0].equals(
-            MethodInterceptor.class)) {
-                continue;
-            }
-            InstructionList il = new InstructionList();
-            MethodGen costructor = toMethodGen(constructors[i], cg.getClassName(), il, cp);
-            Type argTypes[] = toType(parmTypes);
-            invokeSuper(cg, costructor, argTypes);
-            int argArray = createArgArray(il, factory, cp, argTypes);
-            il.append(new ASTORE(argArray));
-            il.append(new ALOAD(0));
-            il.append(
-            factory.createFieldAccess(
-            cg.getClassName(),
-            FIELD_NAME,
-            new ObjectType(INTERCEPTOR_CLASS_NAME),
-            GETFIELD));
-            il.append(new ALOAD(0));
-            il.append(new ALOAD(argArray));
-            il.append(new INVOKESTATIC(addAfterConstructionRef(cp)));
-            il.append(new RETURN());
-            costructor.setMaxStack();
-            costructor.setMaxLocals();
-            cg.addMethod(costructor.getMethod());
-        }
-    }
+    
     private static void addConstructor(ClassGen cg) throws Throwable {
         
         String parentClass = cg.getSuperclassName();
@@ -290,7 +275,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             new ObjectType(INTERCEPTOR_CLASS_NAME)}, null, // arg names
             CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
             
-            
+           
             il.append(new ALOAD(0));
             il.append(
             factory.createInvoke(
@@ -299,6 +284,8 @@ public class Enhancer implements org.apache.bcel.Constants {
             Type.VOID,
             new Type[] {},
             INVOKESPECIAL));
+           
+           
             il.append(new ALOAD(0));
             il.append(new ALOAD(1));
             il.append(
@@ -821,12 +808,6 @@ public class Enhancer implements org.apache.bcel.Constants {
         new INVOKESTATIC(
         cp.addMethodref(className, mg.getName(), mg.getSignature())));
     }
-    
-    private static void addMethod(ClassGen cg, java.lang.reflect.Method method ){
-        
-        
-    }
-    
     
     
     private static MethodGen toMethodGen(
