@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.51 2005/01/28 10:39:24 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.52 2005/03/12 20:41:24 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -644,27 +644,52 @@ public class TestEnhancer extends CodeGenTestCase {
                                                  new Class[]{ String.class },
                                                  new Object[]{ value });
     }
-   
-    public void testRegisterCallbacks() {
+
+    private static class StringValue
+    implements MethodInterceptor
+    {
+        private String value;
+
+        public StringValue(String value) {
+            this.value = value;
+        }
+        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) {
+            return value;
+        }
+    }
+
+    public void testRegisterCallbacks()
+    throws InterruptedException
+    {
          Enhancer e = new Enhancer();
          e.setSuperclass(ArgInit.class);
          e.setCallbackType(MethodInterceptor.class);
          e.setUseFactory(false);
-         Class clazz = e.createClass();
+         final Class clazz = e.createClass();
 
          assertTrue(!Factory.class.isAssignableFrom(clazz));
          assertEquals("test", newArgInit(clazz, "test").toString());
 
-         Enhancer.registerCallbacks(clazz, new Callback[]{ new MethodInterceptor() {
-             public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-                 return "fizzy";
-             }
-         }});
+         Enhancer.registerCallbacks(clazz, new Callback[]{ new StringValue("fizzy") });
          assertEquals("fizzy", newArgInit(clazz, "test").toString());
          assertEquals("fizzy", newArgInit(clazz, "test").toString());
 
          Enhancer.registerCallbacks(clazz, new Callback[]{ null });
          assertEquals("test", newArgInit(clazz, "test").toString());
+
+         Enhancer.registerStaticCallbacks(clazz, new Callback[]{ new StringValue("soda") });
+         assertEquals("test", newArgInit(clazz, "test").toString());
+
+         Enhancer.registerCallbacks(clazz, null);
+         assertEquals("soda", newArgInit(clazz, "test").toString());
+         
+         Thread thread = new Thread(){
+             public void run() {
+                 assertEquals("soda", newArgInit(clazz, "test").toString());
+             }
+         };
+         thread.start();
+         thread.join();
     }
     
    public void perform(ClassLoader loader) throws Exception{

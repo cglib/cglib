@@ -71,7 +71,9 @@ public class Enhancer extends AbstractClassGenerator
 
     private static final String BOUND_FIELD = "CGLIB$BOUND";
     private static final String THREAD_CALLBACKS_FIELD = "CGLIB$THREAD_CALLBACKS";
+    private static final String STATIC_CALLBACKS_FIELD = "CGLIB$STATIC_CALLBACKS";
     private static final String SET_THREAD_CALLBACKS_NAME = "CGLIB$SET_THREAD_CALLBACKS";
+    private static final String SET_STATIC_CALLBACKS_NAME = "CGLIB$SET_STATIC_CALLBACKS";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
     private static final Type FACTORY =
@@ -90,6 +92,8 @@ public class Enhancer extends AbstractClassGenerator
       TypeUtils.parseConstructor("");
     private static final Signature SET_THREAD_CALLBACKS =
       new Signature(SET_THREAD_CALLBACKS_NAME, Type.VOID_TYPE, new Type[]{ CALLBACK_ARRAY });
+    private static final Signature SET_STATIC_CALLBACKS =
+      new Signature(SET_STATIC_CALLBACKS_NAME, Type.VOID_TYPE, new Type[]{ CALLBACK_ARRAY });
     private static final Signature NEW_INSTANCE =
       new Signature("newInstance", Constants.TYPE_OBJECT, new Type[]{ CALLBACK_ARRAY });
     private static final Signature MULTIARG_NEW_INSTANCE =
@@ -482,6 +486,7 @@ public class Enhancer extends AbstractClassGenerator
             e.declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
         }
         e.declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL, null, null);
+        e.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_CALLBACKS_FIELD, CALLBACK_ARRAY, null, null);
         if (serialVersionUID != null) {
             e.declare_field(Constants.PRIVATE_FINAL_STATIC, Constants.SUID_FIELD_NAME, Type.LONG_TYPE, serialVersionUID, null);
         }
@@ -493,6 +498,7 @@ public class Enhancer extends AbstractClassGenerator
         emitMethods(e, methods, actualMethods);
         emitConstructors(e, constructorInfo);
         emitSetThreadCallbacks(e);
+        emitSetStaticCallbacks(e);
         emitBindCallbacks(e);
 
         if (useFactory) {
@@ -555,10 +561,34 @@ public class Enhancer extends AbstractClassGenerator
      * new instances, this method is unnecessary. Its primary use is for when you want to
      * cache and reuse a generated class yourself, and the generated class does
      * <i>not</i> implement the {@link Factory} interface.
+     * <p>
+     * Note that this method only registers the callbacks on the current thread.
+     * If you want to register callbacks for instances created by multiple threads,
+     * use {@link #registerStaticCallbacks}.
+     * <p>
+     * The registered callbacks are overwritten and subsequently cleared
+     * when calling any of the <code>create</code> methods (such as
+     * {@link #create}).
+     * @param generatedClass a class previously created by {@link Enhancer}
+     * @param callbacks the array of callbacks to use when instances of the generated
+     * class are created
      * @see #setUseFactory
      */
     public static void registerCallbacks(Class generatedClass, Callback[] callbacks) {
         setThreadCallbacks(generatedClass, callbacks);
+    }
+
+    /**
+     * Similar to {@link #registerCallbacks}, but suitable for use
+     * when multiple threads will be creating instances of the generated class.
+     * The thread-level callbacks will always override the static callbacks.
+     * Static callbacks are never cleared.
+     * @param generatedClass a class previously created by {@link Enhancer}
+     * @param callbacks the array of callbacks to use when instances of the generated
+     * class are created
+     */
+    public static void registerStaticCallbacks(Class generatedClass, Callback[] callbacks) {
+        setCallbacksHelper(generatedClass, callbacks, SET_STATIC_CALLBACKS_NAME);
     }
 
     /**
@@ -925,6 +955,17 @@ public class Enhancer extends AbstractClassGenerator
         e.end_method();
     }
 
+    private void emitSetStaticCallbacks(ClassEmitter ce) {
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC | Constants.ACC_STATIC,
+                                        SET_STATIC_CALLBACKS,
+                                        null,
+                                        null);
+        e.load_arg(0);
+        e.putfield(STATIC_CALLBACKS_FIELD);
+        e.return_value();
+        e.end_method();
+    }
+    
     private void emitCurrentCallback(CodeEmitter e, int index) {
         e.load_this();
         e.getfield(getCallbackField(index));
@@ -961,6 +1002,11 @@ public class Enhancer extends AbstractClassGenerator
         e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
         e.dup();
         Label found_callback = e.make_label();
+        e.ifnonnull(found_callback);
+        e.pop();
+
+        e.getfield(STATIC_CALLBACKS_FIELD);
+        e.dup();
         e.ifnonnull(found_callback);
         e.pop();
         e.goTo(end);
