@@ -121,13 +121,13 @@ public class TestBeanMap extends CodeGenTestCase {
         TestBean b1 = makePerfBean();
         TestBean b2 = makePerfBean();
 
-        Map normal = BeanMap.create(b1, false, null);
-        Map hash = BeanMap.create(b2, true, null);
+        Map hash = BeanMap.create(b2, BeanMap.SWITCH_STYLE_HASH, null);
+        Map trie = BeanMap.create(b1, BeanMap.SWITCH_STYLE_TRIE, null);
 
         System.out.println("\nHash\n----");
         perfHelper(hash, iter);
-        System.out.println("\nNormal\n------");
-        perfHelper(normal, iter);
+        System.out.println("\nTrie\n------");
+        perfHelper(trie, iter);
     }
 
     public void perfHelper(Map map, int iter) {

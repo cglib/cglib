@@ -66,13 +66,13 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
 
     public void testSimple() {
-        simpleHelper(false);
-        simpleHelper(true);
+        simpleHelper(CodeGenerator.SWITCH_STYLE_HASH);
+        simpleHelper(CodeGenerator.SWITCH_STYLE_TRIE);
     }
 
-    private void simpleHelper(boolean hash) {
+    private void simpleHelper(int switchStyle) {
         String[] keys = new String[]{ "foo", "bar", "baz", "quud", "quick", "quip" };
-        Class created = new Generator(keys, hash).define();
+        Class created = new Generator(keys, switchStyle).define();
         Indexed test = (Indexed)ReflectUtils.newInstance(created);
         assertTrue(test.getIndex("foo") == 'o');
         assertTrue(test.getIndex("bar") == 'r');
@@ -91,14 +91,14 @@ public class TestStringSwitch extends CodeGenTestCase {
 
     private static class Generator extends CodeGenerator {
         private String[] keys;
-        private boolean hash;
+        private int switchStyle;
 
-        public Generator(String[] keys, boolean hash) {
+        public Generator(String[] keys, int switchStyle) {
             super("TestStringSwitch" + index++,
                   Object.class,
                   TestStringSwitch.class.getClassLoader());
             this.keys = keys;
-            this.hash = hash;
+            this.switchStyle = switchStyle;
             addInterface(Indexed.class);
         }
 
@@ -108,7 +108,7 @@ public class TestStringSwitch extends CodeGenTestCase {
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
             begin_method(method);
             load_arg(0);
-            string_switch(keys, hash, new StringSwitchCallback() {
+            string_switch(keys, switchStyle, new StringSwitchCallback() {
                     public void processCase(String key, Label end) {
                         push((int)key.charAt(key.length() - 1));
                         goTo(end);

@@ -54,24 +54,28 @@
 package net.sf.cglib;
 
 import java.beans.*;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.util.*;
 
 abstract public class BeanMap implements Map {
-    static final Class TYPE = BeanMap.class;
+    public static final int SWITCH_STYLE_TRIE = CodeGenerator.SWITCH_STYLE_TRIE;
+    public static final int SWITCH_STYLE_HASH = CodeGenerator.SWITCH_STYLE_HASH;
+    
+    private static final FactoryCache cache = new FactoryCache(BeanMap.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("BeanMapGenerator(Class, Integer)");
+    private static final Integer DEFAULT_SWITCH_STYLE = new Integer(SWITCH_STYLE_TRIE);
 
-    private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
-    private static final BeanMapKey keyFactory =
+    private static final BeanMapKey KEY_FACTORY =
       (BeanMapKey)KeyFactory.create(BeanMapKey.class, null);
 
     interface BeanMapKey {
-        public Object newInstance(Class type, boolean hash);
+        public Object newInstance(Class type, Integer switchStyle);
     }
 
-    abstract protected BeanMap cglib_newInstance(Object bean);
+    abstract protected BeanMap newInstance(Object bean);
     protected Object bean;
 
     protected BeanMap() {
@@ -82,26 +86,22 @@ abstract public class BeanMap implements Map {
     }
 
     public static BeanMap create(Object bean, ClassLoader loader) {
-        return create(bean, false, loader);
+        return createHelper(bean, DEFAULT_SWITCH_STYLE, loader);
     }
 
-    public static BeanMap create(Object bean, boolean hash, ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
-        }
+    public static BeanMap create(Object bean, int switchStyle, ClassLoader loader) {
+        return createHelper(bean, new Integer(switchStyle), loader);
+    }
+
+    private static BeanMap createHelper(Object bean, Integer switchStyle, ClassLoader loader) {
         Class type = bean.getClass();
-        Object key = keyFactory.newInstance(type, hash);
-        BeanMap factory;
-        synchronized (cache) {
-            factory = (BeanMap)cache.get(loader, key);
-            if (factory == null) {
-                String className = nameFactory.getNextName(type);
-                Class result = new BeanMapGenerator(className, type, hash, loader).define();
-                factory = (BeanMap)ReflectUtils.newInstance(result);
-                cache.put(loader, key, factory);
-            }
-        }
-        return factory.cglib_newInstance(bean);
+        BeanMap factory = 
+            (BeanMap)cache.getFactory(loader,
+                                      KEY_FACTORY.newInstance(type, switchStyle),
+                                      GENERATOR,
+                                      type,
+                                      switchStyle);
+        return factory.newInstance(bean);
     }
 
     public void clear() {

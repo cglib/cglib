@@ -61,15 +61,15 @@ import net.sf.cglib.util.*;
 
 class BeanMapGenerator extends CodeGenerator {
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("BeanMap.cglib_newInstance(Object)");
+      ReflectUtils.findMethod("BeanMap.newInstance(Object)");
 
     private Class type;
-    private boolean hash;
+    private int switchStyle;
 
-    public BeanMapGenerator(String className, Class type, boolean hash, ClassLoader loader) {
-        super(className, BeanMap.class, loader);
+    public BeanMapGenerator(Class type, Integer switchStyle) {
+        setSuperclass(BeanMap.class);
         this.type = type;
-        this.hash = hash;
+        this.switchStyle = switchStyle.intValue();
     }
 
     private Map makePropertyMap(PropertyDescriptor[] props) {
@@ -112,7 +112,7 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(getters), hash, new StringSwitchCallback() {
+        string_switch(getNames(getters), switchStyle, new StringSwitchCallback() {
                 public void processCase(String key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                     invoke(pd.getReadMethod());
@@ -134,7 +134,7 @@ class BeanMapGenerator extends CodeGenerator {
         checkcast(type);
         load_arg(0);
         checkcast(String.class);
-        string_switch(getNames(setters), hash, new StringSwitchCallback() {
+        string_switch(getNames(setters), switchStyle, new StringSwitchCallback() {
                 public void processCase(String key, Label end) {
                     PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                     if (pd.getReadMethod() == null) {
