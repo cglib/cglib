@@ -55,12 +55,13 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.*;
 
 abstract public class MulticastDelegate implements Cloneable {
     /* package */ static final Class TYPE = MulticastDelegate.class;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("DelegatedByCGLIB");
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("MulticastByCGLIB");
 
     private static final MulticastDelegateKey keyFactory =
       (MulticastDelegateKey)KeyFactory.create(MulticastDelegateKey.class, null);
@@ -144,6 +145,13 @@ abstract public class MulticastDelegate implements Cloneable {
 
             // generate proxied method
             begin_method(method);
+            Class returnType = method.getReturnType();
+            final boolean returns = returnType != Void.TYPE;
+            if (returns) {
+                local_type("result", returnType);
+                zero_or_null(returnType);
+                store_local("result");
+            }
             load_this();
             super_getfield("delegates");
             process_array(Object[].class, new ProcessArrayCallback() {
@@ -151,8 +159,14 @@ abstract public class MulticastDelegate implements Cloneable {
                         checkcast(iface);
                         load_args();
                         invoke(method);
+                        if (returns) {
+                            store_local("result");
+                        }
                     }
                 });
+            if (returns) {
+                load_local("result");
+            }
             return_value();
             end_method();
 
