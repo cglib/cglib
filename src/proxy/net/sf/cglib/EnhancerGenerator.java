@@ -197,7 +197,7 @@ import java.util.*;
                 Object methodKey = MethodWrapper.newInstance(method);
                 Method other = (Method)methodMap.get(methodKey);
                 
-                if( other != null && compare( other, method ) > 0 ){
+                if( other != null && compare( other, method ) >= 0 ){
                     
                     checkReturnTypesEqual(method, other);
                    
