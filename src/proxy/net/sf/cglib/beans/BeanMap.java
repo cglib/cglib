@@ -69,6 +69,9 @@ import org.objectweb.asm.ClassVisitor;
  * @author Chris Nokleberg
  */
 abstract public class BeanMap implements Map {
+    public static final int REQUIRE_GETTER = 1;
+    public static final int REQUIRE_SETTER = 2;
+    
     /**
      * Helper method to create a new <code>BeanMap</code>.  For finer
      * control over the generated instance, use a new instance of
@@ -85,8 +88,16 @@ abstract public class BeanMap implements Map {
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(BeanMap.class.getName());
 
+        private static final BeanMapKey KEY_FACTORY =
+          (BeanMapKey)KeyFactory.create(BeanMapKey.class, KeyFactory.CLASS_BY_NAME);
+
+        interface BeanMapKey {
+            public Object newInstance(Class type, int require);
+        }
+        
         private Object bean;
         private Class beanClass;
+        private int require;
         
         public Generator() {
             super(SOURCE);
@@ -101,18 +112,24 @@ abstract public class BeanMap implements Map {
         public void setBeanClass(Class beanClass) {
             this.beanClass = beanClass;
         }
-        
+
+        public void setRequire(int require) {
+            this.require = require;
+        }
+
         protected ClassLoader getDefaultClassLoader() {
             return beanClass.getClassLoader();
         }
 
         public BeanMap create() {
+            if (beanClass == null)
+                throw new IllegalArgumentException("Class of bean unknown");
             setNamePrefix(beanClass.getName());
-            return (BeanMap)super.create(beanClass.getName());
+            return (BeanMap)super.create(KEY_FACTORY.newInstance(beanClass, require));
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            new BeanMapEmitter(v, getClassName(), beanClass);
+            new BeanMapEmitter(v, getClassName(), beanClass, require);
         }
 
         protected Object firstInstance(Class type) {

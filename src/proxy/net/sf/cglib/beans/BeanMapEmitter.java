@@ -80,7 +80,7 @@ class BeanMapEmitter extends ClassEmitter {
     private static final Type FIXED_KEY_SET =
       TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
 
-    public BeanMapEmitter(ClassVisitor v, String className, Class type) {
+    public BeanMapEmitter(ClassVisitor v, String className, Class type, int require) {
         super(v);
 
         begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
@@ -90,12 +90,24 @@ class BeanMapEmitter extends ClassEmitter {
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
         Map setters = makePropertyMap(ReflectUtils.getBeanSetters(type));
-        generateGet(type, getters);
-        generatePut(type, setters);
-
         Map allProps = new HashMap();
         allProps.putAll(getters);
         allProps.putAll(setters);
+
+        if (require != 0) {
+            for (Iterator it = allProps.keySet().iterator(); it.hasNext();) {
+                String name = (String)it.next();
+                if ((((require & BeanMap.REQUIRE_GETTER) != 0) && !getters.containsKey(name)) ||
+                    (((require & BeanMap.REQUIRE_SETTER) != 0) && !setters.containsKey(name))) {
+                    it.remove();
+                    getters.remove(name);
+                    setters.remove(name);
+                }
+            }
+        }
+        generateGet(type, getters);
+        generatePut(type, setters);
+
         String[] allNames = getNames(allProps);
         generateKeySet(allNames);
         generateGetPropertyType(allProps, allNames);
