@@ -6,6 +6,7 @@
 
 package net.sf.cglib.metaclass;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -19,19 +20,19 @@ import net.sf.cglib.util.*;
  * @author  baliuka
  */
 
-public abstract class MetaClass implements ClassFileConstants{
+public abstract class MetaClass  {
     
     private static Map cache = new Hashtable();
-    private static String METACLASS_CONSTRUCTOR ="(Ljava/lang/Class;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/Class;)V";
     
     protected Class target;
     protected String [] getters, setters;
     protected Class[] types;
     
-    /** Creates a new instance of MetaClass */
+    
+     /** Creates a new instance of MetaClass */
    protected MetaClass( Class target, String getters[], 
                         String setters[], Class types[] ) {
-        validate( target, getters, setters, types );
+       
         this.target = target;
         this.getters = new String[getters.length];
         System.arraycopy(getters,0,this.getters,0,getters.length ); 
@@ -91,7 +92,8 @@ public abstract class MetaClass implements ClassFileConstants{
    }
   
    private static void validate( Class target, String getters[], 
-                                 String setters[], Class types[] ){
+                                 String setters[], Class types[],
+                                 Method getters_out[], Method setters_out[] ){
 
 
      if(target.getName().startsWith("java") ){
@@ -115,11 +117,13 @@ public abstract class MetaClass implements ClassFileConstants{
       if( getters[i] != null ){
       	 last = getters[i];
       	 Method method = findDeclaredMethod(target,last,new Class[]{});  
+      	 
          int mod = method.getModifiers();
          
          if(method.getReturnType() != types[i] || Modifier.isPrivate(mod) ){
            throw new IllegalArgumentException(last);
          }
+         getters_out[i] = method;
       }
       
       if( setters[i] != null ){
@@ -128,6 +132,7 @@ public abstract class MetaClass implements ClassFileConstants{
        if( Modifier.isPrivate(method.getModifiers()) ){
            throw new IllegalArgumentException(last);
          }
+         setters_out[i] = method;
       }
       
     
@@ -144,151 +149,28 @@ public abstract class MetaClass implements ClassFileConstants{
    public static MetaClass getInstance(ClassLoader loader, Class target, String getters[], 
                                         String setters[], Class types[] )
                                                             throws Throwable{
+
+
+
+      String key = generateKey(target, getters, setters, types);
+      MetaClass result = (MetaClass)cache.get(key);
        
-      
-       String key = generateKey(target, getters, setters, types);
-       MetaClass result = (MetaClass)cache.get(key);
-       if( result != null ){
-         return result;
+      if( result != null ){
+       	   return result;
        }
-        String name = target.getName() + "MetaClass";
-        ClassGen cg =
-        new ClassGen( name, MetaClass.class.getName(), SOURCE_FILE,
-        ACC_PUBLIC | ACC_FINAL , null );
-    
-        ConstantPoolGen cp = cg.getConstantPool();       
-        InstructionList il = new InstructionList();
-        
-        //------------- Generate constructor -------------
-        
-        MethodGen constructor = new MethodGen( ACC_PUBLIC, Type.VOID, 
-                  new Type[]{ CLASS_OBJECT, new ArrayType(Type.STRING,1),
-                           new ArrayType(Type.STRING, 1),  
-                           new ArrayType(CLASS_OBJECT,1)
-        }, null, CONSTRUCTOR_NAME, cg.getClassName(), il, cp);           
-        
-        
-        il.append( new ALOAD(0) );//this
-        il.append( new ALOAD(1) );//target
-        il.append( new ALOAD(2) );//getters
-        il.append( new ALOAD(3) );//setters
-        il.append( new ALOAD(4) );//types
-        
-        il.append( new INVOKESPECIAL( cp.addMethodref(
-          MetaClass.class.getName(),"<init>",
-          METACLASS_CONSTRUCTOR
-        ) ) );
-        il.append( new RETURN() );
-        cg.addMethod( ClassFileUtils.getMethod( constructor ) );
-        il.dispose();
-        
-        //------------- newInstance -------------------------
-        
-        MethodGen newInstance = ClassFileUtils.toMethodGen( 
-                     MetaClass.class.getMethod("newInstance",new Class[]{}), 
-                     cg.getClassName(), il, cp
-        );
-        
-            il.append( new NEW(cp.addClass( 
-                                 new ObjectType( target.getName()) )) 
-                   );
-            il.append( new DUP() );
-            il.append( new INVOKESPECIAL( cp.addMethodref( 
-                   target.getName(),"<init>","()V"  ) ) 
-                  ) ;
-            il.append( new ARETURN());
-            cg.addMethod( ClassFileUtils.getMethod( newInstance ) );
-            il.dispose(); 
-            
-        //------------- getPropertyValues -------------------------    
-            
-            MethodGen getPropertyValues = ClassFileUtils.toMethodGen( 
-                     MetaClass.class.getMethod("getPropertyValues",
-                                                new Class[]{ Object.class} ), 
-                     cg.getClassName(), il, cp
-                   );
-        
-           il.append( new ALOAD(1) ); // arg1
-           il.append( new CHECKCAST( cp.addClass(target.getName()) ) );
-           il.append( new ASTORE(2) ); // local1
-           il.append( ClassFileUtils.getIntConst( types.length , cp ) );
-           il.append( new ANEWARRAY(cp.addClass(Type.OBJECT)));
-           il.append( new ASTORE(3) ); // local2
-           
-           for( int i = 0; i < types.length; i++  ){
-           if( setters[i] != null ){    
-               
-            il.append( new ALOAD(3) );// local2
-            il.append( ClassFileUtils.getIntConst(i , cp ) );
-            
-            Type returnType = ClassFileUtils.toType(types[i]);
-            Instruction wrapper = ClassFileUtils.newWrapper( returnType,cp );
-            if( wrapper != null ){
-             il.append( wrapper );
-             il.append( new DUP() );
-            }
-            il.append( new ALOAD(2)  );//local1
-            
-            il.append( new INVOKEVIRTUAL( 
-                                cp.addMethodref( 
-                                  target.getName() ,
-                                  getters[i],"()" + returnType.getSignature() 
-                                       ) 
-                                  ) 
-                     );
-            if( wrapper != null ){
-             il.append( ClassFileUtils.initWrapper( returnType, cp ) );
-            }
-            il.append( new AASTORE() );
-            }
-           }
-           il.append( new ALOAD(3) );//local2
-           il.append( new ARETURN() );
-           cg.addMethod( ClassFileUtils.getMethod( getPropertyValues ) );
-           il.dispose(); 
-           
-          //------------- setPropertyValues -------------------------     
-           
-           
-       MethodGen setPropertyValues = ClassFileUtils.toMethodGen( 
-                     MetaClass.class.getMethod("setPropertyValues",
-                      new Class[]{ Object.class, Object[].class } ), 
-                     cg.getClassName(), il, cp
-                   );
-           il.append( new ALOAD(1) ); // arg1
-           il.append( new CHECKCAST( cp.addClass(target.getName()) ) );
-           il.append( new ASTORE(3) ); // local1
-           for( int i = 0; i < types.length; i++  ){
-               
-                il.append( new  ALOAD(3) ); // local1
-                il.append( new  ALOAD(2) ); // arg2
-                il.append( ClassFileUtils.getIntConst(i , cp ) );
-                il.append( new  AALOAD() ); // arg2[i]
-           
-              Type returnType = ClassFileUtils.toType(types[i]);
-              ClassFileUtils.castObject(cp, il, returnType);
-             
-               il.append( new INVOKEVIRTUAL( 
-                    cp.addMethodref( target.getName(),setters[i],
-                                    "("+ returnType.getSignature() +")V"  ) 
-                    ) 
-                  );
-              
-           }  
-           il.append( new RETURN() );
-          
-          cg.addMethod( ClassFileUtils.getMethod( setPropertyValues ) );  
-          
-          //---------------- Create generated instance ---------------------
-          
-          
-          Class clazz = ClassFileUtils.defineClass(
-                                           loader, cg.getClassName(),
-                                            cg.getJavaClass().getBytes() 
-                       );
-          
-          
-          result = (MetaClass)clazz.getConstructor( new Class[]{ 
+       
+      Method g[] = new Method[types.length] ;
+      Method  s[] = new Method[types.length] ;
+      String name = target.getName() + "MetaClass";
+       
+      validate(target, getters, setters, types, g, s );
+      
+      MetaClassGenerator generator = 
+                       new MetaClassGenerator(name,loader,target,g,s);
+                       
+      Class clazz = generator.define();
+       
+      result = (MetaClass)clazz.getConstructor( new Class[]{ 
                                         Class.class,String[].class,
                                         String[].class,Class[].class 
                                         } ).newInstance( 
@@ -296,10 +178,11 @@ public abstract class MetaClass implements ClassFileConstants{
                                                       setters,types 
                                                      }
                                         );
+                                     
        
-           cache.put( key, result );  
+      cache.put( key, result );  
           
-       return result;
+    return result;
    
    }
     
@@ -308,5 +191,147 @@ public abstract class MetaClass implements ClassFileConstants{
     public abstract Object[] getPropertyValues( Object bean );
     
     public abstract void setPropertyValues( Object bean, Object[] values );
+    
+   
+    
+ static private class MetaClassGenerator extends CodeGenerator{
+
+
+    private Class target;
+    private Method [] getters, setters;
+   
+
+   protected MetaClassGenerator( String className, 
+                                  ClassLoader loader,
+                                  Class target,
+                                  Method [] getters,Method [] setters ){
+    	super(className,MetaClass.class.getName(),loader );
+    	this.target = target;
+    	this.getters = getters;
+    	this.setters = setters;
+    	
+  
+    }  
+       
+    protected Class define(){
+      return super.define();
+    }
+    public  void generate(){
+       
+      try{
+        
+      //------------- Generate constructor -------------
+        
+        Constructor constructor = MetaClass.class.
+                   getDeclaredConstructor( 
+                      new Class[]{ Class.class,String[].class,
+                      	           String[].class,Class[].class}
+                      	           );
+                      	           
+        begin_constructor( constructor );
+        
+	        load_this();
+	        load_args();
+	        super_invoke(constructor);
+    	    return_value(Void.TYPE);
+        
+        end_method(); 
+        
+        //------------- newInstance -------------------------
+        
+        Method newInstance = MetaClass.class.getMethod("newInstance",new Class[]{});
+        
+        begin_method( newInstance );
+        
+        	new_instance(target);
+	        dup();
+	        invoke_costructor(target);    
+	        return_value(target);
+        
+        end_method();
+            
+        //------------- getPropertyValues -------------------------    
+            
+         Method getPropertyValues = 
+                     MetaClass.class.getMethod("getPropertyValues",
+                                                new Class[]{ Object.class} ) ;
+           
+        begin_method(getPropertyValues);   
+                   
+           load_arg(1);
+           checkcast(target);
+           alocal(2);
+           push(getters.length);
+           new_aaray();
+           alocal(3);
+           
+           for( int i = 0; i < getters.length; i++  ){
+           if( getters[i] != null ){    
+               
+            load_alocal(3);
+            push(i);
+            
+            boolean wrapped = false;
+            if( wrapp(getters[i].getReturnType()) ){
+              dup();
+              wrapped = true;
+            }
+            
+            load_alocal(2);
+            invoke_virtual(getters[i]);
+            
+            if( wrapped ){
+             init(getters[i].getReturnType());
+            }
+            aastore();
+            }//write only
+           }
+           load_alocal(3);
+           return_value(Object[].class);
+           
+        end_method();   
+        
+     //------------- setPropertyValues -------------------------     
+           
+           
+       Method setPropertyValues = 
+                     MetaClass.class.getMethod("setPropertyValues",
+                      new Class[]{ Object.class, Object[].class } );
+                      
+        begin_method(setPropertyValues);              
+          
+           load_arg(1);            
+           checkcast(target);
+           alocal(3);
+         
+           for( int i = 0; i < setters.length; i++  ){
+           	
+               if(setters[i] != null){
+               	
+                load_alocal(3);
+                load_arg(2);
+                aload(i); // arg2[i]
+                cast(setters[i].getParameterTypes()[0]); 
+                invoke_virtual( setters[i] );
+                
+               }//read only
+           }  
+          return_value(Void.TYPE);
+          
+        end_method(); 
+          
+         
+      }catch( Exception e ){
+      	 e.printStackTrace();
+         throw new ClassFormatError( e.getMessage() );
+      }       
+   
+   }
+ 
+ 
+ 
+ }    
+    
+    
     
 }

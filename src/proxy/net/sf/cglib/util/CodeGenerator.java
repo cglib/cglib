@@ -55,13 +55,16 @@
 
 package net.sf.cglib.util;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.cglib.util.ClassFileUtils;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
 
@@ -78,13 +81,13 @@ public abstract class CodeGenerator implements ClassFileConstants {
 	protected MethodGen mg;
     protected ClassLoader loader;
 	
-	
+	private Class returnType;
 	private Map  branches;  
 	private Map  labels;
 	private Map  locals;//TODO: map index to name and type 
 	
 	
-	public CodeGenerator( String className, String parentClassName, ClassLoader loader  ){
+	protected CodeGenerator( String className, String parentClassName, ClassLoader loader  ){
 	  
 	  this.loader = loader;
 	  cg = new ClassGen(className,parentClassName,SOURCE_FILE,ACC_PUBLIC,null); 
@@ -93,24 +96,48 @@ public abstract class CodeGenerator implements ClassFileConstants {
 	
 	}
 	
-	abstract protected Class generate();
+	protected CodeGenerator(){
 	
-	protected Class define(){
-     
+	}
+	/**
+	 * 
+	 * method used to generate code  
+	 *
+	 * */
+	abstract protected void generate();
+	
+	 protected Class define(){
+       generate(); 
       return ClassFileUtils.defineClass(loader,cg.getClassName(),
                                          cg.getJavaClass().getBytes() );     
 	
 	}
 
+    protected Class getReturnType(){
+       return returnType; 
+    }
     protected void begin_method(java.lang.reflect.Method method){
-    	
+      returnType = method.getReturnType();	
       mg = ClassFileUtils.toMethodGen(method,cg.getClassName(),il, cp );    	
     
     }
+    
+    protected void begin_constructor(java.lang.reflect.Constructor constructor){
+      returnType = Void.TYPE;	
+      mg = new MethodGen(ACC_PUBLIC,Type.VOID,
+                  ClassFileUtils.toType(constructor.getParameterTypes()),null,
+                  CONSTRUCTOR_NAME,cg.getClassName(),il,cp);
+      
+    
+    }
+    
 
     protected	void end_method(){
 
     setTargets();
+    //TDOO: PRINT DEBUG
+    //System.out.print(mg.getMethod());
+    //System.out.print(mg.getMethod().getCode());
     cg.addMethod(ClassFileUtils.getMethod(mg));	
     il.dispose();      
     
@@ -244,9 +271,36 @@ public abstract class CodeGenerator implements ClassFileConstants {
   }
   
   
-   protected  void local_var(Class type, String name){
-   //TODO
-  }
+   
+  protected  void alocal(int index){
+   
+      append(new ASTORE(index) );
+    
+    }
+ protected boolean wrapp(Class type){   
+  Instruction wrapper = 
+   ClassFileUtils.newWrapper( ClassFileUtils.toType(type), cp );   
+   
+   if( wrapper != null ){
+     append( wrapper );
+     return true;
+   }else{
+     return false;
+   }
+  
+ } 
+    
+ protected  void load_alocal(int index){
+  
+     append(new ALOAD(index));
+ }   
+
+
+ protected  void new_aaray(){ 
+ 	
+    append( new ANEWARRAY(cp.addClass(Type.OBJECT)));
+    
+  } 
  
    protected  void load_this(){
    
@@ -259,17 +313,31 @@ public abstract class CodeGenerator implements ClassFileConstants {
   	
   	int pos = fromArg;
   	 for( int i = 0; i < count; i++   ){
-  	  pos += ClassFileUtils.loadArg(il,mg.getArgumentType(fromArg + i),pos);
+  	  pos = ClassFileUtils.loadArg(il,mg.getArgumentType(fromArg + i - 1),pos);
   	 }
   	
   }
   
+   protected  void load_args(){
+  	int pos = 1;
+  	 for( int i = 0; i < mg.getArgumentTypes().length; i++   ){
+  	  pos = ClassFileUtils.loadArg(il,mg.getArgumentType( i ),pos);
+  	 
+  	 }
+ 
+   }
+   protected  void load_arg(int index){
+  	 load_args(index,1);
+   }
   
-   protected  void aload( Class componentType, int index ){
-  	//TODO
+  
+  
+   protected  void aload( int index ){
+     push(index);
+     append( new AALOAD() );
   	
   }
-   protected  void store( String local){
+   protected  void store( String local ){
   	//TODO
   	
   }
@@ -350,12 +418,61 @@ public abstract class CodeGenerator implements ClassFileConstants {
     //TODO:
    
    }
+   
+   protected void invoke_costructor(Class type){
+   
+   append( new INVOKESPECIAL( cp.addMethodref(
+           type.getName(),CONSTRUCTOR_NAME,
+           Type.getMethodSignature(Type.VOID, new Type[]{} ) 
+            )
+        )
+       );
+   
+   }
+
+
+ protected  void invoke_virtual(Method method){
+  append( new INVOKEVIRTUAL( cp.addMethodref( 
+                              method.getDeclaringClass().getName() ,
+                                  method.getName(),Type.getMethodSignature(
+                                   ClassFileUtils.toType(method.getReturnType()),
+                                   ClassFileUtils.toType(method.getParameterTypes())
+                                          )
+                                        ) 
+                                     ) 
+                                  ); 
+                     
+ }          
+
+   
+   protected void super_invoke(Constructor constructor){
+   	
+    append( new INVOKESPECIAL( cp.addMethodref(
+           cg.getSuperclassName(),CONSTRUCTOR_NAME,
+           Type.getMethodSignature(Type.VOID,
+               ClassFileUtils.toType( 
+               constructor.getParameterTypes() 
+               ) 
+            )
+        )
+       )
+      );
+        
+   
+   }
   
-   protected   void newInstance(Class type){ 
+  
+   protected void new_instance( Class type ){ 
   	append( new NEW( cp.addClass(type.getName() ) ) ); 
    }
  
-  
+   protected void  init( Class type ){
+    append(ClassFileUtils.initWrapper( ClassFileUtils.toType( type ), cp )); 
+   }
+   
+   protected void  aastore(){
+    append(new AASTORE());
+   }
   
    protected   void athrow(){ append( new ATHROW() ); }
    protected   void athrow(String label){ append(label,new ATHROW() ); }
@@ -364,6 +481,13 @@ public abstract class CodeGenerator implements ClassFileConstants {
    protected   void checkcast(Class type){ 
   	append( new CHECKCAST(cp.addClass( type.getName() )) ); 
    }
+   protected   void cast(Class type){ 
+       Type returnType = ClassFileUtils.toType(type);
+       ClassFileUtils.castObject(cp, il, returnType);
+  
+   }
+          
+   
    protected   void instanceOf(Class type){ 
   	append( new INSTANCEOF(cp.addClass( type.getName() ) ) ); 
    }
