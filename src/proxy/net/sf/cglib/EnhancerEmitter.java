@@ -88,6 +88,10 @@ class EnhancerEmitter extends Emitter
                            CallbackFilter filter) throws Exception {
         setClassVisitor(v);
         interfaces = ReflectUtils.add(interfaces, Factory.class);
+        if (superclass == null) {
+            superclass = Object.class;
+        }
+        
         begin_class(Modifier.PUBLIC, className, superclass, interfaces);
         
         List constructors = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));

@@ -59,78 +59,86 @@ import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.3 2003/09/14 21:10:38 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.4 2003/09/15 18:41:32 herbyderby Exp $
  */
-public class ConstructorDelegate extends AbstractClassGenerator {
-    private static final Source SOURCE = new Source(ConstructorDelegate.class, true);
+abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
       (ConstructorKey)KeyFactory.create(ConstructorKey.class);
-    private Class iface;
-    private Class delegate;
     
     interface ConstructorKey {
         public Object newInstance(Class declaring, Class iface);
     }
 
-    public ConstructorDelegate() {
-        super(SOURCE);
+    protected ConstructorDelegate() {
     }
 
-    public static Object create(Class delegate, Class iface) {
-        ConstructorDelegate gen = new ConstructorDelegate();
-        gen.setDelegate(delegate);
+    public static ConstructorDelegate create(Class targetClass, Class iface) {
+        Generator gen = new Generator();
+        gen.setTargetClass(targetClass);
         gen.setInterface(iface);
         return gen.create();
     }
 
-    public void setInterface(Class iface) {
-        this.iface = iface;
-    }
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(ConstructorDelegate.class, true);
 
-    public void setDelegate(Class delegate) {
-        this.delegate = delegate;
-    }
+        private Class iface;
+        private Class targetClass;
 
-    public Object create() {
-        return super.create(KEY_FACTORY.newInstance(iface, delegate));
-    }
-
-    protected ClassLoader getDefaultClassLoader() {
-        return delegate.getClassLoader();
-    }
-
-    public void generateClass(ClassVisitor v) {
-        setNamePrefix(delegate.getName());
-
-        Method newInstance = ReflectUtils.findNewInstance(iface);
-        if (!newInstance.getReturnType().isAssignableFrom(delegate)) {
-            throw new IllegalArgumentException("incompatible return type");
-        }
-        Constructor constructor;
-        try {
-            constructor = delegate.getDeclaredConstructor(newInstance.getParameterTypes());
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("interface does not match any known constructor");
+        public Generator() {
+            super(SOURCE);
         }
 
-        Emitter e = new Emitter(v);
-        e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ iface });
-        Virt.null_constructor(e);
-        e.begin_method(newInstance);
-        e.new_instance(constructor.getDeclaringClass());
-        e.dup();
-        e.load_args();
-        e.invoke(constructor);
-        e.return_value();
-        e.end_method();
-        e.end_class();
-    }
+        public void setInterface(Class iface) {
+            this.iface = iface;
+        }
 
-    protected Object firstInstance(Class type) {
-        return ReflectUtils.newInstance(type);
-    }
+        public void setTargetClass(Class targetClass) {
+            this.targetClass = targetClass;
+        }
 
-    protected Object nextInstance(Object instance) {
-        return instance;
+        public ConstructorDelegate create() {
+            Object key = KEY_FACTORY.newInstance(iface, targetClass);
+            return (ConstructorDelegate)super.create(key);
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return targetClass.getClassLoader();
+        }
+
+        public void generateClass(ClassVisitor v) {
+            setNamePrefix(targetClass.getName());
+
+            Method newInstance = ReflectUtils.findNewInstance(iface);
+            if (!newInstance.getReturnType().isAssignableFrom(targetClass)) {
+                throw new IllegalArgumentException("incompatible return type");
+            }
+            Constructor constructor;
+            try {
+                constructor = targetClass.getDeclaredConstructor(newInstance.getParameterTypes());
+            } catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("interface does not match any known constructor");
+            }
+
+            Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), ConstructorDelegate.class, new Class[]{ iface });
+            Virt.null_constructor(e);
+            e.begin_method(newInstance);
+            e.new_instance(constructor.getDeclaringClass());
+            e.dup();
+            e.load_args();
+            e.invoke(constructor);
+            e.return_value();
+            e.end_method();
+            e.end_class();
+        }
+
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type);
+        }
+
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
     }
 }

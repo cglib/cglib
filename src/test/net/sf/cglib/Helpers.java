@@ -91,15 +91,4 @@ class Helpers
         e.setCallbackFilter(filter);
         return e.createClass();
     }
-
-    public static Object mixin(Object[] delegates) {
-        return mixin(null, delegates);
-    }
-
-    public static Object mixin(Class[] interfaces, Object[] delegates) {
-        Mixin mixin = new Mixin();
-        mixin.setInterfaces(interfaces);
-        mixin.setDelegates(delegates);
-        return mixin.create();
-    }
 }

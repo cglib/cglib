@@ -53,131 +53,143 @@
  */
 package net.sf.cglib.reflect;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
-import net.sf.cglib.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.core.ReflectUtils;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 abstract public class MulticastDelegate implements Cloneable {
-    private static final FactoryCache cache = new FactoryCache(MulticastDelegate.class);
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("MulticastDelegate.newInstance()");
-    private static final Method ADD =
-      ReflectUtils.findMethod("MulticastDelegate.add(Object)");
-    private static final Method ADD_HELPER =
-      ReflectUtils.findMethod("MulticastDelegate.addHelper(Object)");
-
-    protected Object[] delegates = {};
+    protected Object[] targets = {};
 
     protected MulticastDelegate() {
     }
 
-    public List getInvocationList() {
-        return new ArrayList(Arrays.asList(delegates));
+    public List getTargets() {
+        return new ArrayList(Arrays.asList(targets));
     }
 
-    abstract public MulticastDelegate add(Object delegate);
+    abstract public MulticastDelegate add(Object target);
 
-    protected MulticastDelegate addHelper(Object delegate) {
+    protected MulticastDelegate addHelper(Object target) {
         MulticastDelegate copy = newInstance();
-        copy.delegates = new Object[delegates.length + 1];
-        System.arraycopy(delegates, 0, copy.delegates, 0, delegates.length);
-        copy.delegates[delegates.length] = delegate;
+        copy.targets = new Object[targets.length + 1];
+        System.arraycopy(targets, 0, copy.targets, 0, targets.length);
+        copy.targets[targets.length] = target;
         return copy;
     }
 
-    public MulticastDelegate remove(Object delegate) {
-        for (int i = delegates.length - 1; i >= 0; i--) { 
-            if (delegates[i].equals(delegate)) {
+    public MulticastDelegate remove(Object target) {
+        for (int i = targets.length - 1; i >= 0; i--) { 
+            if (targets[i].equals(target)) {
                 MulticastDelegate copy = newInstance();
-                copy.delegates = new Object[delegates.length - 1];
-                System.arraycopy(delegates, 0, copy.delegates, 0, i);
-                System.arraycopy(delegates, i + 1, copy.delegates, i, delegates.length - i - 1);
+                copy.targets = new Object[targets.length - 1];
+                System.arraycopy(targets, 0, copy.targets, 0, i);
+                System.arraycopy(targets, i + 1, copy.targets, i, targets.length - i - 1);
                 return copy;
             }
         }
         return this;
     }
 
-    abstract protected MulticastDelegate newInstance();
+    abstract public MulticastDelegate newInstance();
 
     public static MulticastDelegate create(Class iface) {
-        return create(iface, null);
+        Generator gen = new Generator();
+        gen.setInterface(iface);
+        return gen.create();
     }
 
-    public static MulticastDelegate create(final Class iface, ClassLoader loader) {
-        return (MulticastDelegate)cache.get(loader, iface, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new Generator(iface);
-                }
-                public Object newInstance(Object factory, boolean isNew) {
-                    return ((MulticastDelegate)factory).newInstance();
-                }
-            });
-    }
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(MulticastDelegate.class, true);
+        private static final Method NEW_INSTANCE =
+          ReflectUtils.findMethod("MulticastDelegate.newInstance()");
+        private static final Method ADD =
+          ReflectUtils.findMethod("MulticastDelegate.add(Object)");
+        private static final Method ADD_HELPER =
+          ReflectUtils.findMethod("MulticastDelegate.addHelper(Object)");
 
-    private static class Generator extends CodeGenerator {
-        private Method method;
         private Class iface;
 
-        public Generator(Class iface) {
-            setSuperclass(MulticastDelegate.class);
-
-            this.iface = iface;
-            method = ReflectUtils.findInterfaceMethod(iface);
-            addInterface(iface);
+        public Generator() {
+            super(SOURCE);
         }
 
-        protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            null_constructor();
+        protected ClassLoader getDefaultClassLoader() {
+            return iface.getClassLoader();
+        }
+
+        public void setInterface(Class iface) {
+            this.iface = iface;
+        }
+
+        public MulticastDelegate create() {
+            return (MulticastDelegate)super.create(iface);
+        }
+
+        public void generateClass(ClassVisitor v) throws NoSuchFieldException {
+            setNamePrefix(MulticastDelegate.class.getName());
+            final Method method = ReflectUtils.findInterfaceMethod(iface);
+            
+            final Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), MulticastDelegate.class, new Class[]{ iface });
+            Virt.null_constructor(e);
 
             // generate proxied method
-            begin_method(method);
+            e.begin_method(method);
             Class returnType = method.getReturnType();
             final boolean returns = returnType != Void.TYPE;
             Local result = null;
             if (returns) {
-                result = make_local(returnType);
-                zero_or_null(returnType);
-                store_local(result);
+                result = e.make_local(returnType);
+                Virt.zero_or_null(e, returnType);
+                e.store_local(result);
             }
-            load_this();
-            super_getfield("delegates");
+            e.load_this();
+            e.super_getfield("targets");
             final Local result2 = result;
-            process_array(Object[].class, new ProcessArrayCallback() {
+            Virt.process_array(e, Object[].class, new Virt.ProcessArrayCallback() {
                     public void processElement(Class type) {
-                        checkcast(iface);
-                        load_args();
-                        invoke(method);
+                        e.checkcast(iface);
+                        e.load_args();
+                        e.invoke(method);
                         if (returns) {
-                            store_local(result2);
+                            e.store_local(result2);
                         }
                     }
                 });
             if (returns) {
-                load_local(result);
+                e.load_local(result);
             }
-            return_value();
-            end_method();
+            e.return_value();
+            e.end_method();
 
             // newInstance
-            begin_method(NEW_INSTANCE);
-            new_instance_this();
-            dup();
-            invoke_constructor_this();
-            return_value();
-            end_method();
+            e.begin_method(NEW_INSTANCE);
+            e.new_instance_this();
+            e.dup();
+            e.invoke_constructor_this();
+            e.return_value();
+            e.end_method();
 
             // add
-            begin_method(ADD);
-            load_this();
-            load_arg(0);
-            checkcast(iface);
-            invoke(ADD_HELPER);
-            return_value();
-            end_method();
+            e.begin_method(ADD);
+            e.load_this();
+            e.load_arg(0);
+            e.checkcast(iface);
+            e.invoke(ADD_HELPER);
+            e.return_value();
+            e.end_method();
+
+            e.end_class();
+        }
+
+        protected Object firstInstance(Class type) {
+            // make a new instance in case first object is used with a long list of targets
+            return ((MulticastDelegate)ReflectUtils.newInstance(type)).newInstance();
+        }
+
+        protected Object nextInstance(Object instance) {
+            return ((MulticastDelegate)instance).newInstance();
         }
     }
 }

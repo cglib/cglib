@@ -78,12 +78,10 @@ abstract public class FastClass
         
         public Generator() {
             super(SOURCE);
-            setSuperclass(FastClass.class);
         }
 
         public void setType(Class type) {
             this.type = type;
-            setNamePrefix(type.getName());
         }
         
         public FastClass create() {
@@ -95,6 +93,7 @@ abstract public class FastClass
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
+            setNamePrefix(type.getName());
             new FastClassEmitter(v, getClassName(), type);
         }
 

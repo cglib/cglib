@@ -72,17 +72,17 @@ public class Enhancer extends AbstractClassGenerator
     private CallbackFilter filter;
     private Callbacks callbacks;
     private boolean classOnly;
+    private Class superclass;
     
     public Enhancer() {
         super(SOURCE);
     }
 
-    // TODO: add Factory interface
     public void setSuperclass(Class superclass) {
         if (superclass != null && superclass.isInterface()) {
-            this.interfaces = new Class[]{ superclass };
+            setInterfaces(new Class[]{ superclass });
         } else {
-            super.setSuperclass(superclass);
+            this.superclass = superclass;
         }
     }
 
@@ -118,12 +118,27 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private Object createHelper() {
-        Object key = KEY_FACTORY.newInstance(getSuperclass(), interfaces, filter, classOnly);
+        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, classOnly);
         return super.create(key);
     }
 
+    protected ClassLoader getDefaultClassLoader() {
+        if (superclass != null) {
+            return superclass.getClassLoader();
+        } else if (interfaces != null) {
+            return interfaces[0].getClassLoader();
+        } else {
+            return null;
+        }
+    }
+    
     public void generateClass(ClassVisitor v) throws Exception {
-        new EnhancerEmitter(v, getClassName(), getSuperclass(), interfaces, filter);
+        if (superclass != null) {
+            setNamePrefix(superclass.getName());
+        } else if (interfaces != null) {
+            setNamePrefix(interfaces[0].getName());
+        }
+        new EnhancerEmitter(v, getClassName(), superclass, interfaces, filter);
     }
 
     protected Object firstInstance(Class type) throws Exception {
