@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.23 2002/11/23 00:32:50 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.24 2002/11/26 17:03:37 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -262,6 +262,22 @@ public class TestEnhancer extends TestCase {
         
     }
     
+    public void testRuntimException()throws Throwable{
+    
+        Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        null, NOOP_INTERCEPTOR );
+        
+        try{
+            
+            source.throwIndexOutOfBoundsException();
+            fail("must throw an exception");
+            
+        }catch( IndexOutOfBoundsException ok  ){
+            
+        }
+    
+    }
     
     public void testUndeclaredException()throws Throwable{
         
