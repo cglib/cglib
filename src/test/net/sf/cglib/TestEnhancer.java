@@ -60,11 +60,11 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.7 2002/12/01 19:05:22 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.8 2002/12/03 06:49:49 herbyderby Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
-        net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
+        // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
     }
     
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
