@@ -83,8 +83,6 @@ abstract class CodeGenerator {
     private LinkedList handlerStack = new LinkedList();
     private LinkedList handlerList = new LinkedList();
     
-    private Set definedClasses = new HashSet();
-    
     private Map fieldInfo = new HashMap();
     private String className;
     
