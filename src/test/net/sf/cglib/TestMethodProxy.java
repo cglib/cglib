@@ -59,7 +59,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.2 2002/12/21 20:21:53 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.3 2002/12/21 21:49:43 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -105,13 +105,15 @@ public class TestMethodProxy extends CodeGenTestCase {
         MethodClosure mc2 = MethodClosure.generate(test, "indexOf", IndexOf.class);
         MethodClosure mc3 = MethodClosure.generate("other", "indexOf", IndexOf.class);
         MethodClosure mc4 = MethodClosure.generate(test, "substring", Substring.class);
+        MethodClosure mc5 = MethodClosure.generate(test, "substring", Substring2.class);
         assertTrue(mc1.equals(mc2));
         assertTrue(!mc1.equals(mc3));
         assertTrue(!mc1.equals(mc4));
+        assertTrue(mc4.equals(mc5));
     }
 
     public void testMethodProxyPerformance() throws Throwable {
-        int iterations = 1000000;
+        int iterations = 5000000;
         System.out.println();
         System.out.println("iteration count: " + iterations);
 
