@@ -63,9 +63,9 @@ import junit.framework.TestSuite;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: NoOpInterceptor.java,v 1.2 2002/09/23 18:15:01 baliuka Exp $
+ *@version    $Id: NoOpInterceptor.java,v 1.3 2002/09/23 21:42:09 baliuka Exp $
  */
- public class NoOpInterceptor implements MethodInterceptor{
+ public class NoOpInterceptor implements MethodInterceptor , java.io.Serializable{
     
     /** Creates a new instance of NoOpInterceptor */
     public NoOpInterceptor() {

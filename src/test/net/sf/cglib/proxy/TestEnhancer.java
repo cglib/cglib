@@ -60,12 +60,13 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.lang.reflect.*;
+import java.io.*;
 
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.7 2002/09/23 20:08:57 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.8 2002/09/23 21:42:09 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -295,8 +296,26 @@ public class TestEnhancer extends TestCase {
  
   public void testSerializable()throws Throwable{
  
+      Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        null, NOOP_INTERCEPTOR );
       
+      
+      ByteArrayOutputStream bout = new ByteArrayOutputStream();
+      ObjectOutputStream    out  = new ObjectOutputStream( bout );
  
+      out.writeObject( source );
+      
+      ObjectInputStream in = new ObjectInputStream( 
+                                    new ByteArrayInputStream(bout.toByteArray()) );
+      
+      Object ser = in.readObject();
+      
+      assertTrue("type",  ser instanceof Source );
+      assertTrue("interceptor", 
+                   Enhancer.getMethodInterceptor(ser) instanceof NoOpInterceptor );
+      
+      
   }
  
  

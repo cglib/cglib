@@ -54,6 +54,7 @@
  */
 package net.sf.cglib.proxy;
 
+import java.io.*;
 
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -87,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.9 2002/09/23 18:15:01 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.10 2002/09/23 21:42:09 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -130,7 +131,11 @@ public class Enhancer implements org.apache.bcel.Constants {
         "(L"+ INTERCEPTOR_CLASS_NAME.replace('.','/') +";)V");
     }
     
-    
+    private static int addWriteReplace(ConstantPoolGen cp){ 
+    return cp.addMethodref( Enhancer.InternalReplace.class.getName(), 
+                            "writeReplace",
+                      "(Ljava/lang/Object;)Ljava/lang/Object;"); 
+    } 
     
     private static int addAfterRef(ConstantPoolGen cp) {
         return cp.addInterfaceMethodref(
@@ -164,9 +169,9 @@ public class Enhancer implements org.apache.bcel.Constants {
     
     
     /**
-     *  implemented as 
+     *  implemented as
      * return enhance(cls,interfaces,ih, null);
-    */    
+     */
     public static Object enhance(
     Class cls,
     Class interfaces[],
@@ -190,7 +195,7 @@ public class Enhancer implements org.apache.bcel.Constants {
      * @param loader classloater for enhanced class, uses "current" if null
      * @throws Throwable on error
      * @return instanse of enhanced  class
-     */    
+     */
     public synchronized static Object enhance(
     Class cls,
     Class interfaces[],
@@ -201,7 +206,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             cls = Object.class;
         }
         if( loader == null ){
-           loader = Enhancer.class.getClassLoader();
+            loader = Enhancer.class.getClassLoader();
         }
         StringBuffer keyBuff = new StringBuffer(cls.getName() + ";");
         if(interfaces != null){
@@ -275,7 +280,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             new ObjectType(INTERCEPTOR_CLASS_NAME)}, null, // arg names
             CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
             
-           
+            
             il.append(new ALOAD(0));
             il.append(
             factory.createInvoke(
@@ -284,8 +289,8 @@ public class Enhancer implements org.apache.bcel.Constants {
             Type.VOID,
             new Type[] {},
             INVOKESPECIAL));
-           
-           
+            
+            
             il.append(new ALOAD(0));
             il.append(new ALOAD(1));
             il.append(
@@ -313,6 +318,20 @@ public class Enhancer implements org.apache.bcel.Constants {
             il.append( new ARETURN());
             cg.addMethod(getMethod(newInstance));
             
+            
+         il = new InstructionList();
+         MethodGen writeReplace = new MethodGen(ACC_PRIVATE, // access flags
+         Type.OBJECT, // return type
+         new Type[] {}, null, // arg names
+            "writeReplace", cg.getClassName(), il, cp);
+          
+            
+          il.append(new ALOAD(0));
+          il.append(new INVOKESTATIC( addWriteReplace(cp) ) );
+          il.append(new  ARETURN());
+  
+        cg.addMethod(getMethod(writeReplace));
+          
     }
     
     
@@ -329,7 +348,7 @@ public class Enhancer implements org.apache.bcel.Constants {
     Class[] interfaces) {
         ClassGen gen =
         new ClassGen(class_name, parentClass.getName(), SOURCE_FILE,
-                       ACC_PUBLIC | ACC_FINAL , null );
+        ACC_PUBLIC | ACC_FINAL , null );
         if (interfaces != null) {
             for (int i = 0; i < interfaces.length; i++) {
                 gen.addInterface(interfaces[i].getName());
@@ -818,8 +837,8 @@ public class Enhancer implements org.apache.bcel.Constants {
     ConstantPoolGen cp) {
         
         return new MethodGen(
-          ACC_FINAL  | (    mtd.getModifiers() 
-               & ~ACC_ABSTRACT & ~ACC_NATIVE & ~ACC_SYNCHRONIZED ),
+        ACC_FINAL  | (    mtd.getModifiers()
+        & ~ACC_ABSTRACT & ~ACC_NATIVE & ~ACC_SYNCHRONIZED ),
         toType(mtd.getReturnType()),
         toType(mtd.getParameterTypes()),
         null,
@@ -828,7 +847,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         il,
         cp);
     }
-   
+    
     private static Method generateMethod(
     java.lang.reflect.Method method,
     String fieldName,
@@ -956,6 +975,73 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         return result;
     }
+    
+    
+    public static class InternalReplace implements java.io.Serializable{
+        
+        private String parentClassName;
+        
+        private String [] interfaceNameList;
+        
+        private MethodInterceptor mi;
+        
+        public InternalReplace(){
+            
+        }
+        
+        
+        private InternalReplace( String parentClassName,
+        String [] interfaceList, MethodInterceptor mi ){
+            
+            this.parentClassName = parentClassName;
+            this.interfaceNameList   = interfaceNameList;
+            this.mi = mi;
+        }
+        
+        public static Object writeReplace( Object enhanced ) throws ObjectStreamException{
+ 
+            
+           MethodInterceptor mi = Enhancer.getMethodInterceptor( enhanced ); 
+            
+           String parentClassName = enhanced.getClass().getSuperclass().getName();
+        
+           Class interfaces[] = enhanced.getClass().getInterfaces();
+           
+           String [] interfaceNameList = new String[ interfaces.length  ];
+           
+           for( int i = 0 ; i < interfaces.length; i++  ) {
+             interfaceNameList[i] = interfaces[i].getName();
+           }
+           
+           return new InternalReplace( parentClassName, interfaceNameList, mi );
+
+        }
+
+        
+        Object readResolve() throws ObjectStreamException{
+            try{
+         
+             ClassLoader loader = this.getClass().getClassLoader();   
+             Class parent = loader.loadClass(parentClassName);
+             Class interfaceList[] = null;
+             if( interfaceNameList != null){
+               interfaceList = new Class[interfaceNameList.length];  
+              for( int i = 0; i< interfaceNameList.length; i++ ){
+                interfaceList[i] = loader.loadClass( interfaceNameList[i] );
+              }
+             }
+            
+             return Enhancer.enhance( parent, interfaceList, mi, loader );
+             
+            }catch( Throwable t ){
+                throw new ObjectStreamException(){};
+            }
+            
+            
+        }
+        
+    }
+    
     
     static class MethodWrapper {
         java.lang.reflect.Method method;
