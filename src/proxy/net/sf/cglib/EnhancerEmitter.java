@@ -92,7 +92,7 @@ class EnhancerEmitter extends Emitter
             superclass = Object.class;
         }
         
-        begin_class(Modifier.PUBLIC, className, superclass, interfaces);
+        begin_class(Modifier.PUBLIC, className, superclass, interfaces, Constants.SOURCE_FILE);
         
         List constructors = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
         CollectionUtils.filter(constructors, new VisibilityPredicate(superclass, true));

@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import org.objectweb.asm.ClassVisitor;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.2 2003/09/14 17:39:40 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.3 2003/09/17 20:44:27 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -89,7 +89,11 @@ class KeyFactoryEmitter extends Emitter {
         Class[] parameterTypes = newInstance.getParameterTypes();
         
         setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, KeyFactory.class, new Class[]{ keyInterface });
+        begin_class(Modifier.PUBLIC,
+                    className,
+                    KeyFactory.class,
+                    new Class[]{ keyInterface },
+                    Constants.SOURCE_FILE);
         Virt.null_constructor(this);
         Virt.factory_method(this, newInstance);
         generateConstructor(parameterTypes);

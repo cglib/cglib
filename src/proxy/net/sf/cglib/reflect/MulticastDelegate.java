@@ -131,7 +131,11 @@ abstract public class MulticastDelegate implements Cloneable {
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
             final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), MulticastDelegate.class, new Class[]{ iface });
+            e.begin_class(Modifier.PUBLIC,
+                          getClassName(),
+                          MulticastDelegate.class,
+                          new Class[]{ iface },
+                          Constants.SOURCE_FILE);
             Virt.null_constructor(e);
 
             // generate proxied method

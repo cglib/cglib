@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2003 The Apache Software Foundation.  All rights
+ * Copyright (c) 2002 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,84 +51,32 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib.core;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.core.*;
-import org.objectweb.asm.ClassVisitor;
-
-class ParallelSorterEmitter extends Emitter {
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
-    private static final Method SWAP_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
-    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
-
-    public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
-        Virt.factory_method(this, NEW_INSTANCE);
-        generateConstructor(arrays);
-        generateSwap(arrays);
-        end_class();
+public class Block2
+{
+    private Block2 parent;
+    private org.objectweb.asm.Label start;
+    private org.objectweb.asm.Label end;
+    
+    public Block2(Block2 parent, org.objectweb.asm.Label start) {
+        this.parent = parent;
+        this.start = start;
     }
 
-    private String getFieldName(int index) {
-        return "FIELD_" + index;
+    public Block2 getParent() {
+        return parent;
     }
 
-    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
-        begin_constructor(TYPES_OBJECT_ARRAY);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        super_putfield("a");
-        for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            declare_field(Modifier.PRIVATE, type, getFieldName(i));
-            load_this();
-            load_arg(0);
-            push(i);
-            aaload();
-            checkcast(type);
-            putfield(getFieldName(i));
-        }
-        return_value();
-        end_method();
+    public org.objectweb.asm.Label getStart() {
+        return start;
     }
 
-    private void generateSwap(Object[] arrays) {
-        begin_method(SWAP_METHOD);
-        for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            Class component = type.getComponentType();
-            Local T = make_local(type);
+    public org.objectweb.asm.Label getEnd() {
+        return end;
+    }
 
-            load_this();
-            getfield(getFieldName(i));
-            store_local(T);
-
-            load_local(T);
-            load_arg(0);
-
-            load_local(T);
-            load_arg(1);
-            array_load(component);
-                
-            load_local(T);
-            load_arg(1);
-
-            load_local(T);
-            load_arg(0);
-            array_load(component);
-
-            array_store(component);
-            array_store(component);
-        }
-        return_value();
-        end_method();
+    public void setEnd(org.objectweb.asm.Label end) {
+        this.end = end;
     }
 }

@@ -61,7 +61,7 @@ import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.3 2003/09/15 18:41:32 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.4 2003/09/17 20:44:27 herbyderby Exp $
  */
 class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -72,10 +72,7 @@ class MixinEmitter extends Emitter {
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         setClassVisitor(v);
 
-        begin_class(Modifier.PUBLIC,
-                    className,
-                    Mixin.class,
-                    classes);
+        begin_class(Modifier.PUBLIC, className, Mixin.class, classes, Constants.SOURCE_FILE);
 
         Virt.null_constructor(this);
         generateConstructor();

@@ -87,45 +87,29 @@ public class Emitter {
         setClassVisitor(v);
     }
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     public String getClassName() {
         return className;
-    }
-
-    public Class getSuperclass() {
-        return superclass;
-    }
-    
-    public void setSuperclass(Class superclass) {
-        if (superclass == null) {
-            superclass = Object.class;
-        }
-        this.superclass = superclass;
     }
 
     public void setClassVisitor(ClassVisitor v) {
         classv = v;
     }
 
-    public void setCodeVisitor(CodeVisitor v) {
-        codev = v;
-    }
-
-    // TODO: SOURCE_FILE argument?
     public void begin_class(int modifiers,
                             String className,
                             Class superclass,
-                            Class[] interfaces) {
-        setClassName(className);
-        setSuperclass(superclass);
+                            Class[] interfaces,
+                            String sourceFile) {
+        if (superclass == null) {
+            superclass = Object.class;
+        }
+        this.className = className;
+        this.superclass = superclass;
         classv.visit(modifiers,
                      getInternalName(getClassName()),
-                     getInternalName(getSuperclass()),
+                     getInternalName(superclass),
                      getInternalNames(interfaces),
-                     Constants.SOURCE_FILE);
+                     sourceFile);
     }
 
     public void end_class() {
@@ -145,10 +129,6 @@ public class Emitter {
     public Class[] getParameterTypes() {
         return parameterTypes;
     }
-
-//     public Class getReturnType() {
-//         return returnType;
-//     }
     
     public void begin_method(int modifiers, Class returnType, String methodName,
                              Class[] parameterTypes, Class[] exceptionTypes) {
@@ -246,54 +226,54 @@ public class Emitter {
                               getInternalName(exceptionType));
     }
     
-    public void ifeq(Label label) { emit(Opcodes.IFEQ, label); }
-    public void ifne(Label label) { emit(Opcodes.IFNE, label); }
-    public void iflt(Label label) { emit(Opcodes.IFLT, label); }
-    public void ifge(Label label) { emit(Opcodes.IFGE, label); }
-    public void ifgt(Label label) { emit(Opcodes.IFGT, label); }
-    public void ifle(Label label) { emit(Opcodes.IFLE, label); }
-    public void goTo(Label label) { emit(Opcodes.GOTO, label); }
-    public void ifnull(Label label) { emit(Opcodes.IFNULL, label); }
-    public void ifnonnull(Label label) { emit(Opcodes.IFNONNULL, label); }
-    public void if_icmplt(Label label) { emit(Opcodes.IF_ICMPLT, label); }
-    public void if_icmpgt(Label label) { emit(Opcodes.IF_ICMPGT, label); }
-    public void if_icmpne(Label label) { emit(Opcodes.IF_ICMPNE, label); }
-    public void if_icmpeq(Label label) { emit(Opcodes.IF_ICMPEQ, label); }
-    public void if_acmpeq(Label label) { emit(Opcodes.IF_ACMPEQ, label); }
-    public void if_acmpne(Label label) { emit(Opcodes.IF_ACMPNE, label); }
+    public void ifeq(Label label) { emit(Constants.IFEQ, label); }
+    public void ifne(Label label) { emit(Constants.IFNE, label); }
+    public void iflt(Label label) { emit(Constants.IFLT, label); }
+    public void ifge(Label label) { emit(Constants.IFGE, label); }
+    public void ifgt(Label label) { emit(Constants.IFGT, label); }
+    public void ifle(Label label) { emit(Constants.IFLE, label); }
+    public void goTo(Label label) { emit(Constants.GOTO, label); }
+    public void ifnull(Label label) { emit(Constants.IFNULL, label); }
+    public void ifnonnull(Label label) { emit(Constants.IFNONNULL, label); }
+    public void if_icmplt(Label label) { emit(Constants.IF_ICMPLT, label); }
+    public void if_icmpgt(Label label) { emit(Constants.IF_ICMPGT, label); }
+    public void if_icmpne(Label label) { emit(Constants.IF_ICMPNE, label); }
+    public void if_icmpeq(Label label) { emit(Constants.IF_ICMPEQ, label); }
+    public void if_acmpeq(Label label) { emit(Constants.IF_ACMPEQ, label); }
+    public void if_acmpne(Label label) { emit(Constants.IF_ACMPNE, label); }
 
-    public void pop() { emit(Opcodes.POP); }
-    public void pop2() { emit(Opcodes.POP2); }
-    public void dup() { emit(Opcodes.DUP); }
-    public void dup2() { emit(Opcodes.DUP2); }
-    public void dup_x1() { emit(Opcodes.DUP_X1); }
-    public void dup_x2() { emit(Opcodes.DUP_X2); }
-    public void swap() { emit(Opcodes.SWAP); }
-    public void aconst_null() { emit(Opcodes.ACONST_NULL); }
+    public void pop() { emit(Constants.POP); }
+    public void pop2() { emit(Constants.POP2); }
+    public void dup() { emit(Constants.DUP); }
+    public void dup2() { emit(Constants.DUP2); }
+    public void dup_x1() { emit(Constants.DUP_X1); }
+    public void dup_x2() { emit(Constants.DUP_X2); }
+    public void swap() { emit(Constants.SWAP); }
+    public void aconst_null() { emit(Constants.ACONST_NULL); }
 
-    public void monitorenter() { emit(Opcodes.MONITORENTER); }
-    public void monitorexit() { emit(Opcodes.MONITOREXIT); }
+    public void monitorenter() { emit(Constants.MONITORENTER); }
+    public void monitorexit() { emit(Constants.MONITOREXIT); }
 
     public void if_cmpeq(Class type, Label label) {
-        cmpHelper(type, label, Opcodes.IF_ICMPEQ, Opcodes.IFEQ);
+        cmpHelper(type, label, Constants.IF_ICMPEQ, Constants.IFEQ);
     }
     public void if_cmpne(Class type, Label label) {
-        cmpHelper(type, label, Opcodes.IF_ICMPNE, Opcodes.IFNE);
+        cmpHelper(type, label, Constants.IF_ICMPNE, Constants.IFNE);
     }
     public void if_cmplt(Class type, Label label) {
-        cmpHelper(type, label, Opcodes.IF_ICMPLT, Opcodes.IFLT);
+        cmpHelper(type, label, Constants.IF_ICMPLT, Constants.IFLT);
     }
     public void if_cmpgt(Class type, Label label) {
-        cmpHelper(type, label, Opcodes.IF_ICMPGT, Opcodes.IFGT);
+        cmpHelper(type, label, Constants.IF_ICMPGT, Constants.IFGT);
     }
     
     private void cmpHelper(Class type, Label label, int intOp, int numOp) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LCMP);
+            emit(Constants.LCMP);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DCMPG);
+            emit(Constants.DCMPG);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FCMPG);
+            emit(Constants.FCMPG);
         } else {
             emit(intOp, label);
             return;
@@ -303,105 +283,105 @@ public class Emitter {
 
     public void add(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LADD);
+            emit(Constants.LADD);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DADD);
+            emit(Constants.DADD);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FADD);
+            emit(Constants.FADD);
         } else if (type == Integer.TYPE) {
-            emit(Opcodes.IADD);
+            emit(Constants.IADD);
         }
     }
 
     public void mul(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LMUL);
+            emit(Constants.LMUL);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DMUL);
+            emit(Constants.DMUL);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FMUL);
+            emit(Constants.FMUL);
         } else {
-            emit(Opcodes.IMUL);
+            emit(Constants.IMUL);
         }
     }
 
     public void xor(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LXOR);
+            emit(Constants.LXOR);
         } else {
-            emit(Opcodes.IXOR);
+            emit(Constants.IXOR);
         }
     }
 
     public void ushr(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LUSHR);
+            emit(Constants.LUSHR);
         } else {
-            emit(Opcodes.IUSHR);
+            emit(Constants.IUSHR);
         }
     }
 
     public void sub(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LSUB);
+            emit(Constants.LSUB);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DSUB);
+            emit(Constants.DSUB);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FSUB);
+            emit(Constants.FSUB);
         } else {
-            emit(Opcodes.ISUB);
+            emit(Constants.ISUB);
         }
     }
 
     public void div(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LDIV);
+            emit(Constants.LDIV);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DDIV);
+            emit(Constants.DDIV);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FDIV);
+            emit(Constants.FDIV);
         } else {
-            emit(Opcodes.IDIV);
+            emit(Constants.IDIV);
         }
     }
 
     public void neg(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LNEG);
+            emit(Constants.LNEG);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DNEG);
+            emit(Constants.DNEG);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FNEG);
+            emit(Constants.FNEG);
         } else {
-            emit(Opcodes.INEG);
+            emit(Constants.INEG);
         }
     }
 
     public void rem(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LREM);
+            emit(Constants.LREM);
         } else if (type == Double.TYPE) {
-            emit(Opcodes.DREM);
+            emit(Constants.DREM);
         } else if (type == Float.TYPE) {
-            emit(Opcodes.FREM);
+            emit(Constants.FREM);
         } else {
-            emit(Opcodes.IREM);
+            emit(Constants.IREM);
         }
     }
 
     public void and(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LAND);
+            emit(Constants.LAND);
         } else {
-            emit(Opcodes.IAND);
+            emit(Constants.IAND);
         }
     }
     
     public void or(Class type) {
         if (type == Long.TYPE) {
-            emit(Opcodes.LOR);
+            emit(Constants.LOR);
         } else {
-            emit(Opcodes.IOR);
+            emit(Constants.IOR);
         }
     }
 
@@ -412,44 +392,44 @@ public class Emitter {
         if (from != to) {
             if (from == Double.TYPE) {
                 if (to == Float.TYPE) {
-                    emit(Opcodes.D2F);
+                    emit(Constants.D2F);
                 } else if (to == Long.TYPE) {
-                    emit(Opcodes.D2L);
+                    emit(Constants.D2L);
                 } else {
-                    emit(Opcodes.D2I);
+                    emit(Constants.D2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else if (from == Float.TYPE) {
                 if (to == Double.TYPE) {
-                    emit(Opcodes.F2D);
+                    emit(Constants.F2D);
                 } else if (to == Long.TYPE) {
-                    emit(Opcodes.F2L);
+                    emit(Constants.F2L);
                 } else {
-                    emit(Opcodes.F2I);
+                    emit(Constants.F2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else if (from == Long.TYPE) {
                 if (to == Double.TYPE) {
-                    emit(Opcodes.L2D);
+                    emit(Constants.L2D);
                 } else if (to == Float.TYPE) {
-                    emit(Opcodes.L2F);
+                    emit(Constants.L2F);
                 } else {
-                    emit(Opcodes.L2I);
+                    emit(Constants.L2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else {
                 if (to == Byte.TYPE) {
-                    emit(Opcodes.I2B);
+                    emit(Constants.I2B);
                 } else if (to == Character.TYPE) {
-                    emit(Opcodes.I2C);
+                    emit(Constants.I2C);
                 } else if (to == Double.TYPE) {
-                    emit(Opcodes.I2D);
+                    emit(Constants.I2D);
                 } else if (to == Float.TYPE) {
-                    emit(Opcodes.I2F);
+                    emit(Constants.I2F);
                 } else if (to == Long.TYPE) {
-                    emit(Opcodes.I2L);
+                    emit(Constants.I2L);
                 } else if (to == Short.TYPE) {
-                    emit(Opcodes.I2S);
+                    emit(Constants.I2S);
                 }
             }
         }
@@ -459,11 +439,11 @@ public class Emitter {
         if (i < -1) {
             emit_ldc(new Integer(i));
         } else if (i <= 5) {
-            emit(Opcodes.iconst(i));
+            emit(Constants.ICONST(i));
         } else if (i <= Byte.MAX_VALUE) {
-            emit_int(Opcodes.BIPUSH, i);
+            emit_int(Constants.BIPUSH, i);
         } else if (i <= Short.MAX_VALUE) {
-            emit_int(Opcodes.SIPUSH, i);
+            emit_int(Constants.SIPUSH, i);
         } else {
             emit_ldc(new Integer(i));
         }
@@ -471,7 +451,7 @@ public class Emitter {
     
     public void push(long value) {
         if (value == 0L || value == 1L) {
-            emit(Opcodes.lconst(value));
+            emit(Constants.LCONST(value));
         } else {
             emit_ldc(new Long(value));
         }
@@ -479,14 +459,14 @@ public class Emitter {
     
     public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            emit(Opcodes.fconst(value));
+            emit(Constants.FCONST(value));
         } else {
             emit_ldc(new Float(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
-            emit(Opcodes.dconst(value));
+            emit(Constants.DCONST(value));
         } else {
             emit_ldc(new Double(value));
         }
@@ -502,57 +482,57 @@ public class Emitter {
     
     public void newarray(Class type) {
         if (type.isPrimitive()) {
-            emit_int(Opcodes.NEWARRAY, Opcodes.newarray(type));
+            emit_int(Constants.NEWARRAY, Constants.newarray(type));
         } else {
-            emit_type(Opcodes.ANEWARRAY, type.getName());
+            emit_type(Constants.ANEWARRAY, type.getName());
         }
     }
     
     public void arraylength() {
-        emit(Opcodes.ARRAYLENGTH);
+        emit(Constants.ARRAYLENGTH);
     }
     
     public void array_load(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
-                emit(Opcodes.LALOAD);
+                emit(Constants.LALOAD);
             } else if (type.equals(Double.TYPE)) {
-                emit(Opcodes.DALOAD);
+                emit(Constants.DALOAD);
             } else if (type.equals(Float.TYPE)) {
-                emit(Opcodes.FALOAD);
+                emit(Constants.FALOAD);
             } else if (type.equals(Short.TYPE)) {
-                emit(Opcodes.SALOAD);
+                emit(Constants.SALOAD);
             } else if (type.equals(Character.TYPE)) {
-                emit(Opcodes.CALOAD);
+                emit(Constants.CALOAD);
             } else if (type.equals(Integer.TYPE)) {
-                emit(Opcodes.IALOAD);
+                emit(Constants.IALOAD);
             } else {
-                emit(Opcodes.BALOAD);
+                emit(Constants.BALOAD);
             }
         } else {
-            emit(Opcodes.AALOAD);
+            emit(Constants.AALOAD);
         }
     }
 
     public void array_store(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
-                emit(Opcodes.LASTORE);
+                emit(Constants.LASTORE);
             } else if (type.equals(Double.TYPE)) {
-                emit(Opcodes.DASTORE);
+                emit(Constants.DASTORE);
             } else if (type.equals(Float.TYPE)) {
-                emit(Opcodes.FASTORE);
+                emit(Constants.FASTORE);
             } else if (type.equals(Short.TYPE)) {
-                emit(Opcodes.SASTORE);
+                emit(Constants.SASTORE);
             } else if (type.equals(Character.TYPE)) {
-                emit(Opcodes.CASTORE);
+                emit(Constants.CASTORE);
             } else if (type.equals(Integer.TYPE)) {
-                emit(Opcodes.IASTORE);
+                emit(Constants.IASTORE);
             } else {
-                emit(Opcodes.BASTORE);
+                emit(Constants.BASTORE);
             }
         } else {
-            emit(Opcodes.AASTORE);
+            emit(Constants.AASTORE);
         }
     }
     
@@ -560,7 +540,7 @@ public class Emitter {
         if (isStatic) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
-        emit_var(Opcodes.ALOAD, 0);
+        emit_var(Constants.ALOAD, 0);
     }
     
     /**
@@ -603,32 +583,32 @@ public class Emitter {
     private void load_local(Class t, int pos) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
-                emit_var(Opcodes.LLOAD, pos);
+                emit_var(Constants.LLOAD, pos);
             } else if (t.equals(Double.TYPE)) {
-                emit_var(Opcodes.DLOAD, pos);
+                emit_var(Constants.DLOAD, pos);
             } else if (t.equals(Float.TYPE)) {
-                emit_var(Opcodes.FLOAD, pos);
+                emit_var(Constants.FLOAD, pos);
             } else {
-                emit_var(Opcodes.ILOAD, pos);
+                emit_var(Constants.ILOAD, pos);
             }
         } else {
-            emit_var(Opcodes.ALOAD, pos);
+            emit_var(Constants.ALOAD, pos);
         }
     }
 
     private void store_local(Class t, int pos) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
-                emit_var(Opcodes.LSTORE, pos);
+                emit_var(Constants.LSTORE, pos);
             } else if (t.equals(Double.TYPE)) {
-                emit_var(Opcodes.DSTORE, pos);
+                emit_var(Constants.DSTORE, pos);
             } else if (t.equals(Float.TYPE)) {
-                emit_var(Opcodes.FSTORE, pos);
+                emit_var(Constants.FSTORE, pos);
             } else {
-                emit_var(Opcodes.ISTORE, pos);
+                emit_var(Constants.ISTORE, pos);
             }
         } else {
-            emit_var(Opcodes.ASTORE, pos);
+            emit_var(Constants.ASTORE, pos);
         }
     }
     
@@ -647,26 +627,30 @@ public class Emitter {
     public void return_value() {
         if (returnType.isPrimitive()) {
             if (returnType.equals(Void.TYPE)) {
-                emit(Opcodes.RETURN);
+                emit(Constants.RETURN);
             } else if (returnType.equals(Long.TYPE)) {
-                emit(Opcodes.LRETURN);
+                emit(Constants.LRETURN);
             } else if (returnType.equals(Double.TYPE)) {
-                emit(Opcodes.DRETURN);
+                emit(Constants.DRETURN);
             } else if (returnType.equals(Float.TYPE)) {
-                emit(Opcodes.FRETURN);
+                emit(Constants.FRETURN);
             } else {
-                emit(Opcodes.IRETURN);
+                emit(Constants.IRETURN);
             }
         } else {
-            emit(Opcodes.ARETURN);
+            emit(Constants.ARETURN);
         }
     }
 
     public void declare_field(int modifiers, Class type, String name) {
+        declare_field(modifiers, type, name, null);
+    }
+
+    public void declare_field(int modifiers, Class type, String name, Object value) {
         if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
-        classv.visitField(modifiers, name, getInternalName(ReflectUtils.getDescriptor(type)), null);
+        classv.visitField(modifiers, name, getInternalName(ReflectUtils.getDescriptor(type)), value);
         fieldInfo.put(name, new FieldInfo(Modifier.isStatic(modifiers), type));
     }
     
@@ -695,21 +679,20 @@ public class Emitter {
             return type;
         }
     }
-    
+
     public void getfield(String name) {
         FieldInfo info = getFieldInfo(name);
-        int opcode = info.isStatic() ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
+        int opcode = info.isStatic() ? Constants.GETSTATIC : Constants.GETFIELD;
         emit_field(opcode, className, name, info.getType());
     }
     
     public void putfield(String name) {
         FieldInfo info = getFieldInfo(name);
-        int opcode = info.isStatic() ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD;
+        int opcode = info.isStatic() ? Constants.PUTSTATIC : Constants.PUTFIELD;
         emit_field(opcode, className, name, info.getType());
     }
-    
+
     public void super_getfield(String name) throws NoSuchFieldException {
-        // TODO: search up entire superclass chain?
         getfield(superclass.getDeclaredField(name));
     }
     
@@ -717,13 +700,32 @@ public class Emitter {
         putfield(superclass.getDeclaredField(name));
     }
 
+    /*
+      TODO
+    public void super_getfield(String name, Class type) {
+        emit_field(Constants.GETFIELD, superName, name, type);
+    }
+    
+    public void super_putfield(String name, Class type) {
+        emit_field(Constants.PUTFIELD, superName, name, type);
+    }
+
+    public void super_getstatic(String name, Class type) {
+        emit_field(Constants.GETSTATIC, superName, name, type);
+    }
+    
+    public void super_putstatic(String name, Class type) {
+        emit_field(Constants.PUTSTATIC, superName, name, type);
+    }
+    */
+    
     public void getfield(Field field) {
-        int opcode = isStatic(field) ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
+        int opcode = isStatic(field) ? Constants.GETSTATIC : Constants.GETFIELD;
         fieldHelper(opcode, field);
     }
     
     public void putfield(Field field) {
-        int opcode = isStatic(field) ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD;
+        int opcode = isStatic(field) ? Constants.PUTSTATIC : Constants.PUTFIELD;
         fieldHelper(opcode, field);
     }
 
@@ -745,11 +747,11 @@ public class Emitter {
     public void invoke(Method method) {
         int opcode;
         if (method.getDeclaringClass().isInterface()) {
-            opcode = Opcodes.INVOKEINTERFACE;
+            opcode = Constants.INVOKEINTERFACE;
         } else if (isStatic(method)) {
-            opcode = Opcodes.INVOKESTATIC;
+            opcode = Constants.INVOKESTATIC;
         } else {
-            opcode = Opcodes.INVOKEVIRTUAL;
+            opcode = Constants.INVOKEVIRTUAL;
         }
         emit_invoke(opcode,
                             method.getDeclaringClass().getName(),
@@ -759,7 +761,7 @@ public class Emitter {
     }
     
     public void super_invoke(Method method) {
-        emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Constants.INVOKESPECIAL,
                             superclass.getName(),
                             method.getName(),
                             method.getReturnType(),
@@ -767,15 +769,15 @@ public class Emitter {
     }
 
     public void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
-        emit_invoke(Opcodes.INVOKEVIRTUAL, className, methodName, returnType, parameterTypes);
+        emit_invoke(Constants.INVOKEVIRTUAL, className, methodName, returnType, parameterTypes);
     }
 
     public void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
-        emit_invoke(Opcodes.INVOKESTATIC, className, methodName, returnType, parameterTypes);
+        emit_invoke(Constants.INVOKESTATIC, className, methodName, returnType, parameterTypes);
     }
 
     public void super_invoke() {
-        emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Constants.INVOKESPECIAL,
                             superclass.getName(),
                             methodName,
                             returnType,
@@ -783,7 +785,7 @@ public class Emitter {
     }
     
     public void invoke_constructor(String className, Class[] parameterTypes) {
-        emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Constants.INVOKESPECIAL,
                             className,
                             Constants.CONSTRUCTOR_NAME,
                             Void.TYPE,
@@ -838,11 +840,11 @@ public class Emitter {
     }
     
     public void new_instance_this() {
-        emit_type(Opcodes.NEW, className);
+        emit_type(Constants.NEW, className);
     }
     
     public void new_instance(String className) {
-        emit_type(Opcodes.NEW, className);
+        emit_type(Constants.NEW, className);
     }
     
     public void new_instance(Class type) {
@@ -854,9 +856,9 @@ public class Emitter {
         aaload();
     }
 
-    public void aaload() { emit(Opcodes.AALOAD); }
-    public void aastore() { emit(Opcodes.AASTORE); }
-    public void athrow() { emit(Opcodes.ATHROW); }
+    public void aaload() { emit(Constants.AALOAD); }
+    public void aastore() { emit(Constants.AASTORE); }
+    public void athrow() { emit(Constants.ATHROW); }
     
     public Label make_label() {
         return new ASMLabel();
@@ -873,23 +875,23 @@ public class Emitter {
     }
 
     public void checkcast_this() {
-        emit_type(Opcodes.CHECKCAST, className);
+        emit_type(Constants.CHECKCAST, className);
     }
     
     public void checkcast(Class type) {
         if (type.equals(Object.class)) {
             // ignore
         } else {
-            emit_type(Opcodes.CHECKCAST, type.getName());
+            emit_type(Constants.CHECKCAST, type.getName());
         }
     }
     
     public void instance_of(Class type) {
-        emit_type(Opcodes.INSTANCEOF, type.getName());
+        emit_type(Constants.INSTANCEOF, type.getName());
     }
     
     public void instance_of_this() {
-        emit_type(Opcodes.INSTANCEOF, className);
+        emit_type(Constants.INSTANCEOF, className);
     }
 
     public void mark(Label label) {
@@ -996,9 +998,9 @@ public class Emitter {
     
     private void emit_field(int opcode, String className, String fieldName, Class type) {
         codev.visitFieldInsn(opcode,
-                          getInternalName(className),
-                          fieldName,
-                          getInternalName(ReflectUtils.getDescriptor(type)));
+                             getInternalName(className),
+                             fieldName,
+                             getInternalName(ReflectUtils.getDescriptor(type)));
     }
 
     private static class ASMLabel implements Label {
@@ -1012,14 +1014,14 @@ public class Emitter {
     }
 
     private void emit_invoke(int opcode,
-                            String className,
-                            String methodName,
-                            Class returnType,
-                            Class[] parameterTypes) {
+                             String className,
+                             String methodName,
+                             Class returnType,
+                             Class[] parameterTypes) {
         codev.visitMethodInsn(opcode,
-                           getInternalName(className),
-                           methodName,
-                           getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)));
+                              getInternalName(className),
+                              methodName,
+                              getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)));
     }
 
     private void emit_iinc(int index, int amount) {

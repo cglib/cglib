@@ -1,7 +1,7 @@
 package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
-import net.sf.cglib.core.Opcodes;
+import net.sf.cglib.core.Constants;
 /**
  *
  * @author  baliuka
@@ -27,13 +27,13 @@ import net.sf.cglib.core.Opcodes;
         
         switch( opcode  ){
         
-            case Opcodes.GETFIELD :
+            case Constants.GETFIELD :
                 
                 if(filter.acceptRead(Type.getType("L" + owner + ";").getClassName(), name )){
                     
                     cv.visitMethodInsn( 
                     
-                            Opcodes.INVOKEVIRTUAL ,
+                            Constants.INVOKEVIRTUAL ,
                             owner, 
                             Signature.readMethod(name), 
                             Type.getMethodDescriptor(Type.getType(desc), new Type[]{}) 
@@ -48,12 +48,12 @@ import net.sf.cglib.core.Opcodes;
                 }
                 
                 
-            case Opcodes.PUTFIELD :    
+            case Constants.PUTFIELD :    
                 
                 if(filter.acceptWrite(Type.getType("L" + owner + ";").getClassName(), name )){
                      
                     cv.visitMethodInsn( 
-                            Opcodes.INVOKEVIRTUAL ,
+                            Constants.INVOKEVIRTUAL ,
                             owner, 
                             Signature.writeMethod(name), 
                             Type.getMethodDescriptor(
@@ -121,13 +121,13 @@ import net.sf.cglib.core.Opcodes;
         
         cv.visitMethodInsn(opcode, owner, name, desc );
         //transform constructors
-        if(transFormInit && opcode == Opcodes.INVOKESPECIAL){
-          cv.visitVarInsn( Opcodes.ALOAD, 0 );  
-          cv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(delegateImpl));
-          cv.visitInsn( Opcodes.DUP );
-          cv.visitVarInsn( Opcodes.ALOAD, 0 );
-          cv.visitMethodInsn(Opcodes.INVOKESPECIAL,Type.getInternalName(delegateImpl), "<init>", "(Ljava/lang/Object;)V"); 
-          cv.visitFieldInsn(Opcodes.PUTFIELD,tcv.getClassName(), Signature.DELEGATE, Type.getDescriptor(Object.class) );
+        if(transFormInit && opcode == Constants.INVOKESPECIAL){
+          cv.visitVarInsn( Constants.ALOAD, 0 );  
+          cv.visitTypeInsn(Constants.NEW, Type.getInternalName(delegateImpl));
+          cv.visitInsn( Constants.DUP );
+          cv.visitVarInsn( Constants.ALOAD, 0 );
+          cv.visitMethodInsn(Constants.INVOKESPECIAL,Type.getInternalName(delegateImpl), "<init>", "(Ljava/lang/Object;)V"); 
+          cv.visitFieldInsn(Constants.PUTFIELD,tcv.getClassName(), Signature.DELEGATE, Type.getDescriptor(Object.class) );
           transFormInit = false;  
         }
         

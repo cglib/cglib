@@ -139,7 +139,7 @@ import org.objectweb.asm.ClassVisitor;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.4 2003/09/15 18:41:32 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.5 2003/09/17 20:44:27 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -251,7 +251,11 @@ abstract public class MethodDelegate {
             }
 
             Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), MethodDelegate.class, new Class[]{ iface });
+            e.begin_class(Modifier.PUBLIC,
+                          getClassName(),
+                          MethodDelegate.class,
+                          new Class[]{ iface },
+                          Constants.SOURCE_FILE);
             e.declare_field(Constants.PRIVATE_FINAL_STATIC, String.class, "eqMethod");
             Virt.null_constructor(e);
 

@@ -73,7 +73,7 @@ class FastClassEmitter extends Emitter {
 
     public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
         setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, FastClass.class, null);
+        begin_class(Modifier.PUBLIC, className, FastClass.class, null, Constants.SOURCE_FILE);
 
         // constructor
         begin_constructor(CONSTRUCTOR_TYPES);

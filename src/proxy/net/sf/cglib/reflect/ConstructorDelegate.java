@@ -59,7 +59,7 @@ import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.4 2003/09/15 18:41:32 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.5 2003/09/17 20:44:27 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -121,7 +121,11 @@ abstract public class ConstructorDelegate {
             }
 
             Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), ConstructorDelegate.class, new Class[]{ iface });
+            e.begin_class(Modifier.PUBLIC,
+                          getClassName(),
+                          ConstructorDelegate.class,
+                          new Class[]{ iface },
+                          Constants.SOURCE_FILE);
             Virt.null_constructor(e);
             e.begin_method(newInstance);
             e.new_instance(constructor.getDeclaringClass());
