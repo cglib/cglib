@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.10 2002/12/07 15:36:49 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.11 2002/12/21 08:37:28 herbyderby Exp $
  */
 public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
@@ -90,7 +90,7 @@ public class Enhancer {
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
 
-    /*package doe's not work on jdk1.2 */     
+    // should be package-protected but causes problems on jdk1.2
     public interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
                                   Class interceptor, boolean delegating);
