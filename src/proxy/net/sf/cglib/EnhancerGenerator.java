@@ -103,7 +103,7 @@ extends CodeGenerator
         Class type = getSuperclass();
 
         List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
-        filterMembers(constructors, new VisibilityFilter(type));
+        removeInvisible(constructors, type);
         if (constructors.size() == 0) {
             throw new IllegalArgumentException("No visible constructors in " + type);
         }
@@ -127,9 +127,9 @@ extends CodeGenerator
             methods.addAll(interfaceMethods);
         }
 
-        filterMembers(methods, new VisibilityFilter(getSuperclass()));
-        filterMembers(methods, new DuplicatesFilter());
-        filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
+        removeInvisible(methods, getSuperclass());
+        removeDuplicates(methods);
+        removeFinal(methods);
 
         int len = Callbacks.MAX_VALUE + 1;
         CallbackGenerator[] generators = new CallbackGenerator[len];
@@ -152,8 +152,7 @@ extends CodeGenerator
 
         CallbackGenerator.Context[] contexts = createContexts(generators, group, forcePublic);
         generateMethods(generators, contexts);
-        generateStatic(constructors, generators, contexts);
-
+        generateStatic(generators, contexts);
         generateFactory(constructors);
         generateSetThreadCallbacks();
     }
@@ -164,15 +163,6 @@ extends CodeGenerator
         setter.invoke(null, new Object[]{ initialCallbacks });
     }
     
-    private static void filterMembers(List members, MethodFilter filter) {
-        Iterator it = members.iterator();
-        while (it.hasNext()) {
-            if (!filter.accept((Member)it.next())) {
-                it.remove();
-            }
-        }
-    }
-
     private static void addDeclaredMethods(List methodList, Class type) {
         methodList.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
       
@@ -288,7 +278,6 @@ extends CodeGenerator
         
         // Factory.newInstance(Class[], Object[], Callbacks)
         Label skipSetCallbacks = make_label();
-        Label fail = make_label();
         begin_method(MULTIARG_NEW_INSTANCE);
         load_arg(2);
         invoke_static_this(SET_THREAD_CALLBACKS, Void.TYPE, new Class[]{ Callbacks.class });
@@ -456,8 +445,7 @@ extends CodeGenerator
         return "CGLIB$TL_CALLBACK_" + type;
     }
 
-    private void generateStatic(List constructors,
-                                CallbackGenerator[] generators,
+    private void generateStatic(CallbackGenerator[] generators,
                                 CallbackGenerator.Context[] contexts)  throws Exception {
         begin_static();
 
@@ -478,5 +466,60 @@ extends CodeGenerator
 
         return_value();
         end_method();
+    }
+
+    private interface Predicate {
+        public boolean evaluate(Object arg);
+    }
+
+    private static void filter(List list, Predicate predicate) {
+        Iterator it = list.iterator();
+        while (it.hasNext()) {
+            if (!predicate.evaluate((Member)it.next())) {
+                it.remove();
+            }
+        }
+    }
+
+    private static void removeDuplicates(List list) {
+        final Set unique = new HashSet();
+        filter(list, new Predicate() {
+            public boolean evaluate(Object arg) {
+                return unique.add(MethodWrapper.create((Method)arg));
+            }
+        });
+    }
+
+//     private void checkReturnTypesEqual(Method m1, Method m2) {
+//         if (!m1.getReturnType().equals(m2.getReturnType())) {
+//             throw new IllegalArgumentException("Can't implement:\n" + m1.getDeclaringClass().getName() +
+//                                                "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
+//                                                m1.toString() + "\n" + m2.toString());
+//         }
+//     }
+    
+
+    private static void removeFinal(List list) {
+        filter(list, new Predicate() {
+            public boolean evaluate(Object arg) {
+                return !Modifier.isFinal(((Method)arg).getModifiers());
+            }
+        });
+    }
+
+    private static void removeInvisible(List list, Class source) {
+        final String pkg = ReflectUtils.getPackageName(source);
+        filter(list, new Predicate() {
+            public boolean evaluate(Object arg) {
+                int mod = ((Member)arg).getModifiers();
+                if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
+                    return false;
+                }
+                if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
+                    return true;
+                }
+                return pkg.equals(ReflectUtils.getPackageName(((Member)arg).getDeclaringClass()));
+            }
+        });
     }
 }
