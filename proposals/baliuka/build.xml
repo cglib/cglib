@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.9 2002/11/02 12:02:24 baliuka Exp $ -->
+<!--   "cglib"  was  "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.1 2002/11/02 12:02:24 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -35,7 +35,7 @@
       <pathelement location="${build.home}/classes"/>
       <pathelement location="${bcel.jar}"/>
     
-      <fileset dir="./lib">
+      <fileset dir="../../lib">
 		<include name="*.*"/>
        </fileset>
     </path>
@@ -107,7 +107,7 @@
 
     <copy file="LICENSE" todir="${dist.home}"/>
 
-    <unzip src="lib/bcel.jar" dest="${build.home}/classes" />
+    <unzip src="../../lib/bcel.jar" dest="${build.home}/classes" />
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
@@ -120,7 +120,7 @@
       <include name="src/**/*.java"/>
       <include name="src/**/*.properties"/>
       <include name="src/**/*.xml"/>  
-      <include name="lib/**"/>  
+      <include name="../../lib/**"/>  
     </jar>   
 
     <jar basedir="docs" jarfile="${dist.home}/${component.name}-docs-${component.version}.jar" >
@@ -165,7 +165,7 @@
         <classpath>
           <pathelement path="${samples.build.home}/classes"/>
           <pathelement path="${build.home}/classes"/>
-          <fileset dir="./lib">
+          <fileset dir="../../lib">
 		<include name="*.*"/>
           </fileset>
         </classpath>
@@ -185,7 +185,7 @@
         <classpath>
           <pathelement path="${samples.build.home}/classes"/>
           <pathelement path="${build.home}/classes"/>
-          <fileset dir="./lib">
+          <fileset dir="../../lib">
 		<include name="*.*"/>
           </fileset>
         </classpath>
@@ -233,7 +233,7 @@
           <pathelement path="${classpath}"/>
           <pathelement path="${java.class.path}"/>
           <pathelement path="${source.test}"/>
-          <fileset dir="./lib">
+          <fileset dir="../../lib">
 		<include name="*.*"/>
           </fileset>
         </classpath>

@@ -52,33 +52,30 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
 
-import junit.framework.*;
-import net.sf.cglib.proxy.*;
+package net.sf.cglib.proxy;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.4 2002/11/02 12:02:25 baliuka Exp $
+ *  private utility
+ * @author  baliuka
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-           
-        return suite;
-    }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+class MethodWrapper {
+    java.lang.reflect.Method method;
+    MethodWrapper(java.lang.reflect.Method method) {
+        if (method == null) {
+            throw new NullPointerException();
+        }
+        this.method = method;
+    }
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof MethodWrapper)) {
+            return false;
+        }
+        return ClassFileUtils.equals(method, ((MethodWrapper) obj).method );
+    }
+    public int hashCode() {
+        return method.getName().hashCode();
     }
 }
-
