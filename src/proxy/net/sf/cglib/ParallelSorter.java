@@ -79,6 +79,8 @@ import java.util.Comparator;
  * <p>
  * The mergesort algorithm here is an "in-place" variant, which while
  * slower, does not require a temporary array.
+ *
+ * @author Chris Nokleberg
  */
 abstract public class ParallelSorter extends SorterTemplate {
     static final Class TYPE = ParallelSorter.class;
@@ -106,7 +108,7 @@ abstract public class ParallelSorter extends SorterTemplate {
 
     /**
      * Helper method, has same effect as <pre>return create(arrays, null);</pre>
-     * @see #create(Object[], ClassLaoder)
+     * @see #create(Object[], ClassLoader)
      */
     public static ParallelSorter create(Object[] arrays) {
         return create(arrays, null);
