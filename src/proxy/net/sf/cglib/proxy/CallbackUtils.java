@@ -64,6 +64,7 @@ class CallbackUtils {
         test = typeHelper(callback, test, InvocationHandler.class);
         test = typeHelper(callback, test, LazyLoader.class);
         test = typeHelper(callback, test, Dispatcher.class);
+        test = typeHelper(callback, test, FixedValue.class);
         if (test == null) {
             throw new IllegalStateException("Unknown callback " + callback.getClass());
         }
@@ -95,6 +96,8 @@ class CallbackUtils {
             return LazyLoaderGenerator.INSTANCE;
         } else if (type.equals(Dispatcher.class)) {
             return DispatcherGenerator.INSTANCE;
+        } else if (type.equals(FixedValue.class)) {
+            return FixedValueGenerator.INSTANCE;
         } else {
             throw new IllegalStateException("Unknown callback " + type);
         }
