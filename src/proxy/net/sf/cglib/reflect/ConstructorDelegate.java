@@ -60,7 +60,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.7 2003/09/20 09:22:22 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.8 2003/09/20 20:23:26 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -82,6 +82,8 @@ abstract public class ConstructorDelegate {
 
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(ConstructorDelegate.class, true);
+        private static final Type CONSTRUCTOR_DELEGATE =
+          Signature.parseType("net.sf.cglib.reflect.ConstructorDelegate");
 
         private Class iface;
         private Class targetClass;
@@ -122,18 +124,17 @@ abstract public class ConstructorDelegate {
             }
 
             Emitter e = new Emitter(v);
-            Ops.begin_class(e,
-                            Modifier.PUBLIC,
-                            getClassName(),
-                            ConstructorDelegate.class,
-                            new Class[]{ iface },
-                            Constants.SOURCE_FILE);
+            e.begin_class(Constants.ACC_PUBLIC,
+                          getClassName(),
+                          CONSTRUCTOR_DELEGATE,
+                          new Type[]{ Type.getType(iface) },
+                          Constants.SOURCE_FILE);
             e.null_constructor();
-            Ops.begin_method(e, newInstance);
+            ReflectOps.begin_method(e, newInstance);
             e.new_instance(Type.getType(constructor.getDeclaringClass()));
             e.dup();
             e.load_args();
-            Ops.invoke(e, constructor);
+            ReflectOps.invoke(e, constructor);
             e.return_value();
             e.end_class();
         }

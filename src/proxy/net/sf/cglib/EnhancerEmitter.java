@@ -108,8 +108,12 @@ class EnhancerEmitter extends Emitter {
         if (superclass == null) {
             superclass = Object.class;
         }
-        
-        Ops.begin_class(this, Constants.ACC_PUBLIC, className, superclass, interfaces, Constants.SOURCE_FILE);
+
+        begin_class(Constants.ACC_PUBLIC,
+                    className,
+                    Type.getType(superclass),
+                    TypeUtils.getTypes(interfaces),
+                    Constants.SOURCE_FILE);
         
         List constructors = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
         CollectionUtils.filter(constructors, new VisibilityPredicate(superclass, true));
@@ -166,11 +170,11 @@ class EnhancerEmitter extends Emitter {
     private void generateConstructors(List constructors) throws NoSuchMethodException {
         for (Iterator i = constructors.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
-            Ops.begin_constructor(this, constructor);
+            ReflectOps.begin_constructor(this, constructor);
             load_this();
             dup();
             load_args();
-            Ops.super_invoke(this, constructor);
+            ReflectOps.super_invoke(this, constructor);
             push(1);
             putfield(CONSTRUCTED_FIELD);
             return_value();
@@ -181,7 +185,7 @@ class EnhancerEmitter extends Emitter {
         int[] keys = getCallbackKeys();
 
         // Factory.getCallback(int)
-        Ops.begin_method(this, GET_CALLBACK);
+        ReflectOps.begin_method(this, GET_CALLBACK);
         load_this();
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
@@ -197,7 +201,7 @@ class EnhancerEmitter extends Emitter {
         return_value();
 
         // Factory.setCallback(int, Callback)
-        Ops.begin_method(this, SET_CALLBACK);
+        ReflectOps.begin_method(this, SET_CALLBACK);
         load_this();
         load_arg(1);
         load_arg(0);
@@ -214,14 +218,14 @@ class EnhancerEmitter extends Emitter {
         return_value();
         
         // Factory.setCallbacks(Callbacks);
-        Ops.begin_method(this, SET_CALLBACKS);
+        ReflectOps.begin_method(this, SET_CALLBACKS);
         load_this();
         load_arg(0);
         generateSetCallbacks();
         return_value();
 
         // Factory.newInstance(Callbacks)
-        Ops.begin_method(this, NEW_INSTANCE);
+        ReflectOps.begin_method(this, NEW_INSTANCE);
         load_arg(0);
         invoke_static_this(SET_THREAD_CALLBACKS);
         new_instance_this();
@@ -233,20 +237,20 @@ class EnhancerEmitter extends Emitter {
         return_value();
 
         // Factory.newInstance(Callback)
-        Ops.begin_method(this, SINGLE_NEW_INSTANCE);
+        ReflectOps.begin_method(this, SINGLE_NEW_INSTANCE);
         switch (usedCallbacks.cardinality()) {
         case 1:
             int type = usedCallbacks.length() - 1;
             getfield(getThreadLocal(type));
             load_arg(0);
-            Ops.invoke(this, MethodConstants.THREADLOCAL_SET);
+            ReflectOps.invoke(this, MethodConstants.THREADLOCAL_SET);
             new_instance_this();
             dup();
             invoke_constructor_this();
             dup();
             push(type);
             load_arg(0);
-            Ops.invoke(this, SET_CALLBACK);
+            ReflectOps.invoke(this, SET_CALLBACK);
             break;
         case 0:
             // TODO: make sure Callback is null?
@@ -255,22 +259,22 @@ class EnhancerEmitter extends Emitter {
             invoke_constructor_this();
             break;
         default:
-            throw_exception(Types.ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
+            throw_exception(Constants.TYPE_ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
         }
         return_value();
         
         // Factory.newInstance(Class[], Object[], Callbacks)
         Label skipSetCallbacks = make_label();
-        Ops.begin_method(this, MULTIARG_NEW_INSTANCE);
+        ReflectOps.begin_method(this, MULTIARG_NEW_INSTANCE);
         load_arg(2);
         invoke_static_this(SET_THREAD_CALLBACKS);
         new_instance_this();
         dup();
         load_arg(0);
-        Ops.constructor_switch(this, (Constructor[])constructors.toArray(new Constructor[0]), new ObjectSwitchCallback() {
+        ReflectOps.constructor_switch(this, (Constructor[])constructors.toArray(new Constructor[0]), new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) throws Exception {
                 Constructor constructor = (Constructor)key;
-                Type types[] = Signature.getTypes(constructor.getParameterTypes());
+                Type types[] = TypeUtils.getTypes(constructor.getParameterTypes());
                 for (int i = 0; i < types.length; i++) {
                     load_arg(1);
                     push(i);
@@ -281,7 +285,7 @@ class EnhancerEmitter extends Emitter {
                 goTo(end);
             }
             public void processDefault() {
-                throw_exception(Types.ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
+                throw_exception(Constants.TYPE_ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
             }
         });
         load_arg(2);
@@ -302,7 +306,7 @@ class EnhancerEmitter extends Emitter {
                     if (i + 1 < usedCallbacks.length())
                         dup2();
                     push(i);
-                    Ops.invoke(this, CALLBACKS_GET);
+                    ReflectOps.invoke(this, CALLBACKS_GET);
                     checkcast(CallbackUtils.getType2(i));
                     putfield(getCallbackField(i));
                 }
@@ -365,7 +369,7 @@ class EnhancerEmitter extends Emitter {
                 Type callbackType = CallbackUtils.getType2(i);
                 if (callbackType != null) {
                     declare_field(Modifier.PRIVATE, getCallbackField(i), callbackType, null);
-                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), Types.THREAD_LOCAL, null);
+                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), Constants.TYPE_THREAD_LOCAL, null);
                 }
                 generators[i].generate(this, contexts[i]);
             }
@@ -383,10 +387,10 @@ class EnhancerEmitter extends Emitter {
             if (usedCallbacks.get(i)) {
                 load_arg(0);
                 push(i);
-                Ops.invoke(this, CALLBACKS_GET);
+                ReflectOps.invoke(this, CALLBACKS_GET);
                 getfield(getThreadLocal(i));
                 swap();
-                Ops.invoke(this, MethodConstants.THREADLOCAL_SET);
+                ReflectOps.invoke(this, MethodConstants.THREADLOCAL_SET);
             }
         }
         mark(end);
@@ -405,7 +409,7 @@ class EnhancerEmitter extends Emitter {
         ifne(end);
         pop();
         getfield(getThreadLocal(type));
-        Ops.invoke(this, MethodConstants.THREADLOCAL_GET);
+        ReflectOps.invoke(this, MethodConstants.THREADLOCAL_GET);
         checkcast(CallbackUtils.getType2(type));
         mark(end);
     }
@@ -423,9 +427,9 @@ class EnhancerEmitter extends Emitter {
         begin_static();
         for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
             if (usedCallbacks.get(i)) {
-                new_instance(Types.THREAD_LOCAL);
+                new_instance(Constants.TYPE_THREAD_LOCAL);
                 dup();
-                invoke_constructor(Types.THREAD_LOCAL, Types.EMPTY);
+                invoke_constructor(Constants.TYPE_THREAD_LOCAL, Constants.TYPE_EMPTY);
                 putfield(getThreadLocal(i));
             }
         }

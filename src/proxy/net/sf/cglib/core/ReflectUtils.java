@@ -56,9 +56,10 @@ package net.sf.cglib.core;
 import java.beans.*;
 import java.lang.reflect.*;
 import java.util.*;
+import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.5 2003/09/15 19:31:22 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.6 2003/09/20 20:23:26 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -113,6 +114,16 @@ public class ReflectUtils {
         wrapperToPrimitive.put(Short.class, Short.TYPE);
         wrapperToPrimitive.put(Integer.class, Integer.TYPE);
         wrapperToPrimitive.put(Byte.class, Byte.TYPE);
+    }
+
+    public static Signature getSignature(Method method) {
+        return new Signature(method.getName(), Type.getMethodDescriptor(method));
+    }
+
+    public static Signature getSignature(Constructor constructor) {
+        return new Signature(Constants.CONSTRUCTOR_NAME,
+                             Type.getMethodDescriptor(Type.VOID_TYPE,
+                                                      TypeUtils.getTypes(constructor.getParameterTypes())));
     }
 
     public static Class getBoxedType(Class type) {

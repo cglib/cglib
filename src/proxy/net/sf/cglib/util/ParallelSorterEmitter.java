@@ -62,12 +62,16 @@ import org.objectweb.asm.Type;
 class ParallelSorterEmitter extends Emitter {
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
+    private static final Signature CSTRUCT_OBJECT_ARRAY =
+      Signature.parse("void <init>(Object[])");
     private static final Signature SWAP =
       Signature.parse("void swap(int, int)");
+    private static final Type PARALLEL_SORTER =
+      Signature.parseType("net.sf.cglib.util.ParallelSorter");
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
         super(v);
-        Ops.begin_class(this, Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
+        begin_class(Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
         null_constructor();
         factory_method(NEW_INSTANCE);
         generateConstructor(arrays);
@@ -80,12 +84,12 @@ class ParallelSorterEmitter extends Emitter {
     }
 
     private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
-        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT_ARRAY, null);
+        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
         load_this();
         super_invoke_constructor();
         load_this();
         load_arg(0);
-        super_putfield("a", Types.OBJECT_ARRAY);
+        super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
         for (int i = 0; i < arrays.length; i++) {
             Type type = Type.getType(arrays[i].getClass());
             declare_field(Modifier.PRIVATE, getFieldName(i), type, null);
@@ -103,7 +107,7 @@ class ParallelSorterEmitter extends Emitter {
         begin_method(Constants.ACC_PUBLIC, SWAP, null);
         for (int i = 0; i < arrays.length; i++) {
             Type type = Type.getType(arrays[i].getClass());
-            Type component = Emitter.getComponentType(type);
+            Type component = TypeUtils.getComponentType(type);
             Local T = make_local(type);
 
             load_this();

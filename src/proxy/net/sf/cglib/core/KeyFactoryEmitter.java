@@ -60,11 +60,20 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.5 2003/09/20 09:22:22 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.6 2003/09/20 20:23:26 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
-    // private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
+    private static final Signature HASH_CODE =
+      Signature.parse("int hashCode()");
+    private static final Signature EQUALS =
+      Signature.parse("boolean equals(Object)");
+    private static final Signature DOUBLE_TO_LONG_BITS =
+      Signature.parse("long doubleToLongBits(double)");
+    private static final Signature FLOAT_TO_INT_BITS =
+      Signature.parse("int floatToIntBits(float)");
+    private static final Type KEY_FACTORY =
+      Signature.parseType("net.sf.cglib.core.KeyFactory");
     
     //generated numbers: 
     private final static int PRIMES[] = {
@@ -91,14 +100,13 @@ class KeyFactoryEmitter extends Emitter {
         
         Class[] parameterTypes = newInstance.getParameterTypes();
         
-        Ops.begin_class(this,
-                        Modifier.PUBLIC,
-                        className,
-                        KeyFactory.class,
-                        new Class[]{ keyInterface },
-                        Constants.SOURCE_FILE);
+        begin_class(Constants.ACC_PUBLIC,
+                    className,
+                    KEY_FACTORY,
+                    new Type[]{ Type.getType(keyInterface) },
+                    Constants.SOURCE_FILE);
         null_constructor();
-        factory_method(new Signature(newInstance));
+        factory_method(ReflectUtils.getSignature(newInstance));
         generateConstructor(parameterTypes);
         generateEquals(parameterTypes);
         end_class();
@@ -107,7 +115,7 @@ class KeyFactoryEmitter extends Emitter {
     // TODO: this doesn't exactly follow Effective Java recommendations
     // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
     private void generateConstructor(Class[] parameterTypes) throws NoSuchFieldException {
-        begin_constructor(Constants.ACC_PUBLIC, Signature.getTypes(parameterTypes), null);
+        begin_constructor(Constants.ACC_PUBLIC, TypeUtils.getTypes(parameterTypes), null);
         load_this();
         super_invoke_constructor();
         load_this();
@@ -138,10 +146,10 @@ class KeyFactoryEmitter extends Emitter {
     }
 
     private void hash_code(Type type) {
-        if (isArray(type)) {
+        if (TypeUtils.isArray(type)) {
             hash_array(type);
         } else {
-            if (isPrimitive(type)) {
+            if (TypeUtils.isPrimitive(type)) {
                 hash_primitive(type);
             } else {
                 hash_object();
@@ -175,7 +183,7 @@ class KeyFactoryEmitter extends Emitter {
         Label end = make_label();
         dup();
         ifnull(isNull);
-        invoke_virtual(Types.OBJECT, Signatures.HASH_CODE);
+        invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
         goTo(end);
         mark(isNull);
         pop();
@@ -192,11 +200,11 @@ class KeyFactoryEmitter extends Emitter {
             break;
         case Type.DOUBLE:
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            invoke_static(Types.DOUBLE, Signatures.DOUBLE_TO_LONG_BITS);
+            invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
             hash_long();
         case Type.FLOAT:
             // Float.floatToIntBits(f)
-            invoke_static(Types.FLOAT, Signatures.FLOAT_TO_INT_BITS);
+            invoke_static(Constants.TYPE_FLOAT, FLOAT_TO_INT_BITS);
         case Type.LONG:
             hash_long();
         default:
@@ -223,7 +231,7 @@ class KeyFactoryEmitter extends Emitter {
 
     private void generateEquals(Class[] parameterTypes) {
         Label fail = make_label();
-        begin_method(Constants.ACC_PUBLIC, Signatures.EQUALS, null);
+        begin_method(Constants.ACC_PUBLIC, EQUALS, null);
         load_arg(0);
         instance_of_this();
         ifeq(fail);

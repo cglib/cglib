@@ -61,6 +61,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
     
 class FastClassEmitter extends Emitter {
+    private static final Signature CSTRUCT_CLASS =
+      Signature.parse("void <init>(Class)");
     private static final Signature METHOD_GET_INDEX =
       Signature.parse("int getIndex(String, Class[])");
     private static final Signature SIGNATURE_GET_INDEX =
@@ -71,16 +73,18 @@ class FastClassEmitter extends Emitter {
       Signature.parse("Object invoke(int, Object, Object[])");
     private static final Signature NEW_INSTANCE =
       Signature.parse("Object newInstance(int, Object[])");
+    private static final Type FAST_CLASS =
+      Signature.parseType("net.sf.cglib.reflect.FastClass");
 
     public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
         super(v);
-        Ops.begin_class(this, Modifier.PUBLIC, className, FastClass.class, null, Constants.SOURCE_FILE);
+        begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
-        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_CLASS, null);
+        begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null);
         load_this();
         load_args();
-        super_invoke_constructor(Signatures.CSTRUCT_CLASS);
+        super_invoke_constructor(CSTRUCT_CLASS);
         return_value();
 
         VisibilityPredicate vp = new VisibilityPredicate(type, false);
@@ -117,12 +121,12 @@ class FastClassEmitter extends Emitter {
         // getIndex(String, Class[])
         begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
         load_args();
-        Ops.method_switch(this, methods, new GetIndexCallback(methods));
+        ReflectOps.method_switch(this, methods, new GetIndexCallback(methods));
 
         // getIndex(Class[])
         begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
         load_args();
-        Ops.constructor_switch(this, constructors, new GetIndexCallback(constructors));
+        ReflectOps.constructor_switch(this, constructors, new GetIndexCallback(constructors));
 
         // invoke(int, Object, Object[])
         begin_method(Constants.ACC_PUBLIC, INVOKE, null);
@@ -152,16 +156,16 @@ class FastClassEmitter extends Emitter {
                     Ops.unbox(FastClassEmitter.this, Type.getType(types[i]));
                 }
                 if (member instanceof Method) {
-                    Ops.invoke(FastClassEmitter.this, (Method)member);
+                    ReflectOps.invoke(FastClassEmitter.this, (Method)member);
                     Ops.box(FastClassEmitter.this, Type.getType(((Method)member).getReturnType()));
                 } else {
-                    Ops.invoke(FastClassEmitter.this, (Constructor)member);
+                    ReflectOps.invoke(FastClassEmitter.this, (Constructor)member);
                 }
                 return_value();
             }
 
             public void processDefault() {
-                throw_exception(Types.NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
+                throw_exception(Constants.TYPE_NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
             }
         });
     }

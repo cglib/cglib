@@ -91,18 +91,18 @@ implements CallbackGenerator
     }
 
     private void generateAccessMethod(Emitter e, Context context, Method method) {
-        Ops.begin_method(e,
-                         Constants.ACC_FINAL,
-                         getAccessName(context, method),
-                         method.getReturnType(),
-                         method.getParameterTypes(),
-                         method.getExceptionTypes());
+        ReflectOps.begin_method(e,
+                                Constants.ACC_FINAL,
+                                getAccessName(context, method),
+                                method.getReturnType(),
+                                method.getParameterTypes(),
+                                method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            e.throw_exception(Types.ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+            e.throw_exception(Constants.TYPE_ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
             e.load_args();
-            Ops.super_invoke(e, method);
+            ReflectOps.super_invoke(e, method);
         }
         e.return_value();
     }
@@ -110,7 +110,7 @@ implements CallbackGenerator
     private void generateAroundMethod(Emitter e,
                                       Context context,
                                       Method method) {
-        Ops.begin_method(e, method, context.getModifiers(method));
+        ReflectOps.begin_method(e, method, context.getModifiers(method));
         Label nullInterceptor = e.make_label();
         context.emitCallback();
         e.dup();
@@ -120,14 +120,14 @@ implements CallbackGenerator
         e.getfield(getFieldName(context, method));
         Ops.create_arg_array(e);
         e.getfield(getAccessName(context, method));
-        Ops.invoke(e, AROUND_ADVICE);
+        ReflectOps.invoke(e, AROUND_ADVICE);
         Ops.unbox_or_zero(e, Type.getType(method.getReturnType()));
         e.return_value();
 
         e.mark(nullInterceptor);
         e.load_this();
         e.load_args();
-        Ops.super_invoke(e, method);
+        ReflectOps.super_invoke(e, method);
         e.return_value();
     }
 
@@ -147,17 +147,17 @@ implements CallbackGenerator
 
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            Ops.load_method(e, method);
+            ReflectOps.load_method(e, method);
             e.dup();
             e.putfield(getFieldName(context, method));
 
             String accessName = getAccessName(context, method);
             String desc = ReflectUtils.getMethodDescriptor(method);
-            Ops.invoke(e, MethodConstants.GET_DECLARING_CLASS);
+            ReflectOps.invoke(e, MethodConstants.GET_DECLARING_CLASS);
             e.push(method.getName() + desc);
             Ops.load_class_this(e);
             e.push(accessName + desc);
-            Ops.invoke(e, MAKE_PROXY);
+            ReflectOps.invoke(e, MAKE_PROXY);
             e.putfield(accessName);
         }
     }

@@ -63,15 +63,27 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 class BeanMapEmitter extends Emitter {
+    private static final Signature CSTRUCT_OBJECT =
+      Signature.parse("void <init>(Object)");
+    private static final Signature CSTRUCT_STRING_ARRAY =
+      Signature.parse("void <init>(String[])");
+    private static final Signature MAP_GET =
+      Signature.parse("Object get(Object)");
+    private static final Signature MAP_PUT =
+      Signature.parse("Object put(Object, Object)");
+    private static final Signature KEY_SET =
+      Signature.parse("java.util.Set keySet()");
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.beans.BeanMap newInstance(Object)");
+    private static final Type BEAN_MAP =
+      Signature.parseType("net.sf.cglib.beans.BeanMap");
     private static final Type FIXED_KEY_SET =
       Signature.parseType("net.sf.cglib.beans.FixedKeySet");
 
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
         super(v);
 
-        Ops.begin_class(this, Modifier.PUBLIC, className, BeanMap.class, null, Constants.SOURCE_FILE);
+        begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
         null_constructor();
         factory_method(NEW_INSTANCE);
         generateConstructor();
@@ -97,24 +109,24 @@ class BeanMapEmitter extends Emitter {
     }
 
     private void generateConstructor() {
-        begin_method(Constants.ACC_PUBLIC, Signatures.CSTRUCT_OBJECT, null);
+        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
         load_this();
         load_arg(0);
-        super_invoke_constructor(Signatures.CSTRUCT_OBJECT);
+        super_invoke_constructor(CSTRUCT_OBJECT);
         return_value();
     }
         
     private void generateGet(Class type, int switchStyle, final Map getters) throws Exception {
-        begin_method(Constants.ACC_PUBLIC, Signatures.GET, null);
+        begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
         load_this();
-        super_getfield("bean", Types.OBJECT);
+        super_getfield("bean", Constants.TYPE_OBJECT);
         checkcast(Type.getType(type));
         load_arg(0);
-        checkcast(Types.STRING);
+        checkcast(Constants.TYPE_STRING);
         Ops.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                Ops.invoke(BeanMapEmitter.this, pd.getReadMethod());
+                ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
                 Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
                 return_value();
             }
@@ -126,12 +138,12 @@ class BeanMapEmitter extends Emitter {
     }
 
     private void generatePut(Class type, int switchStyle, final Map setters) throws Exception {
-        begin_method(Constants.ACC_PUBLIC, Signatures.PUT, null);
+        begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
         load_this();
-        super_getfield("bean", Types.OBJECT);
+        super_getfield("bean", Constants.TYPE_OBJECT);
         checkcast(Type.getType(type));
         load_arg(0);
-        checkcast(Types.STRING);
+        checkcast(Constants.TYPE_STRING);
         Ops.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
@@ -139,13 +151,13 @@ class BeanMapEmitter extends Emitter {
                     aconst_null();
                 } else {
                     dup();
-                    Ops.invoke(BeanMapEmitter.this, pd.getReadMethod());
+                    ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
                     Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
                 }
                 swap(); // move old value behind bean
                 load_arg(1); // new value
                 Ops.unbox(BeanMapEmitter.this, Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
-                Ops.invoke(BeanMapEmitter.this, pd.getWriteMethod());
+                ReflectOps.invoke(BeanMapEmitter.this, pd.getWriteMethod());
                 return_value();
             }
             public void processDefault() {
@@ -165,13 +177,13 @@ class BeanMapEmitter extends Emitter {
         begin_static();
         new_instance(FIXED_KEY_SET);
         dup();
-        Ops.push(this, allNames.toArray(new String[allNames.size()]));
-        invoke_constructor(FIXED_KEY_SET, Signatures.CSTRUCT_STRING_ARRAY);
+        ReflectOps.push(this, allNames.toArray(new String[allNames.size()]));
+        invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
         putfield("keys");
         return_value();
 
         // keySet
-        begin_method(Constants.ACC_PUBLIC, Signatures.KEY_SET, null);
+        begin_method(Constants.ACC_PUBLIC, KEY_SET, null);
         load_this();
         getfield("keys");
         return_value();

@@ -108,6 +108,8 @@ abstract public class MulticastDelegate implements Cloneable {
           Signature.parse("net.sf.cglib.reflect.MulticastDelegate add(Object)");
         private static final Signature ADD_HELPER =
           Signature.parse("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
+        private static final Type MULTICAST_DELEGATE =
+          Signature.parseType("net.sf.cglib.reflect.MulticastDelegate");
 
         private Class iface;
 
@@ -132,16 +134,15 @@ abstract public class MulticastDelegate implements Cloneable {
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
             final Emitter e = new Emitter(v);
-            Ops.begin_class(e,
-                            Modifier.PUBLIC,
-                            getClassName(),
-                            MulticastDelegate.class,
-                            new Class[]{ iface },
-                            Constants.SOURCE_FILE);
+            e.begin_class(Constants.ACC_PUBLIC,
+                          getClassName(),
+                          MULTICAST_DELEGATE,
+                          new Type[]{ Type.getType(iface) },
+                          Constants.SOURCE_FILE);
             e.null_constructor();
 
             // generate proxied method
-            Ops.begin_method(e, method);
+            ReflectOps.begin_method(e, method);
             Type returnType = e.getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
             Local result = null;
@@ -151,18 +152,18 @@ abstract public class MulticastDelegate implements Cloneable {
                 e.store_local(result);
             }
             e.load_this();
-            e.super_getfield("targets", Types.OBJECT_ARRAY);
+            e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
             final Local result2 = result;
-            Ops.process_array(e, Types.OBJECT_ARRAY, new ProcessArrayCallback() {
-                    public void processElement(Type type) {
-                        e.checkcast(Type.getType(iface));
-                        e.load_args();
-                        Ops.invoke(e, method);
-                        if (returns) {
-                            e.store_local(result2);
-                        }
+            Ops.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+                public void processElement(Type type) {
+                    e.checkcast(Type.getType(iface));
+                    e.load_args();
+                    ReflectOps.invoke(e, method);
+                    if (returns) {
+                        e.store_local(result2);
                     }
-                });
+                }
+            });
             if (returns) {
                 e.load_local(result);
             }

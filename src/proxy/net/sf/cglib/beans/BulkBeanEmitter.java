@@ -66,9 +66,11 @@ class BulkBeanEmitter extends Emitter {
       Signature.parse("void getPropertyValues(Object, Object[])");
     private static final Signature SET_PROPERTY_VALUES =
       Signature.parse("void setPropertyValues(Object, Object[])");
+    private static final Type BULK_BEAN =
+      Signature.parseType("net.sf.cglib.beans.BulkBean");
     private static final Type BULK_BEAN_EXCEPTION =
       Signature.parseType("net.sf.cglib.beans.BulkBeanException");
-    private static final Type[] EXCEPTION_TYPES = { Types.THROWABLE, Type.INT_TYPE };
+    private static final Type[] EXCEPTION_TYPES = { Constants.TYPE_THROWABLE, Type.INT_TYPE };
         
     public BulkBeanEmitter(ClassVisitor v,
                            String className,
@@ -82,7 +84,7 @@ class BulkBeanEmitter extends Emitter {
         Method[] setters = new Method[setterNames.length];
         validate(target, getterNames, setterNames, types, getters, setters);
 
-        Ops.begin_class(this, Modifier.PUBLIC, className, BulkBean.class, null, Constants.SOURCE_FILE);
+        begin_class(Constants.ACC_PUBLIC, className, BULK_BEAN, null, Constants.SOURCE_FILE);
         null_constructor();
         generateGet(target, getters);
         generateSet(target, setters);
@@ -100,7 +102,7 @@ class BulkBeanEmitter extends Emitter {
                 load_arg(1);
                 push(i);
                 load_local(bean);
-                Ops.invoke(this, getters[i]);
+                ReflectOps.invoke(this, getters[i]);
                 Ops.box(this, Type.getType(getters[i].getReturnType()));
                 aastore();
             }
@@ -129,12 +131,12 @@ class BulkBeanEmitter extends Emitter {
                 dup2();
                 aaload(i);
                 Ops.unbox(this, Type.getType(setters[i].getParameterTypes()[0]));
-                Ops.invoke(this, setters[i]);
+                ReflectOps.invoke(this, setters[i]);
             }
         }
         end_block();
         return_value();
-        catch_exception(handler, Types.CLASS_CAST_EXCEPTION);
+        catch_exception(handler, Constants.TYPE_CLASS_CAST_EXCEPTION);
         new_instance(BULK_BEAN_EXCEPTION);
         dup_x1();
         swap();
