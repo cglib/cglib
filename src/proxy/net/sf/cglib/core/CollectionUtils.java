@@ -58,7 +58,7 @@ import java.lang.reflect.Array;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: CollectionUtils.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: CollectionUtils.java,v 1.2 2003/09/21 20:27:29 herbyderby Exp $
  */
 public class CollectionUtils {
     private CollectionUtils() { }
@@ -75,6 +75,13 @@ public class CollectionUtils {
             bucket.add(value);
         }
         return buckets;
+    }
+
+    public static void reverse(Map source, Map target) {
+        for (Iterator it = source.keySet().iterator(); it.hasNext();) {
+            Object key = it.next();
+            target.put(source.get(key), key);
+        }
     }
 
     public static Object[] filter(Object[] a, Predicate p) {

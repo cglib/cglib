@@ -4,7 +4,8 @@ import org.objectweb.asm.Type;
 import java.util.*;
 
 public class TypeUtils {
-    private static final Map transforms = new HashMap(8);
+    private static final Map transforms = new HashMap();
+    private static final Map rtransforms = new HashMap();
 
     private TypeUtils() {
     }
@@ -19,8 +20,65 @@ public class TypeUtils {
         transforms.put("long", "J");
         transforms.put("short", "S");
         transforms.put("boolean", "Z");
+
+        CollectionUtils.reverse(transforms, rtransforms);
     }
 
+    public static boolean isStatic(int access) {
+        return (Constants.ACC_STATIC & access) != 0;
+    }
+
+    public static boolean isAbstract(int access) {
+        return (Constants.ACC_ABSTRACT & access) != 0;
+    }
+
+    public static String upperFirst(String s) {
+        if (s == null || s.length() == 0) {
+            return s;
+        }
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    public static String getClassName(Type type) {
+        if (isPrimitive(type)) {
+            return (String)rtransforms.get(type.getDescriptor());
+        } else if (isArray(type)) {
+            return getClassName(getComponentType(type)) + "[]";
+        } else {
+            return type.getClassName();
+        }
+    }
+
+    public static Type[] add(Type[] types, Type extra) {
+        if (types == null) {
+            return new Type[]{ extra };
+        } else {
+            List list = Arrays.asList(types);
+            if (list.contains(extra)) {
+                return types;
+            }
+            Type[] copy = new Type[types.length + 1];
+            System.arraycopy(types, 0, copy, 0, types.length);
+            copy[types.length] = extra;
+            return copy;
+        }
+    }
+    
+    public static Type fromInternalName(String name) {
+        // TODO; primitives?
+        return Type.getType("L" + name + ";");
+    }
+
+    public static Type[] fromInternalNames(String[] names) {
+        if (names == null) {
+            return null;
+        }
+        Type[] types = new Type[names.length];
+        for (int i = 0; i < names.length; i++) {
+            types[i] = fromInternalName(names[i]);
+        }
+        return types;
+    }
 
     public static Signature parseSignature(String s) {
         int space = s.indexOf(' ');

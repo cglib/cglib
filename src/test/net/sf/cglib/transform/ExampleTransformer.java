@@ -1,7 +1,6 @@
 package net.sf.cglib.transform;
 
-import net.sf.cglib.core.Constants;
-import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.*;
 import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
@@ -16,10 +15,6 @@ public class ExampleTransformer extends EmittingTransformer {
         this.newPropertyTypes = newPropertyTypes;
     }
 
-    private static String upfirst(String s) {
-        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
-    }
-    
     protected Emitter getEmitter(ClassVisitor cv) {
         return new Emitter(cv) {
             public void end_class() {
@@ -27,7 +22,7 @@ public class ExampleTransformer extends EmittingTransformer {
                     String name = newPropertyNames[i];
                     Type type = Type.getType(newPropertyTypes[i]);
                     String fieldName = "HIB$" + name;
-                    String methodName = upfirst(name);
+                    String methodName = TypeUtils.upperFirst(name);
                     declare_field(Constants.ACC_PRIVATE, fieldName, type, null);
 
                     begin_method(Constants.ACC_PUBLIC, new Signature("get" + methodName, type, new Type[0]), null);

@@ -160,14 +160,6 @@ public class Emitter {
 //         endClassCallbacks.put(key, callback);
 //     }
     
-    private static boolean isStatic(int access) {
-        return (Constants.ACC_STATIC & access) != 0;
-    }
-
-    private static boolean isAbstract(int access) {
-        return (Constants.ACC_ABSTRACT & access) != 0;
-    }
-
     public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
         closeMethod();
         currentSig = sig;
@@ -175,7 +167,7 @@ public class Emitter {
         methodName = sig.getName();
         returnType = sig.getReturnType();
         argumentTypes = sig.getArgumentTypes();
-        localOffset = isStatic(access) ? 0 : 1;
+        localOffset = TypeUtils.isStatic(access) ? 0 : 1;
         remap.clear();
         
         firstLocal = nextLocal = localOffset + getStackSize(argumentTypes);
@@ -248,7 +240,7 @@ public class Emitter {
 
     private void closeMethod() {
         if (codev != null) {
-            if (!isAbstract(methodAccess)) {
+            if (!TypeUtils.isAbstract(methodAccess)) {
                 // System.err.println("Calling visitMaxs(0, 0) for method " + currentSig);
                 codev.visitMaxs(0, 0);
             }
@@ -485,7 +477,7 @@ public class Emitter {
     }
     
     public void load_this() {
-        if (isStatic(methodAccess)) {
+        if (TypeUtils.isStatic(methodAccess)) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
         codev.visitVarInsn(Constants.ALOAD, 0);
@@ -554,7 +546,7 @@ public class Emitter {
         if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
-        fieldInfo.put(name, new FieldInfo(isStatic(access), type));
+        fieldInfo.put(name, new FieldInfo(TypeUtils.isStatic(access), type));
         classv.visitField(access, name, type.getDescriptor(), value);
     }
 

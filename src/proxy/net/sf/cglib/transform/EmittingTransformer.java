@@ -2,6 +2,7 @@ package net.sf.cglib.transform;
 
 import net.sf.cglib.core.Emitter;
 import net.sf.cglib.core.Signature;
+import net.sf.cglib.core.TypeUtils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
@@ -16,27 +17,11 @@ abstract public class EmittingTransformer extends ClassTransformer {
         e = getEmitter(cv);
     }
 
-    private static Type fromInternalName(String name) {
-        // TODO; primitives?
-        return Type.getType("L" + name + ";");
-    }
-
-    private static Type[] fromInternalNames(String[] names) {
-        if (names == null) {
-            return null;
-        }
-        Type[] types = new Type[names.length];
-        for (int i = 0; i < names.length; i++) {
-            types[i] = fromInternalName(names[i]);
-        }
-        return types;
-    }
-
     public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
         e.begin_class(access,
-                      name.replace('/', '.'),
-                      fromInternalName(superName),
-                      fromInternalNames(interfaces),
+                      name.replace('/', '.'), // TypeUtils.fromInternalName(name).getClassName(),
+                      TypeUtils.fromInternalName(superName),
+                      TypeUtils.fromInternalNames(interfaces),
                       sourceFile);
     }
     
@@ -53,6 +38,6 @@ abstract public class EmittingTransformer extends ClassTransformer {
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
         return e.begin_method(access,
                               new Signature(name, desc),
-                              fromInternalNames(exceptions));
+                              TypeUtils.fromInternalNames(exceptions));
     }
 }
