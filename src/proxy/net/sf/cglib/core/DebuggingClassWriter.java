@@ -97,33 +97,28 @@ public class DebuggingClassWriter extends ClassWriter {
         if (debugLocation != null) {
             String dirs = className.replace('.',File.separatorChar);
             try {
-                
                 new File(debugLocation + File.separatorChar + dirs).getParentFile().mkdirs();
                 
                 File file = new File(new File(debugLocation), dirs + ".class");
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-                try{
-                  out.write(b);
-                }finally{
-                  out.close();
+                try {
+                    out.write(b);
+                } finally {
+                    out.close();
                 }
                
-                 file = new File(new File(debugLocation), dirs + ".asm");
-                 out = new BufferedOutputStream(new FileOutputStream(file));
+                file = new File(new File(debugLocation), dirs + ".asm");
+                out = new BufferedOutputStream(new FileOutputStream(file));
                 try{
-                    
-                  ClassReader cr = new ClassReader(b);
-                  PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
-                  TraceClassVisitor tcv = new TraceClassVisitor(null, pw );
-                  cr.accept(tcv, false);
-                  pw.flush();
+                    ClassReader cr = new ClassReader(b);
+                    PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
+                    TraceClassVisitor tcv = new TraceClassVisitor(null, pw);
+                    cr.accept(tcv, false);
+                    pw.flush();
                   
-                 }finally{
-                   out.close();
-                 }
-                
-             
-                
+                } finally {
+                    out.close();
+                }
             } catch (IOException e) {
                 throw new CodeGenerationException(e);
             }
