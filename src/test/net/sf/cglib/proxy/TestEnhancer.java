@@ -20,11 +20,12 @@ import java.lang.reflect.*;
 import junit.framework.*;
 import net.sf.cglib.CodeGenTestCase;
 import net.sf.cglib.core.ReflectUtils;
+import net.sf.cglib.reflect.FastClass;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.47 2004/08/20 15:08:46 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.48 2004/09/30 20:18:35 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -51,8 +52,7 @@ public class TestEnhancer extends CodeGenTestCase {
         String[] testCaseName = {TestEnhancer.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
     }
-    
-    
+
     public void testEnhance()throws Throwable{
         
         java.util.Vector vector1 = (java.util.Vector)Enhancer.create(
@@ -717,5 +717,23 @@ public class TestEnhancer extends CodeGenTestCase {
         Field field = obj.getClass().getDeclaredField("serialVersionUID");
         field.setAccessible(true);
         assertEquals(suid, field.get(obj));
+    }
+
+    interface ReturnTypeA { int foo(String x); }
+    interface ReturnTypeB { String foo(String x); }
+    public void testMethodsDifferingByReturnTypeOnly() throws IOException {
+        Enhancer e = new Enhancer();
+        e.setInterfaces(new Class[]{ ReturnTypeA.class, ReturnTypeB.class });
+        e.setCallback(new MethodInterceptor() {
+            public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                if (method.getReturnType().equals(String.class))
+                    return "hello";
+                return new Integer(42);
+            }
+        });
+        Object obj = e.create();
+        assertEquals(42, ((ReturnTypeA)obj).foo("foo"));
+        assertEquals("hello", ((ReturnTypeB)obj).foo("foo"));
+        assertEquals(-1, FastClass.create(obj.getClass()).getIndex("foo", new Class[]{ String.class }));
     }
 }
