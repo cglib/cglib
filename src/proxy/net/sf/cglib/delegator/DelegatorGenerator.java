@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.util.*;
-import net.sf.cglib.proxy.MethodWrapper;
+import net.sf.cglib.util.MethodWrapper;
 
 /* package */ class DelegatorGenerator extends CodeGenerator implements ClassFileConstants {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";

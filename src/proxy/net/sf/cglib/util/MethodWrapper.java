@@ -53,10 +53,10 @@
  * <http://www.apache.org/>.
  */
 
-package net.sf.cglib.proxy;
+package net.sf.cglib.util;
 
 
-import net.sf.cglib.util.*;
+
 import java.lang.reflect.Method;
 
 
