@@ -11,4 +11,9 @@ public interface Transformed {
     
     ReadWriteFieldCallback  getReadWriteFieldCallback();
     
+    
+    void setDelegate(Object delegate);
+    
+    Object getDelegate();
+    
 }

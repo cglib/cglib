@@ -14,9 +14,10 @@ import org.objectweb.asm.Type;
  *
  * @author  baliuka
  */
-public class Signature {
+class Signature {
     
-    public static final String READ_WRITE_CALLBACK = "$CGLIB_READ_WRITE_CALLBACK";
+     static final String READ_WRITE_CALLBACK = "$CGLIB_READ_WRITE_CALLBACK";
+     static final String DELEGATE = "$CGLIB_DELEGATE";
     
     private static Map MAP_BY_DESCRIPTOR = new Hashtable();
     
