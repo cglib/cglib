@@ -71,7 +71,7 @@
     <!-- maven b5 onwards -->
     <unitTest>
       <includes>
-        <include>**/Test*.java</include>
+        <include>**/TestAll.java</include>
       </includes>
     </unitTest>
     
@@ -99,23 +99,60 @@
 
 
 
-<!--
+
   <developers>
 
     <developer>
-      <name></name>
-      <id></id>
-      <email></email>
+      <name>Juozas Baliuka</name>
+      <id>baliuka</id>
+      <email>cglib-devel@lists.sourceforge.net</email>
       <organization></organization>
       <roles>
         <role>Administrator</role>
         <role>Release Manager</role>
         <role>Developer</role>
-       /roles>
+       </roles>
+    </developer>
+
+    <developer>
+      <name>Chris Nokleberg</name>
+      <id>herbyderby</id>
+      <email>cglib-devel@lists.sourceforge.net</email>
+      <organization></organization>
+      <roles>
+        <role>Administrator</role>
+        <role>Release Manager</role>
+        <role>Developer</role>
+       </roles>
+    </developer>
+
+   <developer>
+      <name>Matas Ramoska</name>
+      <id>mr226maf</id>
+      <email>cglib-devel@lists.sourceforge.net</email>
+      <organization></organization>
+      <roles>
+        <role>Administrator</role>
+        <role>Release Manager</role>
+        <role>Developer</role>
+       </roles>
+    </developer>
+
+
+  <developer>
+      <name>Wes Biggs</name>
+      <id>wbiggs</id>
+      <email>cglib-devel@lists.sourceforge.net</email>
+      <organization></organization>
+      <roles>
+        <role>Administrator</role>
+        <role>Release Manager</role>
+        <role>Developer</role>
+      </roles>
     </developer>
 
   </developers>
--->
+
 
 <!--
   <contributors>
