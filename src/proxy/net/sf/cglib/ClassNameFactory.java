@@ -55,7 +55,7 @@ package net.sf.cglib;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: ClassNameFactory.java,v 1.1 2002/12/22 00:21:17 herbyderby Exp $
+ * @version $Id: ClassNameFactory.java,v 1.2 2003/01/05 09:09:48 baliuka Exp $
  */
 /* package */ class ClassNameFactory {
     private final String suffix;
@@ -67,9 +67,6 @@ package net.sf.cglib;
 
     public String getNextName(Class cls) {
         String className = cls.getName() + "$$" + suffix + "$$";
-        if (className.startsWith("java")) {
-            className = "net.sf.cglib" + className;
-        }
         className += index++;
         return className;
     }

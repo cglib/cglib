@@ -58,7 +58,7 @@ import junit.framework.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.10 2002/12/21 08:37:01 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.11 2003/01/05 09:09:48 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -66,6 +66,8 @@ public class TestAll extends TestCase {
     }
 
     public static Test suite() {
+       
+       // System.setSecurityManager( new java.rmi.RMISecurityManager());
         
         System.getProperties().list(System.out);
         TestSuite suite = new TestSuite();

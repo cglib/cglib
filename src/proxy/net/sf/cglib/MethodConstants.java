@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodConstants.java,v 1.2 2002/12/29 21:36:42 herbyderby Exp $
+ * @version $Id: MethodConstants.java,v 1.3 2003/01/05 09:09:48 baliuka Exp $
  */
 abstract /* package */ class MethodConstants {
     public static final Method EQUALS =
@@ -76,7 +76,7 @@ abstract /* package */ class MethodConstants {
     public static final Method THROWABLE_GET_MESSAGE =
       ReflectUtils.findMethod("Throwable.getMessage()");
     public static final Method DEFINE_CLASS =
-      ReflectUtils.findMethod("ClassLoader.defineClass(String, byte[], int, int)");
+      ReflectUtils.findMethod("ClassLoader.defineClass( byte[], int, int)");
     public static final Method BOOLEAN_VALUE =
       ReflectUtils.findMethod("Boolean.booleanValue()");
     public static final Method CHAR_VALUE =
@@ -89,4 +89,5 @@ abstract /* package */ class MethodConstants {
       ReflectUtils.findMethod("Number.floatValue()");
     public static final Method INT_VALUE =
       ReflectUtils.findMethod("Number.intValue()");
+
 }
