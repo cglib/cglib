@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.32 2003/11/13 23:39:02 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.33 2003/11/26 02:15:08 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -538,5 +538,22 @@ public class TestEnhancer extends CodeGenTestCase {
         });
         ((MethDecImpl)enhancer.create()).foo();
         assertTrue(result[0]);
+    }
+
+
+    interface ClassOnlyX { }
+    public void testClassOnlyFollowedByInstance() {
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(ClassOnlyX.class);
+        enhancer.setCallbackType(NoOp.class);
+        Class type = enhancer.createClass();
+
+        enhancer = new Enhancer();
+        enhancer.setSuperclass(ClassOnlyX.class);
+        enhancer.setCallback(NoOp.INSTANCE);
+        Object instance = enhancer.create();
+
+        assertTrue(instance instanceof ClassOnlyX);
+        assertTrue(instance.getClass().equals(type));
     }
 }

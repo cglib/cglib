@@ -101,7 +101,6 @@ public class Enhancer extends AbstractClassGenerator
                                   Class[] interfaces,
                                   CallbackFilter filter,
                                   Class[] callbackTypes,
-                                  boolean classOnly,
                                   boolean useFactory);
     }
 
@@ -130,7 +129,7 @@ public class Enhancer extends AbstractClassGenerator
      * Set the class which the generated class will extend. As a convenience,
      * if the supplied superclass is actually an interface, <code>setInterfaces</code>
      * will be called with the appropriate argument instead.
-     * Non-interfaces arguments must not be declared as final, and must have an
+     * A non-interface argument must not be declared as final, and must have an
      * accessible constructor.
      * @param superclass class to extend or interface to implement
      * @see #setInterfaces(Class[])
@@ -301,7 +300,7 @@ public class Enhancer extends AbstractClassGenerator
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
-        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, classOnly, useFactory);
+        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, useFactory);
         return super.create(key);
     }
 
@@ -328,8 +327,9 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     protected Object nextInstance(Object instance) {
+        Class protoclass = (instance instanceof Class) ? (Class)instance : instance.getClass();
         if (classOnly) {
-            return instance;
+            return protoclass;
         } else if (instance instanceof Factory) {
             if (argumentTypes != null) {
                 return ((Factory)instance).newInstance(argumentTypes, arguments, callbacks);
@@ -337,7 +337,7 @@ public class Enhancer extends AbstractClassGenerator
                 return ((Factory)instance).newInstance(callbacks);
             }
         } else {
-            return createUsingReflection(instance.getClass());
+            return createUsingReflection(protoclass);
         }
     }
 
