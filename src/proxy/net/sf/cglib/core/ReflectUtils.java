@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.17 2004/02/08 13:21:51 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.18 2004/02/08 14:57:48 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -68,11 +68,13 @@ public class ReflectUtils {
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
     private static final Method DEFINE_CLASS;
+    private static final java.security.ProtectionDomain PROTECTION_DOMAIN;
     
     static {
         try {
             
-            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ String.class ,byte[].class, int.class, int.class });
+            PROTECTION_DOMAIN = ReflectUtils.class.getProtectionDomain();
+            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ String.class ,byte[].class, int.class, int.class,java.security.ProtectionDomain.class });
             DEFINE_CLASS.setAccessible(true);
             
         } catch (NoSuchMethodException e) {
@@ -435,7 +437,7 @@ public class ReflectUtils {
     }
     
     public static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
-        Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length) };
+        Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length), PROTECTION_DOMAIN };
         return (Class)DEFINE_CLASS.invoke(loader, args);
     }
     

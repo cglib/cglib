@@ -12,6 +12,7 @@ import java.io.IOException;
 abstract public class AbstractClassLoader extends ClassLoader {
     private ClassFilter filter;
     private ClassLoader classPath;
+    private static java.security.ProtectionDomain DOMAIN = AbstractClassLoader.class.getProtectionDomain();
     
     protected AbstractClassLoader(ClassLoader parent, ClassLoader classPath, ClassFilter filter) {
         super(parent);
@@ -61,7 +62,7 @@ abstract public class AbstractClassLoader extends ClassLoader {
             ClassWriter w =  new DebuggingClassWriter(true);
             getGenerator(r).generateClass( w );
             byte[] b = w.toByteArray();
-            return super.defineClass(name, b, 0, b.length);
+            return super.defineClass(name, b, 0, b.length, DOMAIN);
         } catch (RuntimeException e) {
             throw e;
         } catch (Error e) {
