@@ -51,40 +51,61 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
-import java.lang.reflect.Method;
+import org.objectweb.asm.Type;
 
-import net.sf.cglib.proxy.InvocationHandler;
+class CallbackUtils {
+    private CallbackUtils() { }
 
-/**
- * @author neeme
- *
- */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+    private static Class getClass(int type) {
+        switch (type) {
+        case Callbacks.INTERCEPT:
+            return MethodInterceptor.class;
+        case Callbacks.JDK_PROXY:
+            return InvocationHandler.class;
+        case Callbacks.LAZY_LOAD:
+            return LazyLoader.class;
+        case Callbacks.DISPATCH:
+            return Dispatcher.class;
+        default:
+            return null;
+        }
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
+    static Type getType(int type) {
+        Class c = getClass(type);
+        return (c != null) ? Type.getType(c) : null;
+    }
+    
+    static CallbackGenerator getGenerator(int type) {
+        switch (type) {
+        case Callbacks.INTERCEPT:
+            return MethodInterceptorGenerator.INSTANCE;
+        case Callbacks.NO_OP:
+            return NoOpGenerator.INSTANCE;
+        case Callbacks.JDK_PROXY:
+            return InvocationHandlerGenerator.INSTANCE;
+        case Callbacks.LAZY_LOAD:
+            return LazyLoaderGenerator.INSTANCE;
+        case Callbacks.DISPATCH:
+            return DispatcherGenerator.INSTANCE;
+        default:
+            return null;
+        }
+    }
+
+    static int determineType(Callback callback) {
+        int best = Callbacks.NO_OP;
+        for (int i = Callbacks.MAX_VALUE; i >= 0; i--) {
+            Class type = getClass(i);
+            if (type != null && type.isAssignableFrom(callback.getClass())) {
+                if (best != Callbacks.NO_OP) {
+                    throw new IllegalStateException("Callback implements more than one interceptor interface--use a CallbackFilter");
+                }
+                best = i;
             }
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+        return best;
     }
-
 }

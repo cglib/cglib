@@ -4,7 +4,7 @@ package samples;
 
 import java.beans.*;
 import java.lang.reflect.*;
-import net.sf.cglib.*;
+import net.sf.cglib.proxy.*;
 
 /**
  *

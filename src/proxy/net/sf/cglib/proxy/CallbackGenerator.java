@@ -51,40 +51,23 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
+import java.util.Iterator;
+import net.sf.cglib.core.ClassEmitter;
+import net.sf.cglib.core.CodeEmitter;
 
-import net.sf.cglib.proxy.InvocationHandler;
+interface CallbackGenerator
+{
+    void generate(ClassEmitter e, Context context) throws Exception;
+    void generateStatic(CodeEmitter e, Context context) throws Exception;
 
-/**
- * @author neeme
- *
- */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+    interface Context
+    {
+        Iterator getMethods();
+        void emitCallback(CodeEmitter e);
+        int getModifiers(Method method);
+        String getUniqueName(Method method);
     }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
-
 }

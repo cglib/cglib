@@ -51,40 +51,68 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 
-import net.sf.cglib.proxy.InvocationHandler;
+class LazyLoaderGenerator implements CallbackGenerator {
+    public static final LazyLoaderGenerator INSTANCE = new LazyLoaderGenerator();
 
-/**
- * @author neeme
- *
- */
-public class InvocationHandlerSample implements InvocationHandler {
+    private static final String DELEGATE = "CGLIB$LAZY_LOADER";
+    private static final Signature LOAD_PRIVATE =
+      TypeUtils.parseSignature("Object CGLIB$LOAD_PRIVATE()");
+    private static final Signature LOAD_OBJECT = 
+      TypeUtils.parseSignature("Object loadObject()");
+    private static final Type LAZY_LOADER =
+      TypeUtils.parseType("net.sf.cglib.proxy.LazyLoader");
 
-    private Object o;
+    public void generate(ClassEmitter ce, final Context context) {
+        ce.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null);
 
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
+        CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
+                                        Constants.ACC_SYNCHRONIZED |
+                                        Constants.ACC_FINAL,
+                                        LOAD_PRIVATE,
+                                        null);
+        e.load_this();
+        e.getfield(DELEGATE);
+        e.dup();
+        Label end = e.make_label();
+        e.ifnonnull(end);
+        e.pop();
+        e.load_this();
+        context.emitCallback(e);
+        e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
+        e.dup_x1();
+        e.putfield(DELEGATE);
+        e.mark(end);
+        e.return_value();
+        e.end_method();
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
+        for (Iterator it = context.getMethods(); it.hasNext();) {
+            Method method = (Method)it.next();
+            if (Modifier.isProtected(method.getModifiers())) {
+                // ignore protected methods
+            } else {
+                e = ce.begin_method(context.getModifiers(method),
+                                    ReflectUtils.getSignature(method),
+                                    ReflectUtils.getExceptionTypes(method));
+                e.load_this();
+                e.dup();
+                e.invoke_virtual_this(LOAD_PRIVATE);
+                e.checkcast(Type.getType(method.getDeclaringClass()));
+                e.load_args();
+                e.invoke(method);
+                e.return_value();
+                e.end_method();
             }
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
     }
 
+    public void generateStatic(CodeEmitter e, Context context) { }
 }

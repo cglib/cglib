@@ -51,40 +51,78 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+import java.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 /**
- * @author neeme
- *
+ * @author Chris Nokleberg
+ * @version $Id: MixinEmitter.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
+class MixinEmitter extends ClassEmitter {
+    private static final String FIELD_NAME = "CGLIB$DELEGATES";
+    private static final Signature CSTRUCT_OBJECT_ARRAY =
+      TypeUtils.parseConstructor("Object[]");
+    private static final Signature NEW_INSTANCE =
+      TypeUtils.parseSignature("net.sf.cglib.proxy.Mixin newInstance(Object[])");
+    private static final Type MIXIN =
+      TypeUtils.parseType("net.sf.cglib.proxy.Mixin");
 
-    private Object o;
+    public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
+        super(v);
 
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
+        begin_class(Constants.ACC_PUBLIC,
+                    className,
+                    MIXIN,
+                    TypeUtils.getTypes(getInterfaces(classes)),
+                    Constants.SOURCE_FILE);
+        ComplexOps.null_constructor(this);
+        ComplexOps.factory_method(this, NEW_INSTANCE);
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
+        declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Constants.TYPE_OBJECT_ARRAY, null);
+
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
+        e.load_this();
+        e.super_invoke_constructor();
+        e.load_this();
+        e.load_arg(0);
+        e.putfield(FIELD_NAME);
+        e.return_value();
+        e.end_method();
+
+        Set unique = new HashSet();
+        for (int i = 0; i < classes.length; i++) {
+            Method[] methods = getMethods(classes[i]);
+            for (int j = 0; j < methods.length; j++) {
+                if (unique.add(MethodWrapper.create(methods[j]))) {
+                    Method method = methods[j];
+                    e = begin_method(Constants.ACC_PUBLIC,
+                                     ReflectUtils.getSignature(method),
+                                     ReflectUtils.getExceptionTypes(method));
+                    e.load_this();
+                    e.getfield(FIELD_NAME);
+                    e.aaload((route != null) ? route[i] : i);
+                    e.checkcast(Type.getType(method.getDeclaringClass()));
+                    e.load_args();
+                    e.invoke(method);
+                    e.return_value();
+                    e.end_method();
+                }
             }
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+
+        end_class();
     }
 
+    protected Class[] getInterfaces(Class[] classes) {
+        return classes;
+    }
+
+    protected Method[] getMethods(Class type) {
+        return type.getMethods();
+    }
 }

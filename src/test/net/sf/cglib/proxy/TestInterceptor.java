@@ -51,40 +51,55 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+import java.lang.reflect.Modifier;
 
 /**
- * @author neeme
- *
+ *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ *@version $Id: TestInterceptor.java,v 1.1 2003/10/29 03:45:38 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+public class TestInterceptor implements MethodInterceptor, Serializable {
+    String value;
+    
+    public String getValue() {
+        return value;
+    }
+     
+    public TestInterceptor(String ser) {
+        value = ser;
+    }
+   
+    public TestInterceptor() {
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        Throwable e = null;                                                                            
+        boolean invokedSuper = false;                                                                  
+        Object retValFromSuper = null;
+        if (!Modifier.isAbstract(method.getModifiers()) && 
+            invokeSuper(obj, method, args)) {
+            invokedSuper = true;                                                                        
+            try {
+                retValFromSuper = proxy.invokeSuper(obj, args);
+            } catch (Throwable t) {
+                e = t;
             }
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+        return afterReturn(obj, method, args, invokedSuper, retValFromSuper, e);
+    }
+    
+    public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
+        return true;
     }
 
+    public Object afterReturn(Object obj, Method method, Object[] args,
+                              boolean invokedSuper, Object retValFromSuper,
+                              Throwable e) throws Throwable {
+        if (e != null)
+            throw e.fillInStackTrace();
+        return retValFromSuper;
+    }
 }

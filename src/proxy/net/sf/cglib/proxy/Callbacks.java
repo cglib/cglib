@@ -51,40 +51,58 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
-
-import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+package net.sf.cglib.proxy;
 
 /**
- * @author neeme
- *
+ * Provides a method to map from callback types (as defined per-method by a {@link CallbackFilter})
+ * to a particular {@link Callback} implementation. The callback type constants are defined here as well.
+ * In practice it should be rare to need to implement this interface. See {@link SimpleCallbacks} for
+ * a simple implementation.
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
+public interface Callbacks
+{
+    /**
+     * No-op callback type. Does not generate an intercepted method
+     * in the subclass--the "super" method will be called directly instead.
+     * No associated <code>Callback</code> implementation.
+     */
+    public static final int NO_OP = 0;
 
     /**
-     * Constructor for InvocationHandlerSample.
+     * Generic interceptor callback type. <code>Callback</code> implementation is {@link MethodInterceptor}.
+     * @see MethodInterceptor
      */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
+    public static final int INTERCEPT = 1;
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
+    /**
+     * Special callback type used by the {@link Proxy} class for
+     * <code>java.lang.reflect.Proxy</code> compatibility. You probably don't
+     * want to use this directly. <code>Callback</code> implementation is {@link InvocationHandler}.
+     * @see Proxy
+     * @see InvocationHandler
+     */
+    public static final int JDK_PROXY = 2;
 
+    /**
+     * Callback type used to load an implementation as soon as the first method is called,
+     * <code>Callback</code> implementation is {@link LazyLoader}.
+     * @see LazyLoader
+     */
+    public static final int LAZY_LOAD = 3;
+
+    /**
+     * Callback type used to load an implementation for every single method invocation.
+     * <code>Callback</code> implementation is {@link Dispatcher}.
+     * @see Dispatcher
+     */
+    public static final int DISPATCH = 4;
+
+    static final int MAX_VALUE = 4; // should be set to current max index
+
+    /**
+     * Return the actual <code>Callback</code> implementation for the specified callback type.
+     * @param type the callback type
+     * @return the callback implementation
+     */
+    Callback get(int type);
 }

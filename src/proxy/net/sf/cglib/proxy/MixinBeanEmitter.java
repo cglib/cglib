@@ -51,40 +51,26 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+import net.sf.cglib.core.ReflectUtils;
+import org.objectweb.asm.ClassVisitor;
 
 /**
- * @author neeme
- *
+ * @author Chris Nokleberg
+ * @version $Id: MixinBeanEmitter.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+class MixinBeanEmitter extends MixinEmitter {
+    public MixinBeanEmitter(ClassVisitor v, String className, Class[] classes) {
+        super(v, className, classes, null);
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+    protected Class[] getInterfaces(Class[] classes) {
+        return null;
     }
 
+    protected Method[] getMethods(Class type) {
+        return ReflectUtils.getPropertyMethods(ReflectUtils.getBeanProperties(type), true, true);
+    }
 }

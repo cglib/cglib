@@ -51,40 +51,27 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
-
-import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+package net.sf.cglib.proxy;
 
 /**
- * @author neeme
- *
+ * A trivial implementation of the <code>Callbacks</code> interface.
  */
-public class InvocationHandlerSample implements InvocationHandler {
+public class SimpleCallbacks
+implements Callbacks
+{
+    private Callback[] callbacks = new Callback[Callbacks.MAX_VALUE + 1];
 
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+    public Callback get(int type) {
+        return callbacks[type];
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
+    public void set(int type, Callback callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("Callback cannot be null");
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+        if (CallbackUtils.getGenerator(type).getClass().isAssignableFrom(callback.getClass())) {
+            throw new IllegalArgumentException("Callback " + callback + " has incorrect type " + type);
+        }
+        callbacks[type] = callback;
     }
-
 }

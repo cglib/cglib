@@ -51,40 +51,30 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
-
-import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+package net.sf.cglib.proxy;
 
 /**
- * @author neeme
- *
+ * Callback that can be registered with an enhanced class.
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: MethodInterceptor.java,v 1.6 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
+public interface MethodInterceptor
+extends Callback
+{
     /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
+     * All generated proxied methods call this method instead of the original method.
+     * The original method may either be invoked by normal reflection using the Method object,
+     * or by using the MethodProxy (faster).
+     * @param obj "this", the enhanced object
+     * @param method intercepted Method
+     * @param args argument array; primitive types are wrapped
+     * @param proxy used to invoke super (non-intercepted method); may be called
+     * as many times as needed
+     * @throws Throwable any exception may be thrown; if so, super method will not be invoked
+     * @return any value compatible with the signature of the proxied method. Method returning void will ignore this value.
+     * @see MethodProxy
+     */    
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
+                               MethodProxy proxy) throws Throwable;
 
 }
