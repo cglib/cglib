@@ -2,16 +2,11 @@ package net.sf.cglib.transform;
 
 import net.sf.cglib.core.CodeGenerationException;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeAdapter;
 import org.objectweb.asm.CodeVisitor;
 
-// cannot extend from ClassAdapter because cv is final
 abstract public class ClassTransformer implements ClassVisitor, Cloneable {
     private ClassVisitor cv;
     
-    protected ClassTransformer() {
-    }
-
     public void setTarget(ClassVisitor target) {
         cv = target;
     }
