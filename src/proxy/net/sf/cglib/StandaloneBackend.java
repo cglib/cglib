@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 import java.io.*;
 
-public class StandaloneBackend extends CodeGeneratorBackend {
+class StandaloneBackend extends CodeGeneratorBackend {
     private ByteArrayOutputStream methodBytes;
     private DataOutputStream out;
     

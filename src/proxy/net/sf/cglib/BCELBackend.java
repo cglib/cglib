@@ -57,7 +57,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import org.apache.bcel.generic.*;
 
-public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Constants {
+class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Constants {
     private final ClassGen cg;
     private final InstructionList il = new InstructionList();
     private final ConstantPoolGen cp;

@@ -53,7 +53,7 @@
  */
 package net.sf.cglib;
 
-abstract public class CodeGeneratorBackend {
+abstract class CodeGeneratorBackend {
     protected String className;
     protected Class superclass;
     protected boolean debug;

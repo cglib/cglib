@@ -71,9 +71,8 @@ abstract public class ParallelSorter extends SorterTemplate {
 
     protected Object[] a;
     private Comparer comparer;
-
     
-     interface ParallelSorterKey {
+    interface ParallelSorterKey {
         public Object newInstance(Class[] classes);
     }
 
@@ -255,11 +254,11 @@ abstract public class ParallelSorter extends SorterTemplate {
         return comparer.compare(i, j);
     }
 
-    public interface Comparer {
+    interface Comparer {
         int compare(int i, int j);
     }
 
-    public static class ComparatorComparer implements Comparer {
+    static class ComparatorComparer implements Comparer {
         private Object[] a;
         private Comparator cmp;
 
@@ -273,7 +272,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
     }
     
-    public static class ObjectComparer implements Comparer {
+    static class ObjectComparer implements Comparer {
         private Object[] a;
         public ObjectComparer(Object[] a) { this.a = a; }
         public int compare(int i, int j) {
@@ -281,37 +280,37 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
     }
 
-    public static class IntComparer implements Comparer {
+    static class IntComparer implements Comparer {
         private int[] a;
         public IntComparer(int[] a) { this.a = a; }
         public int compare(int i, int j) { return a[i] - a[j]; }
     }
 
-    public static class LongComparer implements Comparer {
+    static class LongComparer implements Comparer {
         private long[] a;
         public LongComparer(long[] a) { this.a = a; }
         public int compare(int i, int j) { return (int)(a[i] - a[j]); }
     }
 
-    public static class FloatComparer implements Comparer {
+    static class FloatComparer implements Comparer {
         private float[] a;
         public FloatComparer(float[] a) { this.a = a; }
         public int compare(int i, int j) { return (int)(a[i] - a[j]); }
     }
     
-    public static class DoubleComparer implements Comparer {
+    static class DoubleComparer implements Comparer {
         private double[] a;
         public DoubleComparer(double[] a) { this.a = a; }
         public int compare(int i, int j) { return (int)(a[i] - a[j]); }
     }
 
-    public static class ShortComparer implements Comparer {
+    static class ShortComparer implements Comparer {
         private short[] a;
         public ShortComparer(short[] a) { this.a = a; }
         public int compare(int i, int j) { return a[i] - a[j]; }
     }
 
-    public static class ByteComparer implements Comparer {
+    static class ByteComparer implements Comparer {
         private byte[] a;
         public ByteComparer(byte[] a) { this.a = a; }
         public int compare(int i, int j) { return a[i] - a[j]; }
