@@ -67,6 +67,7 @@ class FastClassGenerator extends CodeGenerator {
       ReflectUtils.findMethod("FastClass.invoke(int, Object, Object[])");
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("FastClass.newInstance(int, Object[])");
+    private static final Class[] CONSTRUCTOR_TYPES = { Class.class };
 
     private final Class type;
         
@@ -77,7 +78,12 @@ class FastClassGenerator extends CodeGenerator {
         
     public void generate() throws Exception {
         // constructor
-        null_constructor();
+        begin_constructor(CONSTRUCTOR_TYPES);
+        load_this();
+        load_args();
+        super_invoke_constructor(CONSTRUCTOR_TYPES);
+        return_value();
+        end_method();
 
         final Method[] methods = type.getMethods();
         final Constructor[] constructors = type.getConstructors();
