@@ -58,7 +58,7 @@ import java.lang.reflect.Array;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: CollectionUtils.java,v 1.3 2003/09/29 23:08:52 herbyderby Exp $
+ * @version $Id: CollectionUtils.java,v 1.4 2003/10/03 23:09:29 herbyderby Exp $
  */
 public class CollectionUtils {
     private CollectionUtils() { }
@@ -106,31 +106,6 @@ public class CollectionUtils {
             result.add(t.transform(it.next()));
         }
         return result;
-    }
-
-    public static boolean arrayEquals(Object[] a1, Object[] a2, Transformer t) {
-        if ((a1 == null) ^ (a2 == null)) {
-            return false;
-        }
-        if (a1.length != a2.length) {
-            return false;
-        }
-        for (int i = 0; i < a1.length; i++) {
-            Object o1 = a1[i];
-            Object o2 = a2[i];
-            if (o1 == null) {
-                if (o2 != null) {
-                    return false;
-                }
-            } else if (o2 == null) {
-                return false;
-            } else {
-                if (!t.transform(o1).equals(t.transform(o2))) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 }    
     

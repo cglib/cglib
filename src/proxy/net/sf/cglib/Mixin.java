@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.13 2003/10/01 06:05:17 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.14 2003/10/03 23:09:29 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -171,7 +171,7 @@ abstract public class Mixin {
     }
         
     private static Route route(Object[] delegates) {
-        Object key = new ClassesKey(delegates);
+        Object key = ClassesKey.create(delegates);
         Route route = (Route)ROUTE_CACHE.get(key);
         if (route == null) {
             ROUTE_CACHE.put(key, route = new Route(delegates));

@@ -318,7 +318,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
 
         public ParallelSorter create() {
-            return (ParallelSorter)super.create(new ClassesKey(arrays));
+            return (ParallelSorter)super.create(ClassesKey.create(arrays));
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
