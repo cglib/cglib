@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.33 2003/09/04 18:53:45 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.34 2003/09/04 19:18:55 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -181,7 +181,7 @@ public class TestEnhancer extends CodeGenTestCase {
     public void testEnhanceObjectDelayed() throws Throwable {
         
         DelegateInterceptor mi = new DelegateInterceptor(null);
-        EA proxy = (EA)Enhancer.enhance( EA.class, null, mi , null, null);
+        EA proxy = (EA)Enhancer.enhance( EA.class, null, mi , null);
         EA obj = new EA();
         obj.setName("herby");
         mi.delegate = obj;
@@ -318,36 +318,6 @@ public class TestEnhancer extends CodeGenTestCase {
                 fail("invalid exception type: " + cnse);
             }
         }
-    }
-
-    public void testSerializable() throws Throwable {
-
-        String testValue = "test";
-        
-        Source source =  (Source)Enhancer.enhance(
-            Source.class,
-            new Class []{} , new TestInterceptor(testValue),
-            this.getClass().getClassLoader(),
-            Enhancer.InternalReplace.class.getMethod("writeReplace",new Class[]{Object.class})
-        );
-        
-        
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectOutputStream    out  = new ObjectOutputStream( bout );
-        
-        out.writeObject( source );
-        
-        ObjectInputStream in = new ObjectInputStream(
-        new ByteArrayInputStream(bout.toByteArray()) );
-        
-        Object ser = in.readObject();
-        
-        assertTrue("type",  ser instanceof Source );
-        assertTrue("interceptor",
-                   ((Factory)ser).getCallback(Callbacks.INTERCEPT) instanceof TestInterceptor );
-        
-        TestInterceptor interceptor = (TestInterceptor)((Factory)ser).getCallback(Callbacks.INTERCEPT);
-        assertEquals("testValue", testValue, interceptor.getValue()  );
     }
 
   static abstract class CastTest{

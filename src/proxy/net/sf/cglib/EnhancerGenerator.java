@@ -90,19 +90,16 @@ extends CodeGenerator
       ReflectUtils.findMethod("Callbacks.get(int)");
     
     private final Class[] interfaces;
-//     private final Method wreplace;
     private final CallbackFilter filter;
     private final Callbacks initialCallbacks;
     private final BitSet usedCallbacks = new BitSet();
 
     public EnhancerGenerator(Class type,
                              Class[] interfaces,
-                             Method wreplace,
                              CallbackFilter filter,
                              Callbacks callbacks) {
         setSuperclass(type);
         this.interfaces = interfaces;
-//         this.wreplace = wreplace;
         this.filter = filter;
         initialCallbacks = callbacks;
 
@@ -144,7 +141,6 @@ extends CodeGenerator
         filterMembers(methods, new DuplicatesFilter());
         filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
 
-//         boolean declaresWriteReplace = false;
         int len = Callbacks.MAX_VALUE + 1;
         CallbackGenerator[] generators = new CallbackGenerator[len];
         List[] group = new List[len];
@@ -159,15 +155,7 @@ extends CodeGenerator
                 generators[ctype] = Callbacks.getGenerator(ctype);
             }
             group[ctype].add(method);
-
-//             if (method.getName().equals("writeReplace") &&
-//                 method.getParameterTypes().length == 0) {
-//                 declaresWriteReplace = true;
-//             }
         }
-//         if (!declaresWriteReplace) {
-//             generateWriteReplace();
-//         }
 
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
@@ -224,32 +212,6 @@ extends CodeGenerator
             end_method();
         }
     }
-
-    /*
-    private void generateWriteReplace() throws ClassNotFoundException {
-        Method wr = wreplace;
-        if (wr == null) {
-            wr = INTERNAL_WRITE_REPLACE;
-        } else if (!Modifier.isStatic(wr.getModifiers()) ||
-                   !Modifier.isPublic(wr.getModifiers()) ||
-                   wr.getReturnType() != Object.class || 
-                   wr.getParameterTypes().length != 1 ||
-                   wr.getParameterTypes()[0] != Object.class) {
-            throw new IllegalArgumentException(wr.toString());
-        }
-        ensureLoadable(wr.getDeclaringClass());
-
-        begin_method(Modifier.PRIVATE,
-                     Object.class, 
-                     "writeReplace",
-                     null,
-                     new Class[]{ ObjectStreamException.class });
-        load_this();
-        invoke(wr);
-        return_value();
-        end_method();
-    }
-    */
 
     private void generateFactory() throws Exception {
         int[] keys = getCallbackKeys();
