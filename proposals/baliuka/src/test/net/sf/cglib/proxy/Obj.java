@@ -15,8 +15,11 @@ import org.apache.bcel.classfile.*;
  *
  * @author  user
  */
+class ObjS{
+  ObjS(int i, int j, float d){}
 
-public class Obj implements Serializable{
+}
+public class Obj extends ObjS implements Serializable{
     
      private static java.lang.reflect.Method  METHOD_0;
      private static java.lang.reflect.Method  METHOD_1;
@@ -34,7 +37,7 @@ public class Obj implements Serializable{
      try{
        
       if( METHOD_3.equals( method ) ){
-            method( ((Number)args[0]).intValue() , ((Number)args[2]).longValue() );
+     //       method( ((Number)args[0]).intValue() , ((Number)args[2]).longValue() );
            return null;   
        }   
         
@@ -59,10 +62,40 @@ public class Obj implements Serializable{
      
      }
        
-   public void method( int a1,long a2 ){
-   
+  public Object   newInstance(){
+    return new String();
+  }
+     
+   public Object [] method( Object bean ){
+
+        String  str = (String)bean;
+        Object [] result = new Object[3];
+        result[0] = str.getBytes();
+        result[1] = str.getBytes();
+        result[2] = new Integer(str.length());
+        
+        
+        return result;
+        
    } 
-    
+   static abstract class Bean {
+     abstract public void set(int i);
+     abstract public void setO(Object i);
+     abstract public void setS(String i);
+     
+   }
+   public void method1( Object bean, Object[] values ){
+         
+        Bean src = ( Bean)bean;
+        src.set( ((Number)values[0]).intValue() );
+        src.setO(values[1]);
+        src.set( ((Number)values[2]).intValue() );
+        src.set( ((Number)values[3]).intValue() );
+        src.setS( (String)values[4] );
+        src.setS( (String)values[5] );
+        src.setS( (String)values[600] );
+   
+  }   
     
     public static void main( String args[] ) throws Exception{
     
@@ -87,4 +120,8 @@ public class Obj implements Serializable{
         
     }
 
+    Obj(int i, int j, float d){
+        super(i,j,d);
+    }
+    
 }
