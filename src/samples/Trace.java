@@ -1,11 +1,12 @@
 
-import net.sf.cglib.proxy.*;
+package samples;
+import net.sf.cglib.*;
 import java.util.*;
 /**
  *
  * @author  baliuka
  */
-public class Trace implements MethodInterceptor{
+public class Trace implements  BeforeAfterInterceptor{
     
     int ident = 1;
     static Trace callback = new Trace();
@@ -62,6 +63,7 @@ public class Trace implements MethodInterceptor{
      * @return value to return from generated method
      */
     public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
+       
         ident--;
          if(e != null){
            printIdent(ident);   
