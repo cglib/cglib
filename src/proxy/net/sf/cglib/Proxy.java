@@ -73,11 +73,10 @@ import java.lang.reflect.Method;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.2 2003/01/28 20:11:44 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.3 2003/01/28 20:25:39 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
-    private static final HandlerAdapter NULL_INTERCEPTOR = new HandlerAdapter(null);
 
     protected InvocationHandler h;
 
