@@ -216,11 +216,25 @@ public class Enhancer extends AbstractClassGenerator
      * actual callback objects.
      * @param filter the callback filter to use when generating a new class
      * @see #setCallbacks
+     * @see @setCallbackFilter2
      */
     public void setCallbackFilter(CallbackFilter filter) {
         this.filter = filter;
     }
 
+
+    /**
+     * Set the {@link CallbackFilter} used to map the generated class' methods
+     * to a particular callback index.
+     * New object instances will always use the same mapping, but may use different
+     * actual callback objects.
+     * <p>
+     * A <code>CallbackFilter2</code> must be used when calling
+     * {@link #createTransformer}, but may also be used for <code>create</code>
+     * or <code>createClass</code>.
+     * @param filter the callback filter to use when generating a new class
+     * @see #setCallbacks
+     */
     public void setCallbackFilter2(CallbackFilter2 filter) {
         this.filter = filter;
     }
@@ -397,11 +411,20 @@ public class Enhancer extends AbstractClassGenerator
                              sig.getDescriptor());
     }
     
-//     private Signature rename(Signature sig) {
-//         return new Signature("CGLIB$" + TypeUtils.escapeType(sig.toString()),
-//                              sig.getDescriptor());
-//     }
-
+    /**
+     * Create a transformer that can be used to enhance classes directly, instead of
+     * generating subclasses. Differences include:
+     * <ul>
+     * <li>Requires the use of a {@link CallbackFilter2} to
+     * map methods signatures to callback types.
+     * <li>The superclass, if any, is ignored.
+     * <li>There is no restriction on intercepting final classes and methods.
+     * <li>A {@link Callback} array is not allowed. {@link #setCallbackTypes} must
+     * be used instead.
+     * </ul>
+     * @return A thread-safe ClassTransformer
+     * @see #setCallbackFilter2
+     */
     public ClassTransformer createTransformer() {
         validate(true);
         return new EnhancerTransformer();
