@@ -105,7 +105,7 @@ public class TestBeanGenerator extends TestCase {
       final String name = "test";
         
        BeanGenerator bg = new BeanGenerator();
-       bg.addProperty( name , String.class, null );
+       bg.addProperty( name , String.class, Collections.singletonMap("name","value") );
        
        Object bean = bg.getBeanClass().newInstance();
        
@@ -123,6 +123,15 @@ public class TestBeanGenerator extends TestCase {
                                descriptor != null );
        assertEquals( name + " property type ",
                                descriptor.getPropertyType(), String.class  );
+       assertEquals( name + " attribute ", descriptor.getValue("name") , "value");
+    
+       final String value = name + "value";
+       
+       descriptor.getWriteMethod().invoke( bean, new Object[]{ value }  );
+       
+       
+       assertEquals( name + " value", value , 
+                            descriptor.getReadMethod().invoke( bean, null ) );
         
     }
     

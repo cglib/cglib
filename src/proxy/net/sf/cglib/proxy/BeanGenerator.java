@@ -59,7 +59,7 @@ import org.apache.bcel.generic.*;
 import java.beans.*;
 import java.util.*;
 
-//TODO: refactoring
+
 
 /**
  *
@@ -71,9 +71,10 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
     
     private static final String BEAN_INFO_CLASS_NAME = CLASS_NAME + "BeanInfo";
     
-    private List properties    = new ArrayList();
-    private Set   names        = new HashSet();
-    private List  methods      = new ArrayList();
+    private List     properties    = new ArrayList();
+    private Set      names         = new HashSet();
+    private List     methods       = new ArrayList();
+    private HashMap  attributes    = new HashMap();
     private Class beanInfo;
     private Class result;
     
@@ -93,9 +94,16 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                 java.io.ByteArrayOutputStream out = new  java.io.ByteArrayOutputStream();
                 
                 try{
-                    while(is.available() > 0){
-                        out.write( is.read() );
-                    }
+                    byte buffer[] = new byte[ 0xFF ]; 
+                    
+                    while( true ){
+                        
+                       int r = is.read( buffer );
+                       if( r <= 0 ) break;
+                       out.write( buffer, 0, r ); 
+                       
+                    };
+                    
                 }catch(java.io.IOException ioe){
                     
                     throw new NoClassDefFoundError( ioe.getMessage() );
@@ -113,18 +121,38 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
       return methods;
     }
     
-    public BeanGenerator( ) {
-        
+    public Map getAttributes(){
+      return attributes;
+    }
+    
+     public BeanGenerator( ) {
+       this((Map)null);  
+    }
+    
+    public BeanGenerator( Map attributes ) {
+       if( attributes != null ){ 
+        this.attributes.putAll( attributes );
+       } 
     }
     
     
-    public BeanGenerator( ClassLoader parent ) {
-        super(parent);
+    public BeanGenerator( ClassLoader parent, Map attributes ) {
+       super(parent);
+       if( attributes != null ){ 
+         this.attributes.putAll( attributes );
+       } 
+    
     }
+     public BeanGenerator( ClassLoader parent ) {
+       this( parent, null );
+     }
+   
+    
     // can be implemented without code generation
     public static class Info extends java.beans.SimpleBeanInfo {
         
         private BeanGenerator generator ;
+        private BeanDescriptor beanDescriptor;
         private MethodDescriptor[]  methodDescriptors;
         private PropertyDescriptor[] propertyDescriptors;
         
@@ -145,7 +173,36 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
             for( int i = 0; i< m.length; i++ ){
               methodDescriptors[i] = m[i].toMethodDescriptor();
             }
-            //TODO: events
+            
+            beanDescriptor = new BeanDescriptor( generator.getBeanClass() ){
+              
+                public Enumeration attributeNames(){
+                    
+                  return new Enumeration(){
+                    Iterator i;  
+                   { i = generator.getAttributes().keySet().iterator();}
+                    
+                   public boolean hasMoreElements(){
+                     return i.hasNext();
+                   }
+                   
+                   public Object nextElement(){
+                     return i.next();
+                   }
+                   
+                  };
+                }
+                
+               public void setValue(String attributeName,
+                     Object value){
+                generator.getAttributes().put(attributeName, value );
+               } 
+                
+              public Object getValue(String attributeName){
+                return generator.getAttributes().get(attributeName);
+              }  
+            };
+            
           }
         
         
@@ -158,8 +215,8 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
          * analysis.
          */
         public BeanDescriptor getBeanDescriptor() {
-            //TODO:
-            return null;
+            
+            return beanDescriptor;
         }
         
         /** A bean may have a "default" event that is the event that will
