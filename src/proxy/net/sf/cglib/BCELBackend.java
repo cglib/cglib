@@ -152,7 +152,7 @@ class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Consta
 
     public void declare_field(int modifiers, Class typeClass, String fieldName) {
         Type type = getType(typeClass);
-        FieldGen fg = new FieldGen(javaModifiersToBcel(modifiers), type, fieldName, cp);
+        FieldGen fg = new FieldGen(convertModifiers(modifiers), type, fieldName, cp);
         cg.addField(fg.getField());
         cp.addFieldref(className, fieldName, getSignature(typeClass));
     }
@@ -184,7 +184,7 @@ class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Consta
     
     public void begin_method(int modifiers, Class returnType, String methodName,
                              Class[] parameterTypes, Class[] exceptionTypes) {
-        mg = new MethodGen(javaModifiersToBcel(modifiers),
+        mg = new MethodGen(convertModifiers(modifiers),
                            getType(returnType),
                            getTypes(parameterTypes),
                            null,
@@ -229,6 +229,10 @@ class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Consta
         mg.setMaxStack();
         cg.addMethod(mg.getMethod());
         il.dispose();
+    }
+
+    public Object make_label() {
+        return new Object();
     }
 
     // backend only
@@ -309,7 +313,7 @@ class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel.Consta
         return types;
     }
 
-    private static int javaModifiersToBcel(int modifiers) {
+    private static int convertModifiers(int modifiers) {
         int result = 0;
         if (Modifier.isAbstract(modifiers))
             result |= ACC_ABSTRACT;

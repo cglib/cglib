@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.28 2003/02/02 11:02:31 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.29 2003/06/01 00:00:32 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -380,8 +380,6 @@ public class TestEnhancer extends CodeGenTestCase {
                      null, TEST_INTERCEPTOR) ).compareTo( new EC1() ) == -1 );
        Enhancer.enhance(ED.class, null, TEST_INTERCEPTOR).toString();
        Enhancer.enhance(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
-   
-       
    }
 
     public static class AroundDemo {
