@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.3 2003/09/12 09:57:39 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.4 2003/09/12 14:08:30 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -126,16 +126,27 @@ public class TestTransformVisistor extends TestCase {
     
     public void testFieldTransform( )throws Exception{
         
-       Transformed t = ( Transformed )transform(MA.class);
+       Transformed t = ( Transformed )transform( MA.class,
+                      PersistenceCapable.class,
+                      PersistenceCapableImpl.class
+                    );
+       
        Callback clb = new Callback();
        t.setReadWriteFieldCallback( clb );
        Object value = "TEST";
        BeanMap map = BeanMap.create( t, t.getClass().getClassLoader() );
        map.put("name", value );
+       
        assertEquals(clb.getValue(),value);
+       t.setDelegate( new PersistenceCapableImpl() );
+       
+       PersistenceCapable capable = (PersistenceCapable)t;
+       capable.setPersistenceManager(value);
+       
+       assertEquals(capable.getPersistenceManager(),value);
         
     }
-    public Object transform( Class cls )throws Exception{
+    public Object transform( Class cls,Class iface,Class impl )throws Exception{
         
         byte data[] ;
         java.io.InputStream is = openStream( cls );
@@ -143,7 +154,9 @@ public class TestTransformVisistor extends TestCase {
         try{
             
             TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
+            tv.setDelegate(iface, impl);
             data = tv.transform();
+            //print(data);
             
         }finally{
             
