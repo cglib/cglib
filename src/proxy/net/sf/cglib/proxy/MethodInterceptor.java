@@ -63,9 +63,9 @@ package net.sf.cglib.proxy;
 *
 *<b> package </b> org.apache.java.util;
 *
-*<b> public class </b> Vector$$EnhancedBySimplestore$$ <b> extends </b>java.util.Vector{
+*<b> public class </b> Vector$$EnhancedByCGLIB$$ <b> extends </b>java.util.Vector{
 *
-* <b>org.apache.commons.simplestore.tools.MethodInterceptor</b> h;
+* <b>net.sf.cglib.MethodInterceptor</b> h;
 * //...
 * <b>static java.lang.reflect.Method </b> METHOD_23 =
 *                Vector.class.getMethod(<span style='color:red'>"removeElement"</span>,
@@ -102,18 +102,10 @@ package net.sf.cglib.proxy;
 
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: MethodInterceptor.java,v 1.2 2002/07/06 10:20:37 baliuka Exp $
+ *@version    $Id: MethodInterceptor.java,v 1.3 2002/07/13 10:25:19 baliuka Exp $
  */
 public interface MethodInterceptor {
     
-    /** Generated code calls this method first
-     * @param obj this
-     * @param method Intercepted method
-     * @param args Arg array
-     * @throws Throwable  any exeption to stop execution
-     * @return returned value used as parameter for all
-     * interceptor methods
-     */    
     
     /** Generated code calls this method before invoking super
      * @param obj this
