@@ -106,9 +106,9 @@ class FastClassEmitter extends Emitter {
         });
         load_arg(0);
         ComplexOps.string_switch(this,
-                           (String[])signatures.toArray(new String[0]),
-                           ComplexOps.SWITCH_STYLE_HASH,
-                           new ObjectSwitchCallback() {
+                                 (String[])signatures.toArray(new String[0]),
+                                 Constants.SWITCH_STYLE_HASH,
+                                 new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf
                 push(signatures.indexOf(key));

@@ -61,9 +61,6 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 
 abstract public class BeanMap implements Map {
-    public static final int SWITCH_STYLE_TRIE = ComplexOps.SWITCH_STYLE_TRIE;
-    public static final int SWITCH_STYLE_HASH = ComplexOps.SWITCH_STYLE_HASH;
-
     private static final BeanMapKey KEY_FACTORY =
       (BeanMapKey)KeyFactory.create(BeanMapKey.class);
     interface BeanMapKey {

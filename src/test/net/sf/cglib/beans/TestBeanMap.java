@@ -53,6 +53,7 @@
  */
 package net.sf.cglib.beans;
 
+import net.sf.cglib.core.Constants;
 import java.lang.reflect.Method;
 import java.util.*;
 import junit.framework.*;
@@ -127,8 +128,8 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         TestBean b1 = makePerfBean();
         TestBean b2 = makePerfBean();
 
-        Map hash = create(b2, BeanMap.SWITCH_STYLE_HASH);
-        Map trie = create(b1, BeanMap.SWITCH_STYLE_TRIE);
+        Map hash = create(b2, Constants.SWITCH_STYLE_HASH);
+        Map trie = create(b1, Constants.SWITCH_STYLE_TRIE);
 
         System.out.println("\nHash\n----");
         perfHelper(hash, iter);

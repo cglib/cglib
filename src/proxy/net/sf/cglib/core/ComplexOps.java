@@ -84,9 +84,6 @@ public class ComplexOps {
       TypeUtils.parseType("java.math.BigInteger");
     private static final Type BIG_DECIMAL =
       TypeUtils.parseType("java.math.BigDecimal");
-    
-    public static final int SWITCH_STYLE_TRIE = 0;
-    public static final int SWITCH_STYLE_HASH = 1;
 
     private ComplexOps() {
     }
@@ -232,10 +229,10 @@ public class ComplexOps {
     public static void string_switch(Emitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {
-        case SWITCH_STYLE_TRIE:
+        case Constants.SWITCH_STYLE_TRIE:
             string_switch_trie(e, strings, callback);
             break;
-        case SWITCH_STYLE_HASH:
+        case Constants.SWITCH_STYLE_HASH:
             string_switch_hash(e, strings, callback);
             break;
         default:
