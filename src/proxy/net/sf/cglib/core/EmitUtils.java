@@ -376,13 +376,23 @@ public class EmitUtils {
     }
 
     private static String getFieldName(String typeName) {
-        int arrayCount = typeName.lastIndexOf('[');
-        typeName = typeName.replace('.', '_'); // TODO?
-        if (arrayCount >= 0) {
-            typeName = "ARRAY" + arrayCount + "$" + typeName;
+        return "CGLIB$load_class$" + escapeType(typeName);
+    }
+
+    private static String escapeType(String s) {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0, len = s.length(); i < len; i++) {
+            char c = s.charAt(i);
+            switch (c) {
+            case '$': sb.append("$24"); break;
+            case '.': sb.append("$2E"); break;
+            case '[': sb.append("$5B"); break;
+            case ';': sb.append("$3B"); break;
+            default:
+                sb.append(c);
+            }
         }
-        typeName = typeName.replace('[', '_').replace(';','$');
-        return "CGLIB$load_class$" + typeName;
+        return sb.toString();
     }
 
     public static void push_array(CodeEmitter e, Object[] array) {
