@@ -66,7 +66,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.7 2003/11/16 17:45:00 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.8 2003/12/02 21:58:18 herbyderby Exp $
  */
 public class MethodProxy {
     private Signature sig;
@@ -183,6 +183,8 @@ public class MethodProxy {
      * @param args the arguments passed to the intercepted method; you may substitute a different
      * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
+     * @throws Throwable the bare exceptions thrown by the called method are passed through
+     * without wrapping in an <code>InvocationTargetException</code>
      */
     public Object invoke(Object obj, Object[] args) throws Throwable {
         try {
@@ -199,6 +201,8 @@ public class MethodProxy {
      * @param args the arguments passed to the intercepted method; you may substitute a different
      * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
+     * @throws Throwable the bare exceptions thrown by the called method are passed through
+     * without wrapping in an <code>InvocationTargetException</code>
      */
     public Object invokeSuper(Object obj, Object[] args) throws Throwable {
         try {
