@@ -63,7 +63,7 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.50 2003/10/17 01:49:58 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.51 2003/10/19 11:40:11 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -120,6 +120,10 @@ public class TestAll extends TestCase {
     }
 
     public static void main(String args[])throws Exception {
+        System.setProperty("cglib.debugLocation",
+          System.getProperty("user.home") + 
+          System.getProperty("file.separator") + "cglib-debug"
+          );
         String[] testCaseName = {TestAll.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
        
