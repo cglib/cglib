@@ -58,11 +58,11 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.3 2002/12/03 07:54:45 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.4 2002/12/03 07:55:37 herbyderby Exp $
  */
 public class TestKeyFactory extends TestCase {    
     public void setUp() {
-        net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
+        // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
     }
 
     public interface MyKey {
