@@ -103,7 +103,7 @@ extends CodeGenerator
         Class type = getSuperclass();
 
         List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
-        removeInvisible(constructors, type);
+        ReflectUtils.filter(constructors, new VisibilityPredicate(type, true));
         if (constructors.size() == 0) {
             throw new IllegalArgumentException("No visible constructors in " + type);
         }
@@ -127,7 +127,7 @@ extends CodeGenerator
             methods.addAll(interfaceMethods);
         }
 
-        removeInvisible(methods, getSuperclass());
+        ReflectUtils.filter(methods, new VisibilityPredicate(getSuperclass(), true));
         removeDuplicates(methods);
         removeFinal(methods);
 
@@ -468,22 +468,9 @@ extends CodeGenerator
         end_method();
     }
 
-    private interface Predicate {
-        public boolean evaluate(Object arg);
-    }
-
-    private static void filter(Collection c, Predicate p) {
-        Iterator it = c.iterator();
-        while (it.hasNext()) {
-            if (!p.evaluate(it.next())) {
-                it.remove();
-            }
-        }
-    }
-
     private static void removeDuplicates(List list) {
         final Set unique = new HashSet();
-        filter(list, new Predicate() {
+        ReflectUtils.filter(list, new Predicate() {
             public boolean evaluate(Object arg) {
                 return unique.add(MethodWrapper.create((Method)arg));
             }
@@ -491,25 +478,9 @@ extends CodeGenerator
     }
 
     private static void removeFinal(List list) {
-        filter(list, new Predicate() {
+        ReflectUtils.filter(list, new Predicate() {
             public boolean evaluate(Object arg) {
                 return !Modifier.isFinal(((Method)arg).getModifiers());
-            }
-        });
-    }
-
-    private static void removeInvisible(List list, Class source) {
-        final String pkg = ReflectUtils.getPackageName(source);
-        filter(list, new Predicate() {
-            public boolean evaluate(Object arg) {
-                int mod = ((Member)arg).getModifiers();
-                if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-                    return false;
-                }
-                if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-                    return true;
-                }
-                return pkg.equals(ReflectUtils.getPackageName(((Member)arg).getDeclaringClass()));
             }
         });
     }

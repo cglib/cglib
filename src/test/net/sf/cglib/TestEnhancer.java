@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.36 2003/09/09 18:18:19 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.37 2003/09/10 17:49:09 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -432,12 +432,13 @@ public class TestEnhancer extends CodeGenTestCase {
     public static interface ConflictB {
         String foo();
     }
-    public void testConflict() throws Throwable {
-        Object foo =
-            Enhancer.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
-        ((ConflictA)foo).foo();
-        ((ConflictB)foo).foo();
-    }
+
+//     public void testConflict() throws Throwable {
+//         Object foo =
+//             Enhancer.enhance(Object.class, new Class[]{ ConflictA.class, ConflictB.class }, TEST_INTERCEPTOR);
+//         ((ConflictA)foo).foo();
+//         ((ConflictB)foo).foo();
+//     }
     
      public void testArgInit() throws Throwable{
     

@@ -73,8 +73,7 @@ class FastClassGenerator extends CodeGenerator {
         
     public FastClassGenerator(Class type) {
         setSuperclass(FastClass.class);
-        // we only do public methods, so no need to put generated class in same package (yet)
-        // setNamePrefix(type.getName());
+        setNamePrefix(type.getName());
         this.type = type;
     }
         
@@ -87,31 +86,31 @@ class FastClassGenerator extends CodeGenerator {
         return_value();
         end_method();
 
-        final Method[] methods = type.getMethods();
-        final Constructor[] constructors = type.getConstructors();
+        Predicate p = new VisibilityPredicate(type, false);
+        final Method[] methods = (Method[])ReflectUtils.filter(type.getDeclaredMethods(), p);
+        final Constructor[] constructors = (Constructor[])ReflectUtils.filter(type.getDeclaredConstructors(), p);
 
         // getIndex(String, Class[])
         begin_method(METHOD_GET_INDEX);
         load_args();
         method_switch(methods, new GetIndexCallback(methods));
-        return_value();
         end_method();
 
         // getIndex(Class[])
         begin_method(CONSTRUCTOR_GET_INDEX);
         load_args();
         constructor_switch(constructors, new GetIndexCallback(constructors));
-        return_value();
         end_method();
 
         // invoke(int, Object, Object[])
         begin_method(INVOKE);
         load_arg(1);
+        checkcast(type);
         load_arg(0);
         process_switch(getIntRange(methods.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                Method method = (Method)methods[key];
-                checkcast(method.getDeclaringClass());
+                Method method = methods[key];
+                // checkcast(method.getDeclaringClass());
                 Class[] types = method.getParameterTypes();
                 for (int i = 0; i < types.length; i++) {
                     load_arg(2);
@@ -120,14 +119,14 @@ class FastClassGenerator extends CodeGenerator {
                 }
                 invoke(method);
                 box(method.getReturnType());
-                goTo(end);
+                // goTo(end);                
+                return_value();
             }
             public void processDefault() {
-                pop(); // stack height
                 throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
             }
         });
-        return_value();
+        // return_value();
         end_method();
 
         // newInstance(int, Object[])
@@ -137,7 +136,7 @@ class FastClassGenerator extends CodeGenerator {
         load_arg(0);
         process_switch(getIntRange(constructors.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                Constructor constructor = (Constructor)constructors[key];
+                Constructor constructor = constructors[key];
                 Class[] types = constructor.getParameterTypes();
                 for (int i = 0; i < types.length; i++) {
                     load_arg(1);
@@ -145,14 +144,12 @@ class FastClassGenerator extends CodeGenerator {
                     unbox(types[i]);
                 }
                 invoke(constructor);
-                goTo(end);
+                return_value();
             }
             public void processDefault() {
-                pop2(); // stack height
                 throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
             }
         });
-        return_value();
         end_method();
     }
 
@@ -167,7 +164,7 @@ class FastClassGenerator extends CodeGenerator {
             
         public void processCase(Object key, Label end) {
             push(((Integer)indexes.get(key)).intValue());
-            goTo(end);
+            return_value();
         }
         
         public void processDefault() {

@@ -64,11 +64,11 @@ public class TestFastClass extends CodeGenTestCase {
     public static class Simple {
     }
     
-    public void testSimple() {
+    public void testSimple() throws Throwable {
         FastClass.create(Simple.class).newInstance();
     }
 
-    public void testComplex() throws NoSuchMethodException {
+    public void testComplex() throws Throwable {
         FastClass fc = FastClass.create(MemberSwitchBean.class);
         MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
         assertTrue(bean.init == 0);
@@ -81,8 +81,11 @@ public class TestFastClass extends CodeGenTestCase {
         assertTrue(fc1.toString().equals("public net.sf.cglib.MemberSwitchBean()"));
 
         Method m1 = MemberSwitchBean.class.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
-        FastMethod fm1 = fc.getMethod(m1);
-        assertTrue(fm1.invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
+        assertTrue(fc.getMethod(m1).invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
+
+        // TODO: should null be allowed here?
+        Method m2 = MemberSwitchBean.class.getDeclaredMethod("pkg", null);
+        assertTrue(fc.getMethod(m2).invoke(bean, null).equals(new Integer(9)));
     }
     
     public TestFastClass(String testName) {
