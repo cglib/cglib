@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.25 2003/09/08 15:56:59 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.26 2003/09/09 18:19:11 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="1.1pre1"/>
+    <property name="component.version" value="2.0pre1"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -92,7 +92,7 @@
              bottom="Copyright (c) 2001 - Apache Software Foundation" 
              destdir="docs" 
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
-             packagenames="net.sf.cglib.*" 
+             packagenames="net.sf.cglib,net.sf.cglib.beans,net.sf.cglib.delegates,net.sf.cglib.reflect" 
              access="public"
              sourcepath="${source.home}" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
