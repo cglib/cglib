@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.16 2004/02/08 12:37:40 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.17 2004/02/08 13:21:51 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -362,7 +362,7 @@ public class ReflectUtils {
     
     public static Method findDeclaredMethod(final Class type, 
                                    final String methodName, final Class[] parameterTypes)
-    throws Exception {
+    throws NoSuchMethodException {
         try{
         return  (Method)java.security.AccessController.doPrivileged(
         new java.security.PrivilegedExceptionAction() {
@@ -379,8 +379,14 @@ public class ReflectUtils {
                 throw new NoSuchMethodException(methodName);
             }});
         }catch(java.security.PrivilegedActionException pae){
-           
-             throw pae.getException();
+            if( pae.getException() instanceof NoSuchMethodException ){
+              throw (NoSuchMethodException)pae.getException();
+            }else if( pae.getException() instanceof RuntimeException){
+              throw (RuntimeException)pae.getException();
+            }else{
+              throw new CodeGenerationException(pae.getException());
+            }
+             
            
         }
     }
