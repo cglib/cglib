@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.40 2004/02/08 12:37:39 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.41 2004/02/14 08:29:03 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="2.0-RC2"/>
+    <property name="component.version" value="2.0"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>
