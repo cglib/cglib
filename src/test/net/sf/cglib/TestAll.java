@@ -60,7 +60,7 @@ import net.sf.cglib.proxy.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.1 2002/07/04 17:32:08 baliuka Exp $
+ *@version    $Id: TestAll.java,v 1.2 2002/10/12 08:50:59 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
@@ -70,6 +70,7 @@ public class TestAll extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.addTest(TestEnhancer.suite());
+        suite.addTest(TestBeanGenerator.suite());
       
         return suite;
     }
