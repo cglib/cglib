@@ -557,8 +557,14 @@ public abstract class CodeGenerator implements Constants {
                 append(new DALOAD());
             } else if (clazz.equals(Float.TYPE)) {
                 append(new FALOAD());
-            } else {
+            } else if (clazz.equals(Short.TYPE)) {
+                append(new SALOAD());
+            } else if (clazz.equals(Character.TYPE)) {
+                append(new CALOAD());
+            } else if (clazz.equals(Integer.TYPE)) {
                 append(new IALOAD());
+            } else {
+                append(new BALOAD());
             }
         } else {
             append(new AALOAD());
@@ -573,8 +579,14 @@ public abstract class CodeGenerator implements Constants {
                 append(new DASTORE());
             } else if (clazz.equals(Float.TYPE)) {
                 append(new FASTORE());
-            } else {
+            } else if (clazz.equals(Short.TYPE)) {
+                append(new SASTORE());
+            } else if (clazz.equals(Character.TYPE)) {
+                append(new CASTORE());
+            } else if (clazz.equals(Integer.TYPE)) {
                 append(new IASTORE());
+            } else {
+                append(new BASTORE());
             }
         } else {
             append(new AASTORE());

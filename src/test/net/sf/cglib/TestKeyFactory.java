@@ -58,11 +58,11 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.2 2002/11/27 03:38:06 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.3 2002/12/03 07:54:45 herbyderby Exp $
  */
 public class TestKeyFactory extends TestCase {    
     public void setUp() {
-        // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
+        net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
     }
 
     public interface MyKey {
@@ -73,10 +73,18 @@ public class TestKeyFactory extends TestCase {
         public Object newInstance(int[][] a);
     }
 
+    public interface CharArrayKey {
+        public Object newInstance(char[] a);
+    }    
+
+    public interface BooleanArrayKey {
+        public Object newInstance(boolean[] a);
+    }    
+
     public interface MethodKey {
         public Object newInstance(Class returnType, Class[] parameterTypes);
     }
-    
+
     public void testSimple() throws Exception {
         MyKey mykey = (MyKey)KeyFactory.makeFactory(MyKey.class, null);
         assertTrue(mykey.newInstance(5, new int[]{ 6, 7 }, false).hashCode() ==
@@ -91,6 +99,20 @@ public class TestKeyFactory extends TestCase {
         int mult = ((KeyFactory)instance).getHashMultiplier();
         int code2 = ((((result + 1) * mult + 2) * mult + 3) * mult + 4) * mult;
         assertTrue(code1 == code2);
+    }
+
+    public void testCharArray() throws Exception {
+        CharArrayKey f = (CharArrayKey)KeyFactory.makeFactory(CharArrayKey.class, null);
+        Object key1 = f.newInstance(new char[]{ 'a', 'b' });
+        Object key2 = f.newInstance(new char[]{ 'a', '_' });
+        assertTrue(!key1.equals(key2));
+    }
+
+    public void testBooleanArray() throws Exception {
+        BooleanArrayKey f = (BooleanArrayKey)KeyFactory.makeFactory(BooleanArrayKey.class, null);
+        Object key1 = f.newInstance(new boolean[]{ true, false, true });
+        Object key2 = f.newInstance(new boolean[]{ true, false, true });
+        assertTrue(key1.equals(key2));
     }
 
     public void testMethodKey() throws Exception {

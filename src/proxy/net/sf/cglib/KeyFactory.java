@@ -57,8 +57,40 @@ package net.sf.cglib;
 import java.util.*;
 
 /**
+ * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
+ * Code for <code>equals</code> and <code>hashCode</code> methods follow the
+ * the rules laid out in <i>Effective Java</i> by Joshua Bloch. 
+ * <p>
+ * To generate a <code>KeyFactory</code>, you need to supply an interface which
+ * describes the structure of the key. The interface should have a
+ * single method named <code>newInstance</code>, which returns an
+ * <code>Object</code>. The arguments array can be
+ * <i>anything</i>--Objects, primitive values, or single or
+ * multi-dimension arrays of either.
+ * <p>
+ * Once you have made a <code>KeyFactory</code>, you generate a new key by calling
+ * the <code>newInstance</code> method defined by your interface.
+ * <p>
+ * This example should print <code>true</code> followed by <code>false</code>:
+ * <p><pre>
+ *   import net.sf.cglib.KeyFactory;
+ *   public class KeySample {
+ *       private interface MyFactory {
+ *           public Object newInstance(int a, char[] b, String c);
+ *       }
+ *       public static void main(String[] args) {
+ *           MyFactory f = (MyFactory)KeyFactory.makeFactory(MyFactory.class, null);
+ *           Object key1 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
+ *           Object key2 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
+ *           Object key3 = f.newInstance(20, new char[]{ 'a', '_' }, "hello");
+ *           System.out.println(key1.equals(key2));
+ *           System.out.println(key2.equals(key3));
+ *       }
+ *   }
+ * </pre>
+ *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.4 2002/12/03 07:54:46 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -74,7 +106,7 @@ abstract public class KeyFactory {
     protected KeyFactory() { }
 
     public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
-        // TODO: caching
+        // TODO: caching?
         if (loader == null) {
             loader = defaultLoader;
         }
@@ -98,11 +130,11 @@ abstract public class KeyFactory {
         return hash;
     }
 
-    public int getHashConstant() {
+    /* package */ int getHashConstant() {
         return hashConstant;
     }
 
-    public int getHashMultiplier() {
+    /* package */ int getHashMultiplier() {
         return hashMultiplier;
     }
 }
