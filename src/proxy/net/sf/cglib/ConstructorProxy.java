@@ -57,11 +57,14 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.6 2003/01/24 21:35:23 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.7 2003/01/25 00:12:09 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
+
+    private static final Method NEW_INSTANCE_HACK = 
+      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],Object)");
     
     private static final ClassNameFactory NAME_FACTORY = 
       new ClassNameFactory("ConstructorProxiedByCGLIB");
@@ -95,7 +98,8 @@ public abstract class ConstructorProxy {
         return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
     }
 
-    public abstract Object newInstance(Object args[]);
+    public abstract Object newInstance(Object[] args);
+    public abstract Object newInstance(Object[] args, Object hack);
     
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
@@ -107,17 +111,27 @@ public abstract class ConstructorProxy {
 
         protected void generate() {
             generateNullConstructor();
-            begin_method(NEW_INSTANCE);
+            generateNewInstanceHelper(NEW_INSTANCE, false);
+            generateNewInstanceHelper(NEW_INSTANCE_HACK, true);
+        }
+
+        private void generateNewInstanceHelper(Method method, boolean isHack) {
+            begin_method(method);
             new_instance(constructor.getDeclaringClass());
             dup();
             Class types[] = constructor.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
+            int stop = isHack ? types.length - 1 : types.length;
+            for (int i = 0; i < stop; i++) {
                 load_arg(0);
                 push(i);
                 aaload();
                 unbox(types[i]);
             }
-            invoke_constructor(constructor.getDeclaringClass(), types);
+            if (isHack) {
+                load_arg(1);
+                checkcast(types[stop]);
+            }
+            invoke(constructor);
             return_value();
             end_method();
         }
