@@ -193,9 +193,12 @@ import java.util.*;
                 Object methodKey = MethodWrapper.newInstance(method);
                 Method other = (Method)methodMap.get(methodKey);
                 if (other != null) {
-                    //addDeclaredMethods adds methods reverse order
+                    
                     checkReturnTypesEqual(method, other);
-                    methodMap.put(methodKey, method);
+                   
+                }else{
+                     //addDeclaredMethods adds methods reverse order
+                     methodMap.put(methodKey, method);
                 }
                 
             }
