@@ -24,7 +24,7 @@ public abstract class Source implements java.io.Serializable{
      doubleType(1.0);
      objectType("1") ;
      voidType();
-     multiArg(1,1,1,1,"");
+     multiArg(1,1,1,1,"","","");
     }
     
     protected void protectedMethod(){}
@@ -82,7 +82,7 @@ public abstract class Source implements java.io.Serializable{
     
     } 
     public void multiArg( int arg1, long arg2, 
-                           double arg3, float arg4, Object arg5  ){
+                           double arg3, float arg4, Object arg5, Object arg6, Object arg7  ){
     
     }
     

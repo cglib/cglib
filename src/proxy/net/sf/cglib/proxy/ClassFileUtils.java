@@ -70,7 +70,9 @@ class ClassFileUtils implements ClassFileConstants {
     
     static Instruction getIntConst( int i, ConstantPoolGen cp){
         
-              if( i<= 5 ){ 
+            if( i < 0  ){
+                 return new LDC( cp.addInteger(i) ); 
+            }else if( i<= 5 ){ 
                   return ( new  ICONST( i ) );
                }else  if ( i < Byte.MAX_VALUE){
                   return ( new  BIPUSH((byte)i ) ); 
