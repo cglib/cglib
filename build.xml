@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.36 2003/11/18 10:24:05 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.37 2003/12/06 22:46:22 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -36,8 +36,6 @@
 
     <path id="compile.classpath">
       <pathelement location="${build.home}/classes"/>
-      <pathelement location="${asm.jar}"/>
-    
       <fileset dir="./lib">
 		<include name="*.jar"/>
        </fileset>
@@ -50,7 +48,7 @@
 
     <!-- ========== Test Execution Defaults =================================== -->
     <property name="cp" value=""/>
-    <property name="classpath" value="${cp}:${junit.jar}:${asm.jar}" />
+    <property name="classpath" value="${cp}:${junit.jar}" />
     <property name="test.entry" value="net.sf.cglib.TestAll" />
     <property name="test.failonerror" value="true" />
     <property name="test.runner" value="junit.textui.TestRunner" />
@@ -231,7 +229,7 @@
 
   <!-- <jvmarg value="-Xrunhprof:cpu=times,file=debug.txt"/> -->
   <!-- <jvmarg value="-verbose:gc"/> --> 
-  <!-- <jvmarg value="-verbose:class"/> --> 
+  <!-- <jvmarg value="-verbose:class"/> -->
   <!-- <jvmarg value="-Xprof"/> -->
   <!-- <jvmarg value="-server"/> -->
   <!-- <sysproperty key="cglib.debugLocation" value="debug"/> -->
@@ -244,7 +242,7 @@
           <pathelement path="${source.test}"/>
           <pathelement path="${samples.build.home}/classes" />      
           <fileset dir="./lib">
-		<include name="*.*"/>
+		<include name="*.jar"/>
           </fileset>
         </classpath>
     </java>
@@ -259,7 +257,9 @@
       <classpath>
         <pathelement path="${build.home}/classes"/>
         <pathelement path="${test.build.home}/classes"/>
-        <pathelement path="${classpath}"/>
+        <fileset dir="./lib">
+          <include name="*.jar"/>
+        </fileset>
       </classpath>
     </taskdef>
     <example fieldsuffix="Cglib" verbose="yes">
