@@ -100,6 +100,7 @@ public class Emitter {
 
     // current class
     private ClassVisitor classv;
+    private int classAccess;
     private Type classType;
     private Type superType;
 //     private Map endClassCallbacks = new HashMap();
@@ -142,7 +143,9 @@ public class Emitter {
     }
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        // System.err.println("----begin class " + className + "-----");
         init();
+        this.classAccess = access;
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
         this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
         classv.visit(access,
@@ -150,6 +153,10 @@ public class Emitter {
                      this.superType.getInternalName(),
                      toInternalNames(interfaces),
                      sourceFile);
+    }
+
+    public int getClassAccess() {
+        return classAccess;
     }
 
     public void end_class() {
@@ -210,6 +217,7 @@ public class Emitter {
                 default:
                     type = Constants.TYPE_OBJECT;
                 }
+                // System.err.println("VISIT op=" + opcode + " var=" + var + " type=" + type.getDescriptor());
                 cv.visitVarInsn(opcode, remapLocal(var, type));
             }
 
@@ -226,20 +234,19 @@ public class Emitter {
 
     private int remapLocal(int index, Type type) {
         if (index < firstLocal) {
-            // System.err.println("remap keeping " + index);
+            // System.err.println("remap keeping " + index + " (type=" + type.getDescriptor() + ")");
             return index;
         }
-        Integer key = new Integer(index);
+        Integer key = new Integer((type.getSize() == 2) ? ~index : index);
         Local local = (Local)remap.get(key);
         if (local == null) {
-            local = make_local(type);
-            remap.put(new Integer(index), local);
+            remap.put(key, local = make_local(type));
         }
-        
-        if (local.getType().getOpcode(Constants.ISTORE) != type.getOpcode(Constants.ISTORE)) {
-            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") requires different opcode: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
+
+        // System.err.println("remapping " + index + " --> " + local.getIndex()  + " (type=" + type.getDescriptor() + ")");
+        if (local.getType().getSize() != type.getSize()) {
+            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") in method " + currentSig + ", class " + classType.getClassName() + " requires different opcode sizes: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
         }
-        // System.err.println("remapping " + index + " --> " + local.getIndex());
         return local.getIndex();
     }
 

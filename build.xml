@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.32 2003/09/20 09:01:55 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.33 2003/09/22 00:09:36 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -98,7 +98,7 @@
              destdir="docs" 
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
              packagenames="net.sf.cglib.*"
-             access="public"
+             access="protected"
              sourcepathref="javadoc.path" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
   </target>
@@ -261,10 +261,12 @@
         <pathelement path="${classpath}"/>
       </classpath>
     </taskdef>
-    <example destdir="${build.transform}">
+    <example destdir="${build.transform}" fieldsuffix="Cglib">
       <fileset dir="${test.build.home}" includes="**/*.class">
         <depend targetdir="${build.transform}"/>
       </fileset>
+      <newproperty name="cglibFoo" type="long"/>
+      <newproperty name="cglibBar" type="Double"/>
     </example>
   </target>
   
