@@ -52,13 +52,64 @@
  * <http://www.apache.org/>.
  */
 package net.sf.cglib;
+
+import java.lang.reflect.*;
 /**
  *
- *@author  baliuka
- *@version $Id: MethodFilter.java,v 1.3 2003/01/12 17:29:17 baliuka Exp $
-*/
-public interface MethodFilter {
- 
-    public boolean accept( java.lang.reflect.Member method );
+ * @author  baliuka
+ * @version $Id: ConstructorProxy.java,v 1.1 2003/01/12 17:29:17 baliuka Exp $
+ */
+public abstract class ConstructorProxy {
+    
+  private static java.lang.reflect.Method NEW_INSTANCE = 
+     ReflectUtils.findMethod("MethodProxy.newInstance(Object[])");
+    private static final ClassNameFactory nameFactory = 
+                               new ClassNameFactory("ProxiedByCGLIB");
+    /** Creates a new instance of ConstructorProxy */
+    protected ConstructorProxy() {
+    }
+   
+    public  ConstructorProxy  create( java.lang.reflect.Constructor costructor,
+                                      ClassLoader loader )throws Throwable{
+    
+         String className = nameFactory.
+                               getNextName(costructor.getDeclaringClass());
+         
+         Class gen = new Generator(className,costructor, loader).define();
+         
+         return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).
+                                                   newInstance(null);
+                                          
+    
+    }
+    
+    public abstract Object  newInstance( Object args[] ) throws Throwable;
+    
+    
+     private static class Generator extends CodeGenerator {
+        private Constructor costructor;
+        
+        public Generator(String className, Constructor costructor, ClassLoader loader) {
+            super(className, ConstructorProxy.class, loader);
+            this.costructor = costructor;
+        }
+
+        protected void generate() {
+           generateNullConstructor();
+           begin_method(NEW_INSTANCE);
+            new_instance( costructor.getDeclaringClass() );
+            dup();
+            Class[] types = costructor.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                load_arg(0);
+                push(i);
+                aaload();
+                unbox(types[i]);
+            }
+            invoke_constructor(costructor.getDeclaringClass(), types );
+            return_value();
+           end_method();
+        }
+    }
     
 }
