@@ -378,4 +378,9 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
             return new ObjectType(clazz.getName());
         }
     }
+
+    public String getMethodSignature(Class returnType, Class[] parameterTypes) {
+        return Type.getMethodSignature(getType(returnType), getTypes(parameterTypes));
+    }
+
 }

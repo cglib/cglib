@@ -53,8 +53,6 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.*;
-
 abstract public class CodeGeneratorBackend {
     protected String className;
     protected Class superclass;
@@ -169,4 +167,5 @@ abstract public class CodeGeneratorBackend {
     abstract public void ireturn();
     abstract public void areturn();
     abstract public void iinc(int index, int amount);
+    abstract public String getMethodSignature(Class returnType, Class[] parameterTypes);
 }
