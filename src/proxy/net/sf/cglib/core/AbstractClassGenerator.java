@@ -55,6 +55,7 @@ package net.sf.cglib.core;
 
 import java.io.*;
 import java.util.*;
+import java.lang.ref.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -183,7 +184,8 @@ implements ClassGenerator
                     cache2.put(NAME_KEY, new HashSet());
                     source.cache.put(loader, cache2);
                 } else if (useCache) {
-                    instance = cache2.get(key);
+                    WeakReference ref = (WeakReference)cache2.get(key);
+                    instance = ( ref == null ) ? null : ref.get(); 
                 }
                 if (instance == null) {
                     this.key = key;
@@ -192,7 +194,7 @@ implements ClassGenerator
                     getClassNameCache(loader).add(className);
                     instance = firstInstance(ReflectUtils.defineClass(className, b, loader));
                     if (useCache) {
-                        cache2.put(key, instance);
+                        cache2.put(key, new WeakReference(instance));
                     }
                     return instance;
                 }
