@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.10 2002/12/07 15:36:52 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.11 2002/12/13 22:27:22 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -367,7 +367,19 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue(demo.getFirstName().equals("Christopher"));
         assertTrue(demo.getLastName().equals("Nokleberg"));
     }
-  
+ 
+    public static interface TestClone extends Cloneable{
+     public Object clone()throws java.lang.CloneNotSupportedException;
+
+    }
+    
+    public void testClone() throws Throwable{
+    
+      TestClone testClone = (TestClone)Enhancer.override( TestClone.class,
+                                                          TEST_INTERCEPTOR );
+      testClone.clone();  
+    }
+    
     public void testSamples() throws Throwable{
         samples.Trace.main(new String[]{});
         samples.Beans.main(new String[]{});
