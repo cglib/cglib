@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.17 2002/11/01 07:08:32 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.18 2002/11/01 07:17:38 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -319,12 +319,24 @@ public class TestEnhancer extends TestCase {
         assertEquals("testValue", testValue, interceptor.getValue()  );
     }
     
-   public void testC1()throws Throwable{
+   public void testABC()throws Throwable{
   
-       Object source =  Enhancer.enhance(
+       Enhancer.enhance(
+        A.class,
+        null, NOOP_INTERCEPTOR );
+   
+       Enhancer.enhance(
         C1.class,
         null, NOOP_INTERCEPTOR );
      
+       Enhancer.enhance(
+        B.class,
+        null, NOOP_INTERCEPTOR );
+   
+       Enhancer.enhance(
+        D.class,
+        null, NOOP_INTERCEPTOR );
+   
   
   }   
 }
