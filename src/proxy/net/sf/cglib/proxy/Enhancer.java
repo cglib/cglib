@@ -198,10 +198,10 @@ public class Enhancer extends AbstractClassGenerator
      * Uses the no-arg constructor of the superclass.
      * @return a new instance
      */
-    public Factory create() {
+    public Object create() {
         classOnly = false;
         argumentTypes = null;
-        return (Factory)createHelper();
+        return createHelper();
     }
 
     /**
@@ -213,14 +213,14 @@ public class Enhancer extends AbstractClassGenerator
      * @param arguments compatible wrapped arguments to pass to constructor
      * @return a new instance
      */
-    public Factory create(Class[] argumentTypes, Object[] arguments) {
+    public Object create(Class[] argumentTypes, Object[] arguments) {
         classOnly = false;
         if (argumentTypes == null || arguments == null || argumentTypes.length != arguments.length) {
             throw new IllegalArgumentException("Arguments must be non-null and of equal length");
         }
         this.argumentTypes = argumentTypes;
         this.arguments = arguments;
-        return (Factory)createHelper();
+        return createHelper();
     }
 
     /**
@@ -270,13 +270,13 @@ public class Enhancer extends AbstractClassGenerator
         setter.invoke(null, new Object[]{ callbacks });
         ////////////////////////////
 
-        Factory instance;
+        Object instance;
         if (argumentTypes != null) {
-            instance = (Factory)ReflectUtils.newInstance(type, argumentTypes, arguments);
+            instance = ReflectUtils.newInstance(type, argumentTypes, arguments);
         } else {
-            instance = (Factory)ReflectUtils.newInstance(type);
+            instance = ReflectUtils.newInstance(type);
         }            
-        instance.setCallbacks(callbacks);
+        ((Factory)instance).setCallbacks(callbacks);
         return instance;
     }
 
@@ -291,7 +291,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param type class to extend or interface to implement
      * @param callback the callback to use for all methods
      */
-    public static Factory create(Class type, Callback callback) {
+    public static Object create(Class type, Callback callback) {
         Enhancer e = new Enhancer();
         e.setSuperclass(type);
         e.setCallback(callback);
@@ -306,7 +306,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param interfaces array of interfaces to implement, or null
      * @param callback the callback to use for all methods
      */
-    public static Factory create(Class superclass, Class interfaces[], Callback callback) {
+    public static Object create(Class superclass, Class interfaces[], Callback callback) {
         Enhancer e = new Enhancer();
         e.setSuperclass(superclass);
         e.setInterfaces(interfaces);
@@ -323,7 +323,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param filter the callback filter to use when generating a new class
      * @param callbacks callback implementations to use for the enhanced object
      */
-    public static Factory create(Class superclass, Class[] interfaces, CallbackFilter filter, Callbacks callbacks) {
+    public static Object create(Class superclass, Class[] interfaces, CallbackFilter filter, Callbacks callbacks) {
         Enhancer e = new Enhancer();
         e.setSuperclass(superclass);
         e.setInterfaces(interfaces);

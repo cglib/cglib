@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.28 2003/11/08 19:18:32 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.29 2003/11/10 16:25:16 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -477,7 +477,7 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("boop".equals(d.herby()));
     }
 
-    public static Factory enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
+    public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
         Enhancer e = new Enhancer();
         e.setSuperclass(cls);
         e.setInterfaces(interfaces);
