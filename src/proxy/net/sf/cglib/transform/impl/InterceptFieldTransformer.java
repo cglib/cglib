@@ -34,9 +34,9 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
     private static final Type ENABLED =
       TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldEnabled");
     private static final Signature ENABLED_SET =
-      TypeUtils.parseSignature("void setInterceptFieldCallback(net.sf.cglib.transform.impl.InterceptFieldCallback)");
+      new Signature("setInterceptFieldCallback", Type.VOID_TYPE, new Type[]{ CALLBACK });
     private static final Signature ENABLED_GET =
-      TypeUtils.parseSignature("net.sf.cglib.transform.impl.InterceptFieldCallback getInterceptFieldCallback()");
+      new Signature("getInterceptFieldCallback", CALLBACK, new Type[0]);
 
     private InterceptFieldFilter filter;
     

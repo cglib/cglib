@@ -85,27 +85,29 @@ public class Enhancer extends AbstractClassGenerator
     private static final Type CALLBACK =
       TypeUtils.parseType("net.sf.cglib.proxy.Callback");
     private static final Type CALLBACK_ARRAY =
-      TypeUtils.parseType("net.sf.cglib.proxy.Callback[]");
-
+      Type.getType("[Lnet/sf/cglib/proxy/Callback;");
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature SET_THREAD_CALLBACKS =
       new Signature(SET_THREAD_CALLBACKS_NAME, Type.VOID_TYPE, new Type[]{ CALLBACK_ARRAY });
-      
     private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.proxy.Callback[])");
+      new Signature("newInstance", Constants.TYPE_OBJECT, new Type[]{ CALLBACK_ARRAY });
     private static final Signature MULTIARG_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(Class[], Object[], net.sf.cglib.proxy.Callback[])");
+      new Signature("newInstance", Constants.TYPE_OBJECT, new Type[]{
+          Constants.TYPE_CLASS_ARRAY,
+          Constants.TYPE_OBJECT_ARRAY,
+          CALLBACK_ARRAY,
+      });
     private static final Signature SINGLE_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.proxy.Callback)");
+      new Signature("newInstance", Constants.TYPE_OBJECT, new Type[]{ CALLBACK });
     private static final Signature SET_CALLBACK =
-      TypeUtils.parseSignature("void setCallback(int, net.sf.cglib.proxy.Callback)");
+      new Signature("setCallback", Type.VOID_TYPE, new Type[]{ Type.INT_TYPE, CALLBACK });
     private static final Signature GET_CALLBACK =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback getCallback(int)");
+      new Signature("getCallback", CALLBACK, new Type[]{ Type.INT_TYPE });
     private static final Signature SET_CALLBACKS =
-      TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.proxy.Callback[])");
+      new Signature("setCallbacks", Type.VOID_TYPE, new Type[]{ CALLBACK_ARRAY });
     private static final Signature GET_CALLBACKS =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback[] getCallbacks()");
+      new Signature("getCallbacks", CALLBACK_ARRAY, new Type[0]);
     private static final Signature THREAD_LOCAL_GET =
       TypeUtils.parseSignature("Object get()");
     private static final Signature THREAD_LOCAL_SET =

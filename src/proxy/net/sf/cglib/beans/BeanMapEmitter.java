@@ -23,6 +23,10 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 class BeanMapEmitter extends ClassEmitter {
+    private static final Type BEAN_MAP =
+      TypeUtils.parseType("net.sf.cglib.beans.BeanMap");
+    private static final Type FIXED_KEY_SET =
+      TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
     private static final Signature CSTRUCT_OBJECT =
       TypeUtils.parseConstructor("Object");
     private static final Signature CSTRUCT_STRING_ARRAY =
@@ -34,13 +38,9 @@ class BeanMapEmitter extends ClassEmitter {
     private static final Signature KEY_SET =
       TypeUtils.parseSignature("java.util.Set keySet()");
     private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.beans.BeanMap newInstance(Object)");
+      new Signature("newInstance", BEAN_MAP, new Type[]{ Constants.TYPE_OBJECT });
     private static final Signature GET_PROPERTY_TYPE =
       TypeUtils.parseSignature("Class getPropertyType(String)");
-    private static final Type BEAN_MAP =
-      TypeUtils.parseType("net.sf.cglib.beans.BeanMap");
-    private static final Type FIXED_KEY_SET =
-      TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
 
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int require) {
         super(v);

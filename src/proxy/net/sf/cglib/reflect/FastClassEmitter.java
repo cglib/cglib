@@ -28,7 +28,7 @@ class FastClassEmitter extends ClassEmitter {
     private static final Signature METHOD_GET_INDEX =
       TypeUtils.parseSignature("int getIndex(String, Class[])");
     private static final Signature SIGNATURE_GET_INDEX =
-      TypeUtils.parseSignature("int getIndex(net.sf.cglib.core.Signature)");
+      new Signature("getIndex", Type.INT_TYPE, new Type[]{ Constants.TYPE_SIGNATURE });
     private static final Signature TO_STRING =
       TypeUtils.parseSignature("String toString()");
     private static final Signature CONSTRUCTOR_GET_INDEX =
