@@ -53,34 +53,36 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.9 2002/12/06 17:47:57 herbyderby Exp $
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: BeanMapProxy.java,v 1.1 2002/12/06 17:48:02 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+public class BeanMapProxy implements InvocationHandler {
+    private Map map;
+
+    public static Object newInstance(Map map, Class[] interfaces) {
+        return JdkCompatibleProxy.newProxyInstance(map.getClass().getClassLoader(),
+                                                   interfaces,
+                                                   new BeanMapProxy(map));
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestJdkCompatibleProxy.suite());
-           
-        return suite;
+    public BeanMapProxy(Map map) {
+        this.map = map;
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
+        String name = m.getName();
+        if (name.startsWith("get")) {
+            return map.get(name.substring(3));
+        } else if (name.startsWith("set")) {
+            map.put(name.substring(3), args[0]);
+            return null;
+        }
+        return null;
     }
 }
 

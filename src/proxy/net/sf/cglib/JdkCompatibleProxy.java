@@ -53,34 +53,50 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
+import java.util.*;
+import java.lang.reflect.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.9 2002/12/06 17:47:57 herbyderby Exp $
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: JdkCompatibleProxy.java,v 1.1 2002/12/06 17:48:13 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+public class JdkCompatibleProxy {
+    private static final Class thisClass = JdkCompatibleProxy.class;
+    private static final HandlerAdapter nullInterceptor = new HandlerAdapter(null);
+
+    private static class HandlerAdapter implements MethodInterceptor {
+        private InvocationHandler handler;
+        public HandlerAdapter(InvocationHandler handler) {
+            this.handler = handler;
+        }
+
+        public Object aroundAdvice(Object obj, Method method, Object[] args,
+                                   MethodProxy proxy) throws Throwable {
+            return handler.invoke(obj, method, args);
+        }
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestJdkCompatibleProxy.suite());
-           
-        return suite;
+    protected InvocationHandler h;
+
+    protected JdkCompatibleProxy(MethodInterceptor mi) {
+        HandlerAdapter adapter = (HandlerAdapter)mi;
+        if (adapter != null)
+            h = adapter.handler;
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public static InvocationHandler getInvocationHandler(Object proxy) {
+        return ((HandlerAdapter)((Factory)proxy).getInterceptor()).handler;
     }
+
+    public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
+        return Enhancer.enhance(thisClass, interfaces, nullInterceptor, loader).getClass();
+    }
+
+    public static boolean isProxyClass(Class cl) {
+        return cl.getSuperclass().equals(thisClass);
+    }
+
+    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
+        return Enhancer.enhance(thisClass, interfaces, new HandlerAdapter(h), loader);
+    }        
 }
-
