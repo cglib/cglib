@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestDelegates.java,v 1.1 2003/09/14 17:14:03 herbyderby Exp $
+ * @version $Id: TestDelegates.java,v 1.2 2003/09/14 21:10:37 herbyderby Exp $
  */
 public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
 
@@ -65,7 +65,7 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
         Object newInstance(char[] buf, int offset, int count);
     }
 
-    public void testTypeCheckedConstructor() throws Throwable {
+    public void testConstructor() throws Throwable {
         StringMaker maker = (StringMaker)ConstructorDelegate.create(String.class, StringMaker.class);
         assertTrue("nil".equals(maker.newInstance("vanilla".toCharArray(), 2, 3)));
     }
