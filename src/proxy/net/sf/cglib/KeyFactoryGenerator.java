@@ -58,23 +58,9 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.6 2002/12/04 00:56:37 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.7 2002/12/21 20:21:54 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
-    private static final Method HASH_CODE;
-    private static final Method FLOAT_TO_INT_BITS;
-    private static final Method DOUBLE_TO_LONG_BITS;
-    
-    static {
-        try {
-            HASH_CODE = Object.class.getDeclaredMethod("hashCode", null);
-            FLOAT_TO_INT_BITS = Float.class.getDeclaredMethod("floatToIntBits", new Class[]{ float.class });
-            DOUBLE_TO_LONG_BITS = Double.class.getDeclaredMethod("doubleToLongBits", new Class[]{ double.class });
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
     private Class keyInterface;
     private Method newInstance;
     private Class[] parameterTypes;
@@ -186,7 +172,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         String end = newLabel();
         dup();
         ifnull(isNull);
-        invoke(HASH_CODE);
+        invoke(MethodConstants.HASH_CODE);
         goTo(end);
         nop(isNull);
         pop();
@@ -201,11 +187,11 @@ class KeyFactoryGenerator extends CodeGenerator {
             ixor();
         } else if (clazz.equals(Double.TYPE)) {
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            invoke(DOUBLE_TO_LONG_BITS);
+            invoke(MethodConstants.DOUBLE_TO_LONG_BITS);
             hash_long();
         } else if (clazz.equals(Float.TYPE)) {
             // Float.floatToIntBits(f)
-            invoke(FLOAT_TO_INT_BITS);
+            invoke(MethodConstants.FLOAT_TO_INT_BITS);
         } else if (clazz.equals(Long.TYPE)) {
             hash_long();
         } else { // byte, char, short, int
@@ -237,7 +223,7 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void generateEquals() {
-        begin_method(EQUALS_METHOD);
+        begin_method(MethodConstants.EQUALS);
         load_arg(0);
         instance_of_this();
         ifeq("failure");
