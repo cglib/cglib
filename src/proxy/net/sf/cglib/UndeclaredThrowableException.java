@@ -55,26 +55,17 @@
 package net.sf.cglib;
 
 /**
- *
  * @author  baliuka
  */
 public class UndeclaredThrowableException extends CodeGenerationException {
-    private Throwable t;
-
     /**
      * Creates a new instance of <code>UndeclaredThrowableException</code> without detail message.
      */
     public UndeclaredThrowableException(Throwable t) {
         super(t);
-        this.t = t;
     }
     
     public Throwable getUndeclaredThrowable() {
-       return t;
-    }
-
-    // for jdk1.4 compatibility
-    public Throwable getCause() {
-        return t;
+        return getCause();
     }
 }
