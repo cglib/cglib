@@ -58,8 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 
-class EnhancerEmitter
-extends Emitter
+class EnhancerEmitter extends Emitter
 {
     /* package */ static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";

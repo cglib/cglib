@@ -56,34 +56,35 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinGenerator.java,v 1.2 2003/09/09 20:59:59 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.1 2003/09/12 19:08:25 herbyderby Exp $
  */
-class MixinGenerator extends CodeGenerator {
+class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Mixin.newInstance(Object[])");
+      ReflectUtils.findMethod("Mixin$Factory.newInstance(Object[])");
     private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
 
     private Class[] classes;
     private int[] route;
         
-    public MixinGenerator(Class[] classes, int[] route) {
-        setSuperclass(Mixin.class);
+    public MixinEmitter(String className, Class[] classes, int[] route) {
+        setClassName(className);
         this.classes = classes;
         this.route = route;
         if (classes[0].isInterface()) {
             addInterfaces(classes);
         }
+        addInterface(Mixin.Factory.class);
     }
 
-    protected void generate() throws NoSuchMethodException {
-        null_constructor();
+    public byte[] getBytes() throws Exception {
+        Virt.null_constructor(this);
         generateConstructor();
-        factory_method(NEW_INSTANCE);
+        Virt.factory_method(this, NEW_INSTANCE);
 
         Set unique = new HashSet();
         for (int i = 0; i < classes.length; i++) {
@@ -94,6 +95,8 @@ class MixinGenerator extends CodeGenerator {
                 }
             }
         }
+
+        return super.getBytes();
     }
 
     protected Method[] getMethods(Class type) {

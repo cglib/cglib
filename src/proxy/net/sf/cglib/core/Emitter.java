@@ -65,7 +65,7 @@ abstract public class Emitter {
 
     private boolean inited;
     private String className;
-    private Class superclass;
+    private Class superclass = Object.class;
 
     // TODO: remove default?
     private int modifiers = Modifier.PUBLIC;
@@ -102,12 +102,15 @@ abstract public class Emitter {
     }
 
     public Class getSuperclass() {
-        return (superclass != null) ? superclass : Object.class;
+        return superclass;
     }
     
-    public void setSuperclass(Class value) {
+    public void setSuperclass(Class superclass) {
+        if (superclass == null) {
+            superclass = Object.class;
+        }
         checkInit(false);
-        superclass = value;
+        this.superclass = superclass;
     }
 
     public void setClassModifiers(int modifiers) {
@@ -126,6 +129,9 @@ abstract public class Emitter {
     private void checkInit(boolean flag) {
         if (flag) {
             if (!inited) {
+                if (className == null) {
+                    throw new IllegalStateException("class name cannot be null");
+                }
                 backend.init(this);
                 inited = true;
             }
@@ -756,11 +762,11 @@ abstract public class Emitter {
     
     public void super_getfield(String name) throws NoSuchFieldException {
         // TODO: search up entire superclass chain?
-        getfield(getSuperclass().getDeclaredField(name));
+        getfield(superclass.getDeclaredField(name));
     }
     
     public void super_putfield(String name) throws NoSuchFieldException {
-        putfield(getSuperclass().getDeclaredField(name));
+        putfield(superclass.getDeclaredField(name));
     }
 
     public void getfield(Field field) {
@@ -806,7 +812,7 @@ abstract public class Emitter {
     
     public void super_invoke(Method method) {
         backend.emit_invoke(Opcodes.INVOKESPECIAL,
-                            getSuperclass().getName(),
+                            superclass.getName(),
                             method.getName(),
                             method.getReturnType(),
                             method.getParameterTypes());
@@ -822,7 +828,7 @@ abstract public class Emitter {
 
     public void super_invoke() {
         backend.emit_invoke(Opcodes.INVOKESPECIAL,
-                            getSuperclass().getName(),
+                            superclass.getName(),
                             methodName,
                             returnType,
                             parameterTypes);
@@ -868,11 +874,11 @@ abstract public class Emitter {
     }
     
     public void super_invoke_constructor() {
-        invoke_constructor(getSuperclass().getName(), Constants.TYPES_EMPTY);
+        invoke_constructor(superclass.getName(), Constants.TYPES_EMPTY);
     }
     
     public void super_invoke_constructor(Class[] parameterTypes) {
-        invoke_constructor(getSuperclass().getName(), parameterTypes);
+        invoke_constructor(superclass.getName(), parameterTypes);
     }
     
     public void invoke_constructor_this() {

@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.2 2003/09/12 19:08:24 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -442,5 +442,13 @@ public class ReflectUtils {
             addAllMethods(interfaces[i], list);
         }
         return list;
+    }
+
+    public static Class[] getParameterTypes(Member member) {
+        if (member instanceof Method) {
+            return ((Method)member).getParameterTypes();
+        } else {
+            return ((Constructor)member).getParameterTypes();
+        }
     }
 }

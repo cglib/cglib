@@ -65,12 +65,13 @@ public class Enhancer extends CodeGenerator
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
 
     interface EnhancerKey {
-        public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter, boolean instance);
+        public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter, boolean classOnly);
     }
 
+    private Class[] interfaces;
     private CallbackFilter filter;
     private Callbacks callbacks;
-    private boolean instance;
+    private boolean classOnly;
     
     public Enhancer() {
         super(SOURCE);
@@ -78,14 +79,14 @@ public class Enhancer extends CodeGenerator
 
     public void setSuperclass(Class superclass) {
         if (superclass != null && superclass.isInterface()) {
-            setInterfaces(new Class[]{ superclass });
+            interfaces = new Class[]{ superclass };
         } else {
             super.setSuperclass(superclass);
         }
     }
 
     public void setInterfaces(Class[] interfaces) {
-        super.setInterfaces(interfaces);
+        this.interfaces = interfaces;
     }
 
     public void setCallbackFilter(CallbackFilter filter) {
@@ -106,37 +107,40 @@ public class Enhancer extends CodeGenerator
     }
 
     public Factory create() {
-        instance = true;
+        classOnly = false;
         return (Factory)createHelper();
     }
 
     public Class createClass() {
-        instance = false;
+        classOnly = true;
         return (Class)createHelper();
     }
 
     private Object createHelper() {
-        Object key = KEY_FACTORY.newInstance(getSuperclass(), getInterfaces(), filter, instance);
+        Object key = KEY_FACTORY.newInstance(getSuperclass(), interfaces, filter, classOnly);
         return super.create(key);
     }
 
-    protected byte[] generate() throws Exception {
-        return new EnhancerEmitter(getClassName(), getSuperclass(), getInterfaces(), filter).getBytes();
+    protected byte[] getBytes() throws Exception {
+        return new EnhancerEmitter(getClassName(), getSuperclass(), interfaces, filter).getBytes();
     }
 
-    protected Object newFactory(Class type) throws Exception {
-        if (instance) {
-            // this is a hack
-            Method setter = type.getDeclaredMethod(EnhancerEmitter.SET_THREAD_CALLBACKS,
-                                                   new Class[]{ Callbacks.class });
-            setter.invoke(null, new Object[]{ callbacks });
-            return ReflectUtils.newInstance(type);
-        } else {
+    protected Object firstInstance(Class type) throws Exception {
+        if (classOnly) {
             return type;
         }
+        
+        // this is a hack
+        Method setter = type.getDeclaredMethod(EnhancerEmitter.SET_THREAD_CALLBACKS,
+                                               new Class[]{ Callbacks.class });
+        setter.invoke(null, new Object[]{ callbacks });
+
+        Factory instance = (Factory)ReflectUtils.newInstance(type);
+        instance.setCallbacks(callbacks);
+        return instance;
     }
 
-    protected Object newInstance(Object factory, boolean isNew) {
-        return instance ? ((Factory)factory).newInstance(callbacks) : factory;
+    protected Object nextInstance(Object instance) {
+        return classOnly ? instance : ((Factory)instance).newInstance(callbacks);
     }
 }

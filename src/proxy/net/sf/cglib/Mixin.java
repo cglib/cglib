@@ -55,105 +55,87 @@ package net.sf.cglib;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 
 /**
- * <code>Mixin</code> provides a number of static methods that allow
+ * <code>Mixin</code> allows
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.3 2003/09/10 00:35:43 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.4 2003/09/12 19:08:25 herbyderby Exp $
  */
-abstract public class Mixin {
-    private static final FactoryCache CACHE = new FactoryCache(Mixin.class);
+public class Mixin extends CodeGenerator {
+    private static final Source SOURCE = new Source(Mixin.class, true);
     private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
     private static final MixinKey KEY_FACTORY =
       (MixinKey)KeyFactory.create(MixinKey.class, null);
 
+    private Class[] interfaces;
+    private Object[] delegates;
+    private int[] route;
+
     interface MixinKey {
         public Object newInstance(Class[] interfaces, int[] route);
     }
-    
-    protected Mixin() { }
 
-    abstract public Mixin newInstance(Object[] delegates);
-
-    /**
-     * Returns an object that implements all of the specified
-     * interfaces. For each interface, all methods are delegated to the
-     * respective object in the delegates argument array.
-     * @param interfaces the array of interfaces to implement
-     * @param delegates The array of delegates. Must be the same length
-     * as the interface array, and each delegates must implements the
-     * corresponding interface.
-     * @param loader The ClassLoader to use. If null uses the one that
-     * loaded this class.
-     * @return the dynamically created object
-     */
-    public static Mixin create(Class[] interfaces, Object[] delegates, ClassLoader loader) {
-        return createHelper(interfaces, delegates, null, loader);
+    interface Factory {
+        Factory newInstance(Object[] delegates);
     }
 
-    /**
-     * Returns an object that implements all of the specified
-     * interfaces. For each interface, all methods are delegated to the
-     * respective object in the delegates argument array.
-     * @param interfaces the array of interfaces to implement
-     * @param delegates The array of delegates. If the route parameter
-     * is null, this must be the same length as the interface array. Each delegate
-     * must implement the interfaces delegated to it.
-     * @param route An optional routing table. Must be null, or the same length
-     * as the interfaces array. If non null, the values represent which delegate
-     * the corresponding interface should be mapped to. If null, a 1:1 correspondence
-     * is assumed.
-     * @param loader The ClassLoader to use. If null uses the one that
-     * loaded this class.
-     * @return the dynamically created object
-     */
-    public static Mixin create(Class[] interfaces,
-                               Object[] delegates,
-                               int[] route,
-                               ClassLoader loader) {
-        return createHelper(interfaces, delegates, route, loader);
-    }
-    
-
-    /**
-     * Returns an object that implements all of the interfaces
-     * implemented by the specified objects. For each interface, all
-     * methods are delegated to the first object in the argument array
-     * which implements the interface.
-     * <p>
-     * <b>Note:</b> interfaces which have no methods (marker interfaces)
-     * are not implemented by the returned object.
-     * @param delegates the array of delegates
-     * @param loader The ClassLoader to use. If null uses the one that
-     * loaded this class.
-     * @return the dynamically created object
-     * @see #getInterfaceMap(Object[])
-     */
-    public static Mixin create(Object[] delegates, ClassLoader loader) {
-        Route route = route(delegates);
-        return createHelper(route.interfaces, delegates, route.route, loader);
+    public Mixin() {
+        super(SOURCE);
     }
 
-    /**
-     * Combines an array of JavaBeans into a single "super" bean.
-     * Calls to the super bean will delegate to the underlying beans.
-     * @param beans the list of beans to delegate to
-     * @param loader The ClassLoader to use. If null uses the one that loaded this class.
-     */
-    public static Mixin createBean(final Object[] beans, ClassLoader loader) {
-        Object key = new ClassesKey(beans);
-        return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
-            }
-            public Object newInstance(Object factory, boolean isNew) {
-                return ((Mixin)factory).newInstance(beans);
-            }
-        });
+    public void setInterfaces(Class[] interfaces) {
+        this.interfaces = interfaces;
+    }
+
+    public void setDelegates(Object[] delegates) {
+        this.delegates = delegates;
+    }
+
+    public void setRoute(int[] route) {
+        this.route = route;
+    }
+
+    public Object create() {
+        if (interfaces == null) {
+            Route r = route(delegates);
+            interfaces = r.interfaces;
+            route = r.route;
+        }
+        Object key = KEY_FACTORY.newInstance(interfaces, route);
+        return (Mixin.Factory)super.create(key);
+    }
+
+    protected byte[] getBytes() throws Exception {
+        return new MixinEmitter(getClassName(), interfaces, route).getBytes();
+    }
+
+    protected Object firstInstance(Class type) {
+        return ((Mixin.Factory)ReflectUtils.newInstance(type)).newInstance(delegates);
+    }
+
+    protected Object nextInstance(Object instance) {
+        return ((Mixin.Factory)instance).newInstance(delegates);
+    }
+
+    public static Class[] getInterfaces(Object[] delegates) {
+        return (Class[])route(delegates).interfaces.clone();
+    }
+
+    public static int[] getRoute(Object[] delegates) {
+        return (int[])route(delegates).route.clone();
+    }
+        
+    private static Route route(Object[] delegates) {
+        Object key = new ClassesKey(delegates);
+        Route route = (Route)ROUTE_CACHE.get(key);
+        if (route == null) {
+            ROUTE_CACHE.put(key, route = new Route(delegates));
+        }
+        return route;
     }
 
     private static class Route
@@ -187,42 +169,22 @@ abstract public class Mixin {
         }
     }
 
-    public static Class[] getInterfaces(Object[] delegates) {
-        return (Class[])route(delegates).interfaces.clone();
-    }
-
-    public static int[] getRoute(Object[] delegates) {
-        return (int[])route(delegates).route.clone();
-    }
-        
-    private static Route route(Object[] delegates) {
-        Object key = new ClassesKey(delegates);
-        Route route = (Route)ROUTE_CACHE.get(key);
-        if (route == null) {
-            ROUTE_CACHE.put(key, route = new Route(delegates));
-        }
-        return route;
-    }
-
-    private static Mixin createHelper(final Class[] interfaces,
-                                       final Object[] delegates,
-                                       final int[] route,
-                                       ClassLoader loader) {
-        Object key = KEY_FACTORY.newInstance(interfaces, route);
-        return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new MixinGenerator(interfaces, route);
-            }
-            public Object newInstance(Object factory, boolean isNew) {
-                return ((Mixin)factory).newInstance(delegates);
-            }
-        });
-    }
-
     private static void collectAllInterfaces(Class type, List list) {
         if (!type.equals(Object.class)) {
             list.addAll(Arrays.asList(type.getInterfaces()));
             collectAllInterfaces(type.getSuperclass(), list);
         }
     }
+
+//     public static Mixin createBean(final Object[] beans, ClassLoader loader) {
+//         Object key = new ClassesKey(beans);
+//         return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
+//             public BasicCodeGenerator newGenerator() {
+//                 return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
+//             }
+//             public Object newInstance(Object factory, boolean isNew) {
+//                 return ((Mixin)factory).newInstance(beans);
+//             }
+//         });
+//     }
 }
