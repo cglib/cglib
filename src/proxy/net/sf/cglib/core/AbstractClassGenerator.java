@@ -58,6 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 
 abstract public class AbstractClassGenerator
 implements ClassGenerator
@@ -75,11 +76,11 @@ implements ClassGenerator
     }
 
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
-        public String getClassName(String prefix, Class source, int counter) {
+        public String getClassName(String prefix, String source, int counter) {
             StringBuffer sb = new StringBuffer();
             sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
             sb.append("$$");
-            sb.append(ReflectUtils.getNameWithoutPackage(source));
+            sb.append(source.substring(source.lastIndexOf('.') + 1));
             sb.append("ByCGLIB$$");
             sb.append(counter);
             return sb.toString();
@@ -93,12 +94,12 @@ implements ClassGenerator
     private int counter;
 
     protected static class Source {
-        Class type;
+        String name;
         Map cache;
         int counter = 1;
 
-        public Source(Class type, boolean useCache) {
-            this.type = type;
+        public Source(String name, boolean useCache) {
+            this.name = name;
             if (useCache) {
                 cache = new WeakHashMap();
             }
@@ -115,7 +116,7 @@ implements ClassGenerator
 
     protected String getClassName() {
         NamingPolicy np = (namingPolicy != null) ? namingPolicy : DEFAULT_NAMING_POLICY;
-        return np.getClassName(namePrefix, source.type, counter);
+        return np.getClassName(namePrefix, source.name, counter);
     }
 
     public void setClassLoader(ClassLoader classLoader) {
