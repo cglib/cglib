@@ -59,7 +59,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.1 2002/12/21 08:37:01 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.2 2002/12/21 20:21:53 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -97,6 +97,17 @@ public class TestMethodProxy extends CodeGenTestCase {
         String test = "abcabcabc";
         IndexOf closure = (IndexOf)MethodClosure.generate(test, "indexOf", IndexOf.class);
         assertTrue(closure.indexOf("ab", 1) == test.indexOf("ab", 1));
+    }
+
+    public void testEquals() throws Throwable {
+        String test = "abc";
+        MethodClosure mc1 = MethodClosure.generate(test, "indexOf", IndexOf.class);
+        MethodClosure mc2 = MethodClosure.generate(test, "indexOf", IndexOf.class);
+        MethodClosure mc3 = MethodClosure.generate("other", "indexOf", IndexOf.class);
+        MethodClosure mc4 = MethodClosure.generate(test, "substring", Substring.class);
+        assertTrue(mc1.equals(mc2));
+        assertTrue(!mc1.equals(mc3));
+        assertTrue(!mc1.equals(mc4));
     }
 
     public void testMethodProxyPerformance() throws Throwable {

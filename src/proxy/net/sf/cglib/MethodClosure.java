@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.1 2002/12/21 08:37:01 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.2 2002/12/21 20:21:54 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
@@ -75,6 +75,18 @@ abstract public class MethodClosure {
     // should be package-protected but causes problems on jdk1.2
     public interface MethodClosureKey {
         public Object newInstance(Class delegateClass, String methodName, Class iface);
+    }
+
+    protected Object delegate;
+    protected String eqMethod;
+
+    public boolean equals(Object obj) {
+        MethodClosure other = (MethodClosure)obj;
+        return delegate == other.delegate && eqMethod.equals(other.eqMethod);
+    }
+
+    public int hashCode() {
+        return delegate.hashCode() ^ eqMethod.hashCode();
     }
 
     protected MethodClosure() {
@@ -149,30 +161,46 @@ abstract public class MethodClosure {
             this.iface = iface;
         }
 
-        protected void generate() throws NoSuchMethodException {
-            generateNullConstructor();
-            declare_field(Modifier.PRIVATE, Object.class, "delegate");
+        protected void generate() throws NoSuchMethodException, NoSuchFieldException {
+            Class delegateClass = method.getDeclaringClass();
+            declare_field(Modifier.PRIVATE, delegateClass, "delegate");
+            declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
             declare_interface(iface);
+            generateNullConstructor();
+            generateFindClass();
 
+            // generate proxied method
             begin_method(iface.getDeclaredMethods()[0]);
             load_this();
-            getfield("delegate");
-            checkcast(method.getDeclaringClass());
+            super_getfield("delegate");
+            checkcast(delegateClass);
             load_args();
             invoke(method);
             return_value();
             end_method();
 
+            // newInstance
             Method newInstance = MethodClosure.TYPE.getMethod("newInstance", TYPES_OBJECT);
             begin_method(newInstance);
             new_instance_this();
             dup();
-            dup();
+            dup2();
             invoke_constructor_this();
             load_arg(0);
-            putfield("delegate");
+            checkcast(delegateClass);
+            super_putfield("delegate");
+            getstatic("eqMethod");
+            super_putfield("eqMethod");
             return_value();
             end_method();
+
+            // static initializer
+            begin_static();
+            push(getMethodSignature(method));
+            putstatic("eqMethod");
+            return_value();
+            end_static();
         }
+
     }
 }

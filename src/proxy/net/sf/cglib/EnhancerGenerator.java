@@ -65,7 +65,6 @@ import java.util.*;
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
     private static final Method AROUND_ADVICE;
     private static final Method MAKE_PROXY;
-    private static final Method GET_DECLARED_METHOD;
 
 
     static {
@@ -75,9 +74,6 @@ import java.util.*;
 
             types = new Class[]{ Method.class };
             MAKE_PROXY = MethodProxy.class.getDeclaredMethod("generate", types);
-
-            types = new Class[]{ String.class, Class[].class };
-            GET_DECLARED_METHOD = Class.class.getDeclaredMethod("getDeclaredMethod", types);
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
@@ -455,38 +451,43 @@ import java.util.*;
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
             String fieldName = getFieldName(i);
-
-            Class[] args = method.getParameterTypes();
-            push(method.getDeclaringClass().getName());
-            invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
-            store_local("cls");
-            push(args.length);
-            newarray(Class.class);
-
-            for (int j = 0; j < args.length; j++) {
-                dup();
-                push(j);
-                load_class(args[j]);
-                aastore();
-            }
-            store_local("args");
-
-            load_local("cls");
-            push(method.getName());
-            load_local("args");
-            invoke(GET_DECLARED_METHOD);
-            putstatic(fieldName);
+            String args = generateSetStaticMethodField(fieldName, method);
 
             String accessName = getAccessName(method, i);
             push(getClassName());
             invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
             push(accessName);
-            load_local("args");
-            invoke(GET_DECLARED_METHOD);
+            load_local(args);
+            invoke(MethodConstants.GET_DECLARED_METHOD);
             invoke(MAKE_PROXY);
             putstatic(accessName);
         }
         return_value();
         end_static();
+    }
+
+    // TODO: move to helper class?
+    private String generateSetStaticMethodField(String fieldName, Method method) {
+        Class[] types = method.getParameterTypes();
+        push(method.getDeclaringClass().getName());
+        invoke_static_this(FIND_CLASS, Class.class, TYPES_STRING);
+        String cls = newLocal();
+        store_local(cls);
+        push(types.length);
+        newarray(Class.class);
+        for (int i = 0; i < types.length; i++) {
+            dup();
+            push(i);
+            load_class(types[i]);
+            aastore();
+        }
+        String args = newLocal();
+        store_local(args);
+        load_local(cls);
+        push(method.getName());
+        load_local(args);
+        invoke(MethodConstants.GET_DECLARED_METHOD);
+        putstatic(fieldName);
+        return args;
     }
 }

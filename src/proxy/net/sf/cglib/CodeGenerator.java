@@ -68,19 +68,12 @@ public abstract class CodeGenerator implements Constants {
     protected static final String SOURCE_FILE = "<generated>";
     protected static final String FIND_CLASS = "CGLIB$findClass";
     protected static final String STATIC_NAME = "<clinit>";
-    protected static final Method EQUALS_METHOD;
 
     private static final String PRIVATE_PREFIX = "PRIVATE_";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
-    private static final Method forName;
-    private static final Method getMessage;
     private static String debugLocation;
 
-    private static final Class[] TYPES_DEFINE_CLASS = {
-        String.class, byte[].class, int.class, int.class
-    };
-	
 	private final ClassGen cg;
 	private final InstructionList il = new InstructionList();
 	private final ConstantPoolGen cp;
@@ -104,15 +97,6 @@ public abstract class CodeGenerator implements Constants {
 
     private Map fields = new HashMap();
     private Set staticFields = new HashSet();
-
-    static {
-        try {
-            forName = Class.class.getDeclaredMethod("forName", TYPES_STRING);
-            getMessage = Throwable.class.getDeclaredMethod("getMessage", null);
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
-    }
 
 	protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
         if (loader == null) {
@@ -177,7 +161,7 @@ public abstract class CodeGenerator implements Constants {
         return new PrivilegedAction() {
             public Object run() {
                 try {
-                    Method m = ClassLoader.class.getDeclaredMethod("defineClass", TYPES_DEFINE_CLASS);
+                    Method m = MethodConstants.DEFINE_CLASS;
 
                     // protected method invocaton
                     boolean flag = m.isAccessible();
@@ -195,20 +179,14 @@ public abstract class CodeGenerator implements Constants {
     }
 
     static {
-        try {
-            primitiveMethods.put(Boolean.TYPE, Boolean.class.getDeclaredMethod("booleanValue", null));
-            primitiveMethods.put(Character.TYPE, Character.class.getDeclaredMethod("charValue", null));
-            primitiveMethods.put(Long.TYPE, Number.class.getDeclaredMethod("longValue", null));
-            primitiveMethods.put(Double.TYPE, Number.class.getDeclaredMethod("doubleValue", null));
-            primitiveMethods.put(Float.TYPE, Number.class.getDeclaredMethod("floatValue", null));
-            primitiveMethods.put(Short.TYPE, Number.class.getDeclaredMethod("intValue", null));
-            primitiveMethods.put(Integer.TYPE, Number.class.getDeclaredMethod("intValue", null));
-            primitiveMethods.put(Byte.TYPE, Number.class.getDeclaredMethod("intValue", null));
-
-            EQUALS_METHOD = Object.class.getDeclaredMethod("equals", new Class[]{ Object.class });
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
+        primitiveMethods.put(Boolean.TYPE, MethodConstants.BOOLEAN_VALUE);
+        primitiveMethods.put(Character.TYPE, MethodConstants.CHAR_VALUE);
+        primitiveMethods.put(Long.TYPE, MethodConstants.LONG_VALUE);
+        primitiveMethods.put(Double.TYPE, MethodConstants.DOUBLE_VALUE);
+        primitiveMethods.put(Float.TYPE, MethodConstants.FLOAT_VALUE);
+        primitiveMethods.put(Short.TYPE, MethodConstants.SHORT_INT_VALUE);
+        primitiveMethods.put(Integer.TYPE, MethodConstants.INT_VALUE);
+        primitiveMethods.put(Byte.TYPE, MethodConstants.BYTE_INT_VALUE);
 
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
         primitiveToWrapper.put(Character.TYPE, Character.class);
@@ -792,7 +770,8 @@ public abstract class CodeGenerator implements Constants {
     }
 
     protected void super_getfield(String name) throws NoSuchFieldException {
-        getfield(superclass.getField(name));
+        // TODO: search up entire superclass chain?
+        getfield(superclass.getDeclaredField(name));
     }
 
     protected void super_putfield(String name) throws NoSuchFieldException {
@@ -926,11 +905,11 @@ public abstract class CodeGenerator implements Constants {
         return types;
     }
 
-    private static String getMethodSignature(Method method) {
+    protected String getMethodSignature(Method method) {
         return getMethodSignature(method.getReturnType(), method.getParameterTypes());
     }
 
-    private static String getMethodSignature(Class returnType, Class[] parameterTypes) {
+    private String getMethodSignature(Class returnType, Class[] parameterTypes) {
         return Type.getMethodSignature(getType(returnType), getTypes(parameterTypes));
     }
 
@@ -1218,12 +1197,12 @@ public abstract class CodeGenerator implements Constants {
                      null);
         int eh = begin_handler();
         load_this();
-        invoke(forName);
+        invoke(MethodConstants.FOR_NAME);
         return_value();
         end_handler();
 
         handle_exception(eh, ClassNotFoundException.class);
-        invoke(getMessage);
+        invoke(MethodConstants.THROWABLE_GET_MESSAGE);
         new_instance(NoClassDefFoundError.class);
         dup_x1();
         swap();
@@ -1366,7 +1345,7 @@ public abstract class CodeGenerator implements Constants {
                 nop(checkContents);
                 process_arrays(clazz, callback);
             } else {
-                invoke(EQUALS_METHOD);
+                invoke(MethodConstants.EQUALS);
                 ifeq(notEquals);
             }
             nop(end);
