@@ -68,9 +68,12 @@ import java.lang.reflect.*;
  * <li>There is no protected constructor which accepts an
  * <code>InvocationHandler</code>. Instead, use the more convenient
  * <code>newProxyInstance</code> static method.
+ * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
+ * of <code>java.lang.reflect.UndeclaredThrowableException</code>, because the latter
+ * is not availabe in JDK 1.2.
  * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.2 2002/12/06 18:28:46 herbyderby Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.3 2002/12/06 19:03:02 herbyderby Exp $
  */
 public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
