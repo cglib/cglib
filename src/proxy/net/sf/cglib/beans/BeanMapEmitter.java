@@ -182,7 +182,7 @@ class BeanMapEmitter extends ClassEmitter {
         CodeEmitter e = begin_static();
         e.new_instance(FIXED_KEY_SET);
         e.dup();
-        ComplexOps.push(e, allNames.toArray(new String[allNames.size()]));
+        ComplexOps.push_array(e, allNames.toArray(new String[allNames.size()]));
         e.invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
         e.putfield("keys");
         e.return_value();

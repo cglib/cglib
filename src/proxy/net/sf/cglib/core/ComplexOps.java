@@ -82,6 +82,32 @@ public class ComplexOps {
       TypeUtils.parseType("ClassNotFoundException");
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
+    private static final Signature DOUBLE_TO_LONG_BITS =
+      TypeUtils.parseSignature("long doubleToLongBits(double)");
+    private static final Signature FLOAT_TO_INT_BITS =
+      TypeUtils.parseSignature("int floatToIntBits(float)");
+    private static final Signature TO_STRING =
+      TypeUtils.parseSignature("String toString()");
+    private static final Signature APPEND_STRING =
+      TypeUtils.parseSignature("StringBuffer append(String)");
+    private static final Signature APPEND_INT =
+      TypeUtils.parseSignature("StringBuffer append(int)");
+    private static final Signature APPEND_DOUBLE =
+      TypeUtils.parseSignature("StringBuffer append(double)");
+    private static final Signature APPEND_FLOAT =
+      TypeUtils.parseSignature("StringBuffer append(float)");
+    private static final Signature APPEND_CHAR =
+      TypeUtils.parseSignature("StringBuffer append(char)");
+    private static final Signature APPEND_LONG =
+      TypeUtils.parseSignature("StringBuffer append(long)");
+    private static final Signature APPEND_BOOLEAN =
+      TypeUtils.parseSignature("StringBuffer append(boolean)");
+    private static final Signature LENGTH =
+      TypeUtils.parseSignature("int length()");
+    private static final Signature SET_LENGTH =
+      TypeUtils.parseSignature("void setLength(int)");
+
+    public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
     private ComplexOps() {
     }
@@ -314,7 +340,7 @@ public class ComplexOps {
         }
     }
 
-    private static void load_class_helper(final CodeEmitter e, Type type) {
+    private static void load_class_helper(CodeEmitter e, Type type) {
 //         e.register(FIND_CLASS, new Emitter.EndClassCallback() {
 //             public void process() {
 //                 generateFindClass(e);
@@ -350,7 +376,7 @@ public class ComplexOps {
 //         e.athrow();
 //     }
 
-    public static void push(CodeEmitter e, Object[] array) {
+    public static void push_array(CodeEmitter e, Object[] array) {
         e.push(array.length);
         e.newarray(Type.getType(array.getClass().getComponentType()));
         for (int i = 0; i < array.length; i++) {
@@ -367,7 +393,7 @@ public class ComplexOps {
         } else {
             Class type = obj.getClass();
             if (type.isArray()) {
-                push(e, (Object[])obj);
+                push_array(e, (Object[])obj);
             } else if (obj instanceof String) {
                 e.push((String)obj);
             } else if (obj instanceof Class) {
@@ -385,6 +411,270 @@ public class ComplexOps {
             } else {
                 throw new IllegalArgumentException("unknown type: " + obj.getClass());
             }
+        }
+    }
+
+    public static void hash_code(CodeEmitter e, Type type, Customizer customizer) {
+        if (TypeUtils.isArray(type)) {
+            hash_array(e, type, customizer);
+        } else {
+            if (TypeUtils.isPrimitive(type)) {
+                hash_primitive(e, type);
+            } else {
+                hash_object(e, type, customizer);
+            }
+            e.math(e.ADD, Type.INT_TYPE);
+            e.swap();
+            e.dup_x1();
+            e.math(e.MUL, Type.INT_TYPE);
+        }
+    }
+
+    private static void hash_array(final CodeEmitter e, Type type, final Customizer customizer) {
+        Label isNull = e.make_label();
+        Label end = e.make_label();
+        e.dup();
+        e.ifnull(isNull);
+        ComplexOps.process_array(e, type, new ProcessArrayCallback() {
+            public void processElement(Type type) {
+                hash_code(e, type, customizer);
+            }
+        });
+        e.goTo(end);
+        e.mark(isNull);
+        e.pop();
+        e.mark(end);
+    }
+
+    private static void hash_object(CodeEmitter e, Type type, Customizer customizer) {
+        // (f == null) ? 0 : f.hashCode();
+        Label isNull = e.make_label();
+        Label end = e.make_label();
+        e.dup();
+        e.ifnull(isNull);
+        if (customizer != null) {
+            customizer.customize(e, type);
+        }
+        e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        e.goTo(end);
+        e.mark(isNull);
+        e.pop();
+        e.push(0);
+        e.mark(end);
+    }
+
+    private static void hash_primitive(CodeEmitter e, Type type) {
+        switch (type.getSort()) {
+        case Type.BOOLEAN:
+            // f ? 0 : 1
+            e.push(1);
+            e.math(e.XOR, Type.INT_TYPE);
+            break;
+        case Type.DOUBLE:
+            // Double.doubleToLongBits(f), hash_code(Long.TYPE)
+            e.invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
+            hash_long(e);
+        case Type.FLOAT:
+            // Float.floatToIntBits(f)
+            e.invoke_static(Constants.TYPE_FLOAT, FLOAT_TO_INT_BITS);
+        case Type.LONG:
+            hash_long(e);
+        default:
+            // (int)f
+        }
+    }
+
+    private static void hash_long(CodeEmitter e) {
+        // (int)(f ^ (f >>> 32))
+        e.push(32);
+        e.math(e.USHR, Type.LONG_TYPE);
+        e.math(e.XOR, Type.LONG_TYPE);
+        e.cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
+    }
+
+    public static void not_equals(CodeEmitter e, Type type, Label notEquals) {
+        not_equals(e, type, notEquals, null);
+    }
+    
+    /**
+     * Branches to the specified label if the top two items on the stack
+     * are not equal. The items must both be of the specified
+     * class. Equality is determined by comparing primitive values
+     * directly and by invoking the <code>equals</code> method for
+     * Objects. Arrays are recursively processed in the same manner.
+     */
+    public static void not_equals(final CodeEmitter e, Type type, final Label notEquals, final Customizer customizer) {
+        (new ProcessArrayCallback() {
+            public void processElement(Type type) {
+                not_equals_helper(e, type, notEquals, customizer, this);
+            }
+        }).processElement(type);
+    }
+    
+    private static void not_equals_helper(CodeEmitter e,
+                                          Type type,
+                                          Label notEquals,
+                                          Customizer customizer,
+                                          ProcessArrayCallback callback) {
+        if (TypeUtils.isPrimitive(type)) {
+            e.if_cmp(type, e.NE, notEquals);
+        } else {
+            Label end = e.make_label();
+            nullcmp(e, notEquals, end);
+            if (TypeUtils.isArray(type)) {
+                Label checkContents = e.make_label();
+                e.dup2();
+                e.arraylength();
+                e.swap();
+                e.arraylength();
+                e.if_icmp(e.EQ, checkContents);
+                e.pop2();
+                e.goTo(notEquals);
+                e.mark(checkContents);
+                ComplexOps.process_arrays(e, type, callback);
+            } else {
+                if (customizer != null) {
+                    customizer.customize(e, type);
+                    e.swap();
+                    customizer.customize(e, type);
+                }
+                e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
+                e.if_jump(e.EQ, notEquals);
+            }
+            e.mark(end);
+        }
+    }
+
+    /**
+     * If both objects on the top of the stack are non-null, does nothing.
+     * If one is null, or both are null, both are popped off and execution
+     * branches to the respective label.
+     * @param oneNull label to branch to if only one of the objects is null
+     * @param bothNull label to branch to if both of the objects are null
+     */
+    private static void nullcmp(CodeEmitter e, Label oneNull, Label bothNull) {
+        e.dup2();
+        Label nonNull = e.make_label();
+        Label oneNullHelper = e.make_label();
+        Label end = e.make_label();
+        e.ifnonnull(nonNull);
+        e.ifnonnull(oneNullHelper);
+        e.pop2();
+        e.goTo(bothNull);
+        
+        e.mark(nonNull);
+        e.ifnull(oneNullHelper);
+        e.goTo(end);
+        
+        e.mark(oneNullHelper);
+        e.pop2();
+        e.goTo(oneNull);
+        
+        e.mark(end);
+    }
+
+    public static void to_string(CodeEmitter e,
+                                 Type type,
+                                 ArrayDelimiters delims,
+                                 Customizer customizer) {
+        e.new_instance(Constants.TYPE_STRING_BUFFER);
+        e.dup();
+        e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
+        append_string(e, type, delims, customizer);
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
+    }
+
+    public static void append_string(final CodeEmitter e,
+                                     Type type,
+                                     final ArrayDelimiters delims,
+                                     final Customizer customizer) {
+        final ArrayDelimiters d = (delims != null) ? delims : DEFAULT_DELIMITERS;
+        ProcessArrayCallback callback =new ProcessArrayCallback() {
+            public void processElement(Type type) {
+                append_string_helper(e, type, delims, customizer, this);
+                e.push(delims.inside);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            }
+        };
+        append_string_helper(e, type, delims, customizer, callback);
+    }
+
+    private static void append_string_helper(CodeEmitter e,
+                                             Type type,
+                                             ArrayDelimiters delims,
+                                             Customizer customizer,
+                                             ProcessArrayCallback callback) {
+        Label skip = e.make_label();
+        Label end = e.make_label();
+        if (TypeUtils.isPrimitive(type)) {
+            switch (type.getSort()) {
+            case Type.INT:
+            case Type.SHORT:
+            case Type.BYTE:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_INT);
+                break;
+            case Type.DOUBLE:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                break;
+            case Type.FLOAT:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                break;
+            case Type.LONG:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_LONG);
+                break;
+            case Type.BOOLEAN:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_BOOLEAN);
+                break;
+            case Type.CHAR:
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_CHAR);
+                break;
+            }
+        } else if (TypeUtils.isArray(type)) {
+            e.dup();
+            e.ifnull(skip);
+            e.swap();
+            e.push(delims.before);
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            e.swap();
+            ComplexOps.process_array(e, type, callback);
+            shrinkStringBuffer(e, 2);
+            e.push(delims.after);
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        } else {
+            e.dup();
+            e.ifnull(skip);
+            if (customizer != null) {
+                customizer.customize(e, type);
+            }
+            e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        }
+        e.goTo(end);
+        e.mark(skip);
+        e.pop();
+        e.push("null");
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        e.mark(end);
+    }
+
+    private static void shrinkStringBuffer(CodeEmitter e, int amt) {
+        e.dup();
+        e.dup();
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, LENGTH);
+        e.push(amt);
+        e.math(e.SUB, Type.INT_TYPE);
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, SET_LENGTH);
+    }
+
+    public static class ArrayDelimiters {
+        private String before;
+        private String inside;
+        private String after;
+            
+        public ArrayDelimiters(String before, String inside, String after) {
+            this.before = before;
+            this.inside = inside;
+            this.after = after;
         }
     }
 }
