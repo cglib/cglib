@@ -64,6 +64,8 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
+    static final String ACCESS_PREFIX = "CGLIB$$ACCESS_";
+
     private static final Type ABSTRACT_METHOD_ERROR =
       TypeUtils.parseType("AbstractMethodError");
     private static final Type METHOD =
@@ -139,7 +141,7 @@ implements CallbackGenerator
     }
     
     private String getAccessName(Context context, Method method) {
-        return "CGLIB$$ACCESS_" + context.getUniqueName(method);
+        return ACCESS_PREFIX + context.getUniqueName(method);
     }
 
     public void generateStatic(CodeEmitter e, final Context context) {
