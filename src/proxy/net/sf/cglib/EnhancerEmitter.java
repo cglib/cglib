@@ -173,11 +173,12 @@ class EnhancerEmitter extends Emitter {
     private void generateConstructors(List constructors) throws NoSuchMethodException {
         for (Iterator i = constructors.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
-            ReflectOps.begin_constructor(this, constructor);
+            Signature sig = ReflectUtils.getSignature(constructor);
+            begin_method(Constants.ACC_PUBLIC, sig, ReflectUtils.getExceptionTypes(constructor));
             load_this();
             dup();
             load_args();
-            ReflectOps.super_invoke(this, constructor);
+            super_invoke_constructor(sig);
             push(1);
             putfield(CONSTRUCTED_FIELD);
             return_value();

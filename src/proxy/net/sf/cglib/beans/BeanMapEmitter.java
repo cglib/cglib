@@ -170,14 +170,14 @@ class BeanMapEmitter extends Emitter {
             
     private void generateKeySet(Map getters, Map setters) {
         // static initializer
-        declare_field(Modifier.STATIC | Modifier.PRIVATE, "keys", FIXED_KEY_SET, null);
+        declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null);
         Set allNames = new HashSet();
         allNames.addAll(getters.keySet());
         allNames.addAll(setters.keySet());
         begin_static();
         new_instance(FIXED_KEY_SET);
         dup();
-        ReflectOps.push(this, allNames.toArray(new String[allNames.size()]));
+        ComplexOps.push(this, allNames.toArray(new String[allNames.size()]));
         invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
         putfield("keys");
         return_value();

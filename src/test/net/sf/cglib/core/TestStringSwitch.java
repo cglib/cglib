@@ -119,7 +119,9 @@ public class TestStringSwitch extends CodeGenTestCase {
             e.begin_class(Constants.ACC_PUBLIC, getClassName(), null, new Type[]{ Type.getType(Indexed.class) }, Constants.SOURCE_FILE);
             e.null_constructor();
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
-            ReflectOps.begin_method(e, method);
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(method),
+                           ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
             ComplexOps.string_switch(e, keys, switchStyle, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {

@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.8 2003/09/21 01:49:48 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.9 2003/09/21 02:33:10 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -92,14 +92,27 @@ public class ReflectUtils {
         transforms.put("boolean", "Z");
     }
 
-    public static Signature getSignature(Method method) {
-        return new Signature(method.getName(), Type.getMethodDescriptor(method));
+    public static Type[] getExceptionTypes(Member member) {
+        if (member instanceof Method) {
+            return TypeUtils.getTypes(((Method)member).getExceptionTypes());
+        } else if (member instanceof Constructor) {
+            return TypeUtils.getTypes(((Constructor)member).getExceptionTypes());
+        } else {
+            throw new IllegalArgumentException("Cannot get exception types of a field");
+        }
     }
 
-    public static Signature getSignature(Constructor constructor) {
-        return new Signature(Constants.CONSTRUCTOR_NAME,
-                             Type.getMethodDescriptor(Type.VOID_TYPE,
-                                                      TypeUtils.getTypes(constructor.getParameterTypes())));
+    public static Signature getSignature(Member member) {
+        if (member instanceof Method) {
+            return new Signature(member.getName(), Type.getMethodDescriptor((Method)member));
+        } else if (member instanceof Constructor) {
+            Type[] types = TypeUtils.getTypes(((Constructor)member).getParameterTypes());
+            return new Signature(Constants.CONSTRUCTOR_NAME,
+                                 Type.getMethodDescriptor(Type.VOID_TYPE, types));
+                                                          
+        } else {
+            throw new IllegalArgumentException("Cannot get signature of a field");
+        }
     }
 
     public static Constructor findConstructor(String desc) {

@@ -60,7 +60,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.9 2003/09/21 01:49:48 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.10 2003/09/21 02:33:10 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -129,12 +129,15 @@ abstract public class ConstructorDelegate {
                           CONSTRUCTOR_DELEGATE,
                           new Type[]{ Type.getType(iface) },
                           Constants.SOURCE_FILE);
+            Type declaring = Type.getType(constructor.getDeclaringClass());
             e.null_constructor();
-            ReflectOps.begin_method(e, newInstance);
-            e.new_instance(Type.getType(constructor.getDeclaringClass()));
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(newInstance),
+                           ReflectUtils.getExceptionTypes(newInstance));
+            e.new_instance(declaring);
             e.dup();
             e.load_args();
-            ReflectOps.invoke(e, constructor);
+            e.invoke_constructor(declaring, ReflectUtils.getSignature(constructor));
             e.return_value();
             e.end_class();
         }

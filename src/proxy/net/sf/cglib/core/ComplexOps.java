@@ -53,6 +53,8 @@
  */
 package net.sf.cglib.core;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -78,6 +80,10 @@ public class ComplexOps {
       TypeUtils.parseType("NoClassDefFoundError");
     private static final Type CLASS_NOT_FOUND_EXCEPTION =
       TypeUtils.parseType("ClassNotFoundException");
+    private static final Type BIG_INTEGER =
+      TypeUtils.parseType("java.math.BigInteger");
+    private static final Type BIG_DECIMAL =
+      TypeUtils.parseType("java.math.BigDecimal");
     
     public static final int SWITCH_STYLE_TRIE = 0;
     public static final int SWITCH_STYLE_HASH = 1;
@@ -397,5 +403,43 @@ public class ComplexOps {
         e.swap();
         e.invoke_constructor(NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
         e.athrow();
+    }
+
+    public static void push(Emitter e, Object[] array) {
+        e.push(array.length);
+        e.newarray(Type.getType(array.getClass().getComponentType()));
+        for (int i = 0; i < array.length; i++) {
+            e.dup();
+            e.push(i);
+            push_object(e, array[i]);
+            e.aastore();
+        }
+    }
+    
+    public static void push_object(Emitter e, Object obj) {
+        if (obj == null) {
+            e.aconst_null();
+        } else {
+            Class type = obj.getClass();
+            if (type.isArray()) {
+                push(e, (Object[])obj);
+            } else if (obj instanceof String) {
+                e.push((String)obj);
+            } else if (obj instanceof Class) {
+                load_class(e, Type.getType((Class)obj));
+            } else if (obj instanceof BigInteger) {
+                e.new_instance(BIG_INTEGER);
+                e.dup();
+                e.push(obj.toString());
+                e.invoke_constructor(BIG_INTEGER);
+            } else if (obj instanceof BigDecimal) {
+                e.new_instance(BIG_DECIMAL);
+                e.dup();
+                e.push(obj.toString());
+                e.invoke_constructor(BIG_DECIMAL);
+            } else {
+                throw new IllegalArgumentException("unknown type: " + obj.getClass());
+            }
+        }
     }
 }
