@@ -398,7 +398,7 @@ import java.util.*;
         create_arg_array();
         getfield(accessName);
         invoke(AROUND_ADVICE);
-        if (Proxy.class.isAssignableFrom(getSuperclass())) {
+        if (isProxy()) {
             unbox(method.getReturnType());
         } else {
             unbox_or_zero(method.getReturnType());
@@ -414,6 +414,17 @@ import java.util.*;
         end_handler();
         generateHandleUndeclared(method, handler);
         end_method();
+    }
+
+    private boolean isProxy() {
+        Class clazz = getSuperclass();
+        while (clazz != null) {
+            if (clazz.getName().equals("net.sf.cglib.Proxy")) {
+                return true;
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return false;
     }
 
     private void generateHandleUndeclared(Method method, Object handler) {
