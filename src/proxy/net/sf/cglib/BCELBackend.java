@@ -63,7 +63,8 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
     private final ConstantPoolGen cp;
     private MethodGen mg;
     private Map branches = new HashMap();
-	private Map labels = new HashMap();
+    private Map labels = new HashMap();
+    
 
     public BCELBackend(String className, Class superclass) {
         super(className, superclass);
@@ -270,6 +271,7 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
     }
 
     private void append(Object label, Instruction instruction) {
+
         if (label != null) {
             if (null != labels.put(label, il.append(instruction))) {
                 throw new IllegalStateException("duplicated label " + label);
@@ -280,6 +282,7 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
     }
 
     private void append(BranchInstruction instruction, Object label) {
+
         List list = (List)branches.get(label);
         if (list == null) {
             branches.put(label, list = new LinkedList());
@@ -344,7 +347,8 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
     }
   
     // this is taken from BCEL CVS: Type.getType(Class)
-    private static Type getType(Class clazz) {
+    private  Type getType(Class clazz) {
+
         if (clazz == null) {
             throw new IllegalArgumentException("Class must not be null");
         }

@@ -65,9 +65,9 @@ abstract class CodeGenerator {
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static String debugLocation;
-    private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION = 
-                         new RuntimePermission("defineCGLIBClassInJavaPackage");
-
+    private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
+    new RuntimePermission("defineCGLIBClassInJavaPackage");
+    
     private final ClassLoader loader;
     private String methodName;
     private Class returnType;
@@ -79,13 +79,15 @@ abstract class CodeGenerator {
     private Map localTypes = new HashMap();
     private int nextLocal;
     private boolean inMethod;
-
+    
     private LinkedList handlerStack = new LinkedList();
     private LinkedList handlerList = new LinkedList();
-
+    
+    private Set definedClasses = new HashSet();
+    
     private Map fieldInfo = new HashMap();
     private String className;
-
+    
     private CodeGeneratorBackend backend;
     private boolean debug = false;
     
@@ -96,37 +98,44 @@ abstract class CodeGenerator {
         this.loader = loader;
         this.className = className;
         this.superclass = superclass;
-        backend = new BCELBackend(className, superclass);
-	}
-
+        defineResource(superclass);
+        defineResource(ReflectUtils.class);
+        defineResource(MethodConstants.class);
+        defineResource(CodeGenerationException.class);
+        defineResource(BCELBackend.class);
+        backend = new  BCELBackend(className, superclass); 
+        
+    }
+    
     protected void setDebug(boolean debug) {
         this.debug = debug;
         backend.setDebug(debug);
     }
-
+    
     protected String getClassName() {
         return className;
     }
-
+    
     protected Class getSuperclass() {
         return superclass;
     }
-
+    
     public static void setDebugLocation(String debugLocation) {
         CodeGenerator.debugLocation = debugLocation;
     }
-
-	/**
-	 * method used to generate code  
+    
+    /**
+     * method used to generate code
      */
     abstract protected void generate() throws Exception;
-
+    
     public Class define() {
         try {
             generate();
             if (needsFindClass) {
                 generateFindClass();
             }
+            
             byte[] bytes = backend.getBytes();
             if (debugLocation != null) {
                 OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".cglib"));
@@ -145,6 +154,110 @@ abstract class CodeGenerator {
             throw new CodeGenerationException(t);
         }
     }
+    public void defineResource(Class resource){
+        
+        if(resource != null && resource.isArray()){
+            defineResource(resource.getComponentType()); 
+            return;
+        }    
+        
+        if( resource == null || resource.getClassLoader() == null ||
+            resource.getClassLoader() == loader || definedClasses.contains(resource) ){
+            return;
+        }
+        
+        definedClasses.add(resource);
+        
+        
+        defineResource(resource.getSuperclass());
+        
+        Class classes[] = resource.getInterfaces();
+        for( int i= 0; i < classes.length; i++ ){
+            defineResource(classes[i]);
+        }
+        
+        classes = resource.getDeclaredClasses();
+        for( int i= 0; i < classes.length; i++ ){
+            defineResource(classes[i]);
+        }
+        
+        Method methods[] = resource.getDeclaredMethods();
+        for( int i = 0; i < methods.length; i++ ){
+            defineResource( methods[i].getReturnType() );
+            classes = methods[i].getParameterTypes();
+            for(int j = 0; j < classes.length; j++  ){
+                defineResource( classes[j] );
+            }
+            classes = methods[i].getExceptionTypes();
+            for(int j = 0; j < classes.length; j++  ){
+                defineResource( classes[j] );
+            }
+            
+        }
+        
+        Constructor constructors [] = resource.getDeclaredConstructors();
+        for( int i = 0; i < constructors.length; i++ ){
+            
+            classes = constructors[i].getParameterTypes();
+            for(int j = 0; j < classes.length; j++  ){
+                defineResource( classes[j] );
+            }
+            classes = constructors[i].getExceptionTypes();
+            for(int j = 0; j < classes.length; j++  ){
+                defineResource( classes[j] );
+            }
+            
+        }
+        Field fields[] = resource.getDeclaredFields();
+        for( int i=0; i< fields.length; i++ ){
+            defineResource( fields[i].getType() );
+        }
+        
+        defineDependancy(resource);
+        
+        
+        
+    }
+    private void defineDependancy(Class resource){
+        
+        if( resource != null && resource.getClassLoader() != null &&
+        resource.getClassLoader() != loader ){
+        
+            try{
+                loader.loadClass( resource.getName() );
+                return;
+            }catch(ClassNotFoundException cne){
+                
+            }
+            try{
+                java.io.InputStream is = resource.getClassLoader().getResourceAsStream(
+                resource.getName().replace('.','/') + ".class");
+                if(is == null){
+                  throw new CodeGenerationException(
+                      new ClassNotFoundException(resource.getName())
+                   );
+                }
+                java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+                while( true ){
+                    int b = is.read();
+                    if( b == -1 ){
+                      break;
+                    }
+                    out.write( b );
+                }
+              
+               defineClass(resource.getName(),out.toByteArray(), loader );
+               // System.err.println("DEFINED " + resource.getName());
+              
+            }catch( Exception e ){
+         
+                throw new CodeGenerationException(e);
+                
+            }
+            
+        }
+        
+    }
     
     private static Class defineClass(String className, byte[] b, ClassLoader loader)
     throws Exception {
@@ -152,21 +265,21 @@ abstract class CodeGenerator {
         // protected method invocaton
         boolean flag = m.isAccessible();
         m.setAccessible(true);
-                   
-        SecurityManager sm = System.getSecurityManager(); 
-        if (className.startsWith("java.") && sm != null  ) {
+        
+        SecurityManager sm = System.getSecurityManager();
+        if ( className != null && className.startsWith("java.") && sm != null  ) {
             sm.checkPermission( DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION );
         }
-                    
-        //way depricated in jdk to define classes, 
-        // doe's not throws SecurityException if class name starts with "java."  
+        
+        //way depricated in jdk to define classes,
+        // doe's not throws SecurityException if class name starts with "java."
         Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
         Class result = (Class)m.invoke(loader, args);
         m.setAccessible(flag);
-
+        
         return result;
     }
-       
+    
     static {
         primitiveMethods.put(Boolean.TYPE, MethodConstants.BOOLEAN_VALUE);
         primitiveMethods.put(Character.TYPE, MethodConstants.CHAR_VALUE);
@@ -176,7 +289,7 @@ abstract class CodeGenerator {
         primitiveMethods.put(Short.TYPE, MethodConstants.INT_VALUE);
         primitiveMethods.put(Integer.TYPE, MethodConstants.INT_VALUE);
         primitiveMethods.put(Byte.TYPE, MethodConstants.INT_VALUE);
-
+        
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
         primitiveToWrapper.put(Character.TYPE, Character.class);
         primitiveToWrapper.put(Long.TYPE, Long.class);
@@ -186,19 +299,20 @@ abstract class CodeGenerator {
         primitiveToWrapper.put(Integer.TYPE, Integer.class);
         primitiveToWrapper.put(Byte.TYPE, Byte.class);
     }
-
+    
     protected void declare_interfaces(Class[] interfaces) {
         for (int i = 0; i < interfaces.length; i++) {
             declare_interface(interfaces[i]);
         }
     }
-
+    
     protected void declare_interface(Class iface) {
+        defineResource(iface);
         backend.declare_interface(iface);
     }
-
+    
     protected void begin_method(int modifiers, Class returnType, String methodName,
-                                Class[] parameterTypes, Class[] exceptionTypes) {
+    Class[] parameterTypes, Class[] exceptionTypes) {
         checkInMethod();
         this.methodName = methodName;
         this.returnType = returnType;
@@ -206,33 +320,33 @@ abstract class CodeGenerator {
         backend.begin_method(modifiers, returnType, methodName, parameterTypes, exceptionTypes);
         setNextLocal();
     }
-
+    
     protected int getDefaultModifiers(Method method) {
         int modifiers = method.getModifiers();
         return Modifier.FINAL
-            | (modifiers
-               & ~Modifier.ABSTRACT
-               & ~Modifier.NATIVE
-               & ~Modifier.SYNCHRONIZED);
+        | (modifiers
+        & ~Modifier.ABSTRACT
+        & ~Modifier.NATIVE
+        & ~Modifier.SYNCHRONIZED);
     }
-
+    
     protected void begin_method(Method method) {
         begin_method(method, getDefaultModifiers(method));
     }
-
+    
     protected void begin_method(Method method, int modifiers) {
         begin_method(modifiers, method.getReturnType(), method.getName(),
-                     method.getParameterTypes(), method.getExceptionTypes());
+        method.getParameterTypes(), method.getExceptionTypes());
     }
-
+    
     protected void begin_constructor(Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
     }
-
+    
     protected void begin_constructor() {
         begin_constructor(Constants.TYPES_EMPTY);
     }
-
+    
     protected void begin_constructor(Class[] parameterTypes) {
         checkInMethod();
         this.returnType = Void.TYPE;
@@ -240,7 +354,7 @@ abstract class CodeGenerator {
         backend.begin_constructor(parameterTypes);
         setNextLocal();
     }
-
+    
     protected void begin_static() {
         checkInMethod();
         this.returnType = Void.TYPE;
@@ -248,17 +362,17 @@ abstract class CodeGenerator {
         backend.begin_static();
         setNextLocal();
     }
-
+    
     private void checkInMethod() {
         if (inMethod) {
             throw new IllegalStateException("cannot nest methods");
         }
     }
-
+    
     private void setNextLocal() {
         nextLocal = 1 + getStackSize(parameterTypes);
     }
-
+    
     protected void end_method() {
         backend.end_method();
         parameterTypes = null;
@@ -272,7 +386,7 @@ abstract class CodeGenerator {
         handlerList.clear();
         inMethod = false;
     }
-
+    
     /**
      * Allocates and fills an Object[] array with the arguments to the
      * current method. Primitive values are inserted as their boxed
@@ -281,7 +395,7 @@ abstract class CodeGenerator {
     protected void create_arg_array() {
         /* generates:
            Object[] args = new Object[]{ arg1, new Integer(arg2) };
-        */
+         */
         push(parameterTypes.length);
         newarray();
         for (int i = 0; i < parameterTypes.length; i++) {
@@ -292,7 +406,7 @@ abstract class CodeGenerator {
             aastore();
         }
     }
-
+    
     protected Object begin_handler() {
         int ref = handlerList.size();
         Object[] range = new Object[]{ backend.start_range(), null };
@@ -300,7 +414,7 @@ abstract class CodeGenerator {
         handlerStack.add(range);
         return new Integer(ref);
     }
-
+    
     protected void end_handler() {
         if (handlerStack.size() == 0) {
             throw new IllegalStateException("mismatched handler boundaries");
@@ -308,7 +422,7 @@ abstract class CodeGenerator {
         Object[] range = (Object[])handlerStack.removeLast();
         range[1] = backend.end_range();
     }
-
+    
     protected void handle_exception(Object handler, Class exceptionType) {
         int ref = ((Integer)handler).intValue();
         if (handlerList.size() <= ref) {
@@ -320,7 +434,7 @@ abstract class CodeGenerator {
         }
         backend.handle_exception(range[0], range[1], exceptionType);
     }
-
+    
     protected void ifeq(Object label) { backend.ifeq(label); }
     protected void ifne(Object label) { backend.ifne(label); }
     protected void iflt(Object label) { backend.iflt(label); }
@@ -351,7 +465,7 @@ abstract class CodeGenerator {
     protected void dup_x2() { backend.dup_x2(); }
     protected void swap() { backend.swap(); }
     protected  void aconst_null() { backend.aconst_null(); }
-  
+    
     protected void push(int i) {
         if (i < 0) {
             backend.ldc(i);
@@ -366,7 +480,7 @@ abstract class CodeGenerator {
         }
     }
     
-    protected void push (long value) {
+    protected void push(long value) {
         if (value == 0L || value == 1L) {
             backend.lconst(value);
         } else {
@@ -374,25 +488,25 @@ abstract class CodeGenerator {
         }
     }
     
-    protected void push (float value) {
+    protected void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
             backend.fconst(value);
         } else {
             backend.ldc(value);
         }
     }
-    protected void push (double value) {
+    protected void push(double value) {
         if (value == 0d || value == 1d) {
             backend.dconst(value);
         } else {
             backend.ldc(value);
         }
     }
-
+    
     protected void push(String value) {
         backend.ldc(value);
     }
-
+    
     protected void push(Object[] array) {
         push(array.length);
         newarray(array.getClass().getComponentType());
@@ -403,7 +517,7 @@ abstract class CodeGenerator {
             aastore();
         }
     }
-
+    
     protected void push_object(Object obj) {
         if (obj == null) {
             aconst_null();
@@ -422,11 +536,11 @@ abstract class CodeGenerator {
             }
         }
     }
-  
+    
     protected void newarray() {
         newarray(Object.class);
     }
-
+    
     protected void newarray(Class clazz) {
         if (clazz.isPrimitive()) {
             backend.newarray(clazz);
@@ -434,11 +548,11 @@ abstract class CodeGenerator {
             backend.anewarray(clazz);
         }
     }
-
+    
     protected void arraylength() {
         backend.arraylength();
     }
-
+    
     protected void array_load(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Long.TYPE)) {
@@ -457,10 +571,11 @@ abstract class CodeGenerator {
                 backend.baload();
             }
         } else {
+            defineResource(clazz);
             backend.aaload();
         }
     }
-
+    
     protected void array_store(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Long.TYPE)) {
@@ -479,6 +594,7 @@ abstract class CodeGenerator {
                 backend.bastore();
             }
         } else {
+            defineResource(clazz);
             backend.aastore();
         }
     }
@@ -486,11 +602,11 @@ abstract class CodeGenerator {
     protected void load_this() {
         backend.aload(0);
     }
-
+    
     protected void load_class_this() {
         load_class_helper(className);
     }
-
+    
     protected void load_class(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Void.TYPE)) {
@@ -502,23 +618,24 @@ abstract class CodeGenerator {
                 throw new CodeGenerationException(e);
             }
         } else {
+            defineResource(clazz);
             load_class_helper(clazz.getName());
         }
     }
-
+    
     private void load_class_helper(String className) {
         needsFindClass = true;
         push(className);
         invoke_static_this(FIND_CLASS, Class.class, Constants.TYPES_STRING);
     }
-
+    
     /**
      * Pushes all of the arguments of the current method onto the stack.
      */
     protected void load_args() {
         load_args(0, parameterTypes.length);
     }
-
+    
     /**
      * Pushes the specified argument of the current method onto the stack.
      * @param index the zero-based index into the argument list
@@ -526,7 +643,7 @@ abstract class CodeGenerator {
     protected void load_arg(int index) {
         load_local(parameterTypes[index], 1 + skipArgs(index));
     }
-
+    
     // zero-based (see load_this)
     protected void load_args(int fromArg, int count) {
         int pos = 1 + skipArgs(fromArg);
@@ -536,7 +653,7 @@ abstract class CodeGenerator {
             pos += getStackSize(t);
         }
     }
-
+    
     private int skipArgs(int numArgs) {
         int amount = 0;
         for (int i = 0; i < numArgs; i++) {
@@ -544,7 +661,7 @@ abstract class CodeGenerator {
         }
         return amount;
     }
-
+    
     private void load_local(Class t, int pos) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
@@ -557,10 +674,11 @@ abstract class CodeGenerator {
                 backend.iload(pos);
             }
         } else {
+            defineResource(t);
             backend.aload(pos);
         }
     }
-
+    
     private void store_local(Class t, int index) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
@@ -573,26 +691,27 @@ abstract class CodeGenerator {
                 backend.istore(index);
             }
         } else {
+            defineResource(t);
             backend.astore(index);
         }
     }
-
+    
     protected void iinc(Object local, int amount) {
         backend.iinc(getLocal(local), amount);
     }
-
+    
     protected void store_local(Object local) {
         store_local((Class)localTypes.get(local), getLocal(local));
     }
-
+    
     protected void load_local(Object local) {
         load_local((Class)localTypes.get(local), getLocal(local));
     }
-
+    
     private int getLocal(Object local) {
         return ((Integer)locals.get(local)).intValue();
     }
-
+    
     protected void return_value() {
         if (returnType.isPrimitive()) {
             if (returnType.equals(Void.TYPE)) {
@@ -610,7 +729,7 @@ abstract class CodeGenerator {
             backend.areturn();
         }
     }
-  
+    
     protected void declare_field(int modifiers, Class type, String name) {
         if (getFieldInfo(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
@@ -618,11 +737,11 @@ abstract class CodeGenerator {
         backend.declare_field(modifiers, type, name);
         fieldInfo.put(name, new FieldInfo(Modifier.isStatic(modifiers), type));
     }
-
+    
     private FieldInfo getFieldInfo(String name) {
         return (FieldInfo)fieldInfo.get(name);
     }
-
+    
     private static class FieldInfo {
         private boolean staticFlag;
         private Class type;
@@ -631,16 +750,16 @@ abstract class CodeGenerator {
             this.staticFlag = staticFlag;
             this.type = type;
         }
-
+        
         public boolean isStatic() {
             return staticFlag;
         }
-
+        
         public Class getType() {
             return type;
         }
     }
-
+    
     protected void getfield(String name) {
         FieldInfo info = getFieldInfo(name);
         if (info.isStatic()) {
@@ -649,7 +768,7 @@ abstract class CodeGenerator {
             backend.getfield(className, name, info.getType());
         }
     }
-
+    
     protected void putfield(String name) {
         FieldInfo info = getFieldInfo(name);
         if (info.isStatic()) {
@@ -658,90 +777,105 @@ abstract class CodeGenerator {
             backend.putfield(className, name, info.getType());
         }
     }
-
+    
     protected void super_getfield(String name) throws NoSuchFieldException {
         // TODO: search up entire superclass chain?
         getfield(superclass.getDeclaredField(name));
     }
-
+    
     protected void super_putfield(String name) throws NoSuchFieldException {
         putfield(superclass.getDeclaredField(name));
     }
-
+    
     protected void getfield(Field field) {
+        
+        defineResource(field.getType());
+        defineResource(field.getDeclaringClass());
+        
         if (Modifier.isStatic(field.getModifiers())) {
             backend.getstatic(field.getDeclaringClass().getName(),
-                              field.getName(),
-                              field.getType());
+            field.getName(),
+            field.getType());
         } else {
             backend.getfield(field.getDeclaringClass().getName(),
-                             field.getName(),
-                             field.getType());
+            field.getName(),
+            field.getType());
         }
     }
-
+    
     protected void putfield(Field field) {
+        defineResource(field.getType());
+        defineResource(field.getDeclaringClass());
         if (Modifier.isStatic(field.getModifiers())) {
             backend.putstatic(field.getDeclaringClass().getName(),
-                              field.getName(),
-                              field.getType());
+            field.getName(),
+            field.getType());
         } else {
             backend.putfield(field.getDeclaringClass().getName(),
-                             field.getName(),
-                             field.getType());
+            field.getName(),
+            field.getType());
         }
     }
-
+    
     protected void invoke(Method method) {
+        defineResource(method.getDeclaringClass());
+        defineResource(method.getReturnType());
+        Class types[] = method.getParameterTypes();
+        for( int i = 0; i< types.length; i++  ){
+            defineResource( types[i] );
+        }
         if (method.getDeclaringClass().isInterface()) {
             backend.invoke_interface(method.getDeclaringClass().getName(), method.getName(),
-                                     method.getReturnType(), method.getParameterTypes());
+            method.getReturnType(), method.getParameterTypes());
         } else if (Modifier.isStatic(method.getModifiers())) {
             backend.invoke_static(method.getDeclaringClass().getName(), method.getName(),
-                                  method.getReturnType(), method.getParameterTypes());
+            method.getReturnType(), method.getParameterTypes());
         } else {
             backend.invoke_virtual(method.getDeclaringClass().getName(), method.getName(),
-                                   method.getReturnType(), method.getParameterTypes());
+            method.getReturnType(), method.getParameterTypes());
         }
     }
-
+    
     protected void super_invoke(Method method) {
+        
         backend.invoke_special(superclass.getName(), method.getName(),
-                               method.getReturnType(), method.getParameterTypes());
+        method.getReturnType(), method.getParameterTypes());
     }
-
+    
     protected void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
         backend.invoke_virtual(className, methodName, returnType, parameterTypes);
     }
-
+    
     protected void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
+        
         backend.invoke_static(className, methodName, returnType, parameterTypes);
     }
-
+    
     protected void super_invoke() {
         backend.invoke_special(superclass.getName(), methodName, returnType, parameterTypes);
     }
-
+    
     protected void invoke_constructor(String className, Class[] parameterTypes) {
         backend.invoke_special(className, Constants.CONSTRUCTOR_NAME, Void.TYPE, parameterTypes);
     }
-   
+    
     protected void invoke_constructor(Class type) {
+        defineResource(type);
         invoke_constructor(type, Constants.TYPES_EMPTY);
     }
-
+    
     protected void invoke(Constructor constructor) {
         invoke_constructor(constructor.getDeclaringClass(), constructor.getParameterTypes());
     }
-
+    
     protected void invoke_constructor(Class type, Class[] parameterTypes) {
         invoke_constructor(type.getName(), parameterTypes);
     }
-
+    
     private static int getStackSize(Class type) {
         return (type.equals(Double.TYPE) || type.equals(Long.TYPE)) ? 2 : 1;
     }
-
+    
     static int getStackSize(Class[] classes) {
         int size = 0;
         for (int i = 0; i < classes.length; i++) {
@@ -749,39 +883,40 @@ abstract class CodeGenerator {
         }
         return size;
     }
-
+    
     protected void super_invoke(Constructor constructor) {
         super_invoke_constructor(constructor.getParameterTypes());
     }
-
+    
     protected void super_invoke_constructor() {
         invoke_constructor(superclass.getName(), Constants.TYPES_EMPTY);
     }
-
+    
     protected void super_invoke_constructor(Class[] parameterTypes) {
         invoke_constructor(superclass.getName(), parameterTypes);
     }
-
+    
     protected void invoke_constructor_this() {
         invoke_constructor_this(Constants.TYPES_EMPTY);
     }
-
+    
     protected void invoke_constructor_this(Class[] parameterTypes) {
         invoke_constructor(className, parameterTypes);
     }
-
+    
     protected void new_instance_this() {
         backend.new_instance(className);
     }
-  
+    
     protected void new_instance(String className) {
         backend.new_instance(className);
     }
-
+    
     protected void new_instance(Class clazz) {
+        defineResource(clazz);
         new_instance(clazz.getName());
     }
- 
+    
     protected void aaload(int index) {
         push(index);
         aaload();
@@ -790,15 +925,15 @@ abstract class CodeGenerator {
     protected void aaload() { backend.aaload(); }
     protected void aastore() { backend.aastore(); }
     protected void athrow() { backend.athrow(); }
-  
+    
     protected Object make_label() {
         return new Object();
     }
-
+    
     protected Object make_local() {
         return make_local(null);
     }
-
+    
     protected Object make_local(Class type) {
         Object local = new Object();
         locals.put(local, new Integer(nextLocal));
@@ -806,7 +941,7 @@ abstract class CodeGenerator {
         nextLocal += (type == null) ? 1 : getStackSize(type);
         return local;
     }
-
+    
     /**
      * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
      */
@@ -827,7 +962,7 @@ abstract class CodeGenerator {
             aconst_null();
         }
     }
-
+    
     /**
      * Unboxes the object on the top of the stack. If the object is null, the
      * unboxed primitive value becomes zero.
@@ -850,7 +985,7 @@ abstract class CodeGenerator {
             checkcast(type);
         }
     }
-
+    
     /**
      * If the argument is a primitive class, replaces the primitive value
      * on the top of the stack with the wrapped (Object) equivalent. For
@@ -879,7 +1014,7 @@ abstract class CodeGenerator {
             }
         }
     }
-
+    
     /**
      * If the argument is a primitive class, replaces the object
      * on the top of the stack with the unwrapped (primitive)
@@ -898,26 +1033,26 @@ abstract class CodeGenerator {
             checkcast(clazz);
         }
     }
-
+    
     protected void checkcast_this() {
         backend.checkcast(className);
     }
-
+    
     protected void checkcast(Class clazz) {
         // TODO: necessary?
-//         if (clazz.isArray()) {
-//             append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
+        //         if (clazz.isArray()) {
+        //             append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
         if (clazz.equals(Object.class)) {
             // ignore
         } else {
             backend.checkcast(clazz.getName());
         }
     }
-   
+    
     protected void instance_of(Class clazz) {
         backend.instance_of(clazz.getName());
     }
-
+    
     protected void instance_of_this() {
         backend.instance_of(className);
     }
@@ -929,7 +1064,7 @@ abstract class CodeGenerator {
         return_value();
         end_method();
     }
-
+    
     private void generateFindClass() {
         /* generates:
            static private Class findClass(String name) throws Exception {
@@ -939,18 +1074,18 @@ abstract class CodeGenerator {
                    throw new java.lang.NoClassDefFoundError(cne.getMessage());
                }
            }
-        */
+         */
         begin_method(Modifier.PRIVATE | Modifier.STATIC,
-                     Class.class,
-                     FIND_CLASS,
-                     Constants.TYPES_STRING,
-                     null);
+        Class.class,
+        FIND_CLASS,
+        Constants.TYPES_STRING,
+        null);
         Object eh = begin_handler();
         load_this();
         invoke(MethodConstants.FOR_NAME);
         return_value();
         end_handler();
-
+        
         handle_exception(eh, ClassNotFoundException.class);
         invoke(MethodConstants.THROWABLE_GET_MESSAGE);
         new_instance(NoClassDefFoundError.class);
@@ -960,11 +1095,11 @@ abstract class CodeGenerator {
         athrow();
         end_method();
     }
-
+    
     protected interface ProcessArrayCallback {
         public void processElement(Class type);
     }
-
+    
     /**
      * Process an array on the stack. Assumes the top item on the stack
      * is an array of the specified type. For each element in the array,
@@ -982,21 +1117,21 @@ abstract class CodeGenerator {
         push(0);
         store_local(loopvar);
         goTo(checkloop);
-
+        
         nop(loopbody);
         load_local(array);
         load_local(loopvar);
         array_load(compType);
         callback.processElement(compType);
         iinc(loopvar, 1);
-
+        
         nop(checkloop);
         load_local(loopvar);
         load_local(array);
         arraylength();
         if_icmplt(loopbody);
     }
-
+    
     /**
      * Process two arrays on the stack in parallel. Assumes the top two items on the stack
      * are arrays of the specified class. The arrays must be the same length. For each pair
@@ -1016,7 +1151,7 @@ abstract class CodeGenerator {
         push(0);
         store_local(loopvar);
         goTo(checkloop);
-
+        
         nop(loopbody);
         load_local(array1);
         load_local(loopvar);
@@ -1026,14 +1161,14 @@ abstract class CodeGenerator {
         array_load(compType);
         callback.processElement(compType);
         iinc(loopvar, 1);
-
+        
         nop(checkloop);
         load_local(loopvar);
         load_local(array1);
         arraylength();
         if_icmplt(loopbody);
     }
-
+    
     /**
      * Branches to the specified label if the top two items on the stack
      * are not equal. The items must both be of the specified
@@ -1043,12 +1178,12 @@ abstract class CodeGenerator {
      */
     protected void not_equals(Class clazz, final Object notEquals) {
         (new ProcessArrayCallback() {
-                public void processElement(Class type) {
-                    not_equals_helper(type, notEquals, this);
-                }
-            }).processElement(clazz);
+            public void processElement(Class type) {
+                not_equals_helper(type, notEquals, this);
+            }
+        }).processElement(clazz);
     }
-
+    
     private void not_equals_helper(Class clazz, Object notEquals, ProcessArrayCallback callback) {
         if (clazz.isPrimitive()) {
             if (returnType.equals(Double.TYPE)) {
@@ -1086,13 +1221,14 @@ abstract class CodeGenerator {
     }
     
     protected void throw_exception(Class type, String msg) {
+        defineResource(type);
         new_instance(type);
         dup();
         push(msg);
         invoke_constructor(type, new Class[]{ String.class });
         athrow();
-    }  
-
+    }
+    
     /**
      * If both objects on the top of the stack are non-null, does nothing.
      * If one is null, or both are null, both are popped off and execution
@@ -1109,18 +1245,18 @@ abstract class CodeGenerator {
         ifnonnull(oneNullHelper);
         pop2();
         goTo(bothNull);
-
+        
         nop(nonNull);
         ifnull(oneNullHelper);
         goTo(end);
-
+        
         nop(oneNullHelper);
         pop2();
         goTo(oneNull);
-
+        
         nop(end);
     }
-
+    
     protected void generateFactoryMethod(Method method) {
         begin_method(method);
         new_instance_this();
