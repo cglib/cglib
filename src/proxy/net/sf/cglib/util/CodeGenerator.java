@@ -55,6 +55,7 @@ package net.sf.cglib.util;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.math.*;
 import java.util.*;
 
 /**
@@ -94,7 +95,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         load_class_helper(getClassName());
     }
     
-    protected void load_class(Class type) {
+    public void load_class(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Void.TYPE)) {
                 throw new IllegalArgumentException("cannot load void type");
@@ -120,7 +121,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * current method. Primitive values are inserted as their boxed
      * (Object) equivalents.
      */
-    protected void create_arg_array() {
+    public void create_arg_array() {
         /* generates:
            Object[] args = new Object[]{ arg1, new Integer(arg2) };
          */
@@ -136,7 +137,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
     
-    protected void push(Object[] array) {
+    public void push(Object[] array) {
         push(array.length);
         newarray(array.getClass().getComponentType());
         for (int i = 0; i < array.length; i++) {
@@ -147,7 +148,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
     
-    protected void push_object(Object obj) {
+    public void push_object(Object obj) {
         if (obj == null) {
             aconst_null();
         } else {
@@ -158,18 +159,55 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 push((String)obj);
             } else if (obj instanceof Class) {
                 load_class((Class)obj);
-            } else if (obj.getClass().getSuperclass().equals(Number.class)) {
-                throw new IllegalArgumentException("not implemented yet");
+            } else if (obj instanceof BigInteger) {
+                new_instance(BigInteger.class);
+                dup();
+                push(obj.toString());
+                invoke_constructor(BigInteger.class);
+            } else if (obj instanceof BigDecimal) {
+                new_instance(BigDecimal.class);
+                dup();
+                push(obj.toString());
+                invoke_constructor(BigDecimal.class);
+            } else if (obj instanceof Number) {
+                push_unboxed(obj);
             } else {
                 throw new IllegalArgumentException("unknown type: " + obj.getClass());
             }
+        }
+    }
+
+    public void push(boolean value) {
+        push(value ? 1 : 0);
+    }
+
+    /**
+     * If the object is a Number, Boolean, or Character, pushes the equivalent primitive
+     * value onto the stack. Otherwise, calls push_object(obj).
+     */
+    public void push_unboxed(Object obj)
+    {
+        if (obj == null || !ReflectUtils.getUnboxedType(obj.getClass()).isPrimitive()) {
+            push_object(obj);
+        } else if (obj instanceof Boolean) {
+            push(((Boolean)obj).booleanValue() ? 1 : 0);
+        } else if (obj instanceof Character) {
+            push((short)((Character)obj).charValue());
+        } else if (obj instanceof Long) {
+            push(((Long)obj).longValue());
+        } else if (obj instanceof Double) {
+            push(((Double)obj).doubleValue());
+        } else if (obj instanceof Float) {
+            push(((Float)obj).floatValue());
+        } else {
+            push(((Number)obj).intValue());
         }
     }
     
     /**
      * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
      */
-    protected void zero_or_null(Class type) {
+    public void zero_or_null(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Double.TYPE)) {
                 push(0d);
@@ -186,12 +224,20 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             aconst_null();
         }
     }
+
+    /**
+     * Toggles the integer on the top of the stack from 1 to 0 or vice versa
+     */
+    public void not() {
+        push(1);
+        xor(Integer.TYPE);
+    }
     
     /**
      * Unboxes the object on the top of the stack. If the object is null, the
      * unboxed primitive value becomes zero.
      */
-    protected void unbox_or_zero(Class type) {
+    public void unbox_or_zero(Class type) {
         if (type.isPrimitive()) {
             if (!type.equals(Void.TYPE)) {
                 Label nonNull = make_label();
@@ -217,7 +263,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * If the class is Void, a null is pushed onto the stack instead.
      * @param type the class indicating the current type of the top stack value
      */
-    protected void box(Class type) {
+    public void box(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Void.TYPE)) {
                 aconst_null();
@@ -246,7 +292,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * @param type the class indicating the desired type of the top stack value
      * @return true if the value was unboxed
      */
-    protected void unbox(Class type) {
+    public void unbox(Class type) {
         if (type.isPrimitive()) {
             if (!type.equals(Void.TYPE)) {
                 Method convert = (Method)primitiveMethods.get(type);
@@ -258,7 +304,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
     
-    protected void null_constructor() {
+    public void null_constructor() {
         begin_constructor();
         load_this();
         super_invoke_constructor();
@@ -309,7 +355,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * @param type the type of the array (type.isArray() must be true)
      * @param callback the callback triggered for each element
      */
-    protected void process_array(Class type, ProcessArrayCallback callback) {
+    public void process_array(Class type, ProcessArrayCallback callback) {
         Class compType = type.getComponentType();
         Local array = make_local();
         Local loopvar = make_local(Integer.TYPE);
@@ -341,7 +387,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * @param type the type of the arrays (type.isArray() must be true)
      * @param callback the callback triggered for each pair of elements
      */
-    protected void process_arrays(Class type, ProcessArrayCallback callback) {
+    public void process_arrays(Class type, ProcessArrayCallback callback) {
         Class compType = type.getComponentType();
         Local array1 = make_local();
         Local array2 = make_local();
@@ -378,7 +424,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * directly and by invoking the <code>equals</code> method for
      * Objects. Arrays are recursively processed in the same manner.
      */
-    protected void not_equals(Class type, final Label notEquals) {
+    public void not_equals(Class type, final Label notEquals) {
         (new ProcessArrayCallback() {
             public void processElement(Class type) {
                 not_equals_helper(type, notEquals, this);
@@ -388,19 +434,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     
     private void not_equals_helper(Class type, Label notEquals, ProcessArrayCallback callback) {
         if (type.isPrimitive()) {
-            Class returnType = getReturnType();
-            if (returnType.equals(Double.TYPE)) {
-                dcmpg();
-                ifne(notEquals);
-            } else if (returnType.equals(Long.TYPE)) {
-                lcmp();
-                ifne(notEquals);
-            } else if (returnType.equals(Float.TYPE)) {
-                fcmpg();
-                ifne(notEquals);
-            } else {
-                if_icmpne(notEquals);
-            }
+            if_cmpne(type, notEquals);
         } else {
             Label end = make_label();
             nullcmp(notEquals, end);
@@ -423,7 +457,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
     
-    protected void throw_exception(Class type, String msg) {
+    public void throw_exception(Class type, String msg) {
         new_instance(type);
         dup();
         push(msg);
@@ -440,7 +474,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
      * @param oneNull label to branch to if only one of the objects is null
      * @param bothNull label to branch to if both of the objects are null
      */
-    protected void nullcmp(Label oneNull, Label bothNull) {
+    public void nullcmp(Label oneNull, Label bothNull) {
         dup2();
         Label nonNull = make_label();
         Label oneNullHelper = make_label();
@@ -461,7 +495,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(end);
     }
     
-    protected void factory_method(Method method) {
+    public void factory_method(Method method) {
         begin_method(method);
         new_instance_this();
         dup();
@@ -478,12 +512,12 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
 
     // TODO: verify sorted
     // TODO: provide switch capabilities in BasicCodeGenerator?
-    protected void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
+    public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
         float density = (float)keys.length / (keys[keys.length - 1] - keys[0] + 1);
         process_switch(keys, callback, density >= 0.5f);
     }
 
-    protected void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
+    public void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
         int len = keys.length;
         int min = keys[0];
         int max = keys[len - 1];
@@ -524,12 +558,12 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(end);
     }
 
-    protected interface StringSwitchCallback {
+    public interface StringSwitchCallback {
         void processCase(String key, Label end) throws Exception;
         void processDefault() throws Exception;
     }
 
-    protected void string_switch(String[] strings, int switchStyle, StringSwitchCallback callback)
+    public void string_switch(String[] strings, int switchStyle, StringSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {
         case SWITCH_STYLE_TRIE:

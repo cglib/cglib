@@ -295,24 +295,24 @@ abstract public class BasicCodeGenerator {
         & ~Modifier.SYNCHRONIZED);
     }
     
-    protected void begin_method(Method method) {
+    public void begin_method(Method method) {
         begin_method(method, getDefaultModifiers(method));
     }
     
-    protected void begin_method(Method method, int modifiers) {
+    public void begin_method(Method method, int modifiers) {
         begin_method(modifiers, method.getReturnType(), method.getName(),
         method.getParameterTypes(), method.getExceptionTypes());
     }
     
-    protected void begin_constructor(Constructor constructor) {
+    public void begin_constructor(Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
     }
     
-    protected void begin_constructor() {
+    public void begin_constructor() {
         begin_constructor(Constants.TYPES_EMPTY);
     }
     
-    protected void begin_constructor(Class[] parameterTypes) {
+    public void begin_constructor(Class[] parameterTypes) {
         checkInMethod();
         this.returnType = Void.TYPE;
         this.parameterTypes = parameterTypes;
@@ -320,7 +320,7 @@ abstract public class BasicCodeGenerator {
         setNextLocal();
     }
     
-    protected void begin_static() {
+    public void begin_static() {
         checkInMethod();
         this.returnType = Void.TYPE;
         this.parameterTypes = Constants.TYPES_EMPTY;
@@ -339,7 +339,7 @@ abstract public class BasicCodeGenerator {
         nextLocal = getLocalOffset() + getStackSize(parameterTypes);
     }
     
-    protected void end_method() {
+    public void end_method() {
         backend.end_method();
         parameterTypes = null;
         returnType = null;
@@ -350,13 +350,13 @@ abstract public class BasicCodeGenerator {
         inMethod = false;
     }
 
-    protected Block begin_block() {
+    public Block begin_block() {
         Block newBlock = new Block(curBlock, backend.mark());
         curBlock = newBlock;
         return curBlock;
     }
 
-    protected void end_block() {
+    public void end_block() {
         if (curBlock == null) {
             throw new IllegalStateException("mismatched block boundaries");
         }
@@ -364,7 +364,7 @@ abstract public class BasicCodeGenerator {
         curBlock = curBlock.getParent();
     }
     
-    protected void catch_exception(Block block, Class exceptionType) {
+    public void catch_exception(Block block, Class exceptionType) {
         // TODO
         // throw new IllegalArgumentException("block belongs to a different method");
 
@@ -374,33 +374,59 @@ abstract public class BasicCodeGenerator {
         backend.catch_exception(block, exceptionType);
     }
     
-    protected void ifeq(Label label) { backend.emit(Opcodes.IFEQ, label); }
-    protected void ifne(Label label) { backend.emit(Opcodes.IFNE, label); }
-    protected void iflt(Label label) { backend.emit(Opcodes.IFLT, label); }
-    protected void ifge(Label label) { backend.emit(Opcodes.IFGE, label); }
-    protected void ifgt(Label label) { backend.emit(Opcodes.IFGT, label); }
-    protected void ifle(Label label) { backend.emit(Opcodes.IFLE, label); }
-    protected void goTo(Label label) { backend.emit(Opcodes.GOTO, label); }
-    protected void ifnull(Label label) { backend.emit(Opcodes.IFNULL, label); }
-    protected void ifnonnull(Label label) { backend.emit(Opcodes.IFNONNULL, label); }
-    protected void if_icmplt(Label label) { backend.emit(Opcodes.IF_ICMPLT, label); }
-    protected void if_icmpne(Label label) { backend.emit(Opcodes.IF_ICMPNE, label); }
-    protected void if_icmpeq(Label label) { backend.emit(Opcodes.IF_ICMPEQ, label); }
-    protected void if_acmpeq(Label label) { backend.emit(Opcodes.IF_ACMPEQ, label); }
-    protected void if_acmpne(Label label) { backend.emit(Opcodes.IF_ACMPNE, label); }
-    protected void dcmpg() { backend.emit(Opcodes.DCMPG); }
-    protected void fcmpg() { backend.emit(Opcodes.FCMPG); }
-    protected void lcmp() { backend.emit(Opcodes.LCMP); }
-    protected void pop() { backend.emit(Opcodes.POP); }
-    protected void pop2() { backend.emit(Opcodes.POP2); }
-    protected void dup() { backend.emit(Opcodes.DUP); }
-    protected void dup2() { backend.emit(Opcodes.DUP2); }
-    protected void dup_x1() { backend.emit(Opcodes.DUP_X1); }
-    protected void dup_x2() { backend.emit(Opcodes.DUP_X2); }
-    protected void swap() { backend.emit(Opcodes.SWAP); }
-    protected void aconst_null() { backend.emit(Opcodes.ACONST_NULL); }
+    public void ifeq(Label label) { backend.emit(Opcodes.IFEQ, label); }
+    public void ifne(Label label) { backend.emit(Opcodes.IFNE, label); }
+    public void iflt(Label label) { backend.emit(Opcodes.IFLT, label); }
+    public void ifge(Label label) { backend.emit(Opcodes.IFGE, label); }
+    public void ifgt(Label label) { backend.emit(Opcodes.IFGT, label); }
+    public void ifle(Label label) { backend.emit(Opcodes.IFLE, label); }
+    public void goTo(Label label) { backend.emit(Opcodes.GOTO, label); }
+    public void ifnull(Label label) { backend.emit(Opcodes.IFNULL, label); }
+    public void ifnonnull(Label label) { backend.emit(Opcodes.IFNONNULL, label); }
+    public void if_icmplt(Label label) { backend.emit(Opcodes.IF_ICMPLT, label); }
+    public void if_icmpgt(Label label) { backend.emit(Opcodes.IF_ICMPGT, label); }
+    public void if_icmpne(Label label) { backend.emit(Opcodes.IF_ICMPNE, label); }
+    public void if_icmpeq(Label label) { backend.emit(Opcodes.IF_ICMPEQ, label); }
+    public void if_acmpeq(Label label) { backend.emit(Opcodes.IF_ACMPEQ, label); }
+    public void if_acmpne(Label label) { backend.emit(Opcodes.IF_ACMPNE, label); }
 
-    protected void add(Class type) {
+    public void pop() { backend.emit(Opcodes.POP); }
+    public void pop2() { backend.emit(Opcodes.POP2); }
+    public void dup() { backend.emit(Opcodes.DUP); }
+    public void dup2() { backend.emit(Opcodes.DUP2); }
+    public void dup_x1() { backend.emit(Opcodes.DUP_X1); }
+    public void dup_x2() { backend.emit(Opcodes.DUP_X2); }
+    public void swap() { backend.emit(Opcodes.SWAP); }
+    public void aconst_null() { backend.emit(Opcodes.ACONST_NULL); }
+
+    public void if_cmpeq(Class type, Label label) {
+        cmpHelper(type, label, Opcodes.IF_ICMPEQ, Opcodes.IFEQ);
+    }
+    public void if_cmpne(Class type, Label label) {
+        cmpHelper(type, label, Opcodes.IF_ICMPNE, Opcodes.IFNE);
+    }
+    public void if_cmplt(Class type, Label label) {
+        cmpHelper(type, label, Opcodes.IF_ICMPLT, Opcodes.IFLT);
+    }
+    public void if_cmpgt(Class type, Label label) {
+        cmpHelper(type, label, Opcodes.IF_ICMPGT, Opcodes.IFGT);
+    }
+    
+    private void cmpHelper(Class type, Label label, int intOp, int numOp) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LCMP);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DCMPG);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FCMPG);
+        } else {
+            backend.emit(intOp, label);
+            return;
+        }
+        backend.emit(numOp, label);
+    }
+
+    public void add(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LADD);
         } else if (type == Double.TYPE) {
@@ -412,7 +438,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void mul(Class type) {
+    public void mul(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LMUL);
         } else if (type == Double.TYPE) {
@@ -424,7 +450,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void xor(Class type) {
+    public void xor(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LXOR);
         } else {
@@ -432,7 +458,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void ushr(Class type) {
+    public void ushr(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LUSHR);
         } else {
@@ -440,7 +466,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void sub(Class type) {
+    public void sub(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LSUB);
         } else if (type == Double.TYPE) {
@@ -452,7 +478,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void div(Class type) {
+    public void div(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LDIV);
         } else if (type == Double.TYPE) {
@@ -464,7 +490,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void neg(Class type) {
+    public void neg(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LNEG);
         } else if (type == Double.TYPE) {
@@ -476,7 +502,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void rem(Class type) {
+    public void rem(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LREM);
         } else if (type == Double.TYPE) {
@@ -488,7 +514,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void and(Class type) {
+    public void and(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LAND);
         } else {
@@ -496,7 +522,7 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void or(Class type) {
+    public void or(Class type) {
         if (type == Long.TYPE) {
             backend.emit(Opcodes.LOR);
         } else {
@@ -507,7 +533,7 @@ abstract public class BasicCodeGenerator {
     /**
      * Casts from one primitive numeric type to another
      */
-    protected void cast_numeric(Class from, Class to) {
+    public void cast_numeric(Class from, Class to) {
         if (from != to) {
             if (from == Double.TYPE) {
                 if (to == Float.TYPE) {
@@ -554,7 +580,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void push(int i) {
+    public void push(int i) {
         if (i < -1) {
             backend.emit_ldc(new Integer(i));
         } else if (i <= 5) {
@@ -568,7 +594,7 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void push(long value) {
+    public void push(long value) {
         if (value == 0L || value == 1L) {
             backend.emit(Opcodes.lconst(value));
         } else {
@@ -576,14 +602,14 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void push(float value) {
+    public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
             backend.emit(Opcodes.fconst(value));
         } else {
             backend.emit_ldc(new Float(value));
         }
     }
-    protected void push(double value) {
+    public void push(double value) {
         if (value == 0d || value == 1d) {
             backend.emit(Opcodes.dconst(value));
         } else {
@@ -591,15 +617,15 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void push(String value) {
+    public void push(String value) {
         backend.emit_ldc(value);
     }
 
-    protected void newarray() {
+    public void newarray() {
         newarray(Object.class);
     }
     
-    protected void newarray(Class type) {
+    public void newarray(Class type) {
         if (type.isPrimitive()) {
             backend.emit_int(Opcodes.NEWARRAY, Opcodes.newarray(type));
         } else {
@@ -607,11 +633,11 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void arraylength() {
+    public void arraylength() {
         backend.emit(Opcodes.ARRAYLENGTH);
     }
     
-    protected void array_load(Class type) {
+    public void array_load(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
                 backend.emit(Opcodes.LALOAD);
@@ -633,7 +659,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void array_store(Class type) {
+    public void array_store(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
                 backend.emit(Opcodes.LASTORE);
@@ -655,7 +681,7 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void load_this() {
+    public void load_this() {
         if (isStatic) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
@@ -665,7 +691,7 @@ abstract public class BasicCodeGenerator {
     /**
      * Pushes all of the arguments of the current method onto the stack.
      */
-    protected void load_args() {
+    public void load_args() {
         load_args(0, parameterTypes.length);
     }
     
@@ -673,12 +699,12 @@ abstract public class BasicCodeGenerator {
      * Pushes the specified argument of the current method onto the stack.
      * @param index the zero-based index into the argument list
      */
-    protected void load_arg(int index) {
+    public void load_arg(int index) {
         load_local(parameterTypes[index], getLocalOffset() + skipArgs(index));
     }
     
     // zero-based (see load_this)
-    protected void load_args(int fromArg, int count) {
+    public void load_args(int fromArg, int count) {
         int pos = getLocalOffset() + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
             Class t = parameterTypes[fromArg + i];
@@ -731,19 +757,19 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void iinc(Local local, int amount) {
+    public void iinc(Local local, int amount) {
         backend.emit_iinc(local.getIndex(), amount);
     }
     
-    protected void store_local(Local local) {
+    public void store_local(Local local) {
         store_local(local.getType(), local.getIndex());
     }
     
-    protected void load_local(Local local) {
+    public void load_local(Local local) {
         load_local(local.getType(), local.getIndex());
     }
     
-    protected void return_value() {
+    public void return_value() {
         if (returnType.isPrimitive()) {
             if (returnType.equals(Void.TYPE)) {
                 backend.emit(Opcodes.RETURN);
@@ -761,7 +787,7 @@ abstract public class BasicCodeGenerator {
         }
     }
 
-    protected void declare_field(int modifiers, Class type, String name) {
+    public void declare_field(int modifiers, Class type, String name) {
         if (getFieldInfo(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
@@ -791,33 +817,33 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void getfield(String name) {
+    public void getfield(String name) {
         FieldInfo info = getFieldInfo(name);
         int opcode = info.isStatic() ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
         backend.emit_field(opcode, className, name, info.getType());
     }
     
-    protected void putfield(String name) {
+    public void putfield(String name) {
         FieldInfo info = getFieldInfo(name);
         int opcode = info.isStatic() ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD;
         backend.emit_field(opcode, className, name, info.getType());
     }
     
-    protected void super_getfield(String name) throws NoSuchFieldException {
+    public void super_getfield(String name) throws NoSuchFieldException {
         // TODO: search up entire superclass chain?
         getfield(superclass.getDeclaredField(name));
     }
     
-    protected void super_putfield(String name) throws NoSuchFieldException {
+    public void super_putfield(String name) throws NoSuchFieldException {
         putfield(superclass.getDeclaredField(name));
     }
 
-    protected void getfield(Field field) {
+    public void getfield(Field field) {
         int opcode = isStatic(field) ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
         fieldHelper(opcode, field);
     }
     
-    protected void putfield(Field field) {
+    public void putfield(Field field) {
         int opcode = isStatic(field) ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD;
         fieldHelper(opcode, field);
     }
@@ -837,7 +863,7 @@ abstract public class BasicCodeGenerator {
                            field.getType());
     }
 
-    protected void invoke(Method method) {
+    public void invoke(Method method) {
         int opcode;
         if (method.getDeclaringClass().isInterface()) {
             opcode = Opcodes.INVOKEINTERFACE;
@@ -853,7 +879,7 @@ abstract public class BasicCodeGenerator {
                             method.getParameterTypes());
     }
     
-    protected void super_invoke(Method method) {
+    public void super_invoke(Method method) {
         backend.emit_invoke(Opcodes.INVOKESPECIAL,
                             superclass.getName(),
                             method.getName(),
@@ -861,15 +887,15 @@ abstract public class BasicCodeGenerator {
                             method.getParameterTypes());
     }
 
-    protected void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
+    public void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
         backend.emit_invoke(Opcodes.INVOKEVIRTUAL, className, methodName, returnType, parameterTypes);
     }
 
-    protected void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
+    public void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
         backend.emit_invoke(Opcodes.INVOKESTATIC, className, methodName, returnType, parameterTypes);
     }
 
-    protected void super_invoke() {
+    public void super_invoke() {
         backend.emit_invoke(Opcodes.INVOKESPECIAL,
                             superclass.getName(),
                             methodName,
@@ -877,7 +903,7 @@ abstract public class BasicCodeGenerator {
                             parameterTypes);
     }
     
-    protected void invoke_constructor(String className, Class[] parameterTypes) {
+    public void invoke_constructor(String className, Class[] parameterTypes) {
         backend.emit_invoke(Opcodes.INVOKESPECIAL,
                             className,
                             Constants.CONSTRUCTOR_NAME,
@@ -885,15 +911,15 @@ abstract public class BasicCodeGenerator {
                             parameterTypes);
     }
     
-    protected void invoke_constructor(Class type) {
+    public void invoke_constructor(Class type) {
         invoke_constructor(type, Constants.TYPES_EMPTY);
     }
     
-    protected void invoke(Constructor constructor) {
+    public void invoke(Constructor constructor) {
         invoke_constructor(constructor.getDeclaringClass(), constructor.getParameterTypes());
     }
     
-    protected void invoke_constructor(Class type, Class[] parameterTypes) {
+    public void invoke_constructor(Class type, Class[] parameterTypes) {
         invoke_constructor(type.getName(), parameterTypes);
     }
     
@@ -909,66 +935,66 @@ abstract public class BasicCodeGenerator {
         return size;
     }
 
-    protected void super_invoke(Constructor constructor) {
+    public void super_invoke(Constructor constructor) {
         super_invoke_constructor(constructor.getParameterTypes());
     }
     
-    protected void super_invoke_constructor() {
+    public void super_invoke_constructor() {
         invoke_constructor(superclass.getName(), Constants.TYPES_EMPTY);
     }
     
-    protected void super_invoke_constructor(Class[] parameterTypes) {
+    public void super_invoke_constructor(Class[] parameterTypes) {
         invoke_constructor(superclass.getName(), parameterTypes);
     }
     
-    protected void invoke_constructor_this() {
+    public void invoke_constructor_this() {
         invoke_constructor_this(Constants.TYPES_EMPTY);
     }
     
-    protected void invoke_constructor_this(Class[] parameterTypes) {
+    public void invoke_constructor_this(Class[] parameterTypes) {
         invoke_constructor(className, parameterTypes);
     }
     
-    protected void new_instance_this() {
+    public void new_instance_this() {
         backend.emit_type(Opcodes.NEW, className);
     }
     
-    protected void new_instance(String className) {
+    public void new_instance(String className) {
         backend.emit_type(Opcodes.NEW, className);
     }
     
-    protected void new_instance(Class type) {
+    public void new_instance(Class type) {
         new_instance(type.getName());
     }
     
-    protected void aaload(int index) {
+    public void aaload(int index) {
         push(index);
         aaload();
     }
     
-    protected void aaload() { backend.emit(Opcodes.AALOAD); }
-    protected void aastore() { backend.emit(Opcodes.AASTORE); }
-    protected void athrow() { backend.emit(Opcodes.ATHROW); }
+    public void aaload() { backend.emit(Opcodes.AALOAD); }
+    public void aastore() { backend.emit(Opcodes.AASTORE); }
+    public void athrow() { backend.emit(Opcodes.ATHROW); }
     
-    protected Label make_label() {
+    public Label make_label() {
         return backend.make_label();
     }
     
-    protected Local make_local() {
+    public Local make_local() {
         return make_local(null);
     }
     
-    protected Local make_local(Class type) {
+    public Local make_local(Class type) {
         int index = nextLocal;
         nextLocal += (type == null) ? 1 : getStackSize(type);
         return new Local(type, index);
     }
 
-    protected void checkcast_this() {
+    public void checkcast_this() {
         backend.emit_type(Opcodes.CHECKCAST, className);
     }
     
-    protected void checkcast(Class type) {
+    public void checkcast(Class type) {
         // TODO: necessary?
         //         if (type.isArray()) {
         //             append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
@@ -979,15 +1005,15 @@ abstract public class BasicCodeGenerator {
         }
     }
     
-    protected void instance_of(Class type) {
+    public void instance_of(Class type) {
         backend.emit_type(Opcodes.INSTANCEOF, type.getName());
     }
     
-    protected void instance_of_this() {
+    public void instance_of_this() {
         backend.emit_type(Opcodes.INSTANCEOF, className);
     }
 
-    protected void mark(Label label) {
+    public void mark(Label label) {
         backend.emit(label);
     }
 }
