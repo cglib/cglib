@@ -61,6 +61,8 @@ import net.sf.cglib.util.*;
 class FastClassGenerator extends CodeGenerator {
     private static final Method METHOD_GET_INDEX =
       ReflectUtils.findMethod("FastClass.getIndex(String, Class[])");
+    private static final Method SIGNATURE_GET_INDEX =
+      ReflectUtils.findMethod("FastClass.getIndex(String)");
     private static final Method CONSTRUCTOR_GET_INDEX =
       ReflectUtils.findMethod("FastClass.getIndex(Class[])");
     private static final Method INVOKE =
@@ -86,9 +88,34 @@ class FastClassGenerator extends CodeGenerator {
         return_value();
         end_method();
 
-        Predicate p = new VisibilityPredicate(type, false);
-        final Method[] methods = (Method[])ReflectUtils.filter(type.getDeclaredMethods(), p);
-        final Constructor[] constructors = (Constructor[])ReflectUtils.filter(type.getDeclaredConstructors(), p);
+        VisibilityPredicate vp = new VisibilityPredicate(type, false);
+        List methodList = ReflectUtils.addAllMethods(type, new ArrayList());
+        CollectionUtils.filter(methodList, vp);
+        CollectionUtils.filter(methodList, new DuplicatesPredicate());
+        final Method[] methods = (Method[])methodList.toArray(new Method[methodList.size()]);
+        final Constructor[] constructors = (Constructor[])CollectionUtils.filter(type.getDeclaredConstructors(), vp);
+
+        // getIndex(String)
+        begin_method(SIGNATURE_GET_INDEX);
+        final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+            public Object transform(Object obj) {
+                Method m = (Method)obj;
+                return m.getName() + ReflectUtils.getMethodDescriptor((Method)obj);
+            }
+        });
+        load_arg(0);
+        string_switch((String[])signatures.toArray(new String[0]), SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                // TODO: remove linear indexOf
+                push(signatures.indexOf(key));
+                return_value();
+            }
+            public void processDefault() {
+                push(-1);
+                return_value();
+            }
+        });
+        end_method();
 
         // getIndex(String, Class[])
         begin_method(METHOD_GET_INDEX);
@@ -119,14 +146,12 @@ class FastClassGenerator extends CodeGenerator {
                 }
                 invoke(method);
                 box(method.getReturnType());
-                // goTo(end);                
                 return_value();
             }
             public void processDefault() {
                 throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
             }
         });
-        // return_value();
         end_method();
 
         // newInstance(int, Object[])
@@ -168,8 +193,8 @@ class FastClassGenerator extends CodeGenerator {
         }
         
         public void processDefault() {
-            // TODO: improve exception
-            throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
+            push(-1);
+            return_value();
         }
     }
     

@@ -58,9 +58,9 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestMethodProxy.java,v 1.11 2003/09/09 16:15:09 herbyderby Exp $
+ * @version $Id: TestDelegates.java,v 1.1 2003/09/10 20:15:27 herbyderby Exp $
  */
-public class TestMethodProxy extends CodeGenTestCase {
+public class TestDelegates extends CodeGenTestCase {
 
     public interface StringMaker {
         Object newInstance(char[] buf, int offset, int count);
@@ -69,14 +69,6 @@ public class TestMethodProxy extends CodeGenTestCase {
     public void testTypeCheckedConstructor() throws Throwable {
         StringMaker maker = (StringMaker)ConstructorDelegate.create(String.class, StringMaker.class);
         assertTrue("nil".equals(maker.newInstance("vanilla".toCharArray(), 2, 3)));
-    }
-
-    public void testSimple() throws Throwable {
-        Class[] types = new Class[]{ Integer.TYPE, Integer.TYPE };
-        Method substring = String.class.getDeclaredMethod("substring", types);
-        MethodProxy proxy = MethodProxy.create(substring,substring);
-        Object[] args = new Object[]{ new Integer(2), new Integer(4) };
-        assertTrue("LI".equals(proxy.invokeSuper("CGLIB", args)));
     }
 
     public interface Substring {
@@ -195,59 +187,7 @@ public class TestMethodProxy extends CodeGenTestCase {
         assertTrue(((SuperSimple)multi).execute() == 1);
     }
 
-    public void testMethodProxyPerformance() throws Throwable {
-        int iterations = 500000;
-        System.out.println();
-        System.out.println("iteration count: " + iterations);
-
-        String test = "abcabcabc";
-        Object[] args;
-
-        Class[] types = new Class[]{ String.class, Integer.TYPE };
-        Method indexOf = String.class.getDeclaredMethod("indexOf", types);
-        MethodProxy proxy = MethodProxy.create(indexOf,indexOf);
-        args = new Object[]{ "ab", new Integer(1) };
-
-        IndexOf fast = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);
-        
-        int result;
-        long t1  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            args = new Object[]{ "ab", new Integer(1) };
-            result = ((Integer)indexOf.invoke(test, args)).intValue();
-        }
-        long t2  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            result = ((Integer)indexOf.invoke(test, args)).intValue();
-        }
-        long t3  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            args = new Object[]{ "ab", new Integer(1) };
-            result = ((Integer)proxy.invokeSuper(test, args)).intValue();
-        }
-        long t4  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            result = ((Integer)proxy.invokeSuper(test, args)).intValue();
-        }
-        long t5  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            result = fast.indexOf("ab", 1);
-        }
-        long t6  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            result = test.indexOf("ab", 1);
-        }
-        long t7  = System.currentTimeMillis();
-
-        System.out.println("reflect+args = " + (t2 - t1) 
-                           + "\n" + "reflect      = " + (t3 - t2)
-                           + "\n" + "proxy+args   = " + (t4 - t3)
-                           + "\n" + "proxy        = " + (t5 - t4)
-                           + "\n" + "fast         = " + (t6 - t5)
-                           + "\n" + "raw          = " + (t7 - t6));
-    }
-    
-    public TestMethodProxy(String testName) {
+    public TestDelegates(String testName) {
         super(testName);
     }
     
@@ -256,7 +196,7 @@ public class TestMethodProxy extends CodeGenTestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestMethodProxy.class);
+        return new TestSuite(TestDelegates.class);
     }
 
 }

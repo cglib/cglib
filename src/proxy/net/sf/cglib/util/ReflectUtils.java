@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.10 2003/09/10 17:49:10 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.11 2003/09/10 20:15:29 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -356,33 +356,6 @@ public class ReflectUtils {
         return (Method[])methods.toArray(new Method[methods.size()]);
     }
 
-    public static boolean arrayEquals(Object[] a1, Object[] a2) {
-        if ((a1 == null) ^ (a2 == null)) {
-            return false;
-        }
-        if (a1.length != a2.length) {
-            return false;
-        }
-        for (int i = 0; i < a1.length; i++) {
-            Object o1 = a1[i];
-            Object o2 = a2[i];
-            if (o1 == null) {
-                if (o2 != null) {
-                    return false;
-                }
-            } else if (o2 == null) {
-                return false;
-            } else {
-                Class c1 = o1.getClass();
-                Class c2 = o2.getClass();
-                if (!c1.equals(c2)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     public static Method findDeclaredMethod(Class type, String methodName, Class[] parameterTypes)
     throws NoSuchMethodException {
         Class cl = type;
@@ -458,18 +431,16 @@ public class ReflectUtils {
         }
     }
 
-    public static Object[] filter(Object[] a, Predicate p) {
-        List c = new ArrayList(Arrays.asList(a));
-        filter(c, p);
-        return c.toArray((Object[])Array.newInstance(a.getClass().getComponentType(), c.size()));
-    }
-
-    public static void filter(Collection c, Predicate p) {
-        Iterator it = c.iterator();
-        while (it.hasNext()) {
-            if (!p.evaluate(it.next())) {
-                it.remove();
-            }
+    public static List addAllMethods(Class type, List list) {
+        list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
+        Class superclass = type.getSuperclass();
+        if (superclass != null) {
+            addAllMethods(superclass, list);
         }
+        Class[] interfaces = type.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            addAllMethods(interfaces[i], list);
+        }
+        return list;
     }
 }

@@ -62,8 +62,8 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
-    private static final Method MAKE_PROXY =
-      ReflectUtils.findMethod("MethodProxy.create(Method, Method)");
+     private static final Method MAKE_PROXY =
+       ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
 
@@ -143,8 +143,8 @@ implements CallbackGenerator
              METHOD_1 = cls.getDeclaredMethod("toString", args);
 
              Class thisClass = findClass("NameOfThisClass");
-             Method proxied = thisClass.getDeclaredMethod("CGLIB$ACCESS_O", args);
-             CGLIB$ACCESS_0 = MethodProxy.create(proxied);
+             CGLIB$ACCESS_0 = MethodProxy.create(cls, "toString()Ljava.lang.String;",
+                                                 thisClass, "CGLIB$ACCESS_0()Ljava.lang.String;");
            }
         */
 
@@ -154,15 +154,13 @@ implements CallbackGenerator
             cg.load_method(method);
             cg.dup();
             cg.putfield(getFieldName(context, method));
-            cg.dup();
-            cg.store_local(m);
-                                       
+
             String accessName = getAccessName(context, method);
-            cg.load_class_this();
-            cg.push(accessName);
-            cg.load_local(m);
-            cg.invoke(MethodConstants.GET_PARAMETER_TYPES);
-            cg.invoke(MethodConstants.GET_DECLARED_METHOD);
+            String desc = ReflectUtils.getMethodDescriptor(method);
+            cg.invoke(MethodConstants.GET_DECLARING_CLASS);
+            cg.push(method.getName() + desc);
+            cg.load_class_this();            
+            cg.push(accessName + desc);
             cg.invoke(MAKE_PROXY);
             cg.putfield(accessName);
         }

@@ -103,7 +103,7 @@ extends CodeGenerator
         Class type = getSuperclass();
 
         List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
-        ReflectUtils.filter(constructors, new VisibilityPredicate(type, true));
+        CollectionUtils.filter(constructors, new VisibilityPredicate(type, true));
         if (constructors.size() == 0) {
             throw new IllegalArgumentException("No visible constructors in " + type);
         }
@@ -115,20 +115,20 @@ extends CodeGenerator
         // its superclass chain, then each interface and
         // its superinterfaces.
         List methods = new ArrayList();
-        addDeclaredMethods(methods, getSuperclass());
+        ReflectUtils.addAllMethods(getSuperclass(), methods);
 
         Set forcePublic = Collections.EMPTY_SET;
         if (interfaces != null) {
             List interfaceMethods = new ArrayList();
             for (int i = 0; i < interfaces.length; i++) {
-                addDeclaredMethods(interfaceMethods, interfaces[i]);
+                ReflectUtils.addAllMethods(interfaces[i], interfaceMethods);
             }
             forcePublic = MethodWrapper.createSet(interfaceMethods);
             methods.addAll(interfaceMethods);
         }
-
-        ReflectUtils.filter(methods, new VisibilityPredicate(getSuperclass(), true));
-        removeDuplicates(methods);
+        CollectionUtils.filter(methods, new VisibilityPredicate(getSuperclass(), true));
+        CollectionUtils.filter(methods, new DuplicatesPredicate());
+        // removeDuplicates(methods);
         removeFinal(methods);
 
         int len = Callbacks.MAX_VALUE + 1;
@@ -163,20 +163,6 @@ extends CodeGenerator
         setter.invoke(null, new Object[]{ initialCallbacks });
     }
     
-    private static void addDeclaredMethods(List methodList, Class type) {
-        methodList.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
-      
-        Class superclass = type.getSuperclass();
-        if (superclass != null) {
-            addDeclaredMethods(methodList, superclass);
-        }
-
-        Class[] interfaces = type.getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            addDeclaredMethods(methodList, interfaces[i]);
-        }
-    }
-
     private void generateConstructors(List constructors) throws NoSuchMethodException {
         for (Iterator i = constructors.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
@@ -468,17 +454,8 @@ extends CodeGenerator
         end_method();
     }
 
-    private static void removeDuplicates(List list) {
-        final Set unique = new HashSet();
-        ReflectUtils.filter(list, new Predicate() {
-            public boolean evaluate(Object arg) {
-                return unique.add(MethodWrapper.create((Method)arg));
-            }
-        });
-    }
-
     private static void removeFinal(List list) {
-        ReflectUtils.filter(list, new Predicate() {
+        CollectionUtils.filter(list, new Predicate() {
             public boolean evaluate(Object arg) {
                 return !Modifier.isFinal(((Method)arg).getModifiers());
             }

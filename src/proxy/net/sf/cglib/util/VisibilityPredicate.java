@@ -56,8 +56,8 @@ package net.sf.cglib.util;
 import java.lang.reflect.*;
 
 public class VisibilityPredicate implements Predicate {
-    final boolean protectedOk;
-    final String pkg;
+    private boolean protectedOk;
+    private String pkg;
 
     public VisibilityPredicate(Class source, boolean protectedOk) {
         this.protectedOk = protectedOk;

@@ -70,7 +70,7 @@ public class ClassesKey
     public boolean equals(Object o) {
         return o != null
             && (o instanceof ClassesKey)
-            && ReflectUtils.arrayEquals(array, ((ClassesKey)o).array);
+            && CollectionUtils.arrayEquals(array, ((ClassesKey)o).array);
     }
 
     public int hashCode() {

@@ -56,7 +56,7 @@ package net.sf.cglib.util;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: MethodConstants.java,v 1.5 2003/09/08 17:42:24 herbyderby Exp $
+ * @version $Id: MethodConstants.java,v 1.6 2003/09/10 20:15:29 herbyderby Exp $
  */
 public class MethodConstants {
     private MethodConstants() { }
@@ -109,4 +109,6 @@ public class MethodConstants {
       ReflectUtils.findMethod("Method.getParameterTypes()");
     public static final Method CLASS_GET_NAME =
       ReflectUtils.findMethod("Class.getName()");
+    public static final Method GET_DECLARING_CLASS =
+      ReflectUtils.findMethod("Method.getDeclaringClass()");
 }

@@ -51,12 +51,13 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import net.sf.cglib.KeyFactory; // TODO
 
-class MethodWrapper {
+public class MethodWrapper {
     private static final MethodWrapperKey KEY_FACTORY =
       (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 
