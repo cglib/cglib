@@ -59,14 +59,14 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.4 2002/12/21 23:44:58 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.5 2002/12/29 21:36:22 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
     public void testSimple() throws Throwable {
         Class[] types = new Class[]{ Integer.TYPE, Integer.TYPE };
         Method substring = String.class.getDeclaredMethod("substring", types);
-        MethodProxy proxy = MethodProxy.generate(substring);
+        MethodProxy proxy = MethodProxy.create(substring);
         Object[] args = new Object[]{ new Integer(2), new Integer(4) };
         assertTrue("LI".equals(proxy.invokeSuper("CGLIB", args)));
     }
@@ -83,33 +83,50 @@ public class TestMethodProxy extends CodeGenTestCase {
         int indexOf(String str, int fromIndex);
     }
 
+    public interface MainDelegate {
+        int main(String[] args);
+    }
+
+    public static class MainTest {
+        public static int alternateMain(String[] args) {
+            return 7;
+        }
+    }
+
     public void testFancy() throws Throwable {
-        Substring closure = (Substring)MethodClosure.generate("CGLIB", "substring", Substring.class);
-        assertTrue("LI".equals(closure.substring(2, 4)));
+        Substring delegate = (Substring)MethodDelegate.create("CGLIB", "substring", Substring.class);
+        assertTrue("LI".equals(delegate.substring(2, 4)));
     }
 
     public void testFancyNames() throws Throwable {
-        Substring2 closure = (Substring2)MethodClosure.generate("CGLIB", "substring", Substring2.class);
-        assertTrue("LI".equals(closure.anyNameAllowed(2, 4)));
+        Substring2 delegate = (Substring2)MethodDelegate.create("CGLIB", "substring", Substring2.class);
+        assertTrue("LI".equals(delegate.anyNameAllowed(2, 4)));
     }
 
     public void testFancyTypes() throws Throwable {
         String test = "abcabcabc";
-        IndexOf closure = (IndexOf)MethodClosure.generate(test, "indexOf", IndexOf.class);
-        assertTrue(closure.indexOf("ab", 1) == test.indexOf("ab", 1));
+        IndexOf delegate = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);
+        assertTrue(delegate.indexOf("ab", 1) == test.indexOf("ab", 1));
     }
 
     public void testEquals() throws Throwable {
         String test = "abc";
-        MethodClosure mc1 = MethodClosure.generate(test, "indexOf", IndexOf.class);
-        MethodClosure mc2 = MethodClosure.generate(test, "indexOf", IndexOf.class);
-        MethodClosure mc3 = MethodClosure.generate("other", "indexOf", IndexOf.class);
-        MethodClosure mc4 = MethodClosure.generate(test, "substring", Substring.class);
-        MethodClosure mc5 = MethodClosure.generate(test, "substring", Substring2.class);
+        MethodDelegate mc1 = MethodDelegate.create(test, "indexOf", IndexOf.class);
+        MethodDelegate mc2 = MethodDelegate.create(test, "indexOf", IndexOf.class);
+        MethodDelegate mc3 = MethodDelegate.create("other", "indexOf", IndexOf.class);
+        MethodDelegate mc4 = MethodDelegate.create(test, "substring", Substring.class);
+        MethodDelegate mc5 = MethodDelegate.create(test, "substring", Substring2.class);
         assertTrue(mc1.equals(mc2));
         assertTrue(!mc1.equals(mc3));
         assertTrue(!mc1.equals(mc4));
         assertTrue(mc4.equals(mc5));
+    }
+
+    public void testStaticDelegate() throws Throwable {
+        MainDelegate start = (MainDelegate)MethodDelegate.createStatic(MainTest.class,
+                                                                       "alternateMain",
+                                                                       MainDelegate.class);
+        assertTrue(start.main(null) == 7);
     }
 
     public void testMethodProxyPerformance() throws Throwable {
@@ -122,10 +139,10 @@ public class TestMethodProxy extends CodeGenTestCase {
 
         Class[] types = new Class[]{ String.class, Integer.TYPE };
         Method indexOf = String.class.getDeclaredMethod("indexOf", types);
-        MethodProxy proxy = MethodProxy.generate(indexOf);
+        MethodProxy proxy = MethodProxy.create(indexOf);
         args = new Object[]{ "ab", new Integer(1) };
 
-        IndexOf fast = (IndexOf)MethodClosure.generate(test, "indexOf", IndexOf.class);
+        IndexOf fast = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);
         
         int result;
         long t1  = System.currentTimeMillis();
