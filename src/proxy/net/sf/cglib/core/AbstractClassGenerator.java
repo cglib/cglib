@@ -43,7 +43,7 @@ implements ClassGenerator
     private Object key;
     private boolean useCache = true;
     private String className;
-    protected boolean attemptLoad;
+    private boolean attemptLoad;
 
     protected static class Source {
         String name;
