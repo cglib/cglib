@@ -56,34 +56,15 @@ package net.sf.cglib.core;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
-public class ClassInfo {
-    private Type type;
-    private Type superType;
-    private int modifiers;
-    private Type[] interfaces;
+abstract public class ClassInfo {
 
-    public ClassInfo(int modifiers, String name, Type superType, Type[] interfaces) {
-        this.modifiers = modifiers;
-        this.superType = superType;
-        this.interfaces = interfaces;
-        type = Type.getType("L" + name.replace('.', '/') + ";");
+    protected ClassInfo() {
     }
 
-    public Type getType() {
-        return type;
-    }
-
-    public Type getSuperType() {
-        return superType;
-    }
-
-    public Type[] getInterfaces() {
-        return interfaces;
-    }
-    
-    public int getModifiers() {
-        return modifiers;
-    }
+    abstract public Type getType();
+    abstract public Type getSuperType();
+    abstract public Type[] getInterfaces();
+    abstract public int getModifiers();
 
     public boolean equals(Object o) {
         if (o == null)

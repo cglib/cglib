@@ -24,6 +24,10 @@ public class TypeUtils {
         CollectionUtils.reverse(transforms, rtransforms);
     }
 
+    public static Type getType(String className) {
+        return Type.getType("L" + className.replace('.', '/') + ";");
+    }
+
     public static boolean isFinal(int access) {
         return (Constants.ACC_FINAL & access) != 0;
     }

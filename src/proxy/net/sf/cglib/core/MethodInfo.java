@@ -56,41 +56,16 @@ package net.sf.cglib.core;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
-public class MethodInfo {
-    private ClassInfo classInfo;
-    private int modifiers;
-    private Signature sig;
-    private Type[] exceptions;
-    private Attribute attrs;
+abstract public class MethodInfo {
 
-    public MethodInfo(ClassInfo classInfo, int modifiers, Signature sig, Type[] exceptions, Attribute attrs) {
-        // TODO: null checking
-        this.classInfo = classInfo;
-        this.modifiers = modifiers;
-        this.sig = sig;
-        this.exceptions = exceptions;
-        this.attrs = attrs;
-    }
-
-    public ClassInfo getClassInfo() {
-        return classInfo;
+    protected MethodInfo() {
     }
     
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    public Signature getSignature() {
-        return sig;
-    }
-
-    public Type[] getExceptionTypes() {
-        return exceptions;
-    }
-
-    public Attribute getAttribute() {
-        return attrs;
-    }
+    abstract public ClassInfo getClassInfo();
+    abstract public int getModifiers();
+    abstract public Signature getSignature();
+    abstract public Type[] getExceptionTypes();
+    abstract public Attribute getAttribute();
 
     public boolean equals(Object o) {
         if (o == null)
@@ -106,6 +81,6 @@ public class MethodInfo {
 
     public String toString() {
         // TODO: include modifiers, exceptions
-        return sig.toString();
+        return getSignature().toString();
     }
 }

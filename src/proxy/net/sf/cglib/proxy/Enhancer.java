@@ -473,6 +473,7 @@ public class Enhancer extends AbstractClassGenerator
         CollectionUtils.filter(actualMethods, new DuplicatesPredicate());
         CollectionUtils.filter(actualMethods, new RejectModifierPredicate(Constants.ACC_FINAL));
 
+        final Map classInfoCache = new HashMap();
         List methods = CollectionUtils.transform(actualMethods, new Transformer() {
             public Object transform(Object value) {
                 Method method = (Method)value;
@@ -484,11 +485,7 @@ public class Enhancer extends AbstractClassGenerator
                 if (forcePublic.contains(MethodWrapper.create(method))) {
                     modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
                 }
-                return new MethodInfo(ReflectUtils.getClassInfo(method.getDeclaringClass()),
-                                      modifiers,
-                                      ReflectUtils.getSignature(method),
-                                      ReflectUtils.getExceptionTypes(method),
-                                      null);
+                return ReflectUtils.getMethodInfo(method, modifiers);
             }
         });
 
@@ -644,12 +641,27 @@ public class Enhancer extends AbstractClassGenerator
         private List methods;
         private boolean collect;
 
-        public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        public void begin_class(final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
+            Type[] useInterfaces = interfaces;
             if (TypeUtils.isInterface(access) || isExcluded(superType)) {
                 collect = false;
             } else {
                 collect = true;
-                classInfo = new ClassInfo(access, className, superType, interfaces);
+                final Type type = TypeUtils.getType(className);
+                classInfo = new ClassInfo() {
+                    public Type getType() {
+                        return type;
+                    }
+                    public Type getSuperType() {
+                        return superType;
+                    }
+                    public Type[] getInterfaces() {
+                        return interfaces;
+                    }
+                    public int getModifiers() {
+                        return access;
+                    }
+                };
                 Class superclass;
                 if (superType == null) {
                     superclass = Object.class;
@@ -668,15 +680,31 @@ public class Enhancer extends AbstractClassGenerator
                 methods = new ArrayList();
                 constructors = new ArrayList();
                 if (useFactory) {
-                    interfaces = TypeUtils.add(interfaces, FACTORY);
+                    useInterfaces = TypeUtils.add(interfaces, FACTORY);
                 }
             }
-            super.begin_class(access, className, superType, interfaces, sourceFile);
+            super.begin_class(access, className, superType, useInterfaces, sourceFile);
         }
 
-        public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
+        public CodeEmitter begin_method(final int access, final Signature sig, final Type[] exceptions, final Attribute attrs) {
             if (collect) {
-                MethodInfo method = new MethodInfo(classInfo, access, sig, exceptions, attrs);
+                MethodInfo method = new MethodInfo() {
+                    public ClassInfo getClassInfo() {
+                        return classInfo;
+                    }
+                    public int getModifiers() {
+                        return access;
+                    }
+                    public Signature getSignature() {
+                        return sig;
+                    }
+                    public Type[] getExceptionTypes() {
+                        return exceptions;
+                    }
+                    public Attribute getAttribute() {
+                        return attrs;
+                    }
+                };
                 if (TypeUtils.isConstructor(method)) {
                     constructors.add(method);
                     return new CodeEmitter(super.begin_method(access, sig, exceptions, attrs)) {
