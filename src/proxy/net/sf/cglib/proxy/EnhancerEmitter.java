@@ -153,10 +153,10 @@ class EnhancerEmitter extends ClassEmitter {
         }
         Set forcePublic = MethodWrapper.createSet(interfaceMethods);
         methods.addAll(interfaceMethods);
-        CollectionUtils.filter(methods, RemoveStaticPredicate.INSTANCE);
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Modifier.STATIC));
         CollectionUtils.filter(methods, new VisibilityPredicate(superclass, true));
         CollectionUtils.filter(methods, new DuplicatesPredicate());
-        removeFinal(methods);
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Modifier.FINAL));
 
         Map groups = new HashMap();
         Map indexes = new HashMap();
@@ -481,13 +481,5 @@ class EnhancerEmitter extends ClassEmitter {
 
     private static String getCallbackField(int index) {
         return "CGLIB$CALLBACK_" + index;
-    }
-    
-    private static void removeFinal(List list) {
-        CollectionUtils.filter(list, new Predicate() {
-            public boolean evaluate(Object arg) {
-                return !Modifier.isFinal(((Method)arg).getModifiers());
-            }
-        });
     }
 }
