@@ -67,7 +67,7 @@ class LazyLoaderGenerator implements CallbackGenerator {
     private static final Signature LOAD_PRIVATE =
       TypeUtils.parseSignature("Object CGLIB$LOAD_PRIVATE()");
     private static final Signature LOAD_OBJECT = 
-      TypeUtils.parseSignature("Object loadObject(String)");
+      TypeUtils.parseSignature("Object loadObject()");
     private static final Type LAZY_LOADER =
       TypeUtils.parseType("net.sf.cglib.LazyLoader");
 

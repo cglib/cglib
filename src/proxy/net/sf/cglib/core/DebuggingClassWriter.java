@@ -92,10 +92,12 @@ public class DebuggingClassWriter extends ClassWriter {
     public byte[] toByteArray() {
         byte[] b = super.toByteArray();
         if (debugLocation != null) {
-            
+            String dirs = className.replace('.',File.separatorChar);
             try {
-                new File(debugLocation).mkdirs();
-                File file = new File(new File(debugLocation), className + ".class");
+                
+                new File(debugLocation + File.separatorChar + dirs).getParentFile().mkdirs();
+                
+                File file = new File(new File(debugLocation), dirs + ".class");
                 OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
                 try{
                   out.write(b);
@@ -103,7 +105,7 @@ public class DebuggingClassWriter extends ClassWriter {
                   out.close();
                 }
                
-                 file = new File(new File(debugLocation), className + ".asm");
+                 file = new File(new File(debugLocation), dirs + ".asm");
                  out = new BufferedOutputStream(new FileOutputStream(file));
                 try{
                     
