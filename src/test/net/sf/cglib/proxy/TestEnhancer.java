@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.9 2002/09/25 19:12:50 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.10 2002/09/26 18:57:13 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -124,13 +124,14 @@ public class TestEnhancer extends TestCase {
             Object args[],
             boolean invokedSuper, Object retValFromSuper,
             java.lang.Throwable e )throws java.lang.Throwable{
+                 
                 int mod =  method.getModifiers(); 
                
                 if( Modifier.isProtected( mod ) ){
                  invokedProtectedMethod = true;
                 }
                
-                if( Modifier.isAbstract( mod ) ){
+                if( !invokedSuper ){
                    invokedAbstractMethod = true;
                 }
                 
