@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.5 2002/11/30 12:41:30 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.6 2002/12/01 08:40:09 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -342,7 +342,7 @@ public class TestEnhancer extends TestCase {
    public void testABC() throws Throwable{
        Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR).toString();
        Enhancer.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
-       Enhancer.enhance(EB.class, null, TEST_INTERCEPTOR).toString();
+       ((EB)Enhancer.enhance(EB.class, null, TEST_INTERCEPTOR)).finalTest();
        Enhancer.enhance(ED.class, null, TEST_INTERCEPTOR).toString();
        Enhancer.enhance(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
    }
