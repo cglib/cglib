@@ -30,6 +30,10 @@ public abstract class Source {
     
     abstract void abstractMethod();
     
+    public void throwChecked()throws ClassCastException{
+      throw new ClassCastException();
+    }
+    
     public synchronized void synchronizedMethod(){}
     
     public final void finalMethod(){ }

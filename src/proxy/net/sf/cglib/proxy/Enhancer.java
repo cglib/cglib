@@ -87,7 +87,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.8 2002/09/23 17:39:40 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.9 2002/09/23 18:15:01 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -187,7 +187,7 @@ public class Enhancer implements org.apache.bcel.Constants {
      * @param cls class to extend, uses Object.class if null
      * @param interfaces interfaces to implement, can be null
      * @param ih valid interceptor implementation
-     * @param loader classloater for enhanced class, uses System ClassLoader if null
+     * @param loader classloater for enhanced class, uses "current" if null
      * @throws Throwable on error
      * @return instanse of enhanced  class
      */    

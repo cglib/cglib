@@ -65,7 +65,7 @@ import java.lang.reflect.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.5 2002/09/23 17:24:52 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.6 2002/09/23 18:15:01 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -205,8 +205,93 @@ public class TestEnhancer extends TestCase {
   
   }
   
+   public void testObject()throws Throwable{
+       Object source =  Enhancer.enhance(
+        null,
+        null, NOOP_INTERCEPTOR );
+   
+        assertTrue("parent is object", 
+                 source.getClass().getSuperclass() == Object.class  );
+   
+   }
+   
+   public void testSystemClassLoader()throws Throwable{
+       Object source =  Enhancer.enhance(
+        null,
+        null, NOOP_INTERCEPTOR , ClassLoader.getSystemClassLoader());
+        source.toString();
+        assertTrue("SystemClassLoader", 
+                 source.getClass().getClassLoader() 
+                 == ClassLoader.getSystemClassLoader()  );
+   
+   }
+   
+   
+   public void testCustomClassLoader()throws Throwable{
   
+       ClassLoader custom = new ClassLoader(){};
+       
+       Object source =  Enhancer.enhance(
+        null,
+        null, NOOP_INTERCEPTOR, custom);
+        source.toString();
+        assertTrue("Custom classLoader", 
+                 source.getClass().getClassLoader() 
+                 == custom  );
+   
+  
+   }
+
+ public void testCheckedException()throws Throwable{
+ 
+  Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        null, NOOP_INTERCEPTOR );
+   
+   try{
+   
+       source.throwChecked();
+       fail("lost exeption");
+       
+   }catch( ClassCastException cce  ){
+   
+   }
+ 
+ }
+
+ public void testInvalidException()throws Throwable{
+ 
+     MethodInterceptor interceptor =
+        new NoOpInterceptor(){
+            
+            public Object afterReturn(  Object obj, Method method,
+            Object args[],
+            boolean invokedSuper, Object retValFromSuper,
+            java.lang.Throwable e )throws java.lang.Throwable{
+                throw new CloneNotSupportedException();
+          }
+     };     
+     
+     Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        null, interceptor );
+  
+   try{
+   
+       source.throwChecked();
+      
+   }catch( Exception cnse  ){
+   
+        // not very usual for java progammer, 
+       // is it OK or we need to rethrow some runtime exception ?  
+     if( !( cnse instanceof CloneNotSupportedException ) ){
+          fail("invalid exeption");
+     }
+    
+   }
+     
+     
+ }
+ 
+ 
 }
-
-
-
