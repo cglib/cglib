@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.45 2004/08/14 08:05:26 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.46 2004/09/19 03:04:05 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -14,7 +14,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="2.0.2"/>
+    <property name="component.version" value="2.1-dev"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>
@@ -27,8 +27,6 @@
     <property name="source.home" value="src/proxy"/>
     <property name="samples.source.home" value="src/proxy/samples"/>
     <property name="source.test" value="src/test"/>
-
-    <property name="asm.jar" value="lib/asm.jar"/>    
     <property name="source.asm" value="../asm-src"/>    
   
     <property name="compile.target" value="1.2"/>
@@ -125,12 +123,15 @@
       <exclude name="samples/**" />
     </jar> 
 
-    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="compile.classpath"/>
+    <jarjar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-nodep-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
-      <zipfileset src="${asm.jar}"/>
+      <zipfileset src="lib/asm.jar" excludes="META-INF"/>
+      <zipfileset src="lib/asm-attrs.jar" excludes="META-INF"/>
+      <rule pattern="org.objectweb.asm.**" result="net.sf.cglib.asm.@1"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
-    </jar> 
+    </jarjar> 
   </target>
 
   <target depends="compile,javadoc" description="Create docs and source distribution" name="srcjar">
