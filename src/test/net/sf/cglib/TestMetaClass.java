@@ -198,7 +198,11 @@ public class TestMetaClass extends TestCase {
         private   Method sets[];
         private   int size ;    
         public MetaClassReflectImpl(Class target, String[] getters, String[] setters, Class[] types) {
-            super(target, getters, setters, types);
+            this.target = target;
+            this.types = types;
+            this.getters = getters;
+            this.setters = setters;
+
             size = this.types.length;        
             gets = new Method [size];
             sets = new Method [size];

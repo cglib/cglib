@@ -58,28 +58,28 @@ import net.sf.cglib.util.*;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
- * @version $Id: ConstructorProxy.java,v 1.13 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.14 2003/06/24 21:00:10 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
+    private static final FactoryCache cache = new FactoryCache(ConstructorProxy.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("ConstructorProxy$Generator(Constructor, Method)");
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
-    
-    private static final ClassNameFactory NAME_FACTORY = 
-      new ClassNameFactory("ConstructorProxiedByCGLIB");
-   
+
+    ////// newClassKey //////
     private static final ClassKey CLASS_KEY_FACTORY =
       (ClassKey)KeyFactory.create(ClassKey.class, null);
-
-    private static final ClassLoader DEFAULT_LOADER =
-      ConstructorProxy.class.getClassLoader();
-  
-    public static Object newClassKey(Class[] args) {
-        return CLASS_KEY_FACTORY.newInstance(args);
-    }
     
     interface ClassKey {
         public Object newInstance(Class[] args); 
     }
+
+    public static Object newClassKey(Class[] args) {
+        return CLASS_KEY_FACTORY.newInstance(args);
+    }
+    /////////////////////////
+    
 
     /** Creates a new instance of ConstructorProxy */
     protected ConstructorProxy() {
@@ -103,20 +103,8 @@ public abstract class ConstructorProxy {
     }
 
     private static ConstructorProxy createHelper(Constructor constructor, Method newInstance) {
-        try {
-            Class declaring = constructor.getDeclaringClass();
-            String className = NAME_FACTORY.getNextName(declaring);
-            ClassLoader loader = declaring.getClassLoader();
-            if (loader == null) {
-                loader = DEFAULT_LOADER;
-            }
-            Class gen = new Generator(className, constructor, loader, newInstance).define();
-            return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
+        ClassLoader loader = constructor.getDeclaringClass().getClassLoader();
+        return (ConstructorProxy)cache.getFactory(loader, null, GENERATOR, constructor, newInstance);
     }
 
     public abstract Object newInstance(Object[] args);
@@ -124,9 +112,11 @@ public abstract class ConstructorProxy {
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
         private Method newInstance;
-        
-        public Generator(String className, Constructor constructor, ClassLoader loader, Method newInstance) {
-            super(className, ConstructorProxy.class, loader);
+        private Class declaring;        
+
+        public Generator(Constructor constructor, Method newInstance) {
+            setSuperclass(ConstructorProxy.class);
+            setNamePrefix(constructor.getDeclaringClass().getName());
             this.constructor = constructor;
             this.newInstance = newInstance;
             if (newInstance != null) {

@@ -93,17 +93,34 @@ class EnhancerGenerator extends CodeGenerator {
     private List constructorList;
     private boolean isProxy;
 
-    EnhancerGenerator(String className, Class clazz, 
-                      Class[] interfaces,
-                      ClassLoader loader, 
-                      Method wreplace, 
-                      MethodFilter filter) {
-        super(className, clazz, loader);
+    public EnhancerGenerator(Class type, 
+                             Class[] interfaces,
+                             Method wreplace, 
+                             MethodFilter filter) {
+        setSuperclass(type);
         this.interfaces = interfaces;
         this.wreplace = wreplace;
         this.filter = filter;
 
-        isProxy = hasSuperclass(clazz, "net.sf.cglib.Proxy");
+        if (interfaces != null) {
+            addInterfaces(interfaces);
+        }
+        addInterface(Factory.class);
+    }
+
+    private static boolean hasSuperclass(Class type, String superclassName) {
+        while (type != null) {
+            if (type.getName().equals(superclassName)) {
+                return true;
+            }
+            type = type.getSuperclass();
+        }
+        return false;
+    }
+
+    protected void generate() throws ClassNotFoundException, NoSuchMethodException {
+        Class type = getSuperclass();
+        isProxy = hasSuperclass(type, "net.sf.cglib.Proxy");
      
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
@@ -114,57 +131,28 @@ class EnhancerGenerator extends CodeGenerator {
             throw new IllegalArgumentException(wreplace.toString());
         }
 
+        VisibilityFilter vis = new VisibilityFilter(type);
         try {
-            VisibilityFilter vis = new VisibilityFilter(clazz);
-            try {
-                cstruct = clazz.getDeclaredConstructor(Constants.TYPES_EMPTY);
-                if (!vis.accept(cstruct)) {
-                    cstruct = null;
-                }
-            } catch (NoSuchMethodException ignore) {
+            cstruct = type.getDeclaredConstructor(Constants.TYPES_EMPTY);
+            if (!vis.accept(cstruct)) {
+                cstruct = null;
             }
-            constructorList = new ArrayList(Arrays.asList(clazz.getDeclaredConstructors()));
-            filterMembers(constructorList, vis);
-            if (constructorList.size() == 0) {
-                throw new IllegalArgumentException("No visible constructors in " + clazz);
-            }
-            
-            if (wreplace != null) {
-                loader.loadClass(wreplace.getDeclaringClass().getName());
-            }
-            loader.loadClass(clazz.getName());
-
-            if (interfaces != null) {
-                for (int i = 0; i < interfaces.length; i++) {
-                    if (!interfaces[i].isInterface()) {
-                        throw new IllegalArgumentException(interfaces[i] + " is not an interface");
-                    }
-                    loader.loadClass(interfaces[i].getName());
-                }
-                addInterfaces(interfaces);
-            }
-            addInterface(Factory.class);
-            
-        } catch (ClassNotFoundException e) {
-            throw new CodeGenerationException(e);
+        } catch (NoSuchMethodException ignore) {
         }
-    }
-
-    private static boolean hasSuperclass(Class clazz, String superclassName) {
-        while (clazz != null) {
-            if (clazz.getName().equals(superclassName)) {
-                return true;
-            }
-            clazz = clazz.getSuperclass();
+        constructorList = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
+        filterMembers(constructorList, vis);
+        if (constructorList.size() == 0) {
+            throw new IllegalArgumentException("No visible constructors in " + type);
         }
-        return false;
-    }
 
-    protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
             wreplace = INTERNAL_WRITE_REPLACE;
         }
 
+        ensureLoadable(type);
+        ensureLoadable(wreplace.getDeclaringClass());
+        ensureLoadable(interfaces);
+        
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
         // its superinterfaces.
@@ -314,15 +302,15 @@ class EnhancerGenerator extends CodeGenerator {
         end_method();
     }
 
-    private static void addDeclaredMethods(List methodList, Class clazz) {
-        methodList.addAll(java.util.Arrays.asList(clazz.getDeclaredMethods()));
+    private static void addDeclaredMethods(List methodList, Class type) {
+        methodList.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
       
-           Class superclass = clazz.getSuperclass();
+           Class superclass = type.getSuperclass();
             if (superclass != null) {
                 addDeclaredMethods(methodList, superclass);
             }
 
-            Class[] interfaces = clazz.getInterfaces();
+            Class[] interfaces = type.getInterfaces();
             for (int i = 0; i < interfaces.length; i++) {
                 addDeclaredMethods(methodList, interfaces[i]);
             }

@@ -54,6 +54,7 @@
 
 package net.sf.cglib;
 
+import java.lang.reflect.Constructor;
 import net.sf.cglib.util.*;
 
 /**
@@ -93,13 +94,12 @@ import net.sf.cglib.util.*;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.15 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.16 2003/06/24 21:00:10 herbyderby Exp $
  */
 abstract public class KeyFactory {
-     static final Class TYPE = KeyFactory.class;
-
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
+    private static final FactoryCache cache = new FactoryCache(KeyFactory.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("KeyFactoryGenerator(Class)");
 
     protected int hashConstant;
     protected int hashMultiplier;
@@ -109,14 +109,9 @@ abstract public class KeyFactory {
     }
 
     public static KeyFactory create(Class keyInterface, ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        String className = nameFactory.getNextName(keyInterface);
-        Class result = new KeyFactoryGenerator(className, keyInterface, loader).define();
-        return (KeyFactory)ReflectUtils.newInstance(result);
+        return (KeyFactory)cache.getFactory(loader, null, GENERATOR, keyInterface);
     }
-
+    
     public int hashCode() {
         return hash;
     }

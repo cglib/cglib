@@ -53,20 +53,31 @@
  */
 package net.sf.cglib.util;
 
-/**
- * @version $Id: ClassNameFactory.java,v 1.1 2003/06/13 21:12:49 herbyderby Exp $
- */
-public class ClassNameFactory {
-    private final String suffix;
-    private int index = 0;
+public class ClassesKey
+{
+    private Object[] array;
+    private int hashCode;
 
-    public ClassNameFactory(String suffix) {
-        this.suffix = suffix;
+    public ClassesKey(Object[] array) {
+        this.array = array;
+        hashCode = 31;
+        for (int i = 0; i < array.length; i++) {
+            Object value = array[0];
+            hashCode = hashCode * 37 + ((value == null) ? 0 : value.getClass().hashCode());
+        }
     }
 
-    public String getNextName(Class cls) {
-        String className = cls.getName() + "$$" + suffix + "$$";
-        className += index++;
-        return className;
+//     public Object[] getArray() {
+//         return array;
+//     }
+
+    public boolean equals(Object o) {
+        return o != null
+            && (o instanceof ClassesKey)
+            && ReflectUtils.arrayEquals(array, ((ClassesKey)o).array);
+    }
+
+    public int hashCode() {
+        return hashCode;
     }
 }

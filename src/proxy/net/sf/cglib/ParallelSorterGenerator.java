@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * Copyright (c) 2003 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,35 +53,84 @@
  */
 package net.sf.cglib;
 
-import java.util.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import net.sf.cglib.util.*;
 
-/**
- * @version $Id: FactoryCache.java,v 1.9 2003/01/31 01:18:51 herbyderby Exp $
- */
-class FactoryCache {
-    private final Map cache;
+class ParallelSorterGenerator extends CodeGenerator {
+    private static final Method NEW_INSTANCE =
+      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
+    private static final Method SWAP_METHOD =
+      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
 
-    public FactoryCache() {
-        this(new WeakHashMap());
+    private Object[] objects;
+        
+    public ParallelSorterGenerator(Object[] objects) {
+        setSuperclass(ParallelSorter.class);
+        this.objects = objects;
     }
 
-    public FactoryCache(Map cache) {
-        this.cache = cache;
+    private String getFieldName(int index) {
+        return "FIELD_" + index;
     }
 
-    public Object get(ClassLoader loader, Object key) {
-        return getFactoryMap(loader).get(key);
+    protected void generate() throws NoSuchFieldException {
+        null_constructor();
+        factory_method(NEW_INSTANCE);
+        generateConstructor();
+        generateSwap();
     }
 
-    public void put(ClassLoader loader, Object key, Object factory) {
-        getFactoryMap(loader).put(key, factory);
-    }
-
-    private Map getFactoryMap(ClassLoader loader) {
-        Map factories = (Map)cache.get(loader);
-        if (factories == null) {
-            cache.put(loader, factories = new HashMap());
+    private void generateConstructor() throws NoSuchFieldException {
+        begin_constructor(Constants.TYPES_OBJECT_ARRAY);
+        load_this();
+        super_invoke_constructor();
+        load_this();
+        load_arg(0);
+        super_putfield("a");
+        for (int i = 0; i < objects.length; i++) {
+            Class type = objects[i].getClass();
+            declare_field(Modifier.PRIVATE, type, getFieldName(i));
+            load_this();
+            load_arg(0);
+            push(i);
+            aaload();
+            checkcast(type);
+            putfield(getFieldName(i));
         }
-        return factories;
+        return_value();
+        end_method();
+    }
+
+    private void generateSwap() {
+        begin_method(SWAP_METHOD);
+        for (int i = 0; i < objects.length; i++) {
+            Class type = objects[i].getClass();
+            Class component = type.getComponentType();
+            Local T = make_local(type);
+
+            load_this();
+            getfield(getFieldName(i));
+            store_local(T);
+
+            load_local(T);
+            load_arg(0);
+
+            load_local(T);
+            load_arg(1);
+            array_load(component);
+                
+            load_local(T);
+            load_arg(1);
+
+            load_local(T);
+            load_arg(0);
+            array_load(component);
+
+            array_store(component);
+            array_store(component);
+        }
+        return_value();
+        end_method();
     }
 }

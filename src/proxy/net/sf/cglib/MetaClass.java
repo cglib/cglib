@@ -65,20 +65,18 @@ import net.sf.cglib.util.*;
  */
 
 public abstract class MetaClass  {
-    
-    private static final Map cache = new Hashtable();
-    private static final MetaClassKey keyFactory =
-    (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
-    private static final MemberKey memberKeyFactory =
+    private static final FactoryCache cache = new FactoryCache(MetaClass.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("MetaClass$Generator(Class, String[], String[], Class[])");
+    private static final MetaClassKey KEY_FACTORY =
+      (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
+    private static final MemberKey MEMBER_KEY_FACTORY =
     (MemberKey)KeyFactory.create(MemberKey.class, null);
-    private static int index = 0;
-    
-    private static final ClassLoader defaultLoader = MetaClass.class.getClassLoader();
     
     protected Class target;
-    protected String [] getters, setters;
+    protected String[] getters, setters;
     protected Class[] types;
-    protected Map memebers = Collections.synchronizedMap(new HashMap());
+    protected Map members = new HashMap();
     
     
      interface MetaClassKey {
@@ -89,23 +87,9 @@ public abstract class MetaClass  {
      interface MemberKey {
         public Object newInstance( Class target, String name, Class types[]  );
     }
-    
-    
-    /** Creates a new instance of MetaClass */
-    protected MetaClass( Class target, String getters[],
-    String setters[], Class types[] ) {
+
+    protected MetaClass() { }
         
-        this.target = target;
-        this.getters = new String[getters.length];
-        System.arraycopy(getters,0,this.getters,0,getters.length );
-        this.setters = new String[setters.length];
-        System.arraycopy(setters,0,this.setters,0,setters.length );
-        this.types = new Class[types.length];
-        System.arraycopy(types,0,this.types,0,types.length );
-        addMembers();
-        
-    }
-    
     public Class[] getPropertyTypes(){
         
         return (Class[])types.clone();
@@ -115,29 +99,27 @@ public abstract class MetaClass  {
         
         java.lang.reflect.Method [] methods = target.getMethods();
         for(int i = 0; i < methods.length; i++ ){
-            Object key = memberKeyFactory.newInstance(target, methods[i].getName(),
+            Object key = MEMBER_KEY_FACTORY.newInstance(target, methods[i].getName(),
             methods[i].getParameterTypes() );
-            memebers.put(key, MethodProxy.create(methods[i],methods[i]));
+            members.put(key, MethodProxy.create(methods[i],methods[i]));
         }
         
         java.lang.reflect.Constructor [] constructors = target.getConstructors();
         for(int i = 0; i < constructors.length; i++ ){
-            Object key = memberKeyFactory.newInstance(target, "<init>" ,
+            Object key = MEMBER_KEY_FACTORY.newInstance(target, "<init>" ,
             constructors[i].getParameterTypes() );
-            memebers.put(key, ConstructorProxy.create(constructors[i]));
+            members.put(key, ConstructorProxy.create(constructors[i]));
         }
-        
-        
     }
     
     public MethodProxy getMethod( String name, Class[] types  ){
-        Object key = memberKeyFactory.newInstance(target, name, types );
-        return (MethodProxy)memebers.get(key);
+        Object key = MEMBER_KEY_FACTORY.newInstance(target, name, types );
+        return (MethodProxy)members.get(key);
     }
     
     public ConstructorProxy getConstructor( Class[] types  ){
-        Object key = memberKeyFactory.newInstance(target, "<init>" , types );
-        return (ConstructorProxy)memebers.get(key);
+        Object key = MEMBER_KEY_FACTORY.newInstance(target, "<init>" , types );
+        return (ConstructorProxy)members.get(key);
     }
     
     
@@ -151,32 +133,7 @@ public abstract class MetaClass  {
         return (String[])setters.clone();
     }
     
-    
-    static private Method findDeclaredMethod(Class clazz, String name, Class types[])
-    throws NoSuchMethodException{
         
-        
-        Class cl = clazz;
-        
-        while ( cl != null ){
-            
-            try{
-                
-                return cl.getDeclaredMethod(name,types);
-                
-                
-            }catch(NoSuchMethodException nsme ){
-                
-                cl = cl.getSuperclass();
-            }
-            
-        }
-        
-        throw new NoSuchMethodException(name);
-        
-        
-    }
-    
     private static void validate( Class target, String getters[],
     String setters[], Class types[],
     Method getters_out[], Method setters_out[] ){
@@ -197,7 +154,7 @@ public abstract class MetaClass  {
                 
                 if( getters[i] != null ){
                     last = getters[i];
-                    Method method = findDeclaredMethod(target,last,new Class[]{});
+                    Method method = ReflectUtils.findDeclaredMethod(target,last,new Class[]{});
                     
                     int mod = method.getModifiers();
                     
@@ -209,7 +166,7 @@ public abstract class MetaClass  {
                 
                 if( setters[i] != null ){
                     last = setters[i];
-                    Method method = findDeclaredMethod( target, last, new Class[]{ types[i] });
+                    Method method = ReflectUtils.findDeclaredMethod( target, last, new Class[]{ types[i] });
                     if( Modifier.isPrivate(method.getModifiers()) ){
                         throw new IllegalArgumentException(last);
                     }
@@ -227,52 +184,39 @@ public abstract class MetaClass  {
         
     }
     
-    public static MetaClass getInstance(ClassLoader loader, Class target, String getters[],
-    String setters[], Class types[] )
-    throws Throwable{
-        
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        
-        Object key = keyFactory.newInstance(target, getters, setters, types);
-        MetaClass result ;
-        synchronized(cache){
-            
-            result = (MetaClass)cache.get(key);
-            
-            if( result != null ){
-                return result;
+    public static MetaClass getInstance(ClassLoader loader,
+                                        Class target,
+                                        String[] getters,
+                                        String[] setters,
+                                        Class[] types) {
+        synchronized (cache) {
+            MetaClass singleton =
+                (MetaClass)cache.getFactory(loader,
+                                            KEY_FACTORY.newInstance(target, getters, setters, types),
+                                            GENERATOR,
+                                            target,
+                                            getters,
+                                            setters,
+                                            types);
+            if (singleton.target == null) {
+                singleton.target = target;
+
+                int len = getters.length;
+                singleton.getters = new String[len];
+                System.arraycopy(getters, 0, singleton.getters, 0, len);
+
+                singleton.setters = new String[len];
+                System.arraycopy(setters, 0, singleton.setters, 0, len);
+                                               
+                singleton.types = new Class[types.length];
+                System.arraycopy(types, 0, singleton.types, 0, types.length);
+
+                singleton.addMembers();
             }
-            
-            
-            Method g[] = new Method[types.length] ;
-            Method  s[] = new Method[types.length] ;
-            String name = target.getName() + "MetaClass" + index++;
-            
-            validate(target, getters, setters, types, g, s );
-            
-            MetaClassGenerator generator =
-            new MetaClassGenerator(name,loader,target,g,s);
-            
-            Class clazz = generator.define();
-            
-            result = (MetaClass)clazz.getConstructor( new Class[]{
-                Class.class,String[].class,
-                String[].class,Class[].class
-            } ).newInstance(
-            new Object[]{ target,getters,
-            setters,types
-            }
-            );
-            
-            
-            cache.put( key, result );
+            return singleton;
         }
-        return result;
-        
     }
-    
+
     public abstract Object newInstance();
     
     public abstract Object[] getPropertyValues( Object bean );
@@ -281,41 +225,27 @@ public abstract class MetaClass  {
     
     
     
-    static private class MetaClassGenerator extends CodeGenerator{
+    static private class Generator extends CodeGenerator {
         
         
         private Class target;
         private Method [] getters, setters;
         
-        
-        protected MetaClassGenerator( String className,
-        ClassLoader loader,
-        Class target,
-        Method [] getters,Method [] setters ){
-            super(className, MetaClass.class, loader );
+        public Generator(Class target, String[] getters, String[] setters, Class[] types) {
+            setSuperclass(MetaClass.class);
+            setNamePrefix(target.getName());
+
             this.target = target;
-            this.getters = getters;
-            this.setters = setters;
-            
-            
+            this.getters = new Method[getters.length];
+            this.setters = new Method[setters.length];
+            validate(target, getters, setters, types, this.getters, this.setters);
         }
         
         public  void generate() throws NoSuchMethodException {
             
             //------------- Generate constructor -------------
-            
-            Constructor constructor = MetaClass.class.
-            getDeclaredConstructor(
-            new Class[]{ Class.class,String[].class,
-            String[].class,Class[].class}
-            );
-            
-            begin_constructor( constructor );
-            load_this();
-            load_args();
-            super_invoke(constructor);
-            return_value();
-            end_method();
+
+            null_constructor();
             
             //------------- newInstance -------------------------
             

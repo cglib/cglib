@@ -60,13 +60,13 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestDelegator.java,v 1.6 2003/05/28 03:56:44 herbyderby Exp $
+ * @version $Id: TestDelegator.java,v 1.7 2003/06/24 21:00:09 herbyderby Exp $
  */
 public class TestDelegator extends CodeGenTestCase {
     public void testSimple() throws Exception {
         Object obj = Delegator.create(new Class[]{ DI1.class, DI2.class },
-                                             new Object[]{ new D1(), new D2() },
-                                             null);
+                                      new Object[]{ new D1(), new D2() },
+                                      null);
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
     }
@@ -102,20 +102,6 @@ public class TestDelegator extends CodeGenTestCase {
         assertTrue(getters.size() == 3); // name, age, class
         assertTrue(getters.contains("name"));
         assertTrue(getters.contains("age"));
-    }
-
-    public void testMulticast() throws Exception {
-        DBean3 bean1 = new DBean3();
-        DBean3 bean2 = new DBean3();
-        Object obj = Delegator.createBean(Object.class, new Object[]{ bean1, bean2 }, true, null);
-        PropertyDescriptor prop = getProperty(obj.getClass(), "age");
-        prop.getWriteMethod().invoke(obj, new Object[]{ new Integer(33) });
-        assertTrue(bean1.getAge() == 33);
-        assertTrue(bean2.getAge() == 33);
-        bean1.setAge(14);
-        assertTrue(((Integer)prop.getReadMethod().invoke(obj, null)).intValue() == 33);
-        bean2.setAge(15);
-        assertTrue(((Integer)prop.getReadMethod().invoke(obj, null)).intValue() == 15);
     }
 
     private static Set getGetters(Class beanClass) throws Exception {

@@ -53,29 +53,21 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.util.*;
 
 abstract public class MulticastDelegate implements Cloneable {
-    private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = MulticastDelegate.class.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("MulticastByCGLIB");
-
-    private static final MulticastDelegateKey keyFactory =
-      (MulticastDelegateKey)KeyFactory.create(MulticastDelegateKey.class, null);
-
+    private static final FactoryCache cache = new FactoryCache(MulticastDelegate.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("MulticastDelegate$Generator(Class)");
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("MulticastDelegate.cglib_newInstance()");
+      ReflectUtils.findMethod("MulticastDelegate.newInstance()");
     private static final Method ADD =
       ReflectUtils.findMethod("MulticastDelegate.add(Object)");
     private static final Method ADD_HELPER =
-      ReflectUtils.findMethod("MulticastDelegate.cglib_addHelper(Object)");
-
-    
-    interface MulticastDelegateKey {
-        public Object newInstance(Class iface);
-    }
+      ReflectUtils.findMethod("MulticastDelegate.addHelper(Object)");
 
     protected Object[] delegates = {};
 
@@ -88,8 +80,8 @@ abstract public class MulticastDelegate implements Cloneable {
 
     abstract public MulticastDelegate add(Object delegate);
 
-    protected MulticastDelegate cglib_addHelper(Object delegate) {
-        MulticastDelegate copy = cglib_newInstance();
+    protected MulticastDelegate addHelper(Object delegate) {
+        MulticastDelegate copy = newInstance();
         copy.delegates = new Object[delegates.length + 1];
         System.arraycopy(delegates, 0, copy.delegates, 0, delegates.length);
         copy.delegates[delegates.length] = delegate;
@@ -99,7 +91,7 @@ abstract public class MulticastDelegate implements Cloneable {
     public MulticastDelegate remove(Object delegate) {
         for (int i = delegates.length - 1; i >= 0; i--) { 
             if (delegates[i].equals(delegate)) {
-                MulticastDelegate copy = cglib_newInstance();
+                MulticastDelegate copy = newInstance();
                 copy.delegates = new Object[delegates.length - 1];
                 System.arraycopy(delegates, 0, copy.delegates, 0, i);
                 System.arraycopy(delegates, i + 1, copy.delegates, i, delegates.length - i - 1);
@@ -109,39 +101,27 @@ abstract public class MulticastDelegate implements Cloneable {
         return this;
     }
 
-    abstract protected MulticastDelegate cglib_newInstance();
+    abstract protected MulticastDelegate newInstance();
 
     public static MulticastDelegate create(Class iface) {
         return create(iface, null);
     }
 
     public static MulticastDelegate create(Class iface, ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        Object key = keyFactory.newInstance(iface);
-        MulticastDelegate factory;
-        synchronized (cache) {
-            factory = (MulticastDelegate)cache.get(loader, key);
-            if (factory == null) {
-                String className = nameFactory.getNextName(iface);
-                Method method = MethodDelegate.findInterfaceMethod(iface);
-                Class result = new Generator(className, method, iface, loader).define();
-                factory = (MulticastDelegate)ReflectUtils.newInstance(result);
-                cache.put(loader, key, factory);
-            }
-        }
-        return factory.cglib_newInstance();
+        MulticastDelegate factory =
+            (MulticastDelegate)cache.getFactory(loader, iface, GENERATOR, iface);
+        return factory.newInstance();
     }
 
     private static class Generator extends CodeGenerator {
         private Method method;
         private Class iface;
 
-        public Generator(String className, Method method, Class iface, ClassLoader loader) {
-            super(className, MulticastDelegate.class, loader);
-            this.method = method;
+        public Generator(Class iface) {
+            setSuperclass(MulticastDelegate.class);
+
             this.iface = iface;
+            method = MethodDelegate.findInterfaceMethod(iface);
             addInterface(iface);
         }
 

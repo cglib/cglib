@@ -53,8 +53,7 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import net.sf.cglib.util.*;
 
 // TODO: don't require exact match for return type
@@ -138,23 +137,19 @@ import net.sf.cglib.util.*;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.9 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.10 2003/06/24 21:00:09 herbyderby Exp $
  */
 abstract public class MethodDelegate {
-     static final Class TYPE = MethodDelegate.class;
-    private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("DelegatedByCGLIB");
-
-    private static final MethodDelegateKey keyFactory =
+    private static final FactoryCache cache = new FactoryCache(MethodDelegate.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("MethodDelegate$Generator(Class, String, Class)");
+    private static final MethodDelegateKey KEY_FACTORY =
       (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class, null);
-
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("MethodDelegate.cglib_newInstance(Object)");
+      ReflectUtils.findMethod("MethodDelegate.newInstance(Object)");
 
-    
-     interface MethodDelegateKey {
-        public Object newInstance(Class delegateClass, String methodName, Class iface);
+    interface MethodDelegateKey {
+        Object newInstance(Class delegateClass, String methodName, Class iface);
     }
 
     protected Object delegate;
@@ -176,7 +171,7 @@ abstract public class MethodDelegate {
     protected MethodDelegate() {
     }
 
-    abstract protected MethodDelegate cglib_newInstance(Object delegate);
+    abstract protected MethodDelegate newInstance(Object delegate);
 
     public static MethodDelegate createStatic(Class clazz, String methodName, Class iface) {
         return createHelper(null, clazz, methodName, iface, null);
@@ -194,24 +189,16 @@ abstract public class MethodDelegate {
         return createHelper(delegate, delegate.getClass(), methodName, iface, loader);
     }
 
-    private static MethodDelegate createHelper(Object delegate, Class clazz, String methodName,
+    private static MethodDelegate createHelper(Object delegate, Class type, String methodName,
                                                Class iface, ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        Object key = keyFactory.newInstance(clazz, methodName, iface);
-        MethodDelegate factory;
-        synchronized (cache) {
-            factory = (MethodDelegate)cache.get(loader, key);
-            if (factory == null) {
-                Method method = findProxiedMethod(clazz, methodName, iface);
-                String className = nameFactory.getNextName(clazz);
-                Class result = new Generator(className, method, iface, loader).define();
-                factory = (MethodDelegate)ReflectUtils.newInstance(result);
-                cache.put(loader, key, factory);
-            }
-        }
-        return factory.cglib_newInstance(delegate);
+        MethodDelegate factory =
+            (MethodDelegate)cache.getFactory(loader,
+                                             KEY_FACTORY.newInstance(type, methodName, iface),
+                                             GENERATOR,
+                                             type,
+                                             methodName,
+                                             iface);
+        return factory.newInstance(delegate);
     }
 
     static Method findInterfaceMethod(Class iface) {
@@ -225,13 +212,10 @@ abstract public class MethodDelegate {
         return methods[0];
     }
 
-    private static Method findProxiedMethod(Class clazz, String methodName, Class iface) {
-        Method proxy = findInterfaceMethod(iface);
+    private static Method findProxiedMethod(Class type, String methodName, Class iface) {
         try {
-            Method method = clazz.getMethod(methodName, proxy.getParameterTypes());
-            if (method == null) {
-                throw new IllegalArgumentException("no matching method found");
-            }
+            Method proxy = findInterfaceMethod(iface);
+            Method method = type.getMethod(methodName, proxy.getParameterTypes());
             if (!proxy.getReturnType().isAssignableFrom(method.getReturnType())) {
                 throw new IllegalArgumentException("incompatible return types");
             }
@@ -245,10 +229,12 @@ abstract public class MethodDelegate {
         private Method method;
         private Class iface;
 
-        public Generator(String className, Method method, Class iface, ClassLoader loader) {
-            super(className, MethodDelegate.class, loader);
-            this.method = method;
+        public Generator(Class type, String methodName, Class iface) {
+            setSuperclass(MethodDelegate.class);
+            setNamePrefix(type.getName());
+
             this.iface = iface;
+            method = findProxiedMethod(type, methodName, iface);            
             addInterface(iface);
         }
 

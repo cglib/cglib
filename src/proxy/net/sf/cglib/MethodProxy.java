@@ -53,8 +53,7 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import net.sf.cglib.util.*;
 
 /**
@@ -64,21 +63,16 @@ import net.sf.cglib.util.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.20 2003/06/13 21:12:49 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.21 2003/06/24 21:00:09 herbyderby Exp $
  */
 abstract public class MethodProxy {
-    
+    private static final FactoryCache cache = new FactoryCache(MethodProxy.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("MethodProxy$Generator(Method, Method)");
     private static final Method INVOKE_SUPER =
       ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
-        private static final Method INVOKE =
+    private static final Method INVOKE =
       ReflectUtils.findMethod("MethodProxy.invoke(Object, Object[])");
-
-
-    private static final ClassNameFactory NAME_FACTORY =
-      new ClassNameFactory("ProxiedByCGLIB");
-
-    private static final ClassLoader DEFAULT_LOADER =
-      MethodProxy.class.getClassLoader();
 
     /**
      * Invoke the original (super) method on the specified object.
@@ -113,32 +107,21 @@ abstract public class MethodProxy {
      * Create a new MethodProxy. Used internally by Enhancer.
      */
     public static MethodProxy create(Method method, Method superMethod, ClassLoader loader) {
-        try {
-            Class declaring = superMethod.getDeclaringClass();
-            String className = NAME_FACTORY.getNextName(declaring);
-            if (loader == null) {
-                loader = declaring.getClassLoader();
-                if (loader == null) {
-                    loader = DEFAULT_LOADER;
-                }
-            }
-            Class gen = new Generator(className, superMethod, method , loader).define();
-            return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
+        if (loader == null) {
+            loader = superMethod.getDeclaringClass().getClassLoader();
         }
+        return (MethodProxy)cache.getFactory(loader, null, GENERATOR, superMethod, method);
     }
 
     static class Generator extends CodeGenerator {
         private Method method;
         private Method superMethod;
         
-        public Generator(String className, Method superMethod, Method method, ClassLoader loader) {
-            super(className, MethodProxy.class, loader);
-            this.method = method;
+        public Generator(Method superMethod, Method method) {
+            setSuperclass(MethodProxy.class);
+            setNamePrefix(superMethod.getDeclaringClass().getName());
             this.superMethod = superMethod;
+            this.method = method;
         }
 
         public void generate() {

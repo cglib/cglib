@@ -53,8 +53,7 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.Comparator;
 import net.sf.cglib.util.*;
 
@@ -84,28 +83,17 @@ import net.sf.cglib.util.*;
  * @author Chris Nokleberg
  */
 abstract public class ParallelSorter extends SorterTemplate {
-    static final Class TYPE = ParallelSorter.class;
-    private static final FactoryCache cache = new FactoryCache();
-    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("SortedByCGLIB");
-    private static final ParallelSorterKey keyFactory =
-      (ParallelSorterKey)KeyFactory.create(ParallelSorterKey.class, null);
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("ParallelSorter.cglib_newInstance(Object[])");
-    private static final Method SWAP_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
+    private static final FactoryCache cache = new FactoryCache(ParallelSorter.class);
+    private static final Constructor GENERATOR =
+      ReflectUtils.findConstructor("ParallelSorterGenerator(Object[])");
 
     protected Object[] a;
     private Comparer comparer;
     
-    interface ParallelSorterKey {
-        public Object newInstance(Class[] classes);
-    }
-
     protected ParallelSorter() {
     }
 
-    abstract protected ParallelSorter cglib_newInstance(Object[] arrays);
+    abstract protected ParallelSorter newInstance(Object[] arrays);
 
     /**
      * Helper method, has same effect as <pre>return create(arrays, null);</pre>
@@ -124,26 +112,12 @@ abstract public class ParallelSorter extends SorterTemplate {
      * @param loader ClassLoader for generated class, uses "current" if null
      */
     public static ParallelSorter create(Object[] arrays, ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        Class[] classes = ReflectUtils.getClasses(arrays);
-        Object key = keyFactory.newInstance(classes);
-        ParallelSorter factory;
-        synchronized (cache) {
-            factory = (ParallelSorter)cache.get(loader, key);
-            if (factory == null) {
-                validate(classes);
-                String className = nameFactory.getNextName(TYPE);
-                Class result = new Generator(className, classes, loader).define();
-                factory = (ParallelSorter)ReflectUtils.newInstance(result,
-                                                                   Constants.TYPES_OBJECT_ARRAY,
-                                                                   new Object[]{ arrays });
-                cache.put(loader, key, factory);
-                return factory;
-            }
-        }
-        return factory.cglib_newInstance(arrays);
+        ParallelSorter factory = 
+            (ParallelSorter)cache.getFactory(loader,
+                                             new ClassesKey(arrays),
+                                             GENERATOR,
+                                             arrays);
+        return factory.newInstance(arrays);
     }
 
     private int len() {
@@ -236,77 +210,6 @@ abstract public class ParallelSorter extends SorterTemplate {
             if (!classes[i].isArray()) {
                 throw new IllegalArgumentException(classes[i] + " is not an array");
             }
-        }
-    }
-
-    private static class Generator extends CodeGenerator {
-        private Class[] classes;
-
-        private String getFieldName(int index) {
-            return "FIELD_" + index;
-        }
-
-        public Generator(String className, Class[] classes, ClassLoader loader) {
-            super(className, ParallelSorter.class, loader);
-            this.classes = classes;
-        }
-
-        protected void generate() throws NoSuchFieldException {
-            factory_method(NEW_INSTANCE);
-            generateConstructor();
-            generateSwap();
-        }
-
-        private void generateConstructor() throws NoSuchFieldException {
-            begin_constructor(Constants.TYPES_OBJECT_ARRAY);
-            load_this();
-            super_invoke_constructor();
-            load_this();
-            load_arg(0);
-            super_putfield("a");
-            for (int i = 0; i < classes.length; i++) {
-                declare_field(Modifier.PRIVATE, classes[i], getFieldName(i));
-                load_this();
-                load_arg(0);
-                push(i);
-                aaload();
-                checkcast(classes[i]);
-                putfield(getFieldName(i));
-            }
-            return_value();
-            end_method();
-        }
-
-        private void generateSwap() {
-            begin_method(SWAP_METHOD);
-            for (int i = 0; i < classes.length; i++) {
-                Class type = classes[i];
-                Class component = type.getComponentType();
-                Local T = make_local(type);
-
-                load_this();
-                getfield(getFieldName(i));
-                store_local(T);
-
-                load_local(T);
-                load_arg(0);
-
-                load_local(T);
-                load_arg(1);
-                array_load(component);
-                
-                load_local(T);
-                load_arg(1);
-
-                load_local(T);
-                load_arg(0);
-                array_load(component);
-
-                array_store(component);
-                array_store(component);
-            }
-            return_value();
-            end_method();
         }
     }
 

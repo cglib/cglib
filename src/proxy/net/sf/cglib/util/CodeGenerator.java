@@ -62,6 +62,9 @@ import java.util.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 abstract public class CodeGenerator extends BasicCodeGenerator {
+    public static final int SWITCH_STYLE_TRIE = 0;
+    public static final int SWITCH_STYLE_HASH = 1;
+    
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
@@ -101,7 +104,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
     }
     
-    protected void load_class_this() {
+    public void load_class_this() {
         load_class_helper(getClassName());
     }
     
@@ -535,21 +538,22 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(end);
     }
 
-    public interface StringSwitchCallback {
+    protected interface StringSwitchCallback {
         void processCase(String key, Label end) throws Exception;
         void processDefault() throws Exception;
     }
 
-    protected void string_switch(String[] strings, StringSwitchCallback callback) throws Exception {
-        string_switch(strings, false, callback);
-    }
-
-    protected void string_switch(String[] strings, boolean useHash, StringSwitchCallback callback)
+    protected void string_switch(String[] strings, int switchStyle, StringSwitchCallback callback)
     throws Exception {
-        if (useHash) {
+        switch (switchStyle) {
+        case SWITCH_STYLE_TRIE:
             string_switch_trie(strings, callback);
-        } else {
+            break;
+        case SWITCH_STYLE_HASH:
             string_switch_hash(strings, callback);
+            break;
+        default:
+            throw new IllegalArgumentException("unknown switch style " + switchStyle);
         }
     }
 
@@ -574,11 +578,11 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         mark(end);
     }
 
-    protected void stringSwitchHelper(List strings,
-                                      final StringSwitchCallback callback,
-                                      final Label def,
-                                      final Label end,
-                                      final int index) throws Exception {
+    private void stringSwitchHelper(List strings,
+                                    final StringSwitchCallback callback,
+                                    final Label def,
+                                    final Label end,
+                                    final int index) throws Exception {
         final int len = ((String)strings.get(0)).length();
         final Map buckets = bucketByChar(strings, index);
         dup();
