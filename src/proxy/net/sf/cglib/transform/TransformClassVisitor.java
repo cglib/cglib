@@ -21,10 +21,12 @@ import java.lang.reflect.*;
 public class TransformClassVisitor implements ClassVisitor{
     
     ReadWriteFieldFilter filter;
-    ClassWriter cw = new ClassWriter(true);
-    Set interfaces = new HashSet();
-    Class delegateIf = null ;
+    ClassWriter cw     = new ClassWriter(true);
+    Set interfaces     = new HashSet();
+    Class delegateIf   = null ;
     Class delegateImpl = null ;
+    Map fields         = new HashMap();
+    Map types         = new HashMap();
     
     
     ClassReader cr;
@@ -44,9 +46,13 @@ public class TransformClassVisitor implements ClassVisitor{
     }
     
     public void setDelegate(Class delegateIf, Class delegateImpl ){
-        
-        this.delegateIf = delegateIf;
-        this.delegateImpl = delegateImpl;
+        try{
+         delegateImpl.getConstructor( new Class[]{Object.class});
+         this.delegateIf = delegateIf;
+         this.delegateImpl = delegateImpl;
+        }catch(Exception e){
+          throw new CodeGenerationException(e);
+        }
     }
     
     public byte[] transform(){
@@ -88,6 +94,87 @@ public class TransformClassVisitor implements ClassVisitor{
     }
     
     public void visitEnd() {
+        
+        String types[] = {"Z","C","B","S","I","F","J","D","Ljava/lang/Object;"};
+        for( int i = 0; i < types.length; i++  ){
+            
+            List fields = getFields(null,types[i]);
+                
+           
+            CodeVisitor cv = cw.visitMethod(
+                              Modifier.PUBLIC,
+                              Signature.fieldGetName( types[i] ),
+                              Signature.fieldGetSignature(types[i]),
+                              new  String[]{} 
+                );
+            
+            
+            for(Iterator iterator = fields.iterator(); iterator.hasNext();  ){
+                
+             String name = iterator.next().toString();   
+             Type type = Type.getType(this.types.get(name).toString());
+             cv.visitVarInsn(Opcodes.ALOAD,1);     
+             cv.visitLdcInsn(name);
+             cv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,"java/lang/Object","equals","(Ljava/lang/Object;)Z");
+             Label label = new Label();
+             cv.visitJumpInsn( Opcodes.IFEQ, label );
+             cv.visitVarInsn(  Opcodes.ALOAD, 0 );
+             cv.visitFieldInsn( Opcodes.GETFIELD, className, name, type.getDescriptor() );
+             cv.visitInsn( type.getOpcode(Opcodes.IRETURN) );   
+             cv.visitLabel(label);
+            }
+           cv.visitTypeInsn(Opcodes.NEW,"java/lang/NoSuchFieldError"); 
+           cv.visitInsn(Opcodes.DUP);
+           cv.visitMethodInsn(Opcodes.INVOKESPECIAL,"java/lang/NoSuchFieldError","<init>","()V");
+           cv.visitInsn(Opcodes.ATHROW);  
+           
+           cv.visitMaxs(0, 0);     
+           
+           
+           cv = cw.visitMethod(
+                              Modifier.PUBLIC,
+                              Signature.fieldSetName( types[i] ),
+                              Signature.fieldSetSignature(types[i]),
+                              new  String[]{} 
+                );
+           for(Iterator iterator = fields.iterator(); iterator.hasNext();  ){
+                
+             String name = iterator.next().toString();   
+             Type type = Type.getType(this.types.get(name).toString());
+             
+             cv.visitVarInsn(Opcodes.ALOAD,1);
+             cv.visitLdcInsn(name);
+             cv.visitMethodInsn(
+                  Opcodes.INVOKEVIRTUAL,
+                  Type.getType(Object.class).getInternalName(),
+                  "equals",
+                  "(Ljava/lang/Object;)Z"
+                  );
+             Label label = new Label();
+             cv.visitJumpInsn(Opcodes.IFEQ, label );
+             cv.visitVarInsn(Opcodes.ALOAD, 0 );
+             cv.visitFieldInsn(Opcodes.GETFIELD, className, name, type.getDescriptor() );
+             cv.visitVarInsn(type.getOpcode(Opcodes.ISTORE),3 + type.getSize() - 1);
+             cv.visitVarInsn(Opcodes.ALOAD, 0 );
+             cv.visitVarInsn(type.getOpcode(Opcodes.ILOAD),2);
+             if(type.getSort() == Type.OBJECT){
+              cv.visitTypeInsn(Opcodes.CHECKCAST, type.getInternalName() );
+             }
+             cv.visitFieldInsn(Opcodes.PUTFIELD, className, name, type.getDescriptor() );
+             cv.visitVarInsn(type.getOpcode(Opcodes.ILOAD),3 + type.getSize() - 1);
+             cv.visitInsn(type.getOpcode(Opcodes.IRETURN));
+             cv.visitLabel(label);
+           }     
+                
+           cv.visitTypeInsn(Opcodes.NEW,"java/lang/NoSuchFieldError"); 
+           cv.visitInsn(Opcodes.DUP);
+           cv.visitMethodInsn(Opcodes.INVOKESPECIAL,"java/lang/NoSuchFieldError","<init>","()V");
+           cv.visitInsn(Opcodes.ATHROW);
+           
+           cv.visitMaxs(0, 0);          
+        }
+        
+        
         cw.visitEnd();
     }
     
@@ -314,26 +401,21 @@ public class TransformClassVisitor implements ClassVisitor{
     
     private void addDelegate(Method m)throws Exception{
         
-        List types = new ArrayList(m.getParameterTypes().length + 1);
-        types.add(Object.class);
-        types.addAll(Arrays.asList(m.getParameterTypes()));
         
         List exeptions = new ArrayList(m.getExceptionTypes().length);
         for(int i = 0; i< m.getExceptionTypes().length; i++ ){
             exeptions.add(Signature.getInternalName( m.getExceptionTypes()[i]) );
         }
         
-        
-        
-        Method delegate = delegateImpl.getMethod(m.getName(),(Class[])types.toArray(new Class[]{}) );
+        Method delegate = delegateImpl.getMethod(m.getName(), m.getParameterTypes() );
+        if(!delegate.getReturnType().getName().equals(m.getReturnType().getName())){
+          throw  new IllegalArgumentException( "invalid  delegate signature  " + delegate);
+        }
         
         CodeVisitor cv =  cw.visitMethod( Modifier.PUBLIC,
         m.getName(),
         Type.getMethodDescriptor(m),
         (String[])exeptions.toArray(new String[]{}) );
-        
-        
-        
         
         cv.visitVarInsn(Opcodes.ALOAD, 0 );
         cv.visitFieldInsn( Opcodes.GETFIELD,
@@ -341,7 +423,6 @@ public class TransformClassVisitor implements ClassVisitor{
         Signature.DELEGATE,
         Type.getDescriptor(Object.class));
         cv.visitTypeInsn(Opcodes.CHECKCAST,Signature.getInternalName(delegateImpl));
-        cv.visitVarInsn(Opcodes.ALOAD, 0 );
         
         for(int i = 1; i <= m.getParameterTypes().length; i++){
             Type type = Type.getType(m.getParameterTypes()[ i - 1]);
@@ -381,20 +462,45 @@ public class TransformClassVisitor implements ClassVisitor{
         null
         );
         
-       cw.visitField(
-        Modifier.PRIVATE,
+        cw.visitField(
+        Modifier.PRIVATE|Modifier.TRANSIENT,
         Signature.DELEGATE,
         Type.getDescriptor(Object.class) ,
         null
         );
-    
+        
         
         
     }
     
+    private String descriptor(String desc){
+        
+        if(Signature.isObject(desc)){
+            return Type.getDescriptor(Object.class);
+        }else{
+            return desc;
+        }
+    }
+    
+    private List getFields(String name,String desc){
+        
+        List list = (List)fields.get(descriptor(desc));
+        if( list == null ){
+            list = new ArrayList();
+            fields.put(descriptor(desc), list);
+        }
+        
+        if(name != null){
+            list.add(name);
+            types.put(name, desc );
+        }
+        
+        return list;
+    }
+    
     public void visitField(int access, String name, String desc, Object value) {
         
-        
+        getFields(name,desc);
         
         if( filter.acceptRead( Type.getType("L" + className + ";").getClassName(), name)){
             
@@ -416,7 +522,28 @@ public class TransformClassVisitor implements ClassVisitor{
     }
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        return new TransformCodeVisitor( cw.visitMethod(access, name, desc, exceptions  ),filter);
+        
+        return new TransformCodeVisitor( this, 
+                                        cw.visitMethod(access, name, desc, exceptions  ),
+                                        filter,
+                                         name.equals( "<init>" ) ? delegateImpl : null
+                                        );
+    }
+    
+    /** Getter for property className.
+     * @return Value of property className.
+     *
+     */
+    public java.lang.String getClassName() {
+        return className;
+    }
+    
+    /** Setter for property className.
+     * @param className New value of property className.
+     *
+     */
+    public void setClassName(java.lang.String className) {
+        this.className = className;
     }
     
 }
