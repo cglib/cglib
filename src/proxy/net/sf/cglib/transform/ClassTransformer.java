@@ -14,10 +14,6 @@ abstract public class ClassTransformer extends ClassAdapter implements Cloneable
         cv = target;
     }
 
-    public ClassVisitor getTarget() {
-        return cv;
-    }
-
     public Object clone() {
         try {
             ClassTransformer t = (ClassTransformer)super.clone();

@@ -52,7 +52,7 @@ public class FieldTransformer extends ClassTransformer{
             className = name;
             interfaces.addAll(Arrays.asList(ifaces));
             
-       getTarget().visit(
+       super.visit(
             access,
             name,
             superName,
@@ -76,7 +76,7 @@ public class FieldTransformer extends ClassTransformer{
             List fields = getFields(null,types[i]);
                 
            
-            CodeVisitor cv = getTarget().visitMethod(
+            CodeVisitor cv = super.visitMethod(
                               Modifier.PUBLIC,
                               Signature.fieldGetName( types[i] ),
                               Signature.fieldGetSignature(types[i]),
@@ -106,7 +106,7 @@ public class FieldTransformer extends ClassTransformer{
            cv.visitMaxs(0, 0);     
            
            
-           cv = getTarget().visitMethod(
+           cv = super.visitMethod(
                               Modifier.PUBLIC,
                               Signature.fieldSetName( types[i] ),
                               Signature.fieldSetSignature(types[i]),
@@ -150,7 +150,7 @@ public class FieldTransformer extends ClassTransformer{
         }
         
         
-        getTarget().visitEnd();
+        super.visitEnd();
     }
     
     private void addWriteMethod(String name, String desc){
@@ -158,7 +158,7 @@ public class FieldTransformer extends ClassTransformer{
         
         Type type = Type.getType(desc);
         
-        CodeVisitor cv = getTarget().visitMethod(
+        CodeVisitor cv = super.visitMethod(
         Modifier.PUBLIC,
         Signature.writeMethod( name ),
         Signature.writeMethodSignature(desc),
@@ -235,7 +235,7 @@ public class FieldTransformer extends ClassTransformer{
         
         Type type = Type.getType(desc);
         
-        CodeVisitor cv = getTarget().visitMethod(
+        CodeVisitor cv = super.visitMethod(
         Modifier.PUBLIC ,
         Signature.readMethod( name ),
         Signature.readMethodSignature(desc),
@@ -297,7 +297,7 @@ public class FieldTransformer extends ClassTransformer{
     
     private void implemetTransform(){
         
-        CodeVisitor cv =  getTarget().visitMethod(Modifier.PUBLIC, "setReadWriteFieldCallback",
+        CodeVisitor cv =  super.visitMethod(Modifier.PUBLIC, "setReadWriteFieldCallback",
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
         "setReadWriteFieldCallback(net.sf.cglib.transform." +
@@ -317,7 +317,7 @@ public class FieldTransformer extends ClassTransformer{
         cv.visitMaxs(0,0);
         
         
-        cv =  getTarget().visitMethod(Modifier.PUBLIC, "getReadWriteFieldCallback",
+        cv =  super.visitMethod(Modifier.PUBLIC, "getReadWriteFieldCallback",
         
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
@@ -335,7 +335,7 @@ public class FieldTransformer extends ClassTransformer{
         cv.visitInsn(Constants.ARETURN);
         cv.visitMaxs(0,0);
         /*
-        cv =  getTarget().visitMethod(Modifier.PUBLIC, "getDelegate",
+        cv =  super.visitMethod(Modifier.PUBLIC, "getDelegate",
         
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
@@ -354,7 +354,7 @@ public class FieldTransformer extends ClassTransformer{
         cv.visitMaxs(0,0);
         
         
-        cv =  getTarget().visitMethod(Modifier.PUBLIC, "setDelegate",
+        cv =  super.visitMethod(Modifier.PUBLIC, "setDelegate",
         Type.getMethodDescriptor(
         ReflectUtils.findMethod("net.sf.cglib.transform.Transformed." +
         "setDelegate(Object)") ) , new String[]{} );
@@ -379,7 +379,7 @@ public class FieldTransformer extends ClassTransformer{
     private void addCallbackField(){
         
         
-        getTarget().visitField(
+        super.visitField(
         Modifier.PRIVATE|Modifier.TRANSIENT,
         Signature.READ_WRITE_CALLBACK,
         callbackDesc ,
@@ -431,13 +431,13 @@ public class FieldTransformer extends ClassTransformer{
         }
       }    
         
-        getTarget().visitField(access, name, desc, value );
+        super.visitField(access, name, desc, value );
     }
     
     
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        CodeVisitor cv = getTarget().visitMethod(access, name, desc, exceptions  );
+        CodeVisitor cv = super.visitMethod(access, name, desc, exceptions  );
         
         return new TransformCodeVisitor( this, cv, filter );
     }

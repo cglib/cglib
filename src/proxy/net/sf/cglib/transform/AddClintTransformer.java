@@ -33,14 +33,14 @@ public class AddClintTransformer extends ClassTransformer {
     public void visitEnd() {
     
        if(generateClinit){
-          CodeVisitor cv = getTarget().visitMethod( Modifier.STATIC,
+          CodeVisitor cv = super.visitMethod( Modifier.STATIC,
           "<clinit>", "()V" , new String[]{} );
             generateClassInit(cv);
           cv.visitInsn(Constants.RETURN);  
           cv.visitMaxs(0,0);
         }
    
-        getTarget().visitEnd();
+        super.visitEnd();
     }
     
    private void generateClassInit(CodeVisitor cv){
@@ -68,11 +68,11 @@ public class AddClintTransformer extends ClassTransformer {
 
    public void visit(int access, String name, String superName, String[] ifaces, String sourceFile) {
      className = name;
-     getTarget().visit(access, name, superName,  ifaces, sourceFile);
+     super.visit(access, name, superName,  ifaces, sourceFile);
    }
    
    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        CodeVisitor cv = getTarget().visitMethod(access, name, desc, exceptions  );
+        CodeVisitor cv = super.visitMethod(access, name, desc, exceptions  );
         if(name.equals("<clinit>")){
             generateClassInit(cv);
         }

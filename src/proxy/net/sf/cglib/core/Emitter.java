@@ -108,6 +108,7 @@ public class Emitter {
     // current method
     private Signature currentSig;
     private CodeVisitor codev;
+    private CodeVisitor wrapped;
     private int methodAccess;
     private String methodName;
     private Type returnType;
@@ -122,49 +123,6 @@ public class Emitter {
 
     public Emitter(ClassVisitor v) {
         this.classv = v;
-    }
-
-    public CodeVisitor getCodeVisitor() {
-        return new CodeAdapter(codev) {
-            public void visitMaxs(int maxStack, int maxLocals) {
-                // ignore
-                // System.err.println("Ignoring visitMaxs(" + maxStack + ", " + maxLocals + ")");
-            }
-
-            public void visitVarInsn(int opcode, int var) {
-                Type type;
-                switch (opcode) {
-                case Constants.RET: // is this correct?
-                case Constants.ILOAD:
-                case Constants.ISTORE:
-                    type = Type.INT_TYPE;
-                    break;
-                case Constants.FLOAD:
-                case Constants.FSTORE:
-                    type = Type.FLOAT_TYPE;
-                    break;
-                case Constants.LLOAD:
-                case Constants.LSTORE:
-                    type = Type.LONG_TYPE;
-                    break;
-                case Constants.DLOAD:
-                case Constants.DSTORE:
-                    type = Type.DOUBLE_TYPE;
-                    break;
-                default:
-                    type = Constants.TYPE_OBJECT;
-                }
-                cv.visitVarInsn(opcode, remapLocal(var, type));
-            }
-
-            public void visitIincInsn(int var, int increment) {
-                cv.visitIincInsn(remapLocal(var, Type.INT_TYPE), increment);
-            }
-
-            public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
-                cv.visitLocalVariable(name, desc, start, end, remapLocal(index, null));
-            }
-        };
     }
 
     public Type getClassType() {
@@ -210,7 +168,7 @@ public class Emitter {
         return (Constants.ACC_ABSTRACT & access) != 0;
     }
 
-    public void begin_method(int access, Signature sig, Type[] exceptions) {
+    public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
         closeMethod();
         currentSig = sig;
         methodAccess = access;
@@ -225,6 +183,48 @@ public class Emitter {
                                       methodName,
                                       sig.getDescriptor(),
                                       toInternalNames(exceptions));
+
+        wrapped = new CodeAdapter(codev) {
+            public void visitMaxs(int maxStack, int maxLocals) {
+                // ignore
+                // System.err.println("Ignoring visitMaxs(" + maxStack + ", " + maxLocals + ")");
+            }
+
+            public void visitVarInsn(int opcode, int var) {
+                Type type;
+                switch (opcode) {
+                case Constants.RET: // is this correct?
+                case Constants.ILOAD:
+                case Constants.ISTORE:
+                    type = Type.INT_TYPE;
+                    break;
+                case Constants.FLOAD:
+                case Constants.FSTORE:
+                    type = Type.FLOAT_TYPE;
+                    break;
+                case Constants.LLOAD:
+                case Constants.LSTORE:
+                    type = Type.LONG_TYPE;
+                    break;
+                case Constants.DLOAD:
+                case Constants.DSTORE:
+                    type = Type.DOUBLE_TYPE;
+                    break;
+                default:
+                    type = Constants.TYPE_OBJECT;
+                }
+                cv.visitVarInsn(opcode, remapLocal(var, type));
+            }
+
+            public void visitIincInsn(int var, int increment) {
+                cv.visitIincInsn(remapLocal(var, Type.INT_TYPE), increment);
+            }
+
+            public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
+                cv.visitLocalVariable(name, desc, start, end, remapLocal(index, null));
+            }
+        };
+        return wrapped;
     }
 
     private int remapLocal(int index, Type type) {
@@ -279,8 +279,8 @@ public class Emitter {
         return names;
     }
 
-    public void begin_static() {
-        begin_method(Constants.ACC_STATIC, STATIC, null);
+    public CodeVisitor begin_static() {
+        return begin_method(Constants.ACC_STATIC, STATIC, null);
     }
 
     public Block begin_block() {
