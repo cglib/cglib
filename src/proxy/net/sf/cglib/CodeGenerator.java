@@ -156,7 +156,7 @@ abstract class CodeGenerator {
      */
     abstract protected void generate() throws Exception;
     
-    public Class define() {
+    public final Class define() {
         try {
             byte[] bytes;
             synchronized (lock) {
