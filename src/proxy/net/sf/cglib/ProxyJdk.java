@@ -61,7 +61,7 @@ import java.lang.reflect.Method;
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
  * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
- * @version $Id: ProxyJdk.java,v 1.3 2003/01/29 16:46:27 nemecec Exp $
+ * @version $Id: ProxyJdk.java,v 1.4 2003/01/29 18:23:21 herbyderby Exp $
  */
 public class ProxyJdk {
     private static final Class IMPL_TYPE = ProxyImpl.class;
@@ -94,7 +94,7 @@ public class ProxyJdk {
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, null, true);
+        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, null);
     }
 
     public static boolean isProxyClass(Class cl) {
