@@ -314,7 +314,12 @@ abstract public class BeanMap implements Map {
 
     // TODO: optimize
     public Set entrySet() {
-        return Collections.unmodifiableMap(new HashMap(this)).entrySet();
+        HashMap copy = new HashMap();
+        for (Iterator it = keySet().iterator(); it.hasNext();) {
+            Object key = it.next();
+            copy.put(key, get(key));
+        }
+        return Collections.unmodifiableMap(copy).entrySet();
     }
 
     public Collection values() {
