@@ -59,7 +59,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.5 2002/12/29 21:36:22 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.6 2002/12/29 23:50:23 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -81,16 +81,6 @@ public class TestMethodProxy extends CodeGenTestCase {
 
     public interface IndexOf {
         int indexOf(String str, int fromIndex);
-    }
-
-    public interface MainDelegate {
-        int main(String[] args);
-    }
-
-    public static class MainTest {
-        public static int alternateMain(String[] args) {
-            return 7;
-        }
     }
 
     public void testFancy() throws Throwable {
@@ -122,11 +112,55 @@ public class TestMethodProxy extends CodeGenTestCase {
         assertTrue(mc4.equals(mc5));
     }
 
+    public static interface MainDelegate {
+        int main(String[] args);
+    }
+
+    public static class MainTest {
+        public static int alternateMain(String[] args) {
+            return 7;
+        }
+    }
+
     public void testStaticDelegate() throws Throwable {
         MainDelegate start = (MainDelegate)MethodDelegate.createStatic(MainTest.class,
                                                                        "alternateMain",
                                                                        MainDelegate.class);
         assertTrue(start.main(null) == 7);
+    }
+
+    public static interface Listener {
+        public void onEvent();
+    }
+
+    public static class Publisher {
+        public int test = 0;
+        private MulticastDelegate event = MulticastDelegate.create(Listener.class);
+        public void addListener(Listener listener) {
+            event = event.add(listener);
+        }
+        public void removeListener(Listener listener) {
+            event = event.remove(listener);
+        }
+        public void fireEvent() {
+            ((Listener)event).onEvent();
+        }
+    }
+
+    public void testPublisher() throws Throwable {
+        final Publisher p = new Publisher();
+        Listener l1 = new Listener() {
+                public void onEvent() {
+                    p.test++;
+                }
+            };
+        p.addListener(l1);
+        p.addListener(l1);
+        p.fireEvent();
+        assertTrue(p.test == 2);
+        p.removeListener(l1);
+        p.fireEvent(); 
+        assertTrue(p.test == 3);
     }
 
     public void testMethodProxyPerformance() throws Throwable {
