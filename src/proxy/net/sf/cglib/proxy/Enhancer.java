@@ -55,6 +55,7 @@
 package net.sf.cglib.proxy;
 
 import java.io.*;
+import java.util.Arrays;
 
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.*;
@@ -88,7 +89,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.28 2002/11/06 18:15:54 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.29 2002/11/06 18:50:07 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -214,17 +215,8 @@ public class Enhancer implements ClassFileConstants {
         if( loader == null ){
             loader = Enhancer.class.getClassLoader();
         }
-        
-        StringBuffer keyBuff = new StringBuffer(cls.getName() + ";");
-        if(interfaces != null){
-            for(int i = 0; i< interfaces.length; i++ ){
-                keyBuff
-                .append(interfaces[i].getName() + ";");
-            }
-        }
-        keyBuff.append( wreplace );
-        
-        String key = keyBuff.toString();
+
+        Object key = new Key(cls, interfaces, wreplace);
         
         java.util.Map map = (java.util.Map) cache.get(loader);
         if ( map == null ) {
@@ -315,8 +307,8 @@ public class Enhancer implements ClassFileConstants {
         return factory.newInstance(ih);
         
     }
-    
-    
+
+
     private static void addConstructor(ClassGen cg, 
                        java.lang.reflect.Method wreplace ) throws Throwable {
         
@@ -881,6 +873,36 @@ public class Enhancer implements ClassFileConstants {
         
     }
     
-    
-    
+    private static final class Key {
+        private static final int hashConstant = 13; // positive and odd
+        private int hash = 41; // positive and odd
+        private Class cls;
+        private Class[] interfaces;
+        private java.lang.reflect.Method wreplace;
+
+        public Key(Class cls, Class[] interfaces, java.lang.reflect.Method wreplace) {
+            this.cls = cls;
+            this.interfaces = interfaces;
+            this.wreplace = wreplace;
+            hash = hash * hashConstant + cls.hashCode();
+            if (interfaces != null) {
+                for (int i = 0, size = interfaces.length; i < size; i++) {
+                    hash = hash * hashConstant + interfaces[i].hashCode();
+                }
+            }
+            if (wreplace != null)
+                hash = hash * hashConstant + wreplace.hashCode();
+        }
+
+        public boolean equals(Object obj) {
+            Key other = (Key)obj;
+            return cls.equals(other.cls) &&
+                (wreplace == null ? other.wreplace == null : wreplace.equals(other.wreplace)) &&
+                Arrays.equals(interfaces, other.interfaces);
+        }
+
+        public int hashCode() {
+            return hash;
+        }
+    }
 }
