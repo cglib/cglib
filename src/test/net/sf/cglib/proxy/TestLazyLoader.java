@@ -51,40 +51,34 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
-import java.lang.reflect.Method;
+import net.sf.cglib.CodeGenTestCase;
+import java.lang.reflect.*;
+import java.util.*;
+import junit.framework.*;
 
-import net.sf.cglib.proxy.InvocationHandler;
-
-/**
- * @author neeme
- *
- */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+public class TestLazyLoader extends CodeGenTestCase {
+    public void testLazyLoader() {
+        LazyLoader loader = new LazyLoader() {
+                public Object loadObject() {
+                    System.err.println("loading object");
+                    return "foo";
+                }
+            };
+        Object obj = Enhancer.create(Object.class, loader);
+        assertTrue("foo".equals(obj.toString()));
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+    public TestLazyLoader(String testName) {
+        super(testName);
     }
-
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestLazyLoader.class);
+    }
 }

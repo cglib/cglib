@@ -51,40 +51,62 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
 
-import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+package net.sf.cglib.proxy;
 
 /**
- * @author neeme
- *
+ * All enhanced instances returned by the Enhancer class implement this interface.
+ * Using this interface for new instances is faster than going through the Enhancer
+ * interface or using reflection. In addition, to intercept methods called during
+ * object construction you <b>must</b> use these methods.
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: Factory.java,v 1.8 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
+public interface Factory {
+    /**
+     * Creates new instance of the same type, using the no-arg constructor.
+     * The class of this object must have been created using a single Callback type (or none).
+     * If multiple callbacks are required an exception will be thrown.
+     * @see newInstance(Callbacks)
+     * @param callback the new interceptor to use
+     * @return new instance of the same type
+     */     
+    Factory newInstance(Callback callback);
 
     /**
-     * Constructor for InvocationHandlerSample.
+     * Creates new instance of the same type, using the no-arg constructor.
+     * @param callbacks the new callbacks(s) to use
+     * @return new instance of the same type
+     */     
+    Factory newInstance(Callbacks callbacks);
+
+    /**
+     * Creates a new instance of the same type, using the constructor
+     * matching the given signature.
+     * @param types the constructor argument types
+     * @param args the constructor arguments
+     * @param callbacks the new interceptor(s) to use
+     * @return new instance of the same type
      */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
+    Factory newInstance(Class[] types, Object[] args, Callbacks callbacks);
+    
+    /**
+     * Returns the current callback in use for the given type;
+     * @param type the callback type
+     * @see Callbacks
+     */
+    Callback getCallback(int type);
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
+    /**
+     * Set the callback for this object for the given type.
+     * @param type the callback type to replace
+     * @param callback the new callback
+     */
+    void setCallback(int type, Callback callback);
 
+    /**
+     * Replace all of the callbacks for this object at once.
+     * @param callbacks the new callbacks(s) to use
+     */
+    void setCallbacks(Callbacks callbacks);
 }

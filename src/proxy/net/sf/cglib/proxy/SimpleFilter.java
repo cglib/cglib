@@ -51,40 +51,37 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
 
-import net.sf.cglib.proxy.InvocationHandler;
-
 /**
- * @author neeme
- *
+ * A {@link CallbackFilter} that returns the same type for every method.
+ * Used internally by {@link Enhancer} but not typically needed otherwise
+ * since the same thing can be accomplished by using the {@link Enhancer#setCallback} method.
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+public class SimpleFilter implements CallbackFilter {
+    private int type;
+    
+    public SimpleFilter(int type) {
+        this.type = type;
+    }
+    
+    public int accept(Method method) {
+        return type;
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+    public int hashCode() {
+        return type;
     }
 
+    public boolean equals(Object obj) {
+        return obj != null
+            && (obj instanceof SimpleFilter)
+            && type == ((SimpleFilter)obj).type;
+    }
+
+    public String toString() {
+        return "SimpleFilter(" + type + ")";
+    }
 }

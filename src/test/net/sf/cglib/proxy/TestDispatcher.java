@@ -51,40 +51,45 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
+import net.sf.cglib.CodeGenTestCase;
+import java.beans.*;
 import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+import java.util.*;
+import junit.framework.*;
 
 /**
- * @author neeme
- *
+ * @author Chris Nokleberg
+ * @version $Id: TestDispatcher.java,v 1.1 2003/10/29 03:45:38 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
+public class TestDispatcher extends CodeGenTestCase {
+    public void testSimple() throws Exception {
+        final Map map = new HashMap();
+        map.put(DI1.class.getName(), new D1());
+        map.put(DI2.class.getName(), new D2());
 
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
+        Dispatcher callback = new Dispatcher() {
+            public Object loadObject(String className) {
+                return map.get(className);
             }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+        };
+        Object obj = Enhancer.create(Object.class,
+                                     new Class[]{ DI1.class, DI2.class },
+                                     callback);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D2"));
     }
 
+    public TestDispatcher(String testName) {
+        super(testName);
+    }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestDispatcher.class);
+    }
 }

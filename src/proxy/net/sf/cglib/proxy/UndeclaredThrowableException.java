@@ -51,40 +51,23 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
 
-import java.lang.reflect.Method;
+package net.sf.cglib.proxy;
 
-import net.sf.cglib.proxy.InvocationHandler;
+import net.sf.cglib.core.CodeGenerationException;
 
 /**
- * @author neeme
- *
+ * @author  baliuka
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
+public class UndeclaredThrowableException extends CodeGenerationException {
     /**
-     * Constructor for InvocationHandlerSample.
+     * Creates a new instance of <code>UndeclaredThrowableException</code> without detail message.
      */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+    public UndeclaredThrowableException(Throwable t) {
+        super(t);
     }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+    
+    public Throwable getUndeclaredThrowable() {
+        return getCause();
     }
-
 }

@@ -1,6 +1,5 @@
-
 package samples;
-import net.sf.cglib.*;
+import net.sf.cglib.proxy.*;
 import java.util.*;
 /**
  *

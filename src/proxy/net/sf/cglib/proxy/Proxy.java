@@ -51,40 +51,64 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+import java.lang.reflect.Member;
+import net.sf.cglib.core.CodeGenerationException;
 
 /**
- * @author neeme
- *
+ * This class is meant to be used as a implementation of
+ * <code>java.lang.reflect.Proxy</code> under JDK 1.2. There are some known
+ * subtle differences:
+ * <ul>
+ * <li>The exceptions returned by invoking <code>getExceptionTypes</code>
+ * on the <code>Method</code> passed to the <code>invoke</code> method
+ * <b>are</b> the exact set that can be thrown without resulting in an
+ * <code>UndeclaredThrowableException</code> being thrown.
+ * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
+ * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
+ * </ul> 
+ * 
+ * @version $Id: Proxy.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
+public class Proxy implements Serializable {
+    protected Proxy(InvocationHandler h) {
+        ((Factory)this).setCallback(Callbacks.JDK_PROXY, h);
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
+    // private for security of isProxyClass
+    private static class ProxyImpl extends Proxy {
+        protected ProxyImpl(InvocationHandler h) {
+            super(h);
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
     }
 
+    public static InvocationHandler getInvocationHandler(Object proxy) {
+        return (InvocationHandler)((Factory)proxy).getCallback(Callbacks.JDK_PROXY);
+    }
+
+    public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(ProxyImpl.class);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(new SimpleFilter(Callbacks.JDK_PROXY));
+        return e.createClass();
+    }
+
+    public static boolean isProxyClass(Class cl) {
+        return cl.getSuperclass().equals(ProxyImpl.class);
+    }
+
+    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
+        try {
+            Class clazz = getProxyClass(loader, interfaces);
+            return clazz.getConstructor(new Class[]{ InvocationHandler.class }).newInstance(new Object[]{ h });
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        }
+    }
 }

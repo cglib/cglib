@@ -51,40 +51,35 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
-import java.lang.reflect.Method;
+import net.sf.cglib.CodeGenTestCase;
+import java.lang.reflect.*;
+import java.util.*;
+import junit.framework.*;
 
-import net.sf.cglib.proxy.InvocationHandler;
-
-/**
- * @author neeme
- *
- */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
-    /**
-     * Constructor for InvocationHandlerSample.
-     */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
+public class TestNoOp extends CodeGenTestCase {
+    private static class Foo {
+        public Foo() { }
+        public String toString() {
+            return "foo";
         }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
+    }
+    
+    public void testNoOp() {
+        Object obj = Enhancer.create(Foo.class, null, new SimpleFilter(Callbacks.NO_OP), null);
+        assertTrue("foo".equals(obj.toString()));
     }
 
+    public TestNoOp(String testName) {
+        super(testName);
+    }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestNoOp.class);
+    }
 }

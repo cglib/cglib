@@ -51,40 +51,21 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
+package net.sf.cglib.proxy;
 
 import java.lang.reflect.Method;
 
-import net.sf.cglib.proxy.InvocationHandler;
-
 /**
- * @author neeme
- *
+ * java.lang.reflect.InvocationHandler replacement (unavailable under JDK 1.2).
+ * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
+ * @version $Id: InvocationHandler.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
+public interface InvocationHandler
+extends Callback
+{
     /**
-     * Constructor for InvocationHandlerSample.
+     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object)
      */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable;
 
 }

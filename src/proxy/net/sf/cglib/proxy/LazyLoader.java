@@ -51,40 +51,19 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxysample;
-
-import java.lang.reflect.Method;
-
-import net.sf.cglib.proxy.InvocationHandler;
+package net.sf.cglib.proxy;
 
 /**
- * @author neeme
- *
+ * Lazy-loading {@link Enhancer} callback.
+ * @see Callbacks#LAZY_LOAD
  */
-public class InvocationHandlerSample implements InvocationHandler {
-
-    private Object o;
-
+public interface LazyLoader extends Callback {
     /**
-     * Constructor for InvocationHandlerSample.
+     * Return the object which the original method invocation should
+     * be dispatched to now and into the future. Called as soon as the
+     * first lazily-loaded method in the enhanced instance is invoked.
+     * @return an object that can invoke the method
+     * @throws ClassCastException if the object is incompatible with the method being invoked
      */
-    public InvocationHandlerSample(Object o) {
-        this.o = o;
-    }
-
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
-        System.out.println("invoke() start");
-        System.out.println("    method: " + method.getName());
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                System.out.println("    arg: " + args[i]);
-            }
-        }
-        Object r = method.invoke(o, args);
-        System.out.println("    return: " + r);
-        System.out.println("invoke() end");
-        return r;
-    }
-
+    Object loadObject() throws Exception;
 }
