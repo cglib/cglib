@@ -53,9 +53,6 @@
  */
 package net.sf.cglib.core;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -367,7 +364,7 @@ public class EmitUtils {
             String typeName = TypeUtils.emulateClassGetName(type);
 
             // TODO: can end up with duplicated field names when using chained transformers; incorporate static hook # somehow
-            String fieldName = "CGLIB$load_class$" + escapeType(typeName);
+            String fieldName = "CGLIB$load_class$" + TypeUtils.escapeType(typeName);
             if (!ce.isFieldDeclared(fieldName)) {
                 ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null, null);
                 CodeEmitter hook = ce.getStaticHook();
@@ -379,31 +376,21 @@ public class EmitUtils {
         }
     }
 
-    private static String escapeType(String s) {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0, len = s.length(); i < len; i++) {
-            char c = s.charAt(i);
-            switch (c) {
-            case '$': sb.append("$24"); break;
-            case '.': sb.append("$2E"); break;
-            case '[': sb.append("$5B"); break;
-            case ';': sb.append("$3B"); break;
-            default:
-                sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-
     public static void push_array(CodeEmitter e, Object[] array) {
         e.push(array.length);
-        e.newarray(Type.getType(array.getClass().getComponentType()));
+        e.newarray(Type.getType(remapComponentType(array.getClass().getComponentType())));
         for (int i = 0; i < array.length; i++) {
             e.dup();
             e.push(i);
             push_object(e, array[i]);
             e.aastore();
         }
+    }
+
+    private static Class remapComponentType(Class componentType) {
+        if (componentType.equals(Type.class))
+            return Class.class;
+        return componentType;
     }
     
     public static void push_object(CodeEmitter e, Object obj) {
@@ -415,6 +402,8 @@ public class EmitUtils {
                 push_array(e, (Object[])obj);
             } else if (obj instanceof String) {
                 e.push((String)obj);
+            } else if (obj instanceof Type) {
+                load_class(e, (Type)obj);
             } else if (obj instanceof Class) {
                 load_class(e, Type.getType((Class)obj));
             } else if (obj instanceof BigInteger) {
@@ -705,49 +694,40 @@ public class EmitUtils {
         }
     }
 
-    public static void load_method(CodeEmitter e, Method method) {
-        load_class(e, Type.getType(method.getDeclaringClass()));
-        e.push(method.getName());
-        push_object(e, method.getParameterTypes());
-        e.invoke_virtual( Constants.TYPE_CLASS ,GET_DECLARED_METHOD);
+    public static void load_method(CodeEmitter e, MethodInfo method) {
+        load_class(e, method.getClassInfo().getType());
+        e.push(method.getSignature().getName());
+        push_object(e, method.getSignature().getArgumentTypes());
+        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
     }
 
     private interface ParameterTyper {
-        Class[] getParameterTypes(Object member);
+        Type[] getParameterTypes(MethodInfo member);
     }
 
     public static void method_switch(CodeEmitter e,
-                                     Method[] methods,
+                                     List methods,
                                      ObjectSwitchCallback callback) {
-        member_switch_helper(e, Arrays.asList(methods), callback, true, new ParameterTyper() {
-            public Class[] getParameterTypes(Object member) {
-                return ((Method)member).getParameterTypes();
-            }
-        });
+        member_switch_helper(e, methods, callback, true);
     }
 
     public static void constructor_switch(CodeEmitter e,
-                                          Constructor[] cstructs,
+                                          List constructors,
                                           ObjectSwitchCallback callback) {
-        member_switch_helper(e, Arrays.asList(cstructs), callback, false, new ParameterTyper() {
-            public Class[] getParameterTypes(Object member) {
-                return ((Constructor)member).getParameterTypes();
-            }
-        });
+        member_switch_helper(e, constructors, callback, false);
     }
 
     private static void member_switch_helper(final CodeEmitter e,
                                              List members,
                                              final ObjectSwitchCallback callback,
-                                             boolean useName,
-                                             final ParameterTyper typer) {
+                                             boolean useName) {
         try {
             final Map cache = new HashMap();
             final ParameterTyper cached = new ParameterTyper() {
-                    public Class[] getParameterTypes(Object member) {
-                        Class[] types = (Class[])cache.get(member);
+                    public Type[] getParameterTypes(MethodInfo member) {
+                        Type[] types = (Type[])cache.get(member);
                         if (types == null) {
-                            cache.put(member, types = typer.getParameterTypes(member));
+                            cache.put(member, types = member.getSignature().getArgumentTypes());
                         }
                         return types;
                     }
@@ -758,7 +738,7 @@ public class EmitUtils {
                 e.swap();
                 final Map buckets = CollectionUtils.bucket(members, new Transformer() {
                         public Object transform(Object value) {
-                            return ((Member)value).getName();
+                            return ((MethodInfo)value).getSignature().getName();
                         }
                     });
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
@@ -794,7 +774,7 @@ public class EmitUtils {
                                            final Label end) throws Exception {
         final Map buckets = CollectionUtils.bucket(members, new Transformer() {
             public Object transform(Object value) {
-                return new Integer(typer.getParameterTypes(value).length);
+                return new Integer(typer.getParameterTypes((MethodInfo)value).length);
             }
         });
         e.dup();
@@ -818,15 +798,15 @@ public class EmitUtils {
                                            final Label end,
                                            final BitSet checked) throws Exception {
         if (members.size() == 1) {
-            Member member = (Member)members.get(0);
-            Class[] types = typer.getParameterTypes(member);
+            MethodInfo member = (MethodInfo)members.get(0);
+            Type[] types = typer.getParameterTypes(member);
             // need to check classes that have not already been checked via switches
             for (int i = 0; i < types.length; i++) {
                 if (checked == null || !checked.get(i)) {
                     e.dup();
                     e.aaload(i);
                     e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
-                    e.push(types[i].getName());
+                    e.push(types[i].getClassName());
                     e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
                     e.if_jump(e.EQ, def);
                 }
@@ -835,14 +815,14 @@ public class EmitUtils {
             callback.processCase(member, end);
         } else {
             // choose the index that has the best chance of uniquely identifying member
-            Class[] example = typer.getParameterTypes(members.get(0));
+            Type[] example = typer.getParameterTypes((MethodInfo)members.get(0));
             Map buckets = null;
             int index = -1;
             for (int i = 0; i < example.length; i++) {
                 final int j = i;
                 Map test = CollectionUtils.bucket(members, new Transformer() {
                     public Object transform(Object value) {
-                        return typer.getParameterTypes(value)[j].getName();
+                        return typer.getParameterTypes((MethodInfo)value)[j].getClassName();
                     }
                 });
                 if (buckets == null || test.size() > buckets.size()) {
@@ -961,5 +941,16 @@ public class EmitUtils {
         e.swap();
         e.invoke_constructor(wrapper, CSTRUCT_THROWABLE);
         e.athrow();
+    }
+
+    public static CodeEmitter begin_method(ClassEmitter e, MethodInfo method) {
+        return begin_method(e, method, method.getModifiers());
+    }
+
+    public static CodeEmitter begin_method(ClassEmitter e, MethodInfo method, int access) {
+        return e.begin_method(access,
+                              method.getSignature(),
+                              method.getExceptionTypes(),
+                              method.getAttribute());
     }
 }

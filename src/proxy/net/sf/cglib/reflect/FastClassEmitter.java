@@ -90,8 +90,6 @@ class FastClassEmitter extends ClassEmitter {
     public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
       
-        
-        
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
@@ -103,15 +101,11 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         VisibilityPredicate vp = new VisibilityPredicate(type, false);
-        List methodList = ReflectUtils.addAllMethods(type, new ArrayList());
-        CollectionUtils.filter(methodList, vp);
-        CollectionUtils.filter(methodList, new DuplicatesPredicate());
-        final Method[] methods = (Method[])methodList.toArray(new Method[methodList.size()]);
-        final Constructor[] constructors = (Constructor[])
-          CollectionUtils.filter(
-               type.getDeclaredConstructors(  ),
-               vp
-             );
+        List methods = ReflectUtils.addAllMethods(type, new ArrayList());
+        CollectionUtils.filter(methods, vp);
+        CollectionUtils.filter(methods, new DuplicatesPredicate());
+        List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
+        CollectionUtils.filter(constructors, vp);
         
         // getIndex(String)
         emitIndexBySignature(methods);
@@ -122,7 +116,8 @@ class FastClassEmitter extends ClassEmitter {
         // getIndex(Class[])
         e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null, null);
         e.load_args();
-        EmitUtils.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
+        List info = CollectionUtils.transform(constructors, MethodInfoTransformer.getInstance());
+        EmitUtils.constructor_switch(e, info, new GetIndexCallback(e, info));
         e.end_method();
 
         // invoke(int, Object, Object[])
@@ -143,7 +138,7 @@ class FastClassEmitter extends ClassEmitter {
 
         // getMaxIndex()
         e = begin_method(Constants.ACC_PUBLIC, GET_MAX_INDEX, null, null);
-        e.push(methods.length - 1);
+        e.push(methods.size() - 1);
         e.return_value();
         e.end_method();
 
@@ -151,9 +146,9 @@ class FastClassEmitter extends ClassEmitter {
     }
 
     // TODO: support constructor indices ("<init>")
-    private void emitIndexBySignature(Method[] methods) {
+    private void emitIndexBySignature(List methods) {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
-        List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+        List signatures = CollectionUtils.transform(methods, new Transformer() {
             public Object transform(Object obj) {
                 return ReflectUtils.getSignature((Method)obj).toString();
             }
@@ -165,11 +160,11 @@ class FastClassEmitter extends ClassEmitter {
     }
 
     private static final int TOO_MANY_METHODS = 100; // TODO
-    private void emitIndexByClassArray(Method[] methods) {
+    private void emitIndexByClassArray(List methods) {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null, null);
-        if (methods.length > TOO_MANY_METHODS) {
+        if (methods.size() > TOO_MANY_METHODS) {
             // hack for big classes
-            List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+            List signatures = CollectionUtils.transform(methods, new Transformer() {
                 public Object transform(Object obj) {
                     String s = ReflectUtils.getSignature((Method)obj).toString();
                     return s.substring(0, s.lastIndexOf(')') + 1);
@@ -180,7 +175,8 @@ class FastClassEmitter extends ClassEmitter {
             signatureSwitchHelper(e, signatures);
         } else {
             e.load_args();
-            EmitUtils.method_switch(e, methods, new GetIndexCallback(e, methods));
+            List info = CollectionUtils.transform(methods, MethodInfoTransformer.getInstance());
+            EmitUtils.method_switch(e, info, new GetIndexCallback(e, info));
         }
         e.end_method();
     }
@@ -203,28 +199,25 @@ class FastClassEmitter extends ClassEmitter {
                                 callback);
     }
 
-    private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) {
+    private static void invokeSwitchHelper(final CodeEmitter e, List members, final int arg) {
+        final List info = CollectionUtils.transform(members, MethodInfoTransformer.getInstance());        
         final Label illegalArg = e.make_label();
         Block block = e.begin_block();
-        e.process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
+        e.process_switch(getIntRange(info.size()), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                Member member = (Member)members[key];
-                Signature sig = ReflectUtils.getSignature(member);
-                Type[] types = sig.getArgumentTypes();
+                MethodInfo method = (MethodInfo)info.get(key);
+                Type[] types = method.getSignature().getArgumentTypes();
                 for (int i = 0; i < types.length; i++) {
                     e.load_arg(arg);
                     e.aaload(i);
                     e.unbox(types[i]);
                 }
-                if (member instanceof Method) {
-                    e.invoke((Method)member);
-                    e.box(Type.getType(((Method)member).getReturnType()));
-                } else {
-                    e.invoke_constructor(Type.getType(member.getDeclaringClass()), sig);
+                e.invoke(method);
+                if (!TypeUtils.isConstructor(method)) {
+                    e.box(method.getSignature().getReturnType());
                 }
                 e.return_value();
             }
-
             public void processDefault() {
                 e.goTo(illegalArg);
             }
@@ -239,10 +232,11 @@ class FastClassEmitter extends ClassEmitter {
         private CodeEmitter e;
         private Map indexes = new HashMap();
 
-        public GetIndexCallback(CodeEmitter e, Object[] members) {
+        public GetIndexCallback(CodeEmitter e, List methods) {
             this.e = e;
-            for (int i = 0; i < members.length; i++) {
-                indexes.put(members[i], new Integer(i));
+            int index = 0;
+            for (Iterator it = methods.iterator(); it.hasNext();) {
+                indexes.put(it.next(), new Integer(index++));
             }
         }
             

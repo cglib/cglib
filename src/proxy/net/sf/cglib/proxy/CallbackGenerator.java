@@ -53,10 +53,8 @@
  */
 package net.sf.cglib.proxy;
 
-import java.lang.reflect.Method;
 import java.util.Iterator;
-import net.sf.cglib.core.ClassEmitter;
-import net.sf.cglib.core.CodeEmitter;
+import net.sf.cglib.core.*;
 
 interface CallbackGenerator
 {
@@ -66,9 +64,10 @@ interface CallbackGenerator
     interface Context
     {
         Iterator getMethods();
-        int getIndex(Method method);
+        int getOriginalModifiers(MethodInfo method);
+        int getIndex(MethodInfo method);
         void emitCallback(CodeEmitter e, int index);
-        int getModifiers(Method method);
-        String getUniqueName(Method method);
+        Signature getImplSignature(MethodInfo method);
+        boolean isTransforming();
     }
 }

@@ -101,11 +101,12 @@ class BulkBeanEmitter extends ClassEmitter {
             e.store_local(bean);
             for (int i = 0; i < getters.length; i++) {
                 if (getters[i] != null) {
+                    MethodInfo getter = ReflectUtils.getMethodInfo(getters[i]);
                     e.load_arg(1);
                     e.push(i);
                     e.load_local(bean);
-                    e.invoke(getters[i]);
-                    e.box(Type.getType(getters[i].getReturnType()));
+                    e.invoke(getter);
+                    e.box(getter.getSignature().getReturnType());
                     e.aastore();
                 }
             }
@@ -128,6 +129,7 @@ class BulkBeanEmitter extends ClassEmitter {
             int lastIndex = 0;
             for (int i = 0; i < setters.length; i++) {
                 if (setters[i] != null) {
+                    MethodInfo setter = ReflectUtils.getMethodInfo(setters[i]);
                     int diff = i - lastIndex;
                     if (diff > 0) {
                         e.iinc(index, diff);
@@ -135,8 +137,8 @@ class BulkBeanEmitter extends ClassEmitter {
                     }
                     e.dup2();
                     e.aaload(i);
-                    e.unbox(Type.getType(setters[i].getParameterTypes()[0]));
-                    e.invoke(setters[i]);
+                    e.unbox(setter.getSignature().getArgumentTypes()[0]);
+                    e.invoke(setter);
                 }
             }
             handler.end();

@@ -62,7 +62,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.22 2004/03/27 17:05:23 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.23 2004/04/07 07:00:59 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -298,7 +298,23 @@ public class ReflectUtils {
         }
         return m;
     }
-        
+
+//     // TODO: get rid of this
+//     public static MethodInfo[] getMethodInfo(Member[] methods) {
+//         Collection c = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+//             public Object transform(Object value) {
+//                 if (value instanceof Field) {
+//                     throw new IllegalArgumentException("cannot get method info for fields");
+//                 } else if (value instanceof Method) {
+//                     return getMethodInfo((Method)value);
+//                 } else {
+//                     return getMethodInfo((Constructor)value);
+//                 }
+//             }
+//         });
+//         return (MethodInfo[])c.toArray(new MethodInfo[c.size()]);
+//     }
+
     public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
         Set methods = new HashSet();
         for (int i = 0; i < properties.length; i++) {
@@ -414,5 +430,21 @@ public class ReflectUtils {
             }
         }
         return 0;
+    }
+
+    public static MethodInfo getMethodInfo(Member member) {
+        return new MethodInfo(getClassInfo(member.getDeclaringClass()),
+                              member.getModifiers(),
+                              getSignature(member),
+                              getExceptionTypes(member),
+                              null);
+    }
+
+    public static ClassInfo getClassInfo(Class clazz) {
+        Class sc = clazz.getSuperclass();
+        return new ClassInfo(clazz.getModifiers(),
+                             clazz.getName(),
+                             (sc != null) ? Type.getType(sc) : null,
+                             TypeUtils.getTypes(clazz.getInterfaces()));
     }
 }

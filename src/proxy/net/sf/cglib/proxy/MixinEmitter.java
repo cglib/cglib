@@ -61,7 +61,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.3 2003/11/06 05:10:52 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.4 2004/04/07 07:00:57 herbyderby Exp $
  */
 class MixinEmitter extends ClassEmitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -99,15 +99,12 @@ class MixinEmitter extends ClassEmitter {
             Method[] methods = getMethods(classes[i]);
             for (int j = 0; j < methods.length; j++) {
                 if (unique.add(MethodWrapper.create(methods[j]))) {
-                    Method method = methods[j];
-                    e = begin_method(Constants.ACC_PUBLIC,
-                                     ReflectUtils.getSignature(method),
-                                     ReflectUtils.getExceptionTypes(method),
-                                     null);
+                    MethodInfo method = ReflectUtils.getMethodInfo(methods[j]);
+                    e = EmitUtils.begin_method(this, method, Constants.ACC_PUBLIC);
                     e.load_this();
                     e.getfield(FIELD_NAME);
                     e.aaload((route != null) ? route[i] : i);
-                    e.checkcast(Type.getType(method.getDeclaringClass()));
+                    e.checkcast(method.getClassInfo().getType());
                     e.load_args();
                     e.invoke(method);
                     e.return_value();

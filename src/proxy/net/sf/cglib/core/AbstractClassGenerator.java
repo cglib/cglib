@@ -54,7 +54,6 @@
 package net.sf.cglib.core;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;

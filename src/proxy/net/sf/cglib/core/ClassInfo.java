@@ -51,30 +51,54 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxy;
+package net.sf.cglib.core;
 
-import java.util.*;
-import net.sf.cglib.core.*;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
-class FixedValueGenerator implements CallbackGenerator {
-    public static final FixedValueGenerator INSTANCE = new FixedValueGenerator();
-    private static final Type FIXED_VALUE =
-      TypeUtils.parseType("net.sf.cglib.proxy.FixedValue");
-    private static final Signature LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject()");
+public class ClassInfo {
+    private Type type;
+    private Type superType;
+    private int modifiers;
+    private Type[] interfaces;
 
-    public void generate(ClassEmitter ce, final Context context) {
-        for (Iterator it = context.getMethods(); it.hasNext();) {
-            MethodInfo method = (MethodInfo)it.next();
-            CodeEmitter e = EmitUtils.begin_method(ce, method);
-            context.emitCallback(e, context.getIndex(method));
-            e.invoke_interface(FIXED_VALUE, LOAD_OBJECT);
-            e.unbox_or_zero(e.getReturnType());
-            e.return_value();
-            e.end_method();
-        }
+    public ClassInfo(int modifiers, String name, Type superType, Type[] interfaces) {
+        this.modifiers = modifiers;
+        this.superType = superType;
+        this.interfaces = interfaces;
+        type = TypeUtils.parseType(name);
     }
 
-    public void generateStatic(CodeEmitter e, Context context) { }
+    public Type getType() {
+        return type;
+    }
+
+    public Type getSuperType() {
+        return superType;
+    }
+
+    public Type[] getInterfaces() {
+        return interfaces;
+    }
+    
+    public int getModifiers() {
+        return modifiers;
+    }
+
+    public boolean equals(Object o) {
+        if (o == null)
+            return false;
+        if (!(o instanceof ClassInfo))
+            return false;
+        return getType().equals(((ClassInfo)o).getType());
+    }
+
+    public int hashCode() {
+        return getType().hashCode();
+    }
+
+    public String toString() {
+        // TODO: include modifiers, superType, interfaces
+        return getType().getClassName();
+    }
 }

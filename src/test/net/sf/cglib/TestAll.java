@@ -65,7 +65,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.59 2004/03/27 17:53:23 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.60 2004/04/07 07:00:57 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     
@@ -84,8 +84,6 @@ public class TestAll extends TestCase {
         TestSuite suite = new TestSuite();
 
         //security
-        
-       
         
         // proxy
         suite.addTest(TestEnhancer.suite());
@@ -121,6 +119,7 @@ public class TestAll extends TestCase {
         suite.addTest(TestAddDelegate.suite());
         suite.addTest(TestInterceptFields.suite());
         suite.addTest(TestDemo.suite());
+        suite.addTest(TestEnhancerTransform.suite());
 
         // performance
         // suite.addTest(TestReflectPerf.suite());

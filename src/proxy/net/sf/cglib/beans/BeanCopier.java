@@ -166,23 +166,24 @@ abstract public class BeanCopier
                 PropertyDescriptor setter = setters[i];
                 PropertyDescriptor getter = (PropertyDescriptor)names.get(setter.getName());
                 if (getter != null) {
+                    MethodInfo read = ReflectUtils.getMethodInfo(getter.getReadMethod());
+                    MethodInfo write = ReflectUtils.getMethodInfo(setter.getWriteMethod());
                     if (useConverter) {
-                        Type getterType = Type.getType(getter.getPropertyType());
-                        Type setterType = Type.getType(setter.getPropertyType());
+                        Type setterType = write.getSignature().getArgumentTypes()[0];
                         e.load_local(targetLocal);
                         e.load_arg(2);
                         e.load_local(sourceLocal);
-                        e.invoke(getter.getReadMethod());
-                        e.box(getterType);
+                        e.invoke(read);
+                        e.box(read.getSignature().getReturnType());
                         EmitUtils.load_class(e, setterType);
-                        e.push(setter.getName());
+                        e.push(write.getSignature().getName());
                         e.invoke_interface(CONVERTER, CONVERT);
                         e.unbox_or_zero(setterType);
-                        e.invoke(setter.getWriteMethod());
+                        e.invoke(write);
                     } else if (compatible(getter, setter)) {
                         e.dup2();
-                        e.invoke(getter.getReadMethod());
-                        e.invoke(setter.getWriteMethod());
+                        e.invoke(read);
+                        e.invoke(write);
                     }
                 }
             }

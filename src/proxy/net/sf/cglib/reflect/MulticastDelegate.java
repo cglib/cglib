@@ -132,7 +132,7 @@ abstract public class MulticastDelegate implements Cloneable {
         }
 
         public void generateClass(ClassVisitor cv) {
-            final Method method = ReflectUtils.findInterfaceMethod(iface);
+            final MethodInfo method = ReflectUtils.getMethodInfo(ReflectUtils.findInterfaceMethod(iface));
             
             ClassEmitter ce = new ClassEmitter(cv);
             ce.begin_class(Constants.ACC_PUBLIC,
@@ -165,12 +165,9 @@ abstract public class MulticastDelegate implements Cloneable {
             ce.end_class();
         }
 
-        private void emitProxy(ClassEmitter ce, final Method method) {
-            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
-                                                  ReflectUtils.getSignature(method),
-                                                  ReflectUtils.getExceptionTypes(method),
-                                                  null);
-            Type returnType = e.getReturnType();
+        private void emitProxy(ClassEmitter ce, final MethodInfo method) {
+            final CodeEmitter e = EmitUtils.begin_method(ce, method, Constants.ACC_PUBLIC);
+            Type returnType = method.getSignature().getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
             Local result = null;
             if (returns) {

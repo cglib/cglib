@@ -53,7 +53,6 @@
  */
 package net.sf.cglib.proxy;
 
-import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Label;
@@ -92,75 +91,78 @@ implements CallbackGenerator
     private static final Signature TO_STRING =
       TypeUtils.parseSignature("String toString()");
 
+    private String getMethodField(Signature impl) {
+        return impl.getName() + "$Method";
+    }
+    private String getMethodProxyField(Signature impl) {
+        return impl.getName() + "$Proxy";
+    }
+
     public void generate(ClassEmitter ce, Context context) {
         Map sigMap = new HashMap();
         for (Iterator it = context.getMethods(); it.hasNext();) {
-            Method method = (Method)it.next();
-            String accessName = getAccessName(context, method);
-            String fieldName = getFieldName(context, method);
-            sigMap.put(ReflectUtils.getSignature(method).toString(), accessName);
+            MethodInfo method = (MethodInfo)it.next();
+            Signature impl = context.getImplSignature(method);
 
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null, null);
+            String methodField = getMethodField(impl);
+            String methodProxyField = getMethodProxyField(impl);
+
+            sigMap.put(method.getSignature().toString(), methodProxyField);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodField, METHOD, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodProxyField, METHOD_PROXY, null, null);
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY, null, null);
             CodeEmitter e;
 
             // access method
-            e = ce.begin_method(Constants.ACC_FINAL,
-                                new Signature(getAccessName(context, method),
-                                              ReflectUtils.getSignature(method).getDescriptor()),
-                                ReflectUtils.getExceptionTypes(method),
-                                null);
-            if (Modifier.isAbstract(method.getModifiers())) {
-                e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
-            } else {
-                e.load_this();
-                e.load_args();
-                e.super_invoke(ReflectUtils.getSignature(method));
+            if (!context.isTransforming()) {
+                e = ce.begin_method(Constants.ACC_FINAL,
+                                    impl,
+                                    method.getExceptionTypes(),
+                                    null);
+                if (TypeUtils.isAbstract(method.getModifiers())) {
+                    e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+                } else {
+                    e.load_this();
+                    e.load_args();
+                    e.super_invoke(method.getSignature());
+                }
+                e.return_value();
+                e.end_method();
             }
-            e.return_value();
-            e.end_method();
 
             // around method
-            e = ce.begin_method(context.getModifiers(method),
-                                ReflectUtils.getSignature(method),
-                                ReflectUtils.getExceptionTypes(method),
-                                null);
+            e = EmitUtils.begin_method(ce, method);
             Label nullInterceptor = e.make_label();
             context.emitCallback(e, context.getIndex(method));
             e.dup();
             e.ifnull(nullInterceptor);
 
             e.load_this();
-            e.getfield(fieldName);
+            e.getfield(methodField);
 
-            if (method.getParameterTypes().length == 0) {
+            if (method.getSignature().getArgumentTypes().length == 0) {
                 e.getfield(EMPTY_ARGS_NAME);
             } else {
                 e.create_arg_array();
             }
             
-            e.getfield(accessName);
+            e.getfield(methodProxyField);
             e.invoke_interface(METHOD_INTERCEPTOR, INTERCEPT);
-            e.unbox_or_zero(Type.getType(method.getReturnType()));
+            e.unbox_or_zero(method.getSignature().getReturnType());
             e.return_value();
 
             e.mark(nullInterceptor);
             e.load_this();
             e.load_args();
-            e.super_invoke(ReflectUtils.getSignature(method));
+            if (context.isTransforming()) {
+                e.invoke_virtual_this(impl);
+            } else {
+                e.super_invoke(method.getSignature());
+            }
             e.return_value();
             e.end_method();
         }
         generateFindProxy(ce, sigMap);
-    }
-
-    private String getFieldName(Context context, Method method) {
-        return "CGLIB$$METHOD_" + context.getUniqueName(method);
-    }
-    
-    private String getAccessName(Context context, Method method) {
-        return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
     public void generateStatic(CodeEmitter e, final Context context) {
@@ -186,20 +188,20 @@ implements CallbackGenerator
         
         for (Iterator it = context.getMethods(); it.hasNext();) {
             e.dup();
-            Method method = (Method)it.next();
+            MethodInfo method = (MethodInfo)it.next();
+            Signature impl = context.getImplSignature(method);
             EmitUtils.load_method(e, method);
             e.dup();
-            e.putfield(getFieldName(context, method));
+            e.putfield(getMethodField(impl));
 
-            String accessName = getAccessName(context, method);
-            Signature sig = ReflectUtils.getSignature(method);
+            Signature sig = method.getSignature();
             e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
             e.load_local(thisclass);
             e.push(sig.getDescriptor());
             e.push(sig.getName());
-            e.push(accessName);
+            e.push(impl.getName());
             e.invoke_static(METHOD_PROXY, MAKE_PROXY);
-            e.putfield(accessName);
+            e.putfield(getMethodProxyField(impl));
         }
     }
 
