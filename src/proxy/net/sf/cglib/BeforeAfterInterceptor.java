@@ -57,11 +57,11 @@ import java.lang.reflect.Method;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: BeforeAfterInterceptor.java,v 1.4 2002/11/29 23:50:48 herbyderby Exp $
+ * @version $Id: BeforeAfterInterceptor.java,v 1.5 2002/11/30 12:41:29 baliuka Exp $
  */
-abstract public class BeforeAfterInterceptor implements AroundInterceptor {
+abstract public class BeforeAfterInterceptor implements MethodInterceptor {
 
-    public Object aroundAdvice(Object obj, Method method, Object[] args,
+    public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
                                MethodProxy proxy) throws Throwable {
         Throwable e = null;                                                                            
         boolean invokedSuper = false;                                                                  

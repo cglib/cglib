@@ -57,9 +57,9 @@ import java.lang.reflect.Method;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: NoOpInterceptor.java,v 1.2 2002/11/29 23:50:48 herbyderby Exp $
+ * @version $Id: NoOpInterceptor.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
  */
-public class NoOpInterceptor implements AroundInterceptor {
+public class NoOpInterceptor implements MethodInterceptor {
     public Object aroundAdvice(Object obj, Method method, Object[] args,
                                MethodProxy proxy) throws Throwable {
         return proxy.invokeSuper(obj, args);

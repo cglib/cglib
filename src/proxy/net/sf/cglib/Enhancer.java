@@ -78,14 +78,14 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib";
     private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
     private static int index = 0;
     private static Map factories = new HashMap();
-    private static Map cache = Collections.synchronizedMap( new WeakHashMap() );
+    private static Map cache =  new WeakHashMap();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
 
@@ -102,8 +102,41 @@ public class Enhancer implements ClassFileConstants {
         
     }
     
+    /**
+     *  implements decorator  for the first parameter,
+     *  returned instance extends obj.getClass() and implements Factory interface,
+     *  MethodProxy delegates calls to obj methods
+     *  @param obj object to decorate
+     *  @param interceptor interceptor used to handle implemented methods
+     *  @return decorated instanse of obj.getClass()  class
+     */
     
     
+     public static Factory decorate(Object obj, MethodInterceptor interceptor ){
+     
+         return (Factory)enhanceHelper(true, obj, obj.getClass(), null , interceptor,
+                               obj.getClass().getClassLoader(), null );
+     }
+    
+    
+    /**
+     *  overrides Class methods and implements all abstract methods.  
+     *  returned instance extends clazz and implements Factory interface,
+     *  MethodProxy delegates calls to supper Class (clazz) methods, if not abstract.
+     *  @param clazz Class to override
+     *  @param interceptor interceptor used to handle implemented methods
+     *  @return instanse of clazz class, new Class is defined in the same class loader
+     */
+    
+     
+      public static Factory override(Class clazz, MethodInterceptor interceptor ){
+     
+         return (Factory)enhanceHelper(false, null , cls, null , interceptor,
+                               cls.getClassLoader(), null );
+     }
+    
+     
+     
     /**
      *  implemented as
      * return enhance(cls,interfaces,ih, null,null,false);
@@ -202,12 +235,9 @@ public class Enhancer implements ClassFileConstants {
             cache.put(loader, map);
         }
 
-     Class result = null;   
       
-      synchronized( cls ){
-
       Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
-      result = (Class) map.get(key);
+      Class result = (Class) map.get(key);
 
           
         if ( result == null ) {
@@ -220,7 +250,7 @@ public class Enhancer implements ClassFileConstants {
             map.put(key, result);
         }
       
-      } //synchronized
+
       
         Factory factory = (Factory)factories.get(result);
         if (factory == null) {
