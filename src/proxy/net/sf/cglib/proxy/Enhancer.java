@@ -352,7 +352,7 @@ public class Enhancer extends AbstractClassGenerator
 
     private void validate(boolean transforming) {
         if (transforming && filter != null && !(filter instanceof CallbackFilter2)) {
-            throw new IllegalArgumentException("CallbackFilter2 must be used when transforming");
+            throw new IllegalStateException("CallbackFilter2 must be used when transforming");
         }
         if ((classOnly || transforming) ^ (callbacks == null)) {
             if (classOnly || transforming) {
@@ -382,6 +382,16 @@ public class Enhancer extends AbstractClassGenerator
                 throw new IllegalStateException("Multiple callback types possible but no filter specified");
             }
             filter = CallbackFilter2.ALL_ZERO;
+        }
+        if (interfaces != null) {
+            for (int i = 0; i < interfaces.length; i++) {
+                if (interfaces[i] == null) {
+                    throw new IllegalStateException("Interfaces cannot be null");
+                }
+                if (!interfaces[i].isInterface()) {
+                    throw new IllegalStateException(interfaces[i] + " is not an interface");
+                }
+            }
         }
     }
 
