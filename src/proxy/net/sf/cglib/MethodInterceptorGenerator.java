@@ -162,7 +162,7 @@ implements CallbackGenerator
         for (Iterator it = context.getMethods(); it.hasNext();) {
             e.dup();
             Method method = (Method)it.next();
-            ReflectOps.load_method(e, method);
+            ComplexOps.load_method(e, method);
             e.dup();
             e.putfield(getFieldName(context, method));
 

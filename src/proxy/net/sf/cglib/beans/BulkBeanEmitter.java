@@ -105,7 +105,7 @@ class BulkBeanEmitter extends ClassEmitter {
                 e.load_arg(1);
                 e.push(i);
                 e.load_local(bean);
-                ReflectOps.invoke(e, getters[i]);
+                e.invoke(getters[i]);
                 e.box(Type.getType(getters[i].getReturnType()));
                 e.aastore();
             }

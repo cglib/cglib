@@ -61,7 +61,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.12 2003/10/03 19:25:08 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.13 2003/10/03 23:20:31 herbyderby Exp $
  */
 class MixinEmitter extends ClassEmitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -108,7 +108,7 @@ class MixinEmitter extends ClassEmitter {
                     e.aaload((route != null) ? route[i] : i);
                     e.checkcast(Type.getType(method.getDeclaringClass()));
                     e.load_args();
-                    ReflectOps.invoke(e, method);
+                    e.invoke(method);
                     e.return_value();
                     e.end_method();
                 }

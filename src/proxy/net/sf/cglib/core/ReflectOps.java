@@ -6,34 +6,12 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class ReflectOps {
-    private static final Signature GET_DECLARED_METHOD =
-      TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
     private static final Signature GET_NAME =
       TypeUtils.parseSignature("String getName()");
     private static final Signature EQUALS =
       TypeUtils.parseSignature("boolean equals(Object)");
 
     private ReflectOps() {
-    }
-
-    // get rid of this
-    public static void invoke(CodeEmitter e, Method method) {
-        Type owner = Type.getType(method.getDeclaringClass());
-        Signature sig = ReflectUtils.getSignature(method);
-        if (method.getDeclaringClass().isInterface()) {
-            e.invoke_interface(owner, sig);
-        } else if (Modifier.isStatic(method.getModifiers())) {
-            e.invoke_static(owner, sig);
-        } else {
-            e.invoke_virtual(owner, sig);
-        }
-    }
-
-    public static void load_method(CodeEmitter e, Method method) {
-        ComplexOps.load_class(e, Type.getType(method.getDeclaringClass()));
-        e.push(method.getName());
-        ComplexOps.push_object(e, method.getParameterTypes());
-        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
     }
 
     private interface ParameterTyper {

@@ -106,7 +106,7 @@ class LazyLoaderGenerator implements CallbackGenerator {
                 e.invoke_virtual_this(LOAD_PRIVATE);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();
-                ReflectOps.invoke(e, method);
+                e.invoke(method);
                 e.return_value();
                 e.end_method();
             }

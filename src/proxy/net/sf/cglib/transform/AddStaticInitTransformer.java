@@ -40,7 +40,7 @@ public class AddStaticInitTransformer extends EmittingTransformer {
         if (sig.getName().equals(Constants.STATIC_NAME)) {
             generated = true;
             ComplexOps.load_class_this(e);
-            ReflectOps.invoke(e, classInit);
+            e.invoke(classInit);
         }
         return e;
     }
