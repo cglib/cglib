@@ -171,6 +171,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
                         outEntry.setComment(entry.getComment());
                         outEntry.setSize(bytes.length);
                         
+                        
                         if(outEntry.getMethod() == ZipEntry.STORED){
                             CRC32 crc = new CRC32();
                             crc.update(bytes);

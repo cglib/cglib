@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.46 2004/09/19 03:04:05 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.47 2005/03/07 14:55:11 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -14,7 +14,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="2.1-dev"/>
+    <property name="component.version" value="2.1"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>
@@ -268,6 +268,7 @@
     <mkdir dir="${build.transform}"/>
     <copy todir="${build.transform}" preservelastmodified="yes">
       <fileset dir="${build.home}/classes"/>
+      <fileset dir="./lib"/>	
     </copy>
     <taskdef name="example" classname="net.sf.cglib.transform.impl.ExampleTask">
       <classpath>
@@ -279,9 +280,10 @@
       </classpath>
     </taskdef>
     <example fieldsuffix="Cglib" verbose="yes">
-      <fileset dir="${build.transform}" includes="**/*.class">
-        <not><depend targetdir="${build.home}/classes"/></not>
+      <fileset dir="${build.transform}" includes="**/*">
+      <!--  <not><depend targetdir="${build.home}/classes"/></not> -->
       </fileset>
+    	
       <newproperty name="cglibFoo" type="long"/>
       <newproperty name="cglibBar" type="Double"/>
     </example>
