@@ -69,7 +69,6 @@ import org.objectweb.asm.Type;
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
-    private static final String KEY_FIELD = "CGLIB$ACGKEY";
     private static final Object NAME_KEY = new Object();
 
     private NamingPolicy namingPolicy;
@@ -169,30 +168,17 @@ implements ClassGenerator
                 }
                 if (instance == null) {
                     this.key = key;
-                    final String keyFieldValue = key.toString();
                     String className = getClassName(loader);
                     Class gen = null;
                     try {
                         gen = loader.loadClass(className);
                         if (gen.getClassLoader() != loader) {
                             gen = null;
-                        } else if (!keyFieldValue.equals(getKeyField(gen))) {
-                            // TODO: log?
-                            gen = null;
                         }
                     } catch (ClassNotFoundException e) {
                     }
                     if (gen == null) {
-                        DebuggingClassWriter w = new DebuggingClassWriter(true) {
-                            public void visitEnd() {
-                                visitField(Constants.ACC_STATIC | Constants.ACC_PUBLIC,
-                                           KEY_FIELD,
-                                           Constants.TYPE_STRING.getDescriptor(),
-                                           keyFieldValue,
-                                           null);
-                                super.visitEnd();
-                            }
-                        };
+                        DebuggingClassWriter w = new DebuggingClassWriter(true);
                         ClassGenerator cg = this;
                         if (transformer != null) {
                             cg = (ClassGenerator)transformer.transform(this);
@@ -215,16 +201,6 @@ implements ClassGenerator
             throw e;
         } catch (Error e) {
             throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
-    private static String getKeyField(Class type) {
-        try {
-            return (String)type.getDeclaredField(KEY_FIELD).get(null);
-        } catch (NoSuchFieldException e) {
-            return null;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
