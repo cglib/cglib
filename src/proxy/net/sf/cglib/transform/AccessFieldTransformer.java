@@ -22,24 +22,26 @@ public class AccessFieldTransformer extends EmittingTransformer {
                 super.declare_field(access, name, type, value);
 
                 String property = callback.getPropertyName(getClassType(), name);
-                begin_method(Constants.ACC_PUBLIC,
-                             new Signature("get" + property,
-                                           type,
-                                           Constants.TYPES_EMPTY),
-                             null);
-                load_this();
-                getfield(name);
-                return_value();
+                if (property != null) {
+                    begin_method(Constants.ACC_PUBLIC,
+                                 new Signature("get" + property,
+                                               type,
+                                               Constants.TYPES_EMPTY),
+                                 null);
+                    load_this();
+                    getfield(name);
+                    return_value();
 
-                begin_method(Constants.ACC_PUBLIC,
-                             new Signature("set" + property,
-                                           Type.VOID_TYPE,
-                                           new Type[]{ type }),
-                             null);
-                load_this();
-                load_arg(0);
-                putfield(name);
-                return_value();
+                    begin_method(Constants.ACC_PUBLIC,
+                                 new Signature("set" + property,
+                                               Type.VOID_TYPE,
+                                               new Type[]{ type }),
+                                 null);
+                    load_this();
+                    load_arg(0);
+                    putfield(name);
+                    return_value();
+                }
             }
         };
     }
