@@ -173,7 +173,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
             for( int i = 0; i< m.length; i++ ){
               methodDescriptors[i] = m[i].toMethodDescriptor();
             }
-            
+            /*
             beanDescriptor = new BeanDescriptor( generator.getBeanClass() ){
               
                 public Enumeration attributeNames(){
@@ -202,7 +202,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                 return generator.getAttributes().get(attributeName);
               }  
             };
-            
+            */
           }
         
         

@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.21 2002/10/18 17:01:55 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.22 2002/10/29 08:10:52 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -650,16 +650,16 @@ public class Enhancer implements ClassFileConstants {
       /* }catch( Exception e){
        
        
-         throw new java.lang.reflect.UndeclaredThrowableException(e);
+         throw new UndeclaredThrowableException(e);
        
      }*/
         
         ehHandled = il.append(  new  ASTORE( ++loaded ) );
-        il.append(  new  NEW( cp.addClass("java.lang.reflect.UndeclaredThrowableException") ) );
+        il.append(  new  NEW( cp.addClass(UndeclaredThrowableException.class.getName()) ) );
         il.append(  new  DUP() );
         il.append(  new  ALOAD(loaded ) );
         il.append(  new INVOKESPECIAL(
-        cp.addMethodref("java.lang.reflect.UndeclaredThrowableException",
+        cp.addMethodref(UndeclaredThrowableException.class.getName(),
         "<init>","(Ljava/lang/Throwable;)V") ) );
         il.append( new ATHROW() );
         
