@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.16 2002/09/30 06:11:51 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.17 2002/09/30 18:36:16 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -203,12 +203,21 @@ public class Enhancer implements org.apache.bcel.Constants {
     MethodInterceptor ih,
     ClassLoader loader)
     throws Throwable {
+        
+        if( ih == null ){
+            
+            throw new NullPointerException("invalid interceptior");
+        }
+        
+        
         if (cls == null) {
             cls = Object.class;
         }
+        
         if( loader == null ){
             loader = Enhancer.class.getClassLoader();
         }
+        
         StringBuffer keyBuff = new StringBuffer(cls.getName() + ";");
         if(interfaces != null){
             for(int i = 0; i< interfaces.length; i++ ){
@@ -227,7 +236,26 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         
         
-        if (result == null) {
+        if ( result == null ) {
+            
+            try{
+                
+                loader.loadClass(cls.getName());
+                
+                if( interfaces != null ){
+                    for( int i = 0; i< interfaces.length; i++ ){
+                        loader.loadClass( interfaces[i].getName() );
+                    }
+                }
+                
+            }catch( ClassNotFoundException cnfe ){
+                
+                
+                throw new IllegalArgumentException( cnfe.getMessage() );
+                
+            }
+            
+            
             String class_name = cls.getName() + CLASS_SUFIX;
             if (class_name.startsWith("java")) {
                 class_name = CLASS_PREFIX + class_name;
@@ -418,7 +446,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         int index = className.lastIndexOf('.');
         if( index == -1 ){
-          return "";
+            return "";
         }
         return className.substring( 0, index );
         
@@ -1007,11 +1035,11 @@ public class Enhancer implements org.apache.bcel.Constants {
             mg.addExceptionHandler(ehStart, ehEnd, ehHandled, Type.THROWABLE);
         }
         
-       //Exception handlers:
+        //Exception handlers:
         /*
          
            }catch( RuntimeException re  ){
-     
+         
             throw re;
          }
          
@@ -1035,17 +1063,17 @@ public class Enhancer implements org.apache.bcel.Constants {
         Class exeptions[] = method.getExceptionTypes();
         
         for( int i = 0; i < exeptions.length; i++  ){
-        
-           // generates : 
+            
+            // generates :
            /*
-         
+            
            }catch( DeclaredException re  ){
-     
+            
             throw re;
          }
-         
-         */
-         
+            
+            */
+            
             
             ehHandled =  il.append( new  ASTORE( ++loaded ) );
             il.append( new  ALOAD(loaded) );
@@ -1056,14 +1084,14 @@ public class Enhancer implements org.apache.bcel.Constants {
             
         }
         
-      //generates :
+        //generates :
         
       /* }catch( Exception e){
-     
-         
+       
+       
          throw new java.lang.reflect.UndeclaredThrowableException(e);
-     
-     }*/  
+       
+     }*/
         
         ehHandled = il.append(  new  ASTORE( ++loaded ) );
         il.append(  new  NEW( cp.addClass("java.lang.reflect.UndeclaredThrowableException") ) );
@@ -1155,18 +1183,18 @@ public class Enhancer implements org.apache.bcel.Constants {
     }
     
     private static void generateClInit(ClassGen cg, ConstantPoolGen cp,  java.util.HashMap  methods){
-     
-      //generates :
+        
+        //generates :
       /*
-      static{   
-         
+      static{
+       
       Class [] args;
       Class cls = findClass("java.lang.Object");
       args = new Class[0];
-      METHOD_1 = cls.getDeclaredMethod("toString", args );  
+      METHOD_1 = cls.getDeclaredMethod("toString", args );
          ................
        }
-    */
+       */
         
         InstructionList  il = new InstructionList();
         MethodGen cinit = new MethodGen(
@@ -1226,8 +1254,8 @@ public class Enhancer implements org.apache.bcel.Constants {
     
     
     private static MethodGen generateFindClass( ClassGen cg, ConstantPoolGen cp ){
-   
-   // generates:    
+        
+        // generates:
      /*
    static private Class findClass(String name ) throws Exception{
       try{
@@ -1237,12 +1265,12 @@ public class Enhancer implements org.apache.bcel.Constants {
      }catch( java.lang.ClassNotFoundException cne ){
       
           throw new java.lang.NoClassDefFoundError( cne.getMessage() );
-          
+      
      }
-       
+      
       
    }
-    */
+      */
         
         
         InstructionList  il = new InstructionList();
@@ -1283,7 +1311,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         return findClass;
     }
     
-    public static class InternalReplace implements java.io.Serializable{
+    static public class InternalReplace implements java.io.Serializable{
         
         private String parentClassName;
         
@@ -1304,7 +1332,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             this.mi = mi;
         }
         
-        public static Object writeReplace( Object enhanced ) throws ObjectStreamException{
+        static public Object writeReplace( Object enhanced ) throws ObjectStreamException{
             
             
             MethodInterceptor mi = Enhancer.getMethodInterceptor( enhanced );
@@ -1340,7 +1368,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 return Enhancer.enhance( parent, interfaceList, mi, loader );
                 
             }catch( Throwable t ){
-                throw new ObjectStreamException(){};
+                throw new ObjectStreamException(t.getMessage()){};
             }
             
             
