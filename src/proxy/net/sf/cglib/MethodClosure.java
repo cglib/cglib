@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.5 2002/12/21 23:45:16 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.6 2002/12/21 23:55:11 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
@@ -157,7 +157,6 @@ abstract public class MethodClosure {
     private static class Generator extends CodeGenerator {
         private Method method;
         private Class iface;
-        private Method proxy;
 
         public Generator(String className, Method method, Class iface, ClassLoader loader) {
             super(className, MethodClosure.class, loader);

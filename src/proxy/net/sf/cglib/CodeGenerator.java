@@ -68,7 +68,6 @@ public abstract class CodeGenerator implements Constants {
     private static final String SOURCE_FILE = "<generated>";
     private static final String STATIC_NAME = "<clinit>";
     private static final String FIND_CLASS = "CGLIB$findClass";
-    private static final String FIND_CLASS_SIG = getMethodSignature(Class.class, TYPES_STRING);
     private static final String PRIVATE_PREFIX = "PRIVATE_";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
