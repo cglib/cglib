@@ -1,0 +1,5 @@
+<project default="java:jar" xmlns:j="jelly:core">
+
+  <!-- we can customize the Maven build here -->
+  	
+</project>

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: FactoryCache.java,v 1.2 2002/12/04 17:37:51 herbyderby Exp $
+ * @version $Id: FactoryCache.java,v 1.3 2002/12/25 22:13:05 baliuka Exp $
  */
 /* package */ class FactoryCache {
     private final Map cache = new WeakHashMap();
@@ -81,7 +81,7 @@ import java.util.*;
 
     public static Class forName(String name, ClassLoader loader) {
         try {
-            return Class.forName(name, true, loader);
+            return Class.forName(name, false, loader);
         } catch (ClassNotFoundException e) {
             throw new CodeGenerationException(e);
         }

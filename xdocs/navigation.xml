@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Maven Site Generation Plugin">
+
+  <title>Code Generation Library</title>
+
+  <body>
+    <menu name="Overview">
+      <item name="Project Summary"       href="http://sourceforge.net/projects/cglib" />
+      <item name="Features"              href="/features.html" /> 
+      <item name="Downloads"             href="http://sourceforge.net/project/showfiles.php?group_id=56933" /> 
+    </menu>
+    <menu name="Samples">
+      <item name="Beans"              href="/xref/samples/Beans.html" /> 
+      <item name="JdkCompatibleProxy" href="/xref/samples/JdkCompatibleProxy.html" />
+      <item name="KeySample"          href="/xref/samples/KeySample.html" />
+      <item name="Trace"              href="/xref/samples/Trace.html" /> 
+    </menu>
+  </body>
+</project>

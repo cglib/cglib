@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<document>
+
+  <properties>
+    <title>Code Generation Library</title>
+  </properties>
+
+  <body>
+    <section name="Code Generation Library">
+      <p>
+
+          This project is inspired by java.lang.reflect.Proxy, 
+          but CGLIB proxy generator is more powerfull 
+          and can be used by JDO/ODMG or EJB implementations. 
+          It can extend any not final class and implement interfaces at runtime.
+
+
+          CGLIB outputs generated classes. Byte code generation and class file
+          format manipulation is hidden in static methods. 
+          It was designed to implement Transparent Persistence for JAVA, 
+          but can be used to implement aspects like Security or Validation. 
+
+
+        
+      </p>
+    </section>
+  </body>
+</document>
