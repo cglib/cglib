@@ -68,27 +68,35 @@ class ClassFileUtils implements ClassFileConstants {
     private ClassFileUtils() {
     }
     
-    static Class defineClass( ClassLoader loader, String name, byte[] b){
+    static Class defineClass( final ClassLoader  loader,
+    final String name,final byte[] b){
         
-        try{
-            java.lang.reflect.Method m =
-            ClassLoader.class.getDeclaredMethod(
-            "defineClass",
-            new Class[] { String.class, byte[].class, int.class, int.class });
-            // protected method invocaton
-            boolean flag = m.isAccessible();
-            m.setAccessible(true);
-            Class  result =
-            (Class) m.invoke(
-            loader,
-            new Object[] { name, b, new Integer(0), new Integer(b.length)});
-            m.setAccessible(flag);
-            
-            return result;
-            
-        }catch( Exception e ){
-            throw new Error( e.getClass().getName() + ":" + e.getMessage());
-        }
+        return (Class) java.security.AccessController.doPrivileged(
+        new java.security.PrivilegedAction() {
+            public Object run() {
+                try{
+                    java.lang.reflect.Method m =
+                    ClassLoader.class.getDeclaredMethod(
+                    "defineClass",
+                    new Class[] { String.class, byte[].class, int.class, int.class });
+                    // protected method invocaton
+                    boolean flag = m.isAccessible();
+                    m.setAccessible(true);
+                    Class  result =
+                    (Class) m.invoke(
+                    loader,
+                    new Object[] { name, b, new Integer(0), new Integer(b.length)});
+                    m.setAccessible(flag);
+                    
+                    return result;
+                }catch( Exception e ){
+                    throw new Error( e.getClass().getName() + ":" + e.getMessage());
+                }
+            }
+        });
+        
+        
+        
     }
     
     static int loadArg(InstructionList il, Type t,  int pos) {
