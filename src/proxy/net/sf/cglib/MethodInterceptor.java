@@ -56,7 +56,7 @@ package net.sf.cglib;
 /**
  * Callback that can be registered with an enhanced class.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: MethodInterceptor.java,v 1.5 2003/02/02 07:00:48 baliuka Exp $
  */
 public interface MethodInterceptor {
     
@@ -69,7 +69,7 @@ public interface MethodInterceptor {
      * as many times as needed.
      * @throws Throwable any exception may be thrown; super method will not be invoked
      */    
-    public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
                                MethodProxy proxy) throws Throwable;
 
 }

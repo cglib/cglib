@@ -67,7 +67,7 @@ import java.util.*;
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor)");
     private static final Method AROUND_ADVICE =
-      ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
+      ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
     private static final Method MAKE_PROXY =
       ReflectUtils.findMethod("MethodProxy.create(Method,Method)");
     private static final Method MAKE_CONSTRUCTOR_PROXY =

@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * @version $Id: MethodProxy.java,v 1.14 2003/02/02 00:57:58 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.15 2003/02/02 07:00:48 baliuka Exp $
  */
 abstract public class MethodProxy {
     
@@ -120,8 +120,7 @@ abstract public class MethodProxy {
        protected void generate(Method proxyMethod, Method method) {
             
             begin_method(proxyMethod);
-            if( !Modifier.isPublic( method.getModifiers() ) && 
-                MethodProxy.INVOKE == proxyMethod){
+            if( Modifier.isProtected( method.getModifiers() ) ){
               throw_exception(IllegalAccessException.class, "not public method: " + method );
             }else{
             load_arg(0);

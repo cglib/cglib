@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.26 2003/02/02 01:10:47 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.27 2003/02/02 07:00:48 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -172,7 +172,7 @@ public class TestEnhancer extends CodeGenTestCase {
         DelegateInterceptor(Object delegate){
           this.delegate = delegate;
         }
-        public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
             return proxy.invoke(delegate,args);
         }
         
@@ -355,7 +355,7 @@ public class TestEnhancer extends CodeGenTestCase {
   
   class CastTestInterceptor implements MethodInterceptor{
      
-      public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
+      public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
           return new Short((short)0);
       }
       
@@ -393,7 +393,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testAround() throws Throwable {
         AroundDemo demo = (AroundDemo)Enhancer.enhance(AroundDemo.class, null, new MethodInterceptor() {
-                public Object aroundAdvice(Object obj, Method method, Object[] args,
+                public Object intercept(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
                     if (method.getName().equals("getFirstName"))
                         return "Christopher";
@@ -426,7 +426,7 @@ public class TestEnhancer extends CodeGenTestCase {
       testClone = (TestClone)Enhancer.enhance( TestClone.class,
          new MethodInterceptor(){
       
-           public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
+           public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
                         MethodProxy proxy) throws Throwable{
                      return  proxy.invokeSuper(obj, args);
            }
