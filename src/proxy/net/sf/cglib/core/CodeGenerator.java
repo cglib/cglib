@@ -80,6 +80,8 @@ abstract public class CodeGenerator
         Class type;
         Map cache;
         int counter = 1;
+        final Method defineClass =
+          ReflectUtils.findMethod("ClassLoader.defineClass(byte[], int, int)");
 
         public Source(Class type, boolean useCache) {
             this.type = type;
@@ -174,7 +176,7 @@ abstract public class CodeGenerator
                 }
                 isNew = factory == null;
                 if (isNew) {
-                    factory = newFactory(defineClass(getClassName(), generate(), loader));
+                    factory = newFactory(defineClass(source.defineClass, getClassName(), generate(), loader));
                     if (cache2 != null) {
                         cache2.put(key, factory);
                     }
@@ -194,7 +196,7 @@ abstract public class CodeGenerator
     abstract protected Object newFactory(Class type) throws Exception;
     abstract protected Object newInstance(Object factory, boolean isNew);
 
-    private static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
+    private static Class defineClass(Method m, String className, byte[] b, ClassLoader loader) throws Exception {
         if (debugLocation != null) {
             File file = new File(new File(debugLocation), className + ".class");
             // System.err.println("CGLIB writing " + file);
@@ -203,20 +205,14 @@ abstract public class CodeGenerator
             out.close();
         }
         
-        Method m = MethodConstants.DEFINE_CLASS;
-        boolean flag = m.isAccessible();
         m.setAccessible(true);
-        try {
-            SecurityManager sm = System.getSecurityManager();
-            if (className != null && className.startsWith("java.") && sm != null) {
-                sm.checkPermission(DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION);
-            }
-            // deprecated method in jdk to define classes, used because it
-            // does not throws SecurityException if class name starts with "java."
-            Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
-            return (Class)m.invoke(loader, args);
-        } finally {
-            m.setAccessible(flag);
+        SecurityManager sm = System.getSecurityManager();
+        if (className != null && className.startsWith("java.") && sm != null) {
+            sm.checkPermission(DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION);
         }
+        // deprecated method in jdk to define classes, used because it
+        // does not throw SecurityException if class name starts with "java."
+        Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
+        return (Class)m.invoke(loader, args);
     }
 }
