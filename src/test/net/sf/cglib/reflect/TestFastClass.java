@@ -51,16 +51,15 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.reflect.*;
 import net.sf.cglib.util.*;
 import junit.framework.*;
 
-public class TestFastClass extends CodeGenTestCase {
+public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public static class Simple {
     }
     
@@ -72,13 +71,13 @@ public class TestFastClass extends CodeGenTestCase {
         FastClass fc = FastClass.create(MemberSwitchBean.class);
         MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
         assertTrue(bean.init == 0);
-        assertTrue(fc.getName().equals("net.sf.cglib.MemberSwitchBean"));
+        assertTrue(fc.getName().equals("net.sf.cglib.reflect.MemberSwitchBean"));
         assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
 
         Constructor c1 = MemberSwitchBean.class.getConstructor(new Class[0]);
         FastConstructor fc1 = fc.getConstructor(c1);
         assertTrue(((MemberSwitchBean)fc1.newInstance()).init == 0);
-        assertTrue(fc1.toString().equals("public net.sf.cglib.MemberSwitchBean()"));
+        assertTrue(fc1.toString().equals("public net.sf.cglib.reflect.MemberSwitchBean()"));
 
         Method m1 = MemberSwitchBean.class.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
         assertTrue(fc.getMethod(m1).invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));

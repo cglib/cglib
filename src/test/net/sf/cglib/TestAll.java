@@ -53,14 +53,16 @@
  */
 package net.sf.cglib;
 
-import net.sf.cglib.beans.*;
-import net.sf.cglib.algorithm.*;
 import junit.framework.*;
+import net.sf.cglib.beans.*;
+import net.sf.cglib.core.*;
+import net.sf.cglib.reflect.*;
+import net.sf.cglib.transform.*;
 
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.32 2003/09/14 03:27:51 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.33 2003/09/14 17:14:04 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {

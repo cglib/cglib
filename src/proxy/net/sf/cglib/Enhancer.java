@@ -62,7 +62,7 @@ public class Enhancer extends AbstractClassGenerator
 {
     private static final Source SOURCE = new Source(Enhancer.class, true);
     private static final EnhancerKey KEY_FACTORY =
-      (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
+      (EnhancerKey)KeyFactory.create(EnhancerKey.class);
 
     interface EnhancerKey {
         public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter, boolean classOnly);

@@ -64,13 +64,13 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.5 2003/09/14 03:27:53 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.6 2003/09/14 17:14:04 herbyderby Exp $
  */
 public class Mixin extends AbstractClassGenerator {
     private static final Source SOURCE = new Source(Mixin.class, true);
     private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
     private static final MixinKey KEY_FACTORY =
-      (MixinKey)KeyFactory.create(MixinKey.class, null);
+      (MixinKey)KeyFactory.create(MixinKey.class);
 
     private Class[] interfaces;
     private Object[] delegates;
@@ -86,7 +86,7 @@ public class Mixin extends AbstractClassGenerator {
 
     public Mixin() {
         super(SOURCE);
-        setPackageName("net.sf.cglib");
+        setNamePrefix("net.sf.cglib.Object");
     }
 
     public void setInterfaces(Class[] interfaces) {

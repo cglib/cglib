@@ -51,16 +51,16 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
 import junit.framework.*;
 import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestBeanMapProxy.java,v 1.1 2003/01/28 11:54:56 nemecec Exp $
+ * @version $Id: TestBeanMapProxy.java,v 1.1 2003/09/14 17:14:04 herbyderby Exp $
  */
-public class TestBeanMapProxy extends CodeGenTestCase {
+public class TestBeanMapProxy extends net.sf.cglib.CodeGenTestCase {
     public void testBeanMap() throws Exception {
         HashMap identity = new HashMap();
         Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });

@@ -56,6 +56,7 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.*;
 import net.sf.cglib.*;
 import net.sf.cglib.util.*;
+import net.sf.cglib.core.KeyFactory;
 
 // TODO: don't require exact match for return type
 
@@ -138,12 +139,12 @@ import net.sf.cglib.util.*;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.2 2003/09/14 17:14:04 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final FactoryCache cache = new FactoryCache(MethodDelegate.class);
     private static final MethodDelegateKey KEY_FACTORY =
-      (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class, null);
+      (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class);
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("MethodDelegate.newInstance(Object)");
 

@@ -55,11 +55,11 @@ package net.sf.cglib.util;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.KeyFactory; // TODO
+import net.sf.cglib.core.KeyFactory;
 
 public class MethodWrapper {
     private static final MethodWrapperKey KEY_FACTORY =
-      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
+      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class);
 
     interface MethodWrapperKey {
         public Object newInstance(String name, Class[] parameterTypes, Class returnType);

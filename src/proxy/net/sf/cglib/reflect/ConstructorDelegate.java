@@ -55,16 +55,17 @@ package net.sf.cglib.reflect;
 
 import java.lang.reflect.*;
 import net.sf.cglib.*;
+import net.sf.cglib.core.KeyFactory;
 import net.sf.cglib.util.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.2 2003/09/14 17:14:04 herbyderby Exp $
  */
 public abstract class ConstructorDelegate {
     private static final FactoryCache CACHE = new FactoryCache(ConstructorDelegate.class);
     private static final ConstructorKey KEY_FACTORY =
-      (ConstructorKey)KeyFactory.create(ConstructorKey.class, null);
+      (ConstructorKey)KeyFactory.create(ConstructorKey.class);
     
     interface ConstructorKey {
         public Object newInstance(Class declaring, Class iface);

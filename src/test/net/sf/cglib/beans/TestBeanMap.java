@@ -51,15 +51,14 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.beans.*;
 import net.sf.cglib.util.*;
 import junit.framework.*;
 
-public class TestBeanMap extends CodeGenTestCase {
+public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     public static class TestBean {
         private String foo;
         private String bar = "x";

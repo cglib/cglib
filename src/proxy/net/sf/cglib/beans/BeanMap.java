@@ -57,7 +57,7 @@ import java.beans.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.KeyFactory;
+import net.sf.cglib.core.KeyFactory;
 import net.sf.cglib.util.*;
 
 abstract public class BeanMap implements Map {
@@ -66,7 +66,7 @@ abstract public class BeanMap implements Map {
     
     private static final FactoryCache cache = new FactoryCache(BeanMap.class);
     private static final BeanMapKey KEY_FACTORY =
-      (BeanMapKey)KeyFactory.create(BeanMapKey.class, null);
+      (BeanMapKey)KeyFactory.create(BeanMapKey.class);
 
     interface BeanMapKey {
         public Object newInstance(Class type, int switchStyle);
