@@ -66,7 +66,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.9 2003/12/07 00:54:36 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.10 2004/05/08 06:29:21 herbyderby Exp $
  */
 public class MethodProxy {
     private Signature sig;
@@ -80,11 +80,11 @@ public class MethodProxy {
      * For internal use by {@link Enhancer} only; see the {@link net.sf.cglib.reflect.FastMethod} class
      * for similar functionality.
      */
-    public static MethodProxy create(ClassLoader loader, Class c1, Class c2, String desc, String name1, String name2) {
+    public static MethodProxy create(ClassLoader loader, Class c1, Class c2, String desc, String name1, String name2, boolean attemptLoad) {
         final Signature sig1 = new Signature(name1, desc);
         Signature sig2 = new Signature(name2, desc);
-        FastClass f1 = helper(loader, c1);
-        FastClass f2 = helper(loader, c2);
+        FastClass f1 = helper(loader, c1, attemptLoad);
+        FastClass f2 = helper(loader, c2, attemptLoad);
         int i1 = f1.getIndex(sig1);
         int i2 = f2.getIndex(sig2);
 
@@ -108,8 +108,9 @@ public class MethodProxy {
         return proxy;
     }
 
-    private static FastClass helper(ClassLoader loader, Class type) {
+    private static FastClass helper(ClassLoader loader, Class type, boolean attemptLoad) {
         FastClass.Generator g = new FastClass.Generator();
+        g.setAttemptLoad(attemptLoad);
         g.setType(type);
         g.setClassLoader(loader);
         return g.create();
