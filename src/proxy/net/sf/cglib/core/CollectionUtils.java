@@ -58,7 +58,7 @@ import java.lang.reflect.Array;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: CollectionUtils.java,v 1.5 2004/04/07 07:01:00 herbyderby Exp $
+ * @version $Id: CollectionUtils.java,v 1.6 2004/04/08 02:56:50 herbyderby Exp $
  */
 public class CollectionUtils {
     private CollectionUtils() { }
@@ -100,6 +100,15 @@ public class CollectionUtils {
             result.add(t.transform(it.next()));
         }
         return result;
+    }
+
+    public static Map getIndexMap(List list) {
+        Map indexes = new HashMap();
+        int index = 0;
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            indexes.put(it.next(), new Integer(index++));
+        }
+        return indexes;
     }
 }    
     

@@ -166,6 +166,7 @@ public class Enhancer extends AbstractClassGenerator
     private Class[] argumentTypes;
     private Object[] arguments;
     private boolean useFactory = true;
+    private int depth;
 
     /**
      * Create a new <code>Enhancer</code>. A new <code>Enhancer</code>
@@ -391,10 +392,15 @@ public class Enhancer extends AbstractClassGenerator
         }
     }
 
-    private Signature rename(Signature sig) {
-        return new Signature("CGLIB$" + TypeUtils.escapeType(sig.toString()),
+    private Signature rename(Signature sig, int index) {
+        return new Signature("CGLIB$" + sig.getName() + "$" + depth + "$" + index,
                              sig.getDescriptor());
     }
+    
+//     private Signature rename(Signature sig) {
+//         return new Signature("CGLIB$" + TypeUtils.escapeType(sig.toString()),
+//                              sig.getDescriptor());
+//     }
 
     public ClassTransformer createTransformer() {
         validate(true);
@@ -403,6 +409,7 @@ public class Enhancer extends AbstractClassGenerator
 
     public void generateClass(ClassVisitor v) throws Exception {
         Class sc = (superclass == null) ? Object.class : superclass;
+        depth = calculateDepth(sc);
         
         if (TypeUtils.isFinal(sc.getModifiers()))
             throw new IllegalArgumentException("Cannot subclass final class " + sc);
@@ -623,6 +630,7 @@ public class Enhancer extends AbstractClassGenerator
                         throw new CodeGenerationException(e);
                     }
                 }
+                depth = calculateDepth(superclass);
                 List superMethods = new ArrayList();
                 ReflectUtils.addAllMethods(superclass, superMethods);
                 CollectionUtils.filter(superMethods, new RejectModifierPredicate(Constants.ACC_PRIVATE | Constants.ACC_STATIC));
@@ -653,7 +661,7 @@ public class Enhancer extends AbstractClassGenerator
                 } else if (!TypeUtils.isPrivate(access) && !TypeUtils.isStatic(access)) {
                     methods.add(method);
                     return super.begin_method(Constants.ACC_FINAL,
-                                              rename(sig),
+                                              rename(sig, methods.size() - 1),
                                               exceptions,
                                               attrs);
                 }
@@ -875,8 +883,11 @@ public class Enhancer extends AbstractClassGenerator
         Map groups = new HashMap();
         final Map indexes = new HashMap();
         final Map originalModifiers = new HashMap();
+        final Map positions = CollectionUtils.getIndexMap(methods);
+
         Iterator it1 = methods.iterator();
         Iterator it2 = (actualMethods != null) ? actualMethods.iterator() : null;
+
         while (it1.hasNext()) {
             MethodInfo method = (MethodInfo)it1.next();
             Method actualMethod = (it2 != null) ? (Method)it2.next() : null;
@@ -928,7 +939,7 @@ public class Enhancer extends AbstractClassGenerator
                             emitCurrentCallback(e, index);
                         }
                         public Signature getImplSignature(MethodInfo method) {
-                            return rename(method.getSignature());
+                            return rename(method.getSignature(), ((Integer)positions.get(method)).intValue());
                         }
                     };
                     try {
@@ -1041,5 +1052,16 @@ public class Enhancer extends AbstractClassGenerator
 
     private static String getCallbackField(int index) {
         return "CGLIB$CALLBACK_" + index;
+    }
+
+    private static int calculateDepth(Class type) {
+        int depth = 0;
+        while (type != null) {
+            if (Enhancer.isEnhanced(type)) {
+                depth++;
+            }
+            type = type.getSuperclass();
+        }
+        return depth;
     }
 }
