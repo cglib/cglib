@@ -62,7 +62,7 @@ import org.objectweb.asm.Type;
 /**
  * @author Chris Nokleberg
  */
-abstract public class ImmutableBean
+public class ImmutableBean
 {
     private static final Type ILLEGAL_STATE_EXCEPTION =
       TypeUtils.parseType("IllegalStateException");
@@ -70,6 +70,9 @@ abstract public class ImmutableBean
       TypeUtils.parseConstructor("Object");
     private static final Class[] OBJECT_CLASSES = { Object.class };
     private static final String FIELD_NAME = "CGLIB$RWBean";
+
+    private ImmutableBean() {
+    }
 
     public static Object create(Object bean) {
         Generator gen = new Generator();

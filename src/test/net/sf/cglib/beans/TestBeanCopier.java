@@ -51,37 +51,52 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.core;
+package net.sf.cglib.beans;
 
-import org.objectweb.asm.Label;
+import net.sf.cglib.core.Converter;
+import java.lang.reflect.Method;
+import junit.framework.*;
 
-public class Block
-{
-    private CodeEmitter e;
-    private Label start;
-    private Label end;
+/**
+ *
+ * @author baliuka
+ */
+public class TestBeanCopier extends TestCase {
 
-    public Block(CodeEmitter e) {
-        this.e = e;
-        start = e.mark();
+    public void testSimple() {
+        BeanCopier copier = BeanCopier.create(MA.class, MA.class, false);
+        MA bean1 = new MA();
+        bean1.setIntP(42);
+        MA bean2 = new MA();
+        copier.copy(bean1, bean2, null);
+        assertTrue(bean2.getIntP() == 42);
     }
 
-    public CodeEmitter getCodeEmitter() {
-        return e;
-    }
-
-    public void end() {
-        if (end != null) {
-            throw new IllegalStateException("end of label already set");
-        }
-        end = e.mark();
+    public void testConvert() {
+        BeanCopier copier = BeanCopier.create(MA.class, MA.class, true);
+        MA bean1 = new MA();
+        bean1.setIntP(42);
+        MA bean2 = new MA();
+        copier.copy(bean1, bean2, new Converter() {
+            public Object convert(Object value, Class target, Object context) {
+                if (target.equals(Integer.TYPE)) {
+                    return new Integer(((Number)value).intValue() + 1);
+                }
+                return value;
+            }
+        });
+        assertTrue(bean2.getIntP() == 43);
     }
     
-    public Label getStart() {
-        return start;
+    public TestBeanCopier(java.lang.String testName) {
+        super(testName);
     }
-
-    public Label getEnd() {
-        return end;
+    
+    public static void main(java.lang.String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestBeanCopier.class);
     }
 }
