@@ -115,7 +115,7 @@ public class ProxyGenerator extends CodeGenerator {
         Class o = Object.class;
         Method[] oMethods = o.getMethods();
         for (int j = 0; j < oMethods.length; j++) {
-            String sig = getMethodSignature(oMethods[j]);
+            Object sig = getMethodSignature(oMethods[j]);
             if (proxiedMethodsOnObject.contains(sig) && Modifier.isPublic(oMethods[j].getModifiers())) 
                 inspectMethod(o, oMethods[j]);
         }
@@ -130,7 +130,7 @@ public class ProxyGenerator extends CodeGenerator {
 
     private void inspectMethod(Class clazz, Method method) {
         //pseudo-signature
-        String sig = getMethodSignature(method);
+        Object sig = getMethodSignature(method);
         Class[] et = method.getExceptionTypes();
         if (isDebug()) debug("//method: " + method);
         if (!methodMap.containsKey(sig)) {
@@ -176,7 +176,7 @@ public class ProxyGenerator extends CodeGenerator {
     }
 
     private void generateMethod(Method method) throws NoSuchMethodException, NoSuchFieldException {
-        String methodSignature = getMethodSignature(method);
+        Object methodSignature = getMethodSignature(method);
         if (isDebug()) debug("//method: " + methodSignature);
         Set exceptionSet = (Set) exceptionMap.get(methodSignature);
         Class[] exceptions = (Class[]) exceptionSet.toArray(new Class[exceptionSet.size()]);
@@ -284,8 +284,8 @@ public class ProxyGenerator extends CodeGenerator {
         if (isDebug()) debug("} //" + methodSignature + "\n");
     }
 
-    protected String getMethodSignature(Method method) {
-        return method.getName() + getMethodSignature(method.getReturnType(), method.getParameterTypes());
+    protected Object getMethodSignature(Method method) {
+        return MethodWrapper.create(method);
     }
 
     private void debug() {
