@@ -68,7 +68,7 @@ class KeyFactoryGenerator extends CodeGenerator {
             floatToIntBits = Float.class.getDeclaredMethod("floatToIntBits", new Class[]{ float.class });
             doubleToLongBits = Double.class.getDeclaredMethod("doubleToLongBits", new Class[]{ double.class });
         } catch (Exception e) {
-            throw new ImpossibleError(e);
+            throw new CodeGenerationException(e);
         }
     }
 
@@ -86,10 +86,6 @@ class KeyFactoryGenerator extends CodeGenerator {
     public KeyFactoryGenerator(String className, Class keyInterface, ClassLoader loader) {
         super(className, KeyFactory.class, loader);
         this.keyInterface = keyInterface;
-    }
-
-    protected Class define() throws CodeGenerationException {
-        return super.define();
     }
 
     protected void generate() throws NoSuchMethodException, NoSuchFieldException {

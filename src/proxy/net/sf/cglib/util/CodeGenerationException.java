@@ -55,7 +55,7 @@
 
 package net.sf.cglib.util;
 
-public class CodeGenerationException extends Exception {
+public class CodeGenerationException extends RuntimeException {
     private Throwable cause;
 
     public CodeGenerationException(Throwable cause) {

@@ -109,7 +109,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
             forName = Class.class.getDeclaredMethod("forName", STRING_CLASS_ARRAY);
             getMessage = Throwable.class.getDeclaredMethod("getMessage", EMPTY_CLASS_ARRAY);
     } catch (Exception e) {
-            throw new ImpossibleError(e);
+            throw new CodeGenerationException(e);
         }
     }
 
@@ -136,38 +136,32 @@ public abstract class CodeGenerator implements ClassFileConstants {
      */
 	abstract protected void generate() throws Exception;
 
-    protected Class define() throws CodeGenerationException {
+    public Class define() {
         try {
             try {
-                try {
-                    generate();
-                    String name = cg.getClassName();
-                    byte[] bytes = cg.getJavaClass().getBytes();
+                generate();
+                String name = cg.getClassName();
+                byte[] bytes = cg.getJavaClass().getBytes();
 
-                    if (debugLocation != null) {
-                        OutputStream out = new FileOutputStream(debugLocation + name + ".cglib");
-                        out.write(bytes);
-                        out.close();
-                    }
-                    
-                    PrivilegedAction action = getDefineClassAction(name, bytes, loader);
-                    return (Class)java.security.AccessController.doPrivileged(action);
-                } catch (WrappedException e) {
-                    throw e.getCause();
+                if (debugLocation != null) {
+                    OutputStream out = new FileOutputStream(debugLocation + name + ".cglib");
+                    out.write(bytes);
+                    out.close();
                 }
+                    
+                PrivilegedAction action = getDefineClassAction(name, bytes, loader);
+                return (Class)java.security.AccessController.doPrivileged(action);
             } catch (InvocationTargetException e) {
                 throw e.getTargetException();
             }
         } catch (RuntimeException e) {
-            throw e;
-        } catch (CodeGenerationException e) {
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         } catch (Error e) {
             throw e;
         } catch (Throwable t) {
-            // impossible
+            // almost impossible
             throw new CodeGenerationException(t);
         }
     }
@@ -190,26 +184,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
 
                     return result;
                 } catch (Exception e) {
-                    throw new WrappedException(e);
+                    throw new CodeGenerationException(e);
                 }
             }
         };
-    }
-
-    private static class WrappedException extends RuntimeException {
-        private Throwable cause;
-
-        public WrappedException(Throwable cause) {
-            this.cause = cause;
-        }
-
-        public Throwable getCause() {
-            return cause;
-        }
-    }
-
-    private static void TODO() {
-        throw new RuntimeException("TODO");
     }
 
     static {
@@ -225,7 +203,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
 
             equalsMethod = Object.class.getDeclaredMethod("equals", new Class[]{ Object.class });
         } catch (NoSuchMethodException e) {
-            throw new ImpossibleError(e);
+            throw new CodeGenerationException(e);
         }
 
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
@@ -608,7 +586,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
             try {
                 getfield(((Class)primitiveToWrapper.get(clazz)).getDeclaredField("TYPE"));
             } catch (NoSuchFieldException e) {
-                throw new ImpossibleError(e);
+                throw new CodeGenerationException(e);
             }
         } else {
             push(clazz.getName());
@@ -1062,7 +1040,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
         case T_VOID:
             return Void.TYPE;
         default:
-            throw new ImpossibleError("unknown type: " + type);
+            return null; // impossible
         }
     }
 

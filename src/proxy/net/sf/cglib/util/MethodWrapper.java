@@ -58,6 +58,7 @@ package net.sf.cglib.util;
 
 
 import java.lang.reflect.Method;
+import net.sf.cglib.util.*;
 
 
 /**
@@ -67,56 +68,17 @@ import java.lang.reflect.Method;
 
 
 public class MethodWrapper {
-    private Method method;
+    private static final MethodWrapperKey keyFactory =
+      (MethodWrapperKey)KeyFactory.makeFactory(MethodWrapperKey.class, null);
+
+    /* package */ interface MethodWrapperKey {
+        public Object newInstance(String name, Class[] parameterTypes);
+    }
     
-    public MethodWrapper(Method method) {
-        if (method == null) {
-            throw new NullPointerException("method is null");
-        }
-        this.method = method;
+    private MethodWrapper() {
     }
 
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof MethodWrapper)) {
-            return false;
-        }
-        return equals(method, ((MethodWrapper)obj).method);
-    }
-
-    public int hashCode() {
-        return method.getName().hashCode();
-    }
-
-    public String toString() {
-        return method.toString();
-    }
-
-    public Method getMethod() {
-        return method;
-    }
-
-    public static boolean equals(Method m1, Method m2) {
-        if (m1 == m2) {
-            return true;
-        }
-        if (m1.getName().equals(m2.getName())) {
-            Class[] params1 = m1.getParameterTypes();
-            Class[] params2 = m2.getParameterTypes();
-            if (params1.length == params2.length) {
-                for (int i = 0; i < params1.length; i++) {
-                    if (!params1[i].getName().equals( params2[i].getName() ) ) {
-                        return false;
-                    }
-                }
-                if (!m1.getReturnType().getName().equals(m2.getReturnType().getName())) {
-                    throw new java.lang.IllegalArgumentException(
-                    "Can't implement:\n" + m1.getDeclaringClass().getName() +
-                    "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
-                    m1.toString() + "\n" + m2.toString());
-                }
-                return true;
-            }
-        }
-        return false;
+    public static Object newInstance(Method method) {
+        return keyFactory.newInstance(method.getName(), method.getParameterTypes());
     }
 }

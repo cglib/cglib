@@ -16,10 +16,6 @@ import net.sf.cglib.util.MethodWrapper;
         this.interfaces = interfaces;
     }
 
-    public Class define() throws CodeGenerationException {
-        return super.define();
-    }
-        
     protected void generate() throws NoSuchMethodException {
         declare_interfaces(interfaces);
         declare_interface(Delegator.Factory.class);
@@ -35,9 +31,9 @@ import net.sf.cglib.util.MethodWrapper;
             Method[] methods = iface.getMethods();
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
-                Object wrapper = new MethodWrapper(method);
-                if (!methodSet.contains(wrapper)) {
-                    methodSet.add(wrapper);
+                Object methodKey = MethodWrapper.newInstance(method);
+                if (!methodSet.contains(methodKey)) {
+                    methodSet.add(methodKey);
                     generateProxy(iface, method, i);
                 }
             }
@@ -78,31 +74,5 @@ import net.sf.cglib.util.MethodWrapper;
         invoke(method);
         return_value();
         end_method();
-    }
-
-    private static class SignatureKey {
-        private static final int hashConstant = 21; // positive and odd
-        private int hash = 43; // positive and odd
-        private Class[] types;
-        private String name;
-
-        public SignatureKey(Method method) {
-            types = method.getParameterTypes();
-            name = method.getName();
-            for (int i = 0; i < types.length; i++) {
-                hash = hash * hashConstant + types[i].hashCode();
-            }
-            hash = hash * hashConstant + name.hashCode();
-        }
-
-        public boolean equals(Object obj) {
-            SignatureKey other = (SignatureKey)obj;
-            return name.equals(other.name) &&
-                Arrays.equals(types, other.types);
-        }
-
-        public int hashCode() {
-            return hash;
-        }
     }
 }

@@ -89,7 +89,7 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.34 2002/11/19 17:53:28 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.35 2002/11/21 18:48:48 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
@@ -97,18 +97,11 @@ public class Enhancer implements ClassFileConstants {
     private static int index = 0;
     private static Map factories = new HashMap();
     private static Map cache = new WeakHashMap();
-    private static final EnhancerKey keyFactory;
+    private static final EnhancerKey keyFactory =
+      (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
 
     /* package */ interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace, boolean delegating);
-    }
-
-    static {
-        try {
-            keyFactory = (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
-        } catch (CodeGenerationException e) {
-            throw new ImpossibleError(e);
-        }
     }
     
     private Enhancer() {}
@@ -128,8 +121,7 @@ public class Enhancer implements ClassFileConstants {
     public static Object enhance(
     Class cls,
     Class interfaces[],
-    MethodInterceptor ih)
-    throws CodeGenerationException {
+    MethodInterceptor ih) {
         
         return enhance(
         cls,
@@ -142,8 +134,7 @@ public class Enhancer implements ClassFileConstants {
     Class cls,
     Class interfaces[],
     MethodInterceptor ih,
-    ClassLoader loader )
-    throws CodeGenerationException {
+    ClassLoader loader ) {
         return enhance(
         cls,
         interfaces,
@@ -174,8 +165,7 @@ public class Enhancer implements ClassFileConstants {
                                  Class[] interfaces,
                                  MethodInterceptor ih,
                                  ClassLoader loader,
-                                 Method wreplace)
-    throws CodeGenerationException {
+                                 Method wreplace) {
         return enhance(null, cls, interfaces, ih, loader, wreplace);
     }
 
@@ -184,10 +174,9 @@ public class Enhancer implements ClassFileConstants {
                                  Class[] interfaces,
                                  MethodInterceptor ih,
                                  ClassLoader loader,
-                                 Method wreplace)
-    throws CodeGenerationException {
+                                 Method wreplace) {
         if (ih == null) {
-            throw new NullPointerException("MethodInterceptor is null");
+            throw new IllegalArgumentException("MethodInterceptor is null");
         }
         
         if (cls != null && obj != null && !cls.isAssignableFrom(obj.getClass())) {
