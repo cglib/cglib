@@ -71,8 +71,8 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
 
     public void testSimple() {
-        simpleHelper(ComplexOps.SWITCH_STYLE_HASH);
-        simpleHelper(ComplexOps.SWITCH_STYLE_TRIE);
+        simpleHelper(Constants.SWITCH_STYLE_HASH);
+        simpleHelper(Constants.SWITCH_STYLE_TRIE);
     }
 
     private void simpleHelper(int switchStyle) {
@@ -97,7 +97,7 @@ public class TestStringSwitch extends CodeGenTestCase {
         String[] keys = new String[]{ "ABC", "AAb", "foo" };
         assertTrue("ABC".hashCode() == "AAb".hashCode());
         assertTrue("ABC".hashCode() != "foo".hashCode());
-        Indexed test = (Indexed)new Generator(keys, ComplexOps.SWITCH_STYLE_HASH).create();
+        Indexed test = (Indexed)new Generator(keys, Constants.SWITCH_STYLE_HASH).create();
         assertTrue(test.getIndex("foo") == 'o');
         assertTrue(test.getIndex("ABC") == 'C');
         assertTrue(test.getIndex("AAb") == 'b');
