@@ -53,6 +53,7 @@
  */
 package net.sf.cglib.reflect;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class FastMethod extends FastMember
@@ -82,8 +83,7 @@ public class FastMethod extends FastMember
         return ((Method)member).getExceptionTypes();
     }
 
-    // TODO: change throws clause
-    public Object invoke(Object obj, Object[] args) throws Throwable {
+    public Object invoke(Object obj, Object[] args) throws InvocationTargetException {
         return fc.invoke(index, obj, args);
     }
 

@@ -14,10 +14,6 @@ implements CallbackGenerator
       TypeUtils.parseType("net.sf.cglib.InvocationHandler");
     private static final Type UNDECLARED_THROWABLE_EXCEPTION =
       TypeUtils.parseType("net.sf.cglib.UndeclaredThrowableException");
-    private static final Type ERROR =
-      TypeUtils.parseType("Error");
-    private static final Type RUNTIME_EXCEPTION =
-      TypeUtils.parseType("RuntimeException");
     private static final Type METHOD =
       TypeUtils.parseType("java.lang.reflect.Method");
     private static final Signature INVOKE =
@@ -47,7 +43,7 @@ implements CallbackGenerator
             e.invoke_interface(INVOCATION_HANDLER, INVOKE);
             e.unbox(Type.getType(method.getReturnType()));
             e.return_value();
-            e.end_block();
+            handler.end();
 
             /* generates:
                } catch (RuntimeException e) {
@@ -65,11 +61,11 @@ implements CallbackGenerator
             if (!(exceptionSet.contains(Exception.class) ||
                   exceptionSet.contains(Throwable.class))) {
                 if (!exceptionSet.contains(RuntimeException.class)) {
-                    e.catch_exception(handler, RUNTIME_EXCEPTION);
+                    e.catch_exception(handler, Constants.TYPE_RUNTIME_EXCEPTION);
                     e.athrow();
                 }
                 if (!exceptionSet.contains(Error.class)) {
-                    e.catch_exception(handler, ERROR);
+                    e.catch_exception(handler, Constants.TYPE_ERROR);
                     e.athrow();
                 }
                 for (int i = 0; i < exceptionTypes.length; i++) {

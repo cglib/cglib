@@ -138,7 +138,7 @@ class BulkBeanEmitter extends ClassEmitter {
                 e.invoke(setters[i]);
             }
         }
-        e.end_block();
+        handler.end();
         e.return_value();
         e.catch_exception(handler, CLASS_CAST_EXCEPTION);
         e.new_instance(BULK_BEAN_EXCEPTION);

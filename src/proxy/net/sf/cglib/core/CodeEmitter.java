@@ -108,7 +108,6 @@ public class CodeEmitter extends CodeAdapter {
         int firstLocal;
         int nextLocal;
         Map remap;
-        Block curBlock;
 
         State(int access, Signature sig, Type[] exceptions) {
             this.access = access;
@@ -147,9 +146,6 @@ public class CodeEmitter extends CodeAdapter {
     }
 
     public void end_method() {
-        if (state.curBlock != null) {
-            throw new IllegalStateException("unclosed exception block");
-        }
         visitMaxs(0, 0);
     }
 
@@ -175,15 +171,7 @@ public class CodeEmitter extends CodeAdapter {
     }
 
     public Block begin_block() {
-        return state.curBlock = new Block(state.curBlock, mark());
-    }
-
-    public void end_block() {
-        if (state.curBlock == null) {
-            throw new IllegalStateException("mismatched block boundaries");
-        }
-        state.curBlock.setEnd(mark());
-        state.curBlock = state.curBlock.getParent();
+        return new Block(this);
     }
 
     public void catch_exception(Block block, Type exception) {
@@ -191,9 +179,9 @@ public class CodeEmitter extends CodeAdapter {
             throw new IllegalStateException("end of block is unset");
         }
         cv.visitTryCatchBlock(block.getStart(),
-                                 block.getEnd(),
-                                 mark(),
-                                 exception.getInternalName());
+                              block.getEnd(),
+                              mark(),
+                              exception.getInternalName());
     }
 
     public void goTo(Label label) { cv.visitJumpInsn(Constants.GOTO, label); }
@@ -713,7 +701,7 @@ public class CodeEmitter extends CodeAdapter {
         cv.visitLabel(label);
     }
 
-    private Label mark() {
+    Label mark() {
         Label label = make_label();
         cv.visitLabel(label);
         return label;

@@ -75,8 +75,11 @@ class FastClassEmitter extends ClassEmitter {
       TypeUtils.parseSignature("Object newInstance(int, Object[])");
     private static final Type FAST_CLASS =
       TypeUtils.parseType("net.sf.cglib.reflect.FastClass");
-    private static final Type NO_SUCH_METHOD_ERROR =
-      TypeUtils.parseType("NoSuchMethodError");
+    private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
+      TypeUtils.parseType("IllegalArgumentException");
+    private static final Type INVOCATION_TARGET_EXCEPTION =
+      TypeUtils.parseType("java.lang.reflect.InvocationTargetException");
+    private static final Type[] INVOCATION_TARGET_EXCEPTION_ARRAY = { INVOCATION_TARGET_EXCEPTION };
     
     public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
@@ -113,19 +116,25 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         // invoke(int, Object, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, INVOKE, null);
+        e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY);
+        Block block = e.begin_block();
         e.load_arg(1);
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         invokeSwitchHelper(e, methods, 2);
+        block.end();
+        ComplexOps.wrap_checked_exception(block, INVOCATION_TARGET_EXCEPTION);
         e.end_method();
 
         // newInstance(int, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY);
+        block = e.begin_block();
         e.new_instance(Type.getType(type));
         e.dup();
         e.load_arg(0);
         invokeSwitchHelper(e, constructors, 1);
+        block.end();
+        ComplexOps.wrap_checked_exception(block, INVOCATION_TARGET_EXCEPTION);
         e.end_method();
 
         end_class();
@@ -179,7 +188,7 @@ class FastClassEmitter extends ClassEmitter {
             }
 
             public void processDefault() {
-                e.throw_exception(NO_SUCH_METHOD_ERROR, "Cannot find matching method/constructor");
+                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Cannot find matching method/constructor");
             }
         });
     }

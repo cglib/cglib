@@ -72,6 +72,8 @@ public class ComplexOps {
       TypeUtils.parseConstructor("String");
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
+    private static final Signature CSTRUCT_THROWABLE =
+      TypeUtils.parseConstructor("Throwable");
 
     private static final Signature GET_NAME =
       TypeUtils.parseSignature("String getName()");
@@ -867,5 +869,19 @@ public class ComplexOps {
                 });
             }
         }
+    }
+
+    public static void wrap_checked_exception(Block block, Type wrapper) {
+        CodeEmitter e = block.getCodeEmitter();
+        e.catch_exception(block, Constants.TYPE_RUNTIME_EXCEPTION);
+        e.athrow();
+        e.catch_exception(block, Constants.TYPE_ERROR);
+        e.athrow();
+        e.catch_exception(block, Constants.TYPE_THROWABLE);
+        e.new_instance(wrapper);
+        e.dup_x1();
+        e.swap();
+        e.invoke_constructor(wrapper, CSTRUCT_THROWABLE);
+        e.athrow();
     }
 }

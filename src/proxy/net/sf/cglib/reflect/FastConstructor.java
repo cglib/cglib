@@ -54,6 +54,7 @@
 package net.sf.cglib.reflect;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 public class FastConstructor extends FastMember
 {
@@ -69,13 +70,11 @@ public class FastConstructor extends FastMember
         return ((Constructor)member).getExceptionTypes();
     }
 
-    // TODO: change throws clause
-    public Object newInstance() throws Throwable {
+    public Object newInstance() throws InvocationTargetException {
         return fc.newInstance(index, null);
     }
 
-    // TODO: change throws clause
-    public Object newInstance(Object[] args) throws Throwable {
+    public Object newInstance(Object[] args) throws InvocationTargetException {
         return fc.newInstance(index, args);
     }
 
