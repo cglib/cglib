@@ -116,59 +116,57 @@ class BeanMapEmitter extends ClassEmitter {
     }
         
     private void generateGet(final Class type, final int switchStyle, final Map getters) throws Exception {
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, MAP_GET, null)) {{
-            load_this();
-            super_getfield("bean", Constants.TYPE_OBJECT);
-            checkcast(Type.getType(type));
-            load_arg(0);
-            checkcast(Constants.TYPE_STRING);
-            ComplexOps.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                    invoke(pd.getReadMethod());
-                    box(Type.getType(pd.getReadMethod().getReturnType()));
-                    return_value();
-                }
-                public void processDefault() {
-                    aconst_null();
-                    return_value();
-                }
-            });
-            end_method();
-        }};
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
+        e.load_this();
+        e.super_getfield("bean", Constants.TYPE_OBJECT);
+        e.checkcast(Type.getType(type));
+        e.load_arg(0);
+        e.checkcast(Constants.TYPE_STRING);
+        ComplexOps.string_switch(e, getNames(getters), switchStyle, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
+                e.invoke(pd.getReadMethod());
+                e.box(Type.getType(pd.getReadMethod().getReturnType()));
+                e.return_value();
+            }
+            public void processDefault() {
+                e.aconst_null();
+                e.return_value();
+            }
+        });
+        e.end_method();
     }
 
     private void generatePut(final Class type, final int switchStyle, final Map setters) throws Exception {
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, MAP_PUT, null)) {{
-            load_this();
-            super_getfield("bean", Constants.TYPE_OBJECT);
-            checkcast(Type.getType(type));
-            load_arg(0);
-            checkcast(Constants.TYPE_STRING);
-            ComplexOps.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
-                    if (pd.getReadMethod() == null) {
-                        aconst_null();
-                    } else {
-                        dup();
-                        invoke(pd.getReadMethod());
-                        box(Type.getType(pd.getReadMethod().getReturnType()));
-                    }
-                    swap(); // move old value behind bean
-                    load_arg(1); // new value
-                    unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
-                    invoke(pd.getWriteMethod());
-                    return_value();
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
+        e.load_this();
+        e.super_getfield("bean", Constants.TYPE_OBJECT);
+        e.checkcast(Type.getType(type));
+        e.load_arg(0);
+        e.checkcast(Constants.TYPE_STRING);
+        ComplexOps.string_switch(e, getNames(setters), switchStyle, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
+                if (pd.getReadMethod() == null) {
+                    e.aconst_null();
+                } else {
+                    e.dup();
+                    e.invoke(pd.getReadMethod());
+                    e.box(Type.getType(pd.getReadMethod().getReturnType()));
                 }
-                public void processDefault() {
-                    // fall-through
-                }
-            });
-            aconst_null();
-            return_value();
-            end_method();
-        }};
+                e.swap(); // move old value behind bean
+                e.load_arg(1); // new value
+                e.unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
+                e.invoke(pd.getWriteMethod());
+                e.return_value();
+            }
+            public void processDefault() {
+                // fall-through
+            }
+        });
+        e.aconst_null();
+        e.return_value();
+        e.end_method();
     }
             
     private void generateKeySet(Map getters, Map setters) {
