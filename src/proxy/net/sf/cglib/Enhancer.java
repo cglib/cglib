@@ -90,7 +90,7 @@ import java.util.List;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.38 2003/05/13 06:17:09 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.39 2003/05/28 03:56:30 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -119,17 +119,17 @@ public class Enhancer {
     }
     
     /**
-     *  overrides Class methods and implements all abstract methods.  
-     *  returned instance extends clazz and implements Factory interface,
-     *  MethodProxy delegates calls to supper Class (clazz) methods, if not abstract.
-     *  @param clazz Class or inteface to extend or implement
-     *  @param interceptor interceptor used to handle implemented methods
-     *  @return instanse of clazz class, new Class is defined in the same class loader
+     * Overrides non-abstract methods and implements all abstract methods.  
+     * The returned instance extends/implements the supplied class, and
+     * additionally implements the Factory interface.
+     * @param cls Class or interface to extend or implement
+     * @param ih interceptor used to handle implemented methods
+     * @return instance of supplied Class; new Class is defined in the same class loader
      */
-    public static Factory enhance(Class clazz, MethodInterceptor interceptor) {
-        return (Factory)enhanceHelper( clazz.isInterface() ? null : clazz,
-                                       clazz.isInterface() ? new Class[]{clazz} : null ,
-                                       interceptor, clazz.getClassLoader(), null, null );
+    public static Factory enhance(Class cls, MethodInterceptor ih) {
+        return (Factory)enhanceHelper(cls.isInterface() ? null : cls,
+                                      cls.isInterface() ? new Class[]{ cls } : null,
+                                      ih, cls.getClassLoader(), null, null );
     }
      
     /**
@@ -165,7 +165,7 @@ public class Enhancer {
      * and package methods if the source class is not in a the java.* hierarchy.
      * @param cls class to extend, uses Object.class if null
      * @param interfaces interfaces to implement, can be null or empty
-     * @param ih valid interceptor implementation
+     * @param ih interceptor used to handle implemented methods
      * @param loader ClassLoader for enhanced class, uses "current" if null
      * @param wreplace static method to implement writeReplace, must have
      * a single Object type parameter (to replace) and return type of Object.
@@ -208,7 +208,7 @@ public class Enhancer {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
         if (cls == null) {
-                cls = Object.class;
+            cls = Object.class;
         }
         if (loader == null) {
             loader = defaultLoader;
