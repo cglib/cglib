@@ -60,23 +60,17 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
 
+/**
+ * Abstract class for all code-generating CGLIB utilities.
+ * In addition to caching generated classes for performance, it provides hooks for
+ * customizing the <code>ClassLoader</code>, name of the generated class, and transformations
+ * applied before generation.
+ */
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
     private static final String KEY_FIELD = "CGLIB$ACGKEY";
     private static final Object NAME_KEY = new Object();
-    
-    private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
-        public String getClassName(String prefix, String source, Object key) {
-            StringBuffer sb = new StringBuffer();
-            sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
-            sb.append("$$");
-            sb.append(source.substring(source.lastIndexOf('.') + 1));
-            sb.append("ByCGLIB$$");
-            sb.append(Integer.toHexString(key.hashCode()));
-            return sb.toString();
-        }
-    };
 
     private NamingPolicy namingPolicy;
     private Source source;
@@ -102,18 +96,35 @@ implements ClassGenerator
     }
 
     protected String getClassName() {
-        NamingPolicy np = (namingPolicy != null) ? namingPolicy : DEFAULT_NAMING_POLICY;
+        NamingPolicy np = (namingPolicy != null) ? namingPolicy : DefaultNamingPolicy.INSTANCE;
         return np.getClassName(namePrefix, source.name, key);
     }
 
+    /**
+     * Set the <code>ClassLoader</code> in which the class will be generated.
+     * Concrete subclasses of <code>AbstractClassGenerator</code> (such as <code>Enhancer</code>)
+     * will try to choose an appropriate default if this is unset.
+     * <p>
+     * Classes are cached per-<code>ClassLoader</code> using a <code>WeakHashMap</code>, to allow
+     * the generated classes to be removed when the associated loader is garbage collected.
+     * @param classLoader the loader to generate the new class with, or null to use the default
+     */
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
+    /**
+     * Override the default naming policy.
+     * @see DefaultNamingPolicy
+     * @param namingPolicy the custom policy, or null to use the default
+     */
     public void setNamingPolicy(NamingPolicy namingPolicy) {
         this.namingPolicy = namingPolicy;
     }
 
+    /**
+     * TODO
+     */
     public void setTransformer(Transformer transformer) {
         this.transformer = transformer;
     }
