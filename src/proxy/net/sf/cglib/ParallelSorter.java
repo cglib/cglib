@@ -109,7 +109,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     public void quickSort(int index) {
-        super.quickSort((Comparable[])a[index], 0, ((Comparable[])a[index]).length - 1);
+        super.quickSort((Comparable[])a[index], 0, ((Comparable[])a[index]).length);;
     }
 
     public void quickSort(int index, int lo, int hi) {
@@ -117,7 +117,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     public void quickSort(int index, Comparator cmp) {
-        super.quickSort((Object[])a[index], 0, ((Object[])a[index]).length - 1, cmp);
+        super.quickSort((Object[])a[index], 0, ((Object[])a[index]).length, cmp);
     }
 
     public void quickSort(int index, int lo, int hi, Comparator cmp) {
@@ -125,7 +125,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     public void mergeSort(int index) {
-        super.mergeSort((Comparable[])a[index], 0, ((Comparable[])a[index]).length - 1);
+        super.mergeSort((Comparable[])a[index], 0, ((Comparable[])a[index]).length);
     }
 
     public void mergeSort(int index, int lo, int hi) {
@@ -133,7 +133,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     public void mergeSort(int index, Comparator cmp) {
-        super.mergeSort((Object[])a[index], 0, ((Object[])a[index]).length - 1, cmp);
+        super.mergeSort((Object[])a[index], 0, ((Object[])a[index]).length, cmp);
     }
 
     public void mergeSort(int index, int lo, int hi, Comparator cmp) {

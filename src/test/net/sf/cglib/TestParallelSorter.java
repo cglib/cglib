@@ -59,13 +59,33 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.1 2003/01/24 00:31:26 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.2 2003/01/31 22:57:37 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
-    public void testSimple() throws Throwable {
+    public void testQuickSort() throws Throwable {
+        Object[] data = getTestData();
+        ParallelSorter.create(data).quickSort(0);
+        verifyTestData(data);
+    }
+
+    public void testMergeSort() throws Throwable {
+        Object[] data = getTestData();
+        ParallelSorter.create(data).mergeSort(0);
+        verifyTestData(data);
+    }
+    
+    private Object[] getTestData() {
         String[] sortme = { "foo", "bar", "qux", "baz", "moof" };
         int[] indexes = { 0, 1, 2, 3, 4 };
-        ParallelSorter.create(new Object[]{ sortme, indexes }).quickSort(0);
+        return new Object[]{ sortme, indexes };
+    }
+    
+    private void verifyTestData(Object[] data) {
+        int[] indexes = (int[])data[1];
+        for (int i = 0; i < indexes.length; i++) {
+            System.err.print(" " + indexes[i]);
+        }
+        System.err.println();
         assertTrue(indexes[0] == 1);
         assertTrue(indexes[1] == 3);
         assertTrue(indexes[2] == 0);
