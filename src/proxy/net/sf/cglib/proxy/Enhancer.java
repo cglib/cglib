@@ -89,7 +89,7 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.35 2002/11/21 18:48:48 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.36 2002/11/23 00:32:50 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
@@ -116,7 +116,7 @@ public class Enhancer implements ClassFileConstants {
     
     /**
      *  implemented as
-     * return enhance(cls,interfaces,ih, null);
+     * return enhance(cls,interfaces,ih, null,null,false);
      */
     public static Object enhance(
     Class cls,
@@ -128,7 +128,7 @@ public class Enhancer implements ClassFileConstants {
         interfaces,
         ih,
         null,
-        null );
+        null);
     }
      public static Object enhance(
     Class cls,
@@ -140,7 +140,7 @@ public class Enhancer implements ClassFileConstants {
         interfaces,
         ih,
         loader,
-        null );
+        null);
    
      } 
     /** enhances public not final class,
@@ -166,7 +166,7 @@ public class Enhancer implements ClassFileConstants {
                                  MethodInterceptor ih,
                                  ClassLoader loader,
                                  Method wreplace) {
-        return enhance(null, cls, interfaces, ih, loader, wreplace);
+        return enhanceHelper(false, null, cls, interfaces, ih, loader, wreplace);
     }
 
     public static Object enhance(Object obj,
@@ -175,10 +175,20 @@ public class Enhancer implements ClassFileConstants {
                                  MethodInterceptor ih,
                                  ClassLoader loader,
                                  Method wreplace) {
+        return enhanceHelper(true, obj, cls, interfaces, ih, loader, wreplace);
+    }
+
+    private static Object enhanceHelper(boolean delegating,
+                                        Object obj,
+                                        Class cls,
+                                        Class[] interfaces,
+                                        MethodInterceptor ih,
+                                        ClassLoader loader,
+                                        Method wreplace) {
         if (ih == null) {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
-        
+
         if (cls != null && obj != null && !cls.isAssignableFrom(obj.getClass())) {
             throw new IllegalArgumentException("Class must be same class or superclass of delegate");
         }
@@ -201,7 +211,6 @@ public class Enhancer implements ClassFileConstants {
             cache.put(loader, map);
         }
 
-        boolean delegating = (obj != null);
         Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating);
         
         Class result = (Class) map.get(key);
