@@ -59,6 +59,7 @@ import java.util.*;
 
 abstract public class CodeGenerator
 {
+    private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
       new RuntimePermission("defineCGLIBClassInJavaPackage");
 
@@ -70,6 +71,10 @@ abstract public class CodeGenerator
     private Class superclass;
     private Class[] interfaces;
     private boolean used;
+
+    static {
+        debugLocation = System.getProperty("cglib.debugLocation");
+    }
 
     protected static class Source {
         Class type;
@@ -190,18 +195,13 @@ abstract public class CodeGenerator
     abstract protected Object newInstance(Object factory, boolean isNew);
 
     private static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
-        // if (debugLocation != null) {
-        //     File file = new File(new File(debugLocation), className + ".class");
-        //     // System.err.println("CGLIB writing " + file);
-        //     OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-        //     out.write(bytes);
-        //     out.close();
-        // }
-
-        File file = new File(new File("/tmp"), className + ".class");
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-        out.write(b);
-        out.close();
+        if (debugLocation != null) {
+            File file = new File(new File(debugLocation), className + ".class");
+            // System.err.println("CGLIB writing " + file);
+            OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+            out.write(b);
+            out.close();
+        }
         
         Method m = MethodConstants.DEFINE_CLASS;
         boolean flag = m.isAccessible();
