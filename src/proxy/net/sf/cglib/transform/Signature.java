@@ -211,5 +211,10 @@ public class Signature {
 
    
    }
+   
+   
+   public static String getInternalName(Class cls){
+     return cls.getName().replace('.','/');
+   }
   
 }

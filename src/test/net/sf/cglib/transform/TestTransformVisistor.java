@@ -54,6 +54,8 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.*;
+import net.sf.cglib.beans.*;
+
 import org.objectweb.asm.util.*;
 import org.objectweb.asm.*;
 
@@ -62,77 +64,101 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.2 2003/09/12 05:17:51 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.3 2003/09/12 09:57:39 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
-
-   ReadWriteFieldFilter acceptAll = new ReadWriteFieldFilter(){
-    public boolean acceptRead(String clas, String name){
-     
-      return true;
-    }
     
-     public boolean acceptWrite(String clas, String name){
-     
-      return true;
-    }
-   };
+    ReadWriteFieldFilter acceptAll = new ReadWriteFieldFilter(){
+        public boolean acceptRead(String clas, String name){
+            
+            return true;
+        }
+        
+        public boolean acceptWrite(String clas, String name){
+            
+            return true;
+        }
+    };
     
- static class  TransforClassLoader extends ClassLoader{
- 
-     byte data[];
-     String name;
-     
-     TransforClassLoader(byte data[],String name){
-       this.data = data;
-       this.name = name;
-     }
-     public Class loadClass(String name)throws ClassNotFoundException{
-      if(this.name.equals(name)){   
-        return super.defineClass(name,data,0,data.length);  
-      }else{
-        return super.loadClass(name);  
-      }
-     }
- 
- } 
+    static class  TransforClassLoader extends ClassLoader{
+        
+        byte data[];
+        String name;
+        
+        TransforClassLoader(byte data[],String name){
+            this.data = data;
+            this.name = name;
+        }
+        public Class loadClass(String name)throws ClassNotFoundException{
+            if(this.name.equals(name)){
+                return super.defineClass(name,data,0,data.length);
+            }else{
+                return super.loadClass(name);
+            }
+        }
+        
+    }
     
     public TestTransformVisistor(String testName) {
         super(testName);
     }
-
-     void print(byte data[]){
-     
+    
+    void print(byte data[]){
+        
         ClassReader cr = new ClassReader(data);
         cr.accept(new TraceClassVisitor(null,new java.io.PrintWriter(System.out)), false);
-      
-     }
+        
+    }
     void print(java.io.InputStream is)throws Exception{
-     
+        
         ClassReader cr = new ClassReader(is);
         cr.accept(new TraceClassVisitor(null,new java.io.PrintWriter(System.out)), false);
-      
-     } 
-   
-    public void testFormat( )throws Exception{
         
-        formatTest(MA.class);  
-       
     }
-    public void formatTest( Class cls )throws Exception{
     
+    void print(Class cls)throws Exception{
+        print(openStream(cls));
+    }
+    
+    java.io.InputStream openStream(Class cls)throws Exception{
+        return cls.getResourceAsStream( "/" + cls.getName().replace('.','/') + ".class");
+    }
+    
+    public void testFieldTransform( )throws Exception{
         
-        java.io.InputStream is = this.getClass().getResourceAsStream( "/" + cls.getName().replace('.','/') + ".class");
+       Transformed t = ( Transformed )transform(MA.class);
+       Callback clb = new Callback();
+       t.setReadWriteFieldCallback( clb );
+       Object value = "TEST";
+       BeanMap map = BeanMap.create( t, t.getClass().getClassLoader() );
+       map.put("name", value );
+       assertEquals(clb.getValue(),value);
         
-        TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
-        byte data[] = tv.transform();
-      
+    }
+    public Object transform( Class cls )throws Exception{
+        
+        byte data[] ;
+        java.io.InputStream is = openStream( cls );
+        
+        try{
+            
+            TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
+            data = tv.transform();
+            
+        }finally{
+            
+            is.close();
+            
+        }
+        //print(data);
+        
         TransforClassLoader loader = new TransforClassLoader(data,cls.getName());
         Class transformed = loader.loadClass(cls.getName());
-        Object obj = transformed.newInstance();
+        
+        return transformed.newInstance();
         
         
-      
+        
     }
     
     public static void main(String[] args) {
@@ -142,5 +168,108 @@ public class TestTransformVisistor extends TestCase {
     public static Test suite() {
         return new TestSuite(TestTransformVisistor.class);
     }
+
+    static class  Callback implements ReadWriteFieldCallback{
+        
+        Object value;
+        
+        public Object getValue(){
+            
+           return value;
+           
+        }
+       
+        public boolean readBoolean(Object _this, String name, boolean oldValue) {
+            value = new Boolean(oldValue);
+            return oldValue;
+        }        
+       
+        public byte readByte(Object _this, String name, byte oldValue) {
+            value = new Byte(oldValue);
+            return oldValue;
+        }
+        
+        public char readChar(Object _this, String name, char oldValue) {
+            value = new Character(oldValue);
+            return oldValue;
+        }
+        
+        public double readDouble(Object _this, String name, double oldValue) {
+            value = new Double(oldValue);
+            return oldValue;
+        }
+        
+        public float readFloat(Object _this, String name, float oldValue) {
+            value = new Float(oldValue);
+            return oldValue;
+        }
+        
+        public int readInt(Object _this, String name, int oldValue) {
+            value = new Integer(oldValue);
+            return oldValue;
+        }
+        
+        public long readLong(Object _this, String name, long oldValue) {
+            value = new Long(oldValue);
+            return oldValue;
+        }
+        
+        public Object readObject(Object _this, String name, Object oldValue) {
+            value = oldValue;
+            return oldValue;
+        }
+        
+        public short readShort(Object _this, String name, short oldValue) {
+            value = new Short(oldValue);
+            return oldValue;
+        }
+        
+        public boolean writeBoolean(Object _this, String name, boolean oldValue, boolean newValue) {
+            value = new Boolean(newValue);
+            return newValue;
+        }
+        
+        public byte writeByte(Object _this, String name, byte oldValue, byte newValue) {
+            value = new Byte(newValue);
+            return newValue;
+        }
+        
+        public char writeChar(Object _this, String name, char oldValue, char newValue) {
+            value = new Character(newValue);
+            return newValue;
+        }
+        
+        public double writeDouble(Object _this, String name, double oldValue, double newValue) {
+            value = new Double(newValue);
+            return newValue;
+        }
+        
+        public float writeFloat(Object _this, String name, float oldValue, float newValue) {
+            value = new Float(newValue);
+            return newValue;
+        }
+        
+        public int writeInt(Object _this, String name, int oldValue, int newValue) {
+            value = new Integer(newValue);
+            return newValue;
+        }
+        
+        public long writeLong(Object _this, String name, long oldValue, long newValue) {
+            value = new Long(newValue);
+            return newValue;
+        }
+        
+        public Object writeObject(Object _this, String name, Object oldValue, Object newValue) {
+            value = newValue;
+            return newValue;
+        }
+        
+        public short writeShort(Object _this, String name, short oldValue, short newValue) {
+            value = new Short(newValue);
+            return newValue;
+        }
+        
+        }
+       
     
 }
