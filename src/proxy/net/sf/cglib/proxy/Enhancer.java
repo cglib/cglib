@@ -440,18 +440,49 @@ public class Enhancer extends AbstractClassGenerator
         return new EnhancerTransformer();
     }
 
+    // package protected, for CallbackHelper
+    static void getMethods(Class superclass, Class[] interfaces, List methods)
+    {
+        getMethods(superclass, interfaces, methods, null, null);
+    }
+
+    private static void getMethods(Class superclass, Class[] interfaces, List methods, List interfaceMethods, Set forcePublic)
+    {
+        ReflectUtils.addAllMethods(superclass, methods);
+        List target = (interfaceMethods != null) ? interfaceMethods : methods;
+        if (interfaces != null) {
+            for (int i = 0; i < interfaces.length; i++) {
+                if (interfaces[i] != Factory.class) {
+                    ReflectUtils.addAllMethods(interfaces[i], target);
+                }
+            }
+        }
+        if (interfaceMethods != null) {
+            if (forcePublic != null) {
+                forcePublic.addAll(MethodWrapper.createSet(interfaceMethods));
+            }
+            methods.addAll(interfaceMethods);
+        }
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Constants.ACC_STATIC));
+        CollectionUtils.filter(methods, new VisibilityPredicate(superclass, true));
+        CollectionUtils.filter(methods, new DuplicatesPredicate());
+        CollectionUtils.filter(methods, new RejectModifierPredicate(Constants.ACC_FINAL));
+    }
+
     public void generateClass(ClassVisitor v) throws Exception {
         Class sc = (superclass == null) ? Object.class : superclass;
-        depth = calculateDepth(sc);
         
         if (TypeUtils.isFinal(sc.getModifiers()))
             throw new IllegalArgumentException("Cannot subclass final class " + sc);
 
+        depth = calculateDepth(sc);
+        
         List constructors = new ArrayList(Arrays.asList(sc.getDeclaredConstructors()));
         CollectionUtils.filter(constructors, new VisibilityPredicate(sc, true));
         if (constructors.size() == 0) {
             throw new IllegalArgumentException("No visible constructors in " + sc);
         }
+
 
         ClassEmitter e = new ClassEmitter(v);
         e.begin_class(Constants.ACC_PUBLIC,
@@ -466,22 +497,9 @@ public class Enhancer extends AbstractClassGenerator
         // its superclass chain, then each interface and
         // its superinterfaces.
         List actualMethods = new ArrayList();
-        ReflectUtils.addAllMethods(sc, actualMethods);
-
         List interfaceMethods = new ArrayList();
-        if (interfaces != null) {
-            for (int i = 0; i < interfaces.length; i++) {
-                if (interfaces[i] != Factory.class) {
-                    ReflectUtils.addAllMethods(interfaces[i], interfaceMethods);
-                }
-            }
-        }
-        final Set forcePublic = MethodWrapper.createSet(interfaceMethods);
-        actualMethods.addAll(interfaceMethods);
-        CollectionUtils.filter(actualMethods, new RejectModifierPredicate(Constants.ACC_STATIC));
-        CollectionUtils.filter(actualMethods, new VisibilityPredicate(sc, true));
-        CollectionUtils.filter(actualMethods, new DuplicatesPredicate());
-        CollectionUtils.filter(actualMethods, new RejectModifierPredicate(Constants.ACC_FINAL));
+        final Set forcePublic = new HashSet();
+        getMethods(sc, interfaces, actualMethods, interfaceMethods, forcePublic);
 
         List methods = CollectionUtils.transform(actualMethods, new Transformer() {
             public Object transform(Object value) {
@@ -785,17 +803,22 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private void emitConstructors(ClassEmitter ce, List constructors) {
+        boolean seenNull = false;
         for (Iterator it = constructors.iterator(); it.hasNext();) {
             MethodInfo constructor = (MethodInfo)it.next();
             CodeEmitter e = EmitUtils.begin_method(ce, constructor, Constants.ACC_PUBLIC);
             e.load_this();
             e.dup();
             e.load_args();
-            e.super_invoke_constructor(constructor.getSignature());
+            Signature sig = constructor.getSignature();
+            seenNull = seenNull || sig.getDescriptor().equals("()V");
+            e.super_invoke_constructor(sig);
             e.invoke_static_this(BIND_CALLBACKS);
             e.return_value();
             e.end_method();
         }
+        if (!classOnly && !seenNull && arguments == null)
+            throw new IllegalArgumentException("Superclass has no null constructors but no arguments were given");
     }
 
     private int[] getCallbackKeys() {
