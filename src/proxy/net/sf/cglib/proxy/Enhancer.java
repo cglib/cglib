@@ -370,7 +370,7 @@ public class Enhancer extends AbstractClassGenerator
             }
             Type[] check = CallbackInfo.determineTypes(callbacks);
             for (int i = 0; i < check.length; i++) {
-                if (check[i] != callbackTypes[i]) {
+                if (!check[i].equals(callbackTypes[i])) {
                     throw new IllegalStateException("Callback " + check[i] + " is not assignable to " + callbackTypes[i]);
                 }
             }
