@@ -5,6 +5,8 @@ import net.sf.cglib.core.ClassGenerator;
 import net.sf.cglib.core.DebuggingClassWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.util.*;
+
 import java.io.IOException;
 
 abstract public class AbstractLoader extends ClassLoader {
@@ -56,8 +58,8 @@ abstract public class AbstractLoader extends ClassLoader {
         }
 
         try {
-            ClassWriter w = new DebuggingClassWriter(true);
-            getGenerator(r).generateClass(w);
+            ClassWriter w =  new DebuggingClassWriter(true);
+            getGenerator(r).generateClass( w );
             byte[] b = w.toByteArray();
             return super.defineClass(name, b, 0, b.length);
         } catch (RuntimeException e) {

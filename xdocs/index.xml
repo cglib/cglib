@@ -38,6 +38,8 @@
       <li/>"<a href="http://www.springframework.org"> Spring </a> is a J2EE application framework based on code published in Expert One-on-One J2EE Design and Development http://www.wrox.com/books/1861007841.htm by Rod Johnson."
       <li/>"<a href="http://www.ibatis.com">The iBATIS  Database Layer </a> takes a different approach to solving the Object Relational mapping problem --it avoids it altogether!"
 
+      <li/>"<a href="http://forge.objectweb.org/projects/asm" >ASM</a> is a Java bytecode manipulation framework. It offers similar functionalities as BCEL or SERP, but is much more smaller and faster than these tools." 
+
     </ul>
 
    </p>
