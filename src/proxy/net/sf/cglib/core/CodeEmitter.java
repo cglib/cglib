@@ -874,4 +874,8 @@ public class CodeEmitter extends RemappingCodeVisitor {
             invoke_virtual(owner, sig);
         }
     }
+
+    public void define_attribute(Attribute attrs) {
+        cv.visitAttribute(attrs);
+    }
 }

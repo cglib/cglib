@@ -146,7 +146,7 @@ abstract public class MulticastDelegate implements Cloneable {
             emitProxy(ce, method);
 
             // newInstance
-            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
             e.new_instance_this();
             e.dup();
             e.invoke_constructor_this();
@@ -154,7 +154,7 @@ abstract public class MulticastDelegate implements Cloneable {
             e.end_method();
 
             // add
-            e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null, null);
             e.load_this();
             e.load_arg(0);
             e.checkcast(Type.getType(iface));
@@ -168,7 +168,8 @@ abstract public class MulticastDelegate implements Cloneable {
         private void emitProxy(ClassEmitter ce, final Method method) {
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                                   ReflectUtils.getSignature(method),
-                                                  ReflectUtils.getExceptionTypes(method));
+                                                  ReflectUtils.getExceptionTypes(method),
+                                                  null);
             Type returnType = e.getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
             Local result = null;

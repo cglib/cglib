@@ -93,7 +93,7 @@ class BulkBeanEmitter extends ClassEmitter {
     }
 
     private void generateGet(final Class target, final Method[] getters) {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null, null);
         if (getters.length >= 0) {
             e.load_arg(0);
             e.checkcast(Type.getType(target));
@@ -116,7 +116,7 @@ class BulkBeanEmitter extends ClassEmitter {
 
     private void generateSet(final Class target, final Method[] setters) {
         // setPropertyValues
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null, null);
         if (setters.length > 0) {
             Local index = e.make_local(Type.INT_TYPE);
             e.push(0);

@@ -113,7 +113,7 @@ public class EmitUtils {
     }
 
     public static void factory_method(ClassEmitter ce, Signature sig) {
-        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, sig, null);
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, sig, null, null);
         e.new_instance_this();
         e.dup();
         e.load_args();
@@ -123,7 +123,7 @@ public class EmitUtils {
     }
 
     public static void null_constructor(ClassEmitter ce) {
-        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null);
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null, null);
         e.load_this();
         e.super_invoke_constructor();
         e.return_value();
@@ -364,7 +364,7 @@ public class EmitUtils {
             ClassEmitter ce = e.getClassEmitter();
             String fieldName = "CGLIB$load_class$" + type.getClassName().replace('.', '_');
             if (!ce.isFieldDeclared(fieldName)) {
-                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null);
+                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null, null);
                 CodeEmitter hook = ce.getStaticHook();
                 hook.push(TypeUtils.emulateClassGetName(type));
                 hook.invoke_static(Constants.TYPE_CLASS, FOR_NAME);

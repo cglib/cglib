@@ -5,6 +5,7 @@ import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeAdapter;
 import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
@@ -35,16 +36,17 @@ public class InterceptFieldTransformer extends EmittingTransformer {
             super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                                 CALLBACK_FIELD,
                                 CALLBACK,
+                                null,
                                 null);
 
             CodeEmitter e;
-            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_GET, null);
+            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_GET, null, null);
             e.load_this();
             e.getfield(CALLBACK_FIELD);
             e.return_value();
             e.end_method();
                 
-            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_SET, null);
+            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_SET, null, null);
             e.load_this();
             e.load_arg(0);
             e.putfield(CALLBACK_FIELD);
@@ -55,8 +57,8 @@ public class InterceptFieldTransformer extends EmittingTransformer {
         }
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
-        super.declare_field(access, name, type, value);
+    public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {
+        super.declare_field(access, name, type, value, attrs);
         if (!TypeUtils.isStatic(access)) {
             if (filter.acceptRead(getClassType(), name)) {
                 addReadMethod(name, type);
@@ -70,6 +72,7 @@ public class InterceptFieldTransformer extends EmittingTransformer {
     private void addReadMethod(String name, Type type) {
         CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
                                            readMethodSig(name, type.getDescriptor()),
+                                           null,
                                            null);
         e.load_this();
         e.getfield(name);
@@ -98,6 +101,7 @@ public class InterceptFieldTransformer extends EmittingTransformer {
     private void addWriteMethod(String name, Type type) {
         CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
                                            writeMethodSig(name, type.getDescriptor()),
+                                           null,
                                            null);
         e.load_this();
         e.dup();
@@ -126,8 +130,8 @@ public class InterceptFieldTransformer extends EmittingTransformer {
         e.end_method();
     }
                 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        return new CodeEmitter(super.begin_method(access, sig, exceptions)) {
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
+        return new CodeEmitter(super.begin_method(access, sig, exceptions, attrs)) {
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                 Type towner = TypeUtils.fromInternalName(owner);
                 switch (opcode) {

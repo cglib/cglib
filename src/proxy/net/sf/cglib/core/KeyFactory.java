@@ -69,34 +69,24 @@ import org.objectweb.asm.Type;
  * single method named <code>newInstance</code>, which returns an
  * <code>Object</code>. The arguments array can be
  * <i>anything</i>--Objects, primitive values, or single or
- * multi-dimension arrays of either.
- * <p>
+ * multi-dimension arrays of either. For example:
+ * <p><pre>
+ *     private interface IntStringKey {
+ *         public Object newInstance(int i, String s);
+ *     }
+ * </pre><p>
  * Once you have made a <code>KeyFactory</code>, you generate a new key by calling
  * the <code>newInstance</code> method defined by your interface.
- * <p>
- * This example should print <code>true</code> followed by <code>false</code>:
  * <p><pre>
- *   import net.sf.cglib.core.KeyFactory;
- *   public class KeySample {
- *       private interface MyFactory {
- *           public Object newInstance(int a, char[] b, String c);
- *       }
- *       public static void main(String[] args) {
- *           MyFactory f = (MyFactory)KeyFactory.create(MyFactory.class, null);
- *           Object key1 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
- *           Object key2 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
- *           Object key3 = f.newInstance(20, new char[]{ 'a', '_' }, "hello");
- *           System.out.println(key1.equals(key2));
- *           System.out.println(key2.equals(key3));
- *       }
- *   }
- * </pre>
- * <p>
+ *     IntStringKey factory = (IntStringKey)KeyFactory.create(IntStringKey.class);
+ *     Object key1 = factory.newInstance(4, "Hello");
+ *     Object key2 = factory.newInstance(4, "World");
+ * </pre><p>
  * <b>Note:</b>
- * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
+ * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is only guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.17 2003/11/06 01:56:58 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.18 2003/11/06 05:10:52 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -223,6 +213,7 @@ abstract public class KeyFactory {
             int seed = 0;
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                             TypeUtils.parseConstructor(parameterTypes),
+                                            null,
                                             null);
             e.load_this();
             e.super_invoke_constructor();
@@ -232,6 +223,7 @@ abstract public class KeyFactory {
                 ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
                                  getFieldName(i),
                                  parameterTypes[i],
+                                 null,
                                  null);
                 e.dup();
                 e.load_arg(i);
@@ -241,7 +233,7 @@ abstract public class KeyFactory {
             e.end_method();
             
             // hash code
-            e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null, null);
             int hc = (constant != 0) ? constant : PRIMES[(int)(Math.abs(seed) % PRIMES.length)];
             int hm = (multiplier != 0) ? multiplier : PRIMES[(int)(Math.abs(seed * 13) % PRIMES.length)];
             e.push(hc);
@@ -254,7 +246,7 @@ abstract public class KeyFactory {
             e.end_method();
 
             // equals
-            e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null, null);
             Label fail = e.make_label();
             e.load_arg(0);
             e.instance_of_this();
@@ -275,7 +267,7 @@ abstract public class KeyFactory {
             e.end_method();
 
             // toString
-            e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null, null);
             e.new_instance(Constants.TYPE_STRING_BUFFER);
             e.dup();
             e.invoke_constructor(Constants.TYPE_STRING_BUFFER);

@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.19 2003/10/29 03:59:12 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.20 2003/11/06 05:10:52 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -254,14 +254,15 @@ abstract public class MethodDelegate {
                            METHOD_DELEGATE,
                            new Type[]{ Type.getType(iface) },
                            Constants.SOURCE_FILE);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null, null);
             EmitUtils.null_constructor(ce);
 
             // generate proxied method
             Method proxied = iface.getDeclaredMethods()[0];
             e = ce.begin_method(Constants.ACC_PUBLIC,
                                 ReflectUtils.getSignature(proxied),
-                                ReflectUtils.getExceptionTypes(proxied));
+                                ReflectUtils.getExceptionTypes(proxied),
+                                null);
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(Type.getType(method.getDeclaringClass()));
@@ -271,7 +272,7 @@ abstract public class MethodDelegate {
             e.end_method();
 
             // newInstance
-            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
             e.new_instance_this();
             e.dup();
             e.dup2();

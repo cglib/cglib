@@ -158,7 +158,7 @@ class EnhancerEmitter extends ClassEmitter {
             group[ctype].add(method);
         }
 
-        declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null);
+        declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
         emitConstructors(constructors);
 
         CallbackGenerator.Context[] contexts = createContexts(generators, group, forcePublic);
@@ -182,7 +182,8 @@ class EnhancerEmitter extends ClassEmitter {
             Signature sig = ReflectUtils.getSignature(constructors[i]);
             CodeEmitter e = begin_method(Constants.ACC_PUBLIC,
                                          sig,
-                                         ReflectUtils.getExceptionTypes(constructors[i]));
+                                         ReflectUtils.getExceptionTypes(constructors[i]),
+                                         null);
             e.load_this();
             e.dup();
             e.load_args();
@@ -195,7 +196,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
     
     private void emitGetCallback(int[] keys) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null, null);
         e.load_this();
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
@@ -214,7 +215,7 @@ class EnhancerEmitter extends ClassEmitter {
 
     private void emitSetCallback(int[] keys) {
         // Factory.setCallback(int, Callback)
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);
@@ -233,7 +234,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
         
     private void emitSetCallbacks() {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null, null);
         e.load_this();
         e.load_arg(0);
         emitSetCallbacks(e);
@@ -242,7 +243,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitNewInstanceCallbacks() {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
         e.load_arg(0);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
         e.new_instance_this();
@@ -256,7 +257,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitNewInstanceCallback() {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SINGLE_NEW_INSTANCE, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SINGLE_NEW_INSTANCE, null, null);
         switch (usedCallbacks.cardinality()) {
         case 1:
             int type = usedCallbacks.length() - 1;
@@ -285,7 +286,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitNewInstanceMultiarg(Constructor[] constructors) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null, null);
         Label skipSetCallbacks = e.make_label();
         e.load_arg(2);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
@@ -395,8 +396,8 @@ class EnhancerEmitter extends ClassEmitter {
             if (generators[i] != null) {
                 Type callbackType = CallbackUtils.getType(i);
                 if (callbackType != null) {
-                    declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackType, null);
-                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null);
+                    declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackType, null, null);
+                    declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
                 }
                 generators[i].generate(this, contexts[i]);
             }
@@ -406,6 +407,7 @@ class EnhancerEmitter extends ClassEmitter {
     private void emitSetThreadCallbacks() {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC | Constants.ACC_STATIC,
                                      SET_THREAD_CALLBACKS,
+                                     null,
                                      null);
         Label end = e.make_label();
         e.load_arg(0);

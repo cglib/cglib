@@ -2,6 +2,7 @@ package net.sf.cglib.transform;
 
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
@@ -39,8 +40,8 @@ public class FieldProviderTransformer extends EmittingTransformer {
         super.begin_class(access, className, superType, interfaces, sourceFile);
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
-        super.declare_field(access, name, type, value);
+    public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {
+        super.declare_field(access, name, type, value, attrs);
         
         if (!TypeUtils.isStatic(access)) {
             fields.put(name, type);
@@ -68,8 +69,8 @@ public class FieldProviderTransformer extends EmittingTransformer {
             indexes[i] = i;
         }
         
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null);
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null, null);
 
         // use separate methods here because each process switch inner class needs a final CodeEmitter
         initFieldProvider(names);
@@ -100,21 +101,21 @@ public class FieldProviderTransformer extends EmittingTransformer {
     }
 
     private void getNames() {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null, null);
         e.getstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
         e.return_value();
         e.end_method();
     }
 
     private void getTypes() {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null, null);
         e.getstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
         e.return_value();
         e.end_method();
     }
 
     private void setByIndex(final String[] names, final int[] indexes) throws Exception {
-        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null);
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);
@@ -133,7 +134,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
     }
 
     private void getByIndex(final String[] names, final int[] indexes) throws Exception {
-        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null);
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null, null);
         e.load_this();
         e.load_arg(0);
         e.process_switch(indexes, new ProcessSwitchCallback() {
@@ -153,7 +154,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
     // TODO: if this is used to enhance class files SWITCH_STYLE_TRIE should be used
     // to avoid JVM hashcode implementation incompatibilities
     private void getField(String[] names) throws Exception {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null, null);
         e.load_this();
         e.load_arg(0);
         EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
@@ -171,7 +172,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
     }
 
     private void setField(String[] names) throws Exception {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);

@@ -28,8 +28,8 @@ public class AsmClassLoaderPreProcessor implements ClassLoaderPreProcessor {
                     super.visit(access, name, superName, interfaces, sourceFile);
                     flag = name.equals("java/lang/ClassLoader"); // is this ok?
                 }
-                public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-                    CodeVisitor v = super.visitMethod(access, name, desc, exceptions);
+                public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
+                    CodeVisitor v = super.visitMethod(access, name, desc, exceptions, attrs);
                     if (flag) {
                         v = new PreProcessingVisitor(v, access, desc);
                     }

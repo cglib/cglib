@@ -73,6 +73,8 @@ class FastClassEmitter extends ClassEmitter {
       TypeUtils.parseSignature("Object invoke(int, Object, Object[])");
     private static final Signature NEW_INSTANCE =
       TypeUtils.parseSignature("Object newInstance(int, Object[])");
+    private static final Signature GET_MAX_INDEX =
+      TypeUtils.parseSignature("int getMaxIndex()");
     private static final Type FAST_CLASS =
       TypeUtils.parseType("net.sf.cglib.reflect.FastClass");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
@@ -86,7 +88,7 @@ class FastClassEmitter extends ClassEmitter {
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null, null);
         e.load_this();
         e.load_args();
         e.super_invoke_constructor(CSTRUCT_CLASS);
@@ -104,19 +106,19 @@ class FastClassEmitter extends ClassEmitter {
         emitIndexBySignature(methods);
 
         // getIndex(String, Class[])
-        e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
+        e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null, null);
         e.load_args();
         EmitUtils.method_switch(e, methods, new GetIndexCallback(e, methods));
         e.end_method();
 
         // getIndex(Class[])
-        e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
+        e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null, null);
         e.load_args();
         EmitUtils.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
         e.end_method();
 
         // invoke(int, Object, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY);
+        e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
         e.load_arg(1);
         e.checkcast(Type.getType(type));
         e.load_arg(0);
@@ -124,18 +126,24 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         // newInstance(int, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY);
+        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
         e.new_instance(Type.getType(type));
         e.dup();
         e.load_arg(0);
         invokeSwitchHelper(e, constructors, 1);
         e.end_method();
 
+        // getMaxIndex()
+        e = begin_method(Constants.ACC_PUBLIC, GET_MAX_INDEX, null, null);
+        e.push(methods.length - 1);
+        e.return_value();
+        e.end_method();
+
         end_class();
     }
 
     private void emitIndexBySignature(Method[] methods) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
         final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
                 Signature sig = ReflectUtils.getSignature((Method)obj);

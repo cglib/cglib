@@ -57,8 +57,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
 
 class DispatcherGenerator implements CallbackGenerator {
@@ -77,7 +75,8 @@ class DispatcherGenerator implements CallbackGenerator {
             } else {
                 CodeEmitter e = ce.begin_method(context.getModifiers(method),
                                                 ReflectUtils.getSignature(method),
-                                                ReflectUtils.getExceptionTypes(method));
+                                                ReflectUtils.getExceptionTypes(method),
+                                                null);
                 context.emitCallback(e);
                 e.push(method.getDeclaringClass().getName());
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
