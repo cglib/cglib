@@ -51,54 +51,24 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib;
 
-import java.lang.reflect.Method;
+import java.util.*;
 
-/**
- * @version $Id: MethodConstants.java,v 1.2 2003/06/16 17:06:59 herbyderby Exp $
- */
-public class MethodConstants {
-    private MethodConstants() { }
-        
-    public static final Method EQUALS =
-      ReflectUtils.findMethod("Object.equals(Object)");
-    public static final Method GET_DECLARED_METHOD =
-      ReflectUtils.findMethod("Class.getDeclaredMethod(String, Class[])");
-    public static final Method GET_DECLARED_CONSTRUCTOR = 
-      ReflectUtils.findMethod("Class.getDeclaredConstructor(Class[])");
-    public static final Method HASH_CODE =
-      ReflectUtils.findMethod("Object.hashCode()");
-    public static final Method FLOAT_TO_INT_BITS =
-      ReflectUtils.findMethod("Float.floatToIntBits(float)");
-    public static final Method DOUBLE_TO_LONG_BITS =
-      ReflectUtils.findMethod("Double.doubleToLongBits(double)");
-    public static final Method FOR_NAME =
-      ReflectUtils.findMethod("Class.forName(String)");
-    public static final Method THROWABLE_GET_MESSAGE =
-      ReflectUtils.findMethod("Throwable.getMessage()");
-    public static final Method DEFINE_CLASS =
-      ReflectUtils.findMethod("ClassLoader.defineClass(byte[], int, int)");
-    public static final Method BOOLEAN_VALUE =
-      ReflectUtils.findMethod("Boolean.booleanValue()");
-    public static final Method CHAR_VALUE =
-      ReflectUtils.findMethod("Character.charValue()");
-    public static final Method LONG_VALUE =
-      ReflectUtils.findMethod("Number.longValue()");
-    public static final Method DOUBLE_VALUE =
-      ReflectUtils.findMethod("Number.doubleValue()");
-    public static final Method FLOAT_VALUE =
-      ReflectUtils.findMethod("Number.floatValue()");
-    public static final Method INT_VALUE =
-      ReflectUtils.findMethod("Number.intValue()");
-    public static final Method MAP_PUT =
-      ReflectUtils.findMethod("java.util.Map.put(Object, Object)");
-    public static final Method MAP_GET =
-      ReflectUtils.findMethod("java.util.Map.get(Object)");
-    public static final Method STRING_LENGTH =
-      ReflectUtils.findMethod("String.length()");
-    public static final Method STRING_CHAR_AT =
-      ReflectUtils.findMethod("String.charAt(int)");
-    public static final Method MAP_KEY_SET =
-      ReflectUtils.findMethod("java.util.Map.keySet()");
+class FixedKeySet extends AbstractSet {
+    private Set set;
+    private int size;
+
+    public FixedKeySet(String[] keys) {
+        size = keys.length;
+        set = Collections.unmodifiableSet(new HashSet(Arrays.asList(keys)));
+    }
+
+    public Iterator iterator() {
+        return set.iterator();
+    }
+
+    public int size() {
+        return size;
+    }
 }

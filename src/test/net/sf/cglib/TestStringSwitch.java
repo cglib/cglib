@@ -51,54 +51,84 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib;
 
 import java.lang.reflect.Method;
+import java.util.*;
+import net.sf.cglib.util.*;
+import junit.framework.*;
 
-/**
- * @version $Id: MethodConstants.java,v 1.2 2003/06/16 17:06:59 herbyderby Exp $
- */
-public class MethodConstants {
-    private MethodConstants() { }
-        
-    public static final Method EQUALS =
-      ReflectUtils.findMethod("Object.equals(Object)");
-    public static final Method GET_DECLARED_METHOD =
-      ReflectUtils.findMethod("Class.getDeclaredMethod(String, Class[])");
-    public static final Method GET_DECLARED_CONSTRUCTOR = 
-      ReflectUtils.findMethod("Class.getDeclaredConstructor(Class[])");
-    public static final Method HASH_CODE =
-      ReflectUtils.findMethod("Object.hashCode()");
-    public static final Method FLOAT_TO_INT_BITS =
-      ReflectUtils.findMethod("Float.floatToIntBits(float)");
-    public static final Method DOUBLE_TO_LONG_BITS =
-      ReflectUtils.findMethod("Double.doubleToLongBits(double)");
-    public static final Method FOR_NAME =
-      ReflectUtils.findMethod("Class.forName(String)");
-    public static final Method THROWABLE_GET_MESSAGE =
-      ReflectUtils.findMethod("Throwable.getMessage()");
-    public static final Method DEFINE_CLASS =
-      ReflectUtils.findMethod("ClassLoader.defineClass(byte[], int, int)");
-    public static final Method BOOLEAN_VALUE =
-      ReflectUtils.findMethod("Boolean.booleanValue()");
-    public static final Method CHAR_VALUE =
-      ReflectUtils.findMethod("Character.charValue()");
-    public static final Method LONG_VALUE =
-      ReflectUtils.findMethod("Number.longValue()");
-    public static final Method DOUBLE_VALUE =
-      ReflectUtils.findMethod("Number.doubleValue()");
-    public static final Method FLOAT_VALUE =
-      ReflectUtils.findMethod("Number.floatValue()");
-    public static final Method INT_VALUE =
-      ReflectUtils.findMethod("Number.intValue()");
-    public static final Method MAP_PUT =
-      ReflectUtils.findMethod("java.util.Map.put(Object, Object)");
-    public static final Method MAP_GET =
-      ReflectUtils.findMethod("java.util.Map.get(Object)");
-    public static final Method STRING_LENGTH =
-      ReflectUtils.findMethod("String.length()");
-    public static final Method STRING_CHAR_AT =
-      ReflectUtils.findMethod("String.charAt(int)");
-    public static final Method MAP_KEY_SET =
-      ReflectUtils.findMethod("java.util.Map.keySet()");
+public class TestStringSwitch extends CodeGenTestCase {
+    private static int index = 0;
+
+    public static interface Indexed {
+        int getIndex(String word);
+    }
+
+    public void testSimple() {
+        String[] keys = new String[]{ "foo", "bar", "baz", "quud", "quick", "quip" };
+
+        Class created = create(keys);
+        Indexed test = (Indexed)ReflectUtils.newInstance(created);
+        assertTrue(test.getIndex("foo") == 'o');
+        assertTrue(test.getIndex("bar") == 'r');
+        assertTrue(test.getIndex("baz") == 'z');
+        assertTrue(test.getIndex("quud") == 'd');
+        assertTrue(test.getIndex("quick") == 'k');
+        assertTrue(test.getIndex("quip") == 'p');
+        assertTrue(test.getIndex("q") == 0);
+        assertTrue(test.getIndex("qu") == 0);
+        assertTrue(test.getIndex("fop") == 0);
+        assertTrue(test.getIndex("quicker") == 0);
+        assertTrue(test.getIndex("herby") == 0);
+        assertTrue(test.getIndex("herbyderby") == 0);
+        assertTrue(test.getIndex("") == 0);
+    }
+
+    public static Class create(String[] keys) {
+        return new Generator(keys).define();
+    }
+
+    private static class Generator extends CodeGenerator {
+        private String[] keys;
+
+        public Generator(String[] keys) {
+            super("TestStringSwitch" + index++,
+                  Object.class,
+                  TestStringSwitch.class.getClassLoader());
+            this.keys = keys;
+            addInterface(Indexed.class);
+        }
+
+        protected void generate() throws Exception {
+            null_constructor();
+
+            Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
+            begin_method(method);
+            load_arg(0);
+            string_switch(keys, new StringSwitchCallback() {
+                    public void processCase(String key, Label end) {
+                        push((int)key.charAt(key.length() - 1));
+                        goTo(end);
+                    }
+                    public void processDefault() {
+                        push(0);
+                    }
+                });
+            return_value();
+            end_method();
+        }
+    }
+
+    public TestStringSwitch(String testName) {
+        super(testName);
+    }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestStringSwitch.class);
+    }
 }
