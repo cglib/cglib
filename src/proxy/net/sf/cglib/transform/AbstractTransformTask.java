@@ -22,7 +22,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         String name = ClassNameReader.getClassName(getClassReader(file));
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
-            new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), true), t).generateClass(w);
+            new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), skipDebug()), t).generateClass(w);
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(w.toByteArray());
             fos.close();
@@ -30,6 +30,10 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
                 System.out.println("Enhancing class " + name);
             }
         }
+    }
+
+    protected boolean skipDebug() {
+        return false;
     }
 
     private static ClassReader getClassReader(File file) throws Exception {
