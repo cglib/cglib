@@ -870,12 +870,8 @@ public class ComplexOps {
         }
     }
 
-    public static void wrap_checked_exception(Block block, Type wrapper) {
+    public static void wrap_throwable(Block block, Type wrapper) {
         CodeEmitter e = block.getCodeEmitter();
-        e.catch_exception(block, Constants.TYPE_RUNTIME_EXCEPTION);
-        e.athrow();
-        e.catch_exception(block, Constants.TYPE_ERROR);
-        e.athrow();
         e.catch_exception(block, Constants.TYPE_THROWABLE);
         e.new_instance(wrapper);
         e.dup_x1();
