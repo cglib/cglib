@@ -68,8 +68,6 @@ abstract public class ParallelSorter extends SorterTemplate {
       ReflectUtils.findMethod("ParallelSorter.cglib_newInstance(Object[])");
     private static final Method SWAP_METHOD =
       ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
-    private static final Method COMPARE_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.compare(int, int)");
 
     protected Object[] a;
     private Comparer comparer;
