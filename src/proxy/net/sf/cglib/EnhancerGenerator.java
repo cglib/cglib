@@ -450,6 +450,7 @@ import java.util.*;
         */
         
         begin_static();
+        Object args = make_local();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
             String fieldName = getFieldName(i);
@@ -458,14 +459,14 @@ import java.util.*;
             push(method.getName());
             push_object(method.getParameterTypes());
             dup();
-            store_local("args");
+            store_local(args);
             invoke(MethodConstants.GET_DECLARED_METHOD);
             putfield(fieldName);
 
             String accessName = getAccessName(method, i);
             load_class_this();
             push(accessName);
-            load_local("args");
+            load_local(args);
             invoke(MethodConstants.GET_DECLARED_METHOD);
             invoke(MAKE_PROXY);
             putfield(accessName);
@@ -477,13 +478,13 @@ import java.util.*;
             dup();
             invoke_constructor(HashMap.class);
             putfield(CONSTRUCTOR_PROXY_MAP);
-            final String LOCAL_MAP = "map";
-            store_local(LOCAL_MAP);
+            Object map = make_local();
+            store_local(map);
             for (int i = 0, size = constructorList.size(); i < size; i++) {
                 Constructor constructor = (Constructor)constructorList.get(i);
                 Class[] types = constructor.getParameterTypes();
                 Class[] argTypes = (Class[])constructorTypes.get(i);
-                load_local(LOCAL_MAP);
+                load_local(map);
                 push(types);
                 invoke(NEW_CLASS_KEY);//key
                 load_class_this();

@@ -584,35 +584,20 @@ import java.util.*;
         }
     }
 
-    protected void iinc(String local, int amount) {
+    protected void iinc(Object local, int amount) {
         backend.iinc(getLocal(local), amount);
     }
 
-    protected void local_type(String name, Class type) {
-        localTypes.put(name, type);
+    protected void store_local(Object local) {
+        store_local((Class)localTypes.get(local), getLocal(local));
     }
 
-    protected void store_local(String name) {
-        Integer position = (Integer)locals.get(name);
-        if (position == null) {
-            position = new Integer(nextLocal);
-            locals.put(name, position);
-            Class type = (Class)localTypes.get(name);
-            nextLocal += (type == null) ? 1 : getStackSize(type);
-        }
-        store_local((Class)localTypes.get(name), position.intValue());
+    protected void load_local(Object local) {
+        load_local((Class)localTypes.get(local), getLocal(local));
     }
 
-    protected void load_local(String name) {
-        load_local((Class)localTypes.get(name), getLocal(name));
-    }
-
-    private int getLocal(String name) {
-        Integer position = (Integer)locals.get(name);
-        if (position == null) {
-            throw new IllegalArgumentException("unknown local " + name);
-        }
-        return position.intValue();
+    private int getLocal(Object local) {
+        return ((Integer)locals.get(local)).intValue();
     }
 
     protected void return_value() {
@@ -817,11 +802,15 @@ import java.util.*;
         return label;
     }
 
-    protected String anon_local() {
-        String local;
-        do {
-            local = PRIVATE_PREFIX + nextPrivateLocal++;
-        } while (locals.containsKey(local));
+    protected Object make_local() {
+        return make_local(null);
+    }
+
+    protected Object make_local(Class type) {
+        Object local = new Object();
+        locals.put(local, new Integer(nextLocal));
+        localTypes.put(local, type);
+        nextLocal += (type == null) ? 1 : getStackSize(type);
         return local;
     }
 
@@ -994,11 +983,10 @@ import java.util.*;
      */
     protected void process_array(Class type, ProcessArrayCallback callback) {
         Class compType = type.getComponentType();
-        String array = anon_local();
-        String loopvar = anon_local();
+        Object array = make_local();
+        Object loopvar = make_local(Integer.TYPE);
         String loopbody = anon_label();
         String checkloop = anon_label();
-        local_type(loopvar, Integer.TYPE);
         store_local(array);
         push(0);
         store_local(loopvar);
@@ -1027,12 +1015,11 @@ import java.util.*;
      */
     protected void process_arrays(Class clazz, ProcessArrayCallback callback) {
         Class compType = clazz.getComponentType();
-        String array1 = anon_local();
-        String array2 = anon_local();
-        String loopvar = anon_local();
+        Object array1 = make_local();
+        Object array2 = make_local();
+        Object loopvar = make_local(Integer.TYPE);
         String loopbody = anon_label();
         String checkloop = anon_label();
-        local_type(loopvar, Integer.TYPE);
         store_local(array1);
         store_local(array2);
         push(0);

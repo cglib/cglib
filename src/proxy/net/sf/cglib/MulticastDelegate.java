@@ -151,25 +151,27 @@ abstract public class MulticastDelegate implements Cloneable {
             begin_method(method);
             Class returnType = method.getReturnType();
             final boolean returns = returnType != Void.TYPE;
+            Object result = null;
             if (returns) {
-                local_type("result", returnType);
+                result = make_local(returnType);
                 zero_or_null(returnType);
-                store_local("result");
+                store_local(result);
             }
             load_this();
             super_getfield("delegates");
+            final Object result2 = result;
             process_array(Object[].class, new ProcessArrayCallback() {
                     public void processElement(Class type) {
                         checkcast(iface);
                         load_args();
                         invoke(method);
                         if (returns) {
-                            store_local("result");
+                            store_local(result2);
                         }
                     }
                 });
             if (returns) {
-                load_local("result");
+                load_local(result);
             }
             return_value();
             end_method();

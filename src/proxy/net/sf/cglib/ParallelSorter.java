@@ -196,8 +196,7 @@ abstract public class ParallelSorter extends SorterTemplate {
             for (int i = 0; i < classes.length; i++) {
                 Class type = classes[i];
                 Class component = type.getComponentType();
-                String T = anon_local();
-                local_type(T, type);
+                Object T = make_local(type);
 
                 load_this();
                 getfield(getFieldName(i));

@@ -292,10 +292,11 @@ public abstract class MetaClass  {
             MetaClass.class.getMethod("getPropertyValues", new Class[]{ Object.class });
            
         begin_method(getPropertyValues);   
-                   
+
+        Object bean = make_local();
         load_arg(0);
         checkcast(target);
-        store_local("bean");
+        store_local(bean);
         push(getters.length);
         newarray();
 
@@ -303,7 +304,7 @@ public abstract class MetaClass  {
             if( getters[i] != null ){    
                 dup();
                 push(i);
-                load_local("bean");
+                load_local(bean);
                 invoke(getters[i]);
                 box(getters[i].getReturnType());
                 aastore();
