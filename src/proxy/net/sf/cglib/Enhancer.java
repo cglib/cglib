@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.15 2003/01/12 13:14:52 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.16 2003/01/14 18:23:33 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -86,6 +86,9 @@ public class Enhancer {
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
+    private static final EnhancerClassKey classKeyFactory =
+      (EnhancerClassKey)KeyFactory.create(EnhancerClassKey.class, null);
+    
     private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
     // should be package-protected but causes problems on jdk1.2
@@ -93,6 +96,12 @@ public class Enhancer {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
                                   Class interceptor, boolean delegating, Object filter);
     }
+    
+    public interface EnhancerClassKey {
+        public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
+                                  Class interceptor, boolean delegating, Object filter, int flag );
+    }
+
     
     private Enhancer() {}
 
@@ -201,8 +210,46 @@ public class Enhancer {
                                loader, wreplace, filter );
     }
 
-    
-   
+    /*
+     * this method can be used to enhance class 
+     * without "default" constructor
+     *
+     */
+   //TODO: dublicated code 
+   public static Class enhanceClass( Class cls, Class[] interfaces, 
+                                      MethodInterceptor ih,
+                                      ClassLoader loader,
+                                      MethodFilter filter) {
+         
+      if (ih == null) {
+            throw new IllegalArgumentException("MethodInterceptor is null");
+        }
+
+        if (cls == null) {
+                cls = Object.class;
+        }
+
+        if (loader == null) {
+            loader = defaultLoader;
+        }
+        
+        Object classKey = classKeyFactory.newInstance(cls, interfaces, null,
+                                        ih.getClass(), false , filter, 0 );
+        Class result;
+        synchronized (cache) {
+            result = (Class)cache.get(loader, classKey);
+            if (result == null) {
+                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
+                String className = nameFactory.getNextName(cls);
+                result = new EnhancerGenerator(className, cls, interfaces,
+                                                     ih, loader, null, 
+                                                     false, filter).define();
+                cache.put( loader, classKey, result );
+                
+            }
+        }
+       return  result;                                    
+   }
     
     private static Object enhanceHelper(boolean delegating, Object obj,Class cls,
                                         Class[] interfaces, MethodInterceptor ih,
@@ -224,7 +271,10 @@ public class Enhancer {
             loader = defaultLoader;
         }
         
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating,filter);
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace,
+                                          ih.getClass(), delegating, filter );
+        Object classKey = classKeyFactory.newInstance(cls, interfaces, wreplace,
+                                        ih.getClass(), delegating, filter, 0 );
         Factory factory;
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
@@ -232,7 +282,9 @@ public class Enhancer {
                 Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
                 String className = nameFactory.getNextName(cls);
                 Class result = new EnhancerGenerator(className, cls, interfaces,
-                                                     ih, loader, wreplace, delegating, filter).define();
+                                                     ih, loader, wreplace, 
+                                                     delegating, filter).define();
+                cache.put( loader, classKey, result );
                 Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
                 factory = (Factory)ReflectUtils.newInstance(result, types, new Object[delegating ? 2 : 1]);
                 cache.put(loader, key, factory);

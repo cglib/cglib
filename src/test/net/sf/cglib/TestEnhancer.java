@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.16 2003/01/14 16:40:04 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.17 2003/01/14 18:23:56 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -439,11 +439,21 @@ public class TestEnhancer extends CodeGenTestCase {
         fail("conflicting interface return types should throw exception");
     }
     
-     public void test() throws Throwable{
+     public void testArgInit() throws Throwable{
     
-         Factory f = (Factory)Enhancer.enhance(ArgInit.class, null, TEST_INTERCEPTOR );
-         ArgInit a = (ArgInit)f.newInstance( new Class[]{  String.class }, new Object[]{"test"}, TEST_INTERCEPTOR );
+         Class f = Enhancer.enhanceClass(ArgInit.class, null, 
+                                      TEST_INTERCEPTOR, null, null );
+         ArgInit a = (ArgInit)ReflectUtils.newInstance(f, new Class[]{  String.class,MethodInterceptor.class }, 
+                                             new Object[]{"test", TEST_INTERCEPTOR } );
          assertEquals("test", a.toString() );
+         try{
+         
+             ((Factory)a).newInstance( new Class[]{  String.class, String.class },
+                                       new Object[]{"test"}, TEST_INTERCEPTOR );
+             fail("must throw exception");
+         }catch( IllegalArgumentException iae ){
+         
+         }
     }
    
 }
