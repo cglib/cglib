@@ -109,7 +109,7 @@ class FastClassEmitter extends ClassEmitter {
         final Method[] methods = (Method[])methodList.toArray(new Method[methodList.size()]);
         final Constructor[] constructors = (Constructor[])
           CollectionUtils.filter(
-               ReflectUtils.getDeclaredConstructorsPrivileged( type ),
+               type.getDeclaredConstructors(  ),
                vp
              );
         

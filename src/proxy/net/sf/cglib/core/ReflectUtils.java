@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.19 2004/02/08 15:09:18 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.20 2004/02/11 18:32:35 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -257,10 +257,6 @@ public class ReflectUtils {
         
         public static Object newInstance(final Constructor cstruct, final Object[] args) {
             
-            return  java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    
                     boolean flag = cstruct.isAccessible();
                     try {
                         cstruct.setAccessible(true);
@@ -275,7 +271,7 @@ public class ReflectUtils {
                     } finally {
                         cstruct.setAccessible(flag);
                     }
-                }});
+                
         }
         
         public static Constructor getConstructor(Class type, Class[] parameterTypes) {
@@ -350,42 +346,11 @@ public class ReflectUtils {
             }
         }
         
-        public static Method getDeclaredMethodPrivileged(final Class type,
-        final String methodName,
-        final Class[] parameterTypes)throws Exception{
-            
-            return  (Method)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedExceptionAction() {
-                public Object run() throws Exception{
-                    return type.getDeclaredMethod(methodName, parameterTypes);
-                    
-                }
-            }
-            );
-            
-        }
-        
-        public static Constructor[] getDeclaredConstructorsPrivileged(final Class type ){
-            
-            return  (Constructor[])java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    return type.getDeclaredConstructors();
-                    
-                }
-            }
-            );
-            
-        }
         
         
         public static Method findDeclaredMethod(final Class type,
         final String methodName, final Class[] parameterTypes)
         throws NoSuchMethodException {
-            try{
-                return  (Method)java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction() {
-                    public Object run() throws Exception{
                         
                         Class cl = type;
                         while (cl != null) {
@@ -396,26 +361,12 @@ public class ReflectUtils {
                             }
                         }
                         throw new NoSuchMethodException(methodName);
-                    }});
-            }catch(java.security.PrivilegedActionException pae){
-                if( pae.getException() instanceof NoSuchMethodException ){
-                    throw (NoSuchMethodException)pae.getException();
-                }else if( pae.getException() instanceof RuntimeException){
-                    throw (RuntimeException)pae.getException();
-                }else{
-                    throw new CodeGenerationException(pae.getException());
-                }
-                
-                
-            }
+            
         }
         
         public static List addAllMethods(final Class type, final List list) {
             
-            java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-                public Object run() {
-                    
+            
                     list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
                     Class superclass = type.getSuperclass();
                     if (superclass != null) {
@@ -425,10 +376,7 @@ public class ReflectUtils {
                     for (int i = 0; i < interfaces.length; i++) {
                         addAllMethods(interfaces[i], list);
                     }
-                    return null;
-                }
-                
-            });
+            
             return list;
         }
         
