@@ -289,19 +289,31 @@ abstract public class ParallelSorter extends SorterTemplate {
     static class LongComparer implements Comparer {
         private long[] a;
         public LongComparer(long[] a) { this.a = a; }
-        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+        public int compare(int i, int j) {
+            long vi = a[i];
+            long vj = a[j];
+            return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
+        }
     }
 
     static class FloatComparer implements Comparer {
         private float[] a;
         public FloatComparer(float[] a) { this.a = a; }
-        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+        public int compare(int i, int j) {
+            float vi = a[i];
+            float vj = a[j];
+            return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
+        }
     }
     
     static class DoubleComparer implements Comparer {
         private double[] a;
         public DoubleComparer(double[] a) { this.a = a; }
-        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+        public int compare(int i, int j) {
+            double vi = a[i];
+            double vj = a[j];
+            return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
+        }
     }
 
     static class ShortComparer implements Comparer {
