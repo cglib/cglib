@@ -28,15 +28,23 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         this.verbose = verbose;
     }
 
-    abstract protected ClassTransformer getClassTransformer(String name);
+    /**
+     * returns transformation for source class
+     *@param classInfo class information 
+     *  class name       := classInfo[ 0 ]
+     *  super class name := classInfo[ 1 ]
+     *  interfaces       := classInfo[ >1 ]                                     
+     */
+    abstract protected ClassTransformer getClassTransformer( String[] classInfo);
 
     protected Attribute[] attributes() {
         return null;
     }
 
     protected void processFile(File file) throws Exception {
+        
         ClassReader reader = getClassReader(file);
-        String name = ClassNameReader.getClassName(reader);
+        String name[] = ClassNameReader.getClassInfo(reader);
         int[] version = reader.getVersion();
         ClassWriter w = new DebuggingClassWriter(true, version[0], version[1]);
         ClassTransformer t = getClassTransformer(name);
