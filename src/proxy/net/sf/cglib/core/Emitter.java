@@ -63,7 +63,7 @@ import org.objectweb.asm.CodeVisitor;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-abstract public class Emitter {
+public class Emitter {
     private String className;
     private Class superclass;
 
@@ -86,6 +86,10 @@ abstract public class Emitter {
 //     }
 
     public Emitter() {
+    }
+
+    public Emitter(ClassVisitor v) {
+        setClassVisitor(v);
     }
 
     public void setClassName(String className) {

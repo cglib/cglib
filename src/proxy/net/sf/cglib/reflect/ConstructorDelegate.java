@@ -54,68 +54,83 @@
 package net.sf.cglib.reflect;
 
 import java.lang.reflect.*;
-import net.sf.cglib.*;
-import net.sf.cglib.core.KeyFactory;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.2 2003/09/14 17:14:04 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.3 2003/09/14 21:10:38 herbyderby Exp $
  */
-public abstract class ConstructorDelegate {
-    private static final FactoryCache CACHE = new FactoryCache(ConstructorDelegate.class);
+public class ConstructorDelegate extends AbstractClassGenerator {
+    private static final Source SOURCE = new Source(ConstructorDelegate.class, true);
     private static final ConstructorKey KEY_FACTORY =
       (ConstructorKey)KeyFactory.create(ConstructorKey.class);
+    private Class iface;
+    private Class delegate;
     
     interface ConstructorKey {
         public Object newInstance(Class declaring, Class iface);
     }
 
-    protected ConstructorDelegate() {
-    }
-   
-    public static Object create(Class declaring, Class iface) {
-        return create(declaring, iface, declaring.getClassLoader());
-    }
-    
-    public static Object create(final Class declaring, final Class iface, ClassLoader loader) {
-        Object key = KEY_FACTORY.newInstance(declaring, iface);
-        return CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new Generator(declaring, iface);
-            }
-        });
+    public ConstructorDelegate() {
+        super(SOURCE);
     }
 
-    private static class Generator extends CodeGenerator {
-        private Constructor constructor;
-        private Method newInstance;
+    public static Object create(Class delegate, Class iface) {
+        ConstructorDelegate gen = new ConstructorDelegate();
+        gen.setDelegate(delegate);
+        gen.setInterface(iface);
+        return gen.create();
+    }
 
-        public Generator(Class declaring, Class iface) {
-            try {
-                newInstance = ReflectUtils.findNewInstance(iface);
-                if (!newInstance.getReturnType().isAssignableFrom(declaring)) {
-                    throw new IllegalArgumentException("incompatible return type");
-                }
-                constructor = declaring.getDeclaredConstructor(newInstance.getParameterTypes());
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("interface does not match any known constructor");
-            }
-            setSuperclass(ConstructorDelegate.class);
-            setNamePrefix(declaring.getName());
-            addInterface(newInstance.getDeclaringClass());
+    public void setInterface(Class iface) {
+        this.iface = iface;
+    }
+
+    public void setDelegate(Class delegate) {
+        this.delegate = delegate;
+    }
+
+    public Object create() {
+        return super.create(KEY_FACTORY.newInstance(iface, delegate));
+    }
+
+    protected ClassLoader getDefaultClassLoader() {
+        return delegate.getClassLoader();
+    }
+
+    public void generateClass(ClassVisitor v) {
+        setNamePrefix(delegate.getName());
+
+        Method newInstance = ReflectUtils.findNewInstance(iface);
+        if (!newInstance.getReturnType().isAssignableFrom(delegate)) {
+            throw new IllegalArgumentException("incompatible return type");
+        }
+        Constructor constructor;
+        try {
+            constructor = delegate.getDeclaredConstructor(newInstance.getParameterTypes());
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException("interface does not match any known constructor");
         }
 
-        protected void generate() {
-            null_constructor();
+        Emitter e = new Emitter(v);
+        e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ iface });
+        Virt.null_constructor(e);
+        e.begin_method(newInstance);
+        e.new_instance(constructor.getDeclaringClass());
+        e.dup();
+        e.load_args();
+        e.invoke(constructor);
+        e.return_value();
+        e.end_method();
+        e.end_class();
+    }
 
-            begin_method(newInstance);
-            new_instance(constructor.getDeclaringClass());
-            dup();
-            load_args();
-            invoke(constructor);
-            return_value();
-            end_method();
-        }
+    protected Object firstInstance(Class type) {
+        return ReflectUtils.newInstance(type);
+    }
+
+    protected Object nextInstance(Object instance) {
+        return instance;
     }
 }

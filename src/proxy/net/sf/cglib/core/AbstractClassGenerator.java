@@ -113,7 +113,7 @@ implements ClassGenerator
         this.className = className;
     }
 
-    public void setNamePrefix(String namePrefix) {
+    protected void setNamePrefix(String namePrefix) {
         this.namePrefix = namePrefix;
     }
 
