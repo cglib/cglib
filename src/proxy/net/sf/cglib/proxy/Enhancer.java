@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.25 2002/11/01 07:13:09 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.26 2002/11/01 20:12:03 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -375,30 +375,6 @@ public class Enhancer implements ClassFileConstants {
             il.append( new ARETURN() );
             cg.addMethod(ClassFileUtils.getMethod(getInterceptor));
             
-            //serialization support
-            il = new InstructionList();
-            MethodGen writeReplace = new MethodGen(ACC_PRIVATE, // access flags
-            Type.OBJECT, // return type
-            new Type[] {}, null, // arg names
-            "writeReplace", cg.getClassName(), il, cp);
-            
-            int wreplaceIndex ;
-            if( wreplace == null ){
-               wreplaceIndex = addWriteReplace(cp);
-            }else{
-               //signature : "(Ljava/lang/Object;)Ljava/lang/Object;");
-               wreplaceIndex = cp.addMethodref( 
-                 wreplace.getDeclaringClass().getName(),wreplace.getName(),  
-                   "(Ljava/lang/Object;)Ljava/lang/Object;"
-                 );
-            }
-            
-            il.append(new ALOAD(0));
-            il.append(new INVOKESTATIC( wreplaceIndex ) );
-            il.append(new ARETURN());
-            
-            cg.addMethod(ClassFileUtils.getMethod(writeReplace));
-            
             
             
     }
@@ -456,6 +432,7 @@ public class Enhancer implements ClassFileConstants {
                 addDeclaredMethods(allMethods, interfaces[j]);
             }
         }
+        boolean declaresWriteReplace = false;
         
         for (java.util.Iterator i = allMethods.iterator(); i.hasNext(); ) {
             
@@ -464,6 +441,11 @@ public class Enhancer implements ClassFileConstants {
             if (!java.lang.reflect.Modifier.isStatic(mod)
             && !java.lang.reflect.Modifier.isFinal(mod)
             &&  ClassFileUtils.isVisible( m , packageName )   ) {
+                
+                if( m.getName().equals("writeReplace") && 
+                    m.getParameterTypes().length == 0   ){
+                 declaresWriteReplace = true;
+                }
                 
                 methodSet.add(new MethodWrapper(m));
             }
@@ -477,6 +459,35 @@ public class Enhancer implements ClassFileConstants {
             cg.addMethod(generateMethod(method, fieldName, cg,  after, invokeSuper));
             methodTable.put(fieldName, method);
         }
+        
+       if(! declaresWriteReplace ){ 
+         //serialization support
+          InstructionList  il = new InstructionList();
+            MethodGen writeReplace = new MethodGen(ACC_PRIVATE, // access flags
+            Type.OBJECT, // return type
+            new Type[] {}, null, // arg names
+            "writeReplace", cg.getClassName(), il, cp);
+            
+            int wreplaceIndex ;
+            if( wreplace == null ){
+               wreplaceIndex = addWriteReplace(cp);
+            }else{
+               //signature : "(Ljava/lang/Object;)Ljava/lang/Object;");
+               wreplaceIndex = cp.addMethodref( 
+                 wreplace.getDeclaringClass().getName(),wreplace.getName(),  
+                   "(Ljava/lang/Object;)Ljava/lang/Object;"
+                 );
+            }
+            
+            il.append(new ALOAD(0));
+            il.append(new INVOKESTATIC( wreplaceIndex ) );
+            il.append(new ARETURN());
+            
+            cg.addMethod(ClassFileUtils.getMethod(writeReplace));
+            
+       }  
+        
+        
         
         generateClInit(cg, cp, methodTable);
         
@@ -517,7 +528,7 @@ public class Enhancer implements ClassFileConstants {
     ClassGen cg,
     int after,
     int invokeSuper) {
-        
+    
         InstructionList il = new InstructionList();
         InstructionFactory factory = new InstructionFactory(cg);
         ConstantPoolGen cp = cg.getConstantPool();
