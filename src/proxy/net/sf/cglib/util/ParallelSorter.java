@@ -328,9 +328,5 @@ abstract public class ParallelSorter extends SorterTemplate {
         protected Object nextInstance(Object instance) {
             return ((ParallelSorter)instance).newInstance(arrays);
         }
-
-        private static void validate(Class[] classes) {
-            if (classes.length == 0) {
-        }
     }
 }
