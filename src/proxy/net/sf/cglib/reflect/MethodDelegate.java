@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.15 2003/10/03 19:25:06 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.16 2003/10/03 23:20:30 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -272,7 +272,7 @@ abstract public class MethodDelegate {
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(Type.getType(method.getDeclaringClass()));
             e.load_args();
-            ReflectOps.invoke(e, method);
+            e.invoke(method);
             e.return_value();
             e.end_method();
 

@@ -167,7 +167,7 @@ class FastClassEmitter extends ClassEmitter {
                     e.unbox(types[i]);
                 }
                 if (member instanceof Method) {
-                    ReflectOps.invoke(e, (Method)member);
+                    e.invoke((Method)member);
                     e.box(Type.getType(((Method)member).getReturnType()));
                 } else {
                     e.invoke_constructor(Type.getType(member.getDeclaringClass()), sig);

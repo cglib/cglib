@@ -53,6 +53,7 @@
  */
 package net.sf.cglib.core;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -106,6 +107,8 @@ public class ComplexOps {
       TypeUtils.parseSignature("int length()");
     private static final Signature SET_LENGTH =
       TypeUtils.parseSignature("void setLength(int)");
+    private static final Signature GET_DECLARED_METHOD =
+      TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
 
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
@@ -676,5 +679,12 @@ public class ComplexOps {
             this.inside = inside;
             this.after = after;
         }
+    }
+
+    public static void load_method(CodeEmitter e, Method method) {
+        load_class(e, Type.getType(method.getDeclaringClass()));
+        e.push(method.getName());
+        push_object(e, method.getParameterTypes());
+        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
     }
 }

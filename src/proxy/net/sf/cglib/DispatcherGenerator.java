@@ -82,7 +82,7 @@ class DispatcherGenerator implements CallbackGenerator {
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();
-                ReflectOps.invoke(e, method);
+                e.invoke(method);
                 e.return_value();
                 e.end_method();
             }
