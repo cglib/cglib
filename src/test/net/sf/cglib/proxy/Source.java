@@ -5,6 +5,9 @@ import junit.framework.TestCase;
 
 public abstract class Source {
     
+    public static class CheckedException1 extends Exception{}
+    public static class CheckedException2 extends Exception{}
+
 
     public Source() {
     }
@@ -30,8 +33,8 @@ public abstract class Source {
     
     abstract void abstractMethod();
     
-    public void throwChecked()throws ClassCastException{
-      throw new ClassCastException();
+    public void throwChecked()throws CheckedException1{
+      throw new CheckedException1();
     }
     
     public synchronized void synchronizedMethod(){}
