@@ -481,4 +481,62 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         return_value();
         end_method();
     }
+
+    public interface ProcessSwitchCallback {
+        void processCase(int index, Label end);
+        void processDefault();
+    }
+
+    // TODO: determine what value javac uses
+    private static final float MIN_TABLESWITCH_DENSITY = 0.5f;
+
+    // TODO: provide switch capabilities in BasicCodeGenerator?
+    protected void process_switch(int[] keys, ProcessSwitchCallback callback) {
+        // TODO: should we make a copy?
+        Arrays.sort(keys);
+        int len = keys.length;
+        int min = keys[0];
+        int max = keys[len - 1];
+        int range = max - min + 1;
+        float density = (float)len / range;
+        boolean useTable = density >= MIN_TABLESWITCH_DENSITY;
+
+        Label start = make_label();
+        Label def = make_label();
+        Label end = make_label();
+        goTo(start);
+
+        Label[] labels;
+        if (useTable) {
+            labels = new Label[range];
+            Arrays.fill(labels, def);
+            for (int i = 0; i < len; i++) {
+                labels[keys[i] - min] = make_label();
+            }
+            for (int i = 0; i < range; i++) {
+                Label label = labels[i];
+                if (label != def) {
+                    mark(label);
+                    callback.processCase(i + min, end);
+                }
+            }
+        } else {
+            labels = new Label[len];
+            for (int i = 0; i < len; i++) {
+                mark(labels[i] = make_label());
+                callback.processCase(keys[i], end);
+            }
+        }
+
+        mark(def);
+        callback.processDefault();
+        goTo(end);
+        mark(start);
+        if (useTable) {
+            getBackend().emit_switch(min, max, labels, def);
+        } else {
+            getBackend().emit_switch(keys, labels, def);
+        }
+        mark(end);
+    }
 }

@@ -53,40 +53,82 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Method;
+import java.util.*;
+import net.sf.cglib.util.*;
 import junit.framework.*;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.16 2003/06/14 00:45:55 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestSwitch extends CodeGenTestCase {
+    private static int index = 0;
+
+    public static interface Alphabet {
+        String getLetter(int index);
+    }
+
+    public void testAlphabet() {
+        int[] keys = new int[26];
+    
+        for (int i = 0; i < 26; i++) {
+            keys[i] = i + 1;
+        }
+        String[] letters = new String[] {
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "k", "j", "l", "m",
+            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+        };
+
+        Class created = create(keys, letters);
+        Alphabet alpha = (Alphabet)ReflectUtils.newInstance(created);
+        assertTrue("c".equals(alpha.getLetter(3)));
+        assertTrue("f".equals(alpha.getLetter(6)));
+        assertTrue("!".equals(alpha.getLetter(27)));
+    }
+
+    public static Class create(int[] keys, String[] values) {
+        return new Generator(keys, values).define();
+    }
+
+    private static class Generator extends CodeGenerator {
+        private int[] keys;
+        private String[] values;
+
+        public Generator(int[] keys, String[] values) {
+            super("TestSwitch" + index++,
+                  Object.class,
+                  TestSwitch.class.getClassLoader());
+            this.keys = keys;
+            this.values = values;
+            addInterface(Alphabet.class);
+        }
+
+        protected void generate() throws Exception {
+            null_constructor();
+
+            Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
+            begin_method(method);
+            load_arg(0);
+            process_switch(keys, new ProcessSwitchCallback() {
+                    public void processCase(int index, Label end) {
+                        push(values[index - 1]);
+                        goTo(end);
+                    }
+                    public void processDefault() {
+                        push("!");
+                    }
+                });
+            return_value();
+            end_method();
+        }
+    }
+
+    public TestSwitch(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestInterface.suite());
-        suite.addTest(TestSwitch.suite());
-           
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestSwitch.class);
     }
 }
-
