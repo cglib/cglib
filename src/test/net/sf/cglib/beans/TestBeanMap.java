@@ -117,6 +117,10 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(map.getPropertyType("kdkkj") == null);
     }
 
+    // TODO: test different package
+    // TODO: test class only (instance delayed)
+    // TODO: test toString
+
     public TestBeanMap(String testName) {
         super(testName);
     }
