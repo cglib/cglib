@@ -72,8 +72,7 @@ public class Emitter2 {
     public static final int OP_AND = Constants.IAND;
     public static final int OP_OR = Constants.IOR;
 
-    private static final Type OBJECT_TYPE = Type.getType(Object.class);
-    private static final Type[] EMPTY_PARAMS = {};
+
 
     // current class
     private ClassVisitor classv;
@@ -204,7 +203,7 @@ public class Emitter2 {
                     type = Type.DOUBLE_TYPE;
                     break;
                 default:
-                    type = OBJECT_TYPE;
+                    type = Types.OBJECT;
                 }
                 cv.visitVarInsn(opcode, remapLocal(var, type));
             }
@@ -229,8 +228,9 @@ public class Emitter2 {
         if (local == null) {
             local = make_local(type);
         }
-        if (!local.getType().equals(type)) {
-            throw new IllegalStateException("Remapped local has different type");
+        
+        if (local.getType().getOpcode(Constants.ISTORE) != type.getOpcode(Constants.ISTORE)) {
+            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") requires different opcode: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
         }
         // System.err.println("remapping " + index + " --> " + local.getIndex());
         return local.getIndex();
@@ -463,7 +463,7 @@ public class Emitter2 {
     }
 
     public void newarray() {
-        newarray(OBJECT_TYPE);
+        newarray(Types.OBJECT);
     }
 
     public void newarray(Type type) {
@@ -545,7 +545,6 @@ public class Emitter2 {
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
-        closeMethod();
         if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
@@ -659,7 +658,7 @@ public class Emitter2 {
     }
 
     public void invoke_constructor(Type type) {
-        invoke_constructor(type, EMPTY_PARAMS);
+        invoke_constructor(type, Types.EMPTY);
     }
 
     // TODO: change to signature variant
@@ -675,7 +674,7 @@ public class Emitter2 {
     }
 
     public void super_invoke_constructor() {
-        invoke_constructor(superType, EMPTY_PARAMS);
+        invoke_constructor(superType, Types.EMPTY);
     }
     
     public void super_invoke_constructor(Type[] argumentTypes) {
@@ -683,7 +682,7 @@ public class Emitter2 {
     }
     
     public void invoke_constructor_this() {
-        invoke_constructor_this(EMPTY_PARAMS);
+        invoke_constructor_this(Types.EMPTY);
     }
     
     public void invoke_constructor_this(Type[] argumentTypes) {
@@ -787,7 +786,7 @@ public class Emitter2 {
     }
     
     public Local2 make_local() {
-        return make_local(OBJECT_TYPE);
+        return make_local(Types.OBJECT);
     }
     
     public Local2 make_local(Type type) {
@@ -802,7 +801,7 @@ public class Emitter2 {
     }
     
     public void checkcast(Type type) {
-        if (!type.equals(OBJECT_TYPE)) {
+        if (!type.equals(Types.OBJECT)) {
             emit_type(Constants.CHECKCAST, type);
         }
     }
