@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.44 2004/04/25 16:15:21 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.45 2004/05/05 06:15:29 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -716,5 +716,31 @@ public class TestEnhancer extends CodeGenTestCase {
            fail("Memory leak caused by Enhancer");
          }
     }
-    
+
+    public void testCallbackHelper() {
+        final ArgInit delegate = new ArgInit("helper");
+        Class sc = ArgInit.class;
+        Class[] interfaces = new Class[]{ DI1.class, DI2.class };
+
+        CallbackHelper helper = new CallbackHelper(sc, interfaces) {
+            protected Object getCallback(final Method method) {
+                return new FixedValue() {
+                    public Object loadObject() {
+                        return "You called method " + method.getName();
+                    }
+                };
+            }
+        };
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(sc);
+        e.setInterfaces(interfaces);
+        e.setCallbacks(helper.getCallbacks());
+        e.setCallbackFilter(helper);
+
+        ArgInit proxy = (ArgInit)e.create(new Class[]{ String.class }, new Object[]{ "whatever" });
+        assertEquals("You called method toString", proxy.toString());
+        assertEquals("You called method herby", ((DI1)proxy).herby());
+        assertEquals("You called method derby", ((DI2)proxy).derby());
+    }
 }
