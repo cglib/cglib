@@ -65,9 +65,9 @@ public class ASMBackend implements CodeGeneratorBackend {
     public void init(BasicCodeGenerator gen) {
         cw = new ClassWriter(true);
         cw.visit(gen.getClassModifiers(),
-                 ASMUtils.getInternalName(gen.getClassName()),
-                 ASMUtils.getInternalName(gen.getSuperclass()),
-                 ASMUtils.getInternalNames(gen.getInterfaces()),
+                 getInternalName(gen.getClassName()),
+                 getInternalName(gen.getSuperclass()),
+                 getInternalNames(gen.getInterfaces()),
                  Constants.SOURCE_FILE);
     }
     
@@ -93,7 +93,7 @@ public class ASMBackend implements CodeGeneratorBackend {
     }
     
     public void emit_type(int opcode, String className) {
-        cv.visitTypeInsn(opcode, ASMUtils.getInternalName(className));
+        cv.visitTypeInsn(opcode, getInternalName(className));
     }
     
     public void emit_int(int opcode, int value) {
@@ -102,9 +102,9 @@ public class ASMBackend implements CodeGeneratorBackend {
     
     public void emit_field(int opcode, String className, String fieldName, Class type) {
         cv.visitFieldInsn(opcode,
-                          ASMUtils.getInternalName(className),
+                          getInternalName(className),
                           fieldName,
-                          ASMUtils.getDescriptor(type));
+                          getInternalName(ReflectUtils.getDescriptor(type)));
     }
 
     public Label make_label() {
@@ -125,27 +125,27 @@ public class ASMBackend implements CodeGeneratorBackend {
         cv.visitTryCatchBlock(convertLabel(block.getStart()),
                               convertLabel(block.getEnd()),
                               convertLabel(mark()),
-                              ASMUtils.getInternalName(exceptionType));
+                              getInternalName(exceptionType));
     }
 
     public void begin_constructor(Class[] parameterTypes) {
         cv = cw.visitMethod(Modifier.PUBLIC,
                             Constants.CONSTRUCTOR_NAME,
-                            ASMUtils.getMethodDescriptor(Void.TYPE, parameterTypes),
+                            getInternalName(ReflectUtils.getMethodDescriptor(Void.TYPE, parameterTypes)),
                             null);
     }
 
     public void begin_method(int modifiers, Class returnType, String name, Class[] parameterTypes, Class[] exceptionTypes) {
         cv = cw.visitMethod(modifiers, // ASM modifier constants are same as JDK
                             name,
-                            ASMUtils.getMethodDescriptor(returnType, parameterTypes),
-                            ASMUtils.getInternalNames(exceptionTypes));
+                            getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)),
+                            getInternalNames(exceptionTypes));
     }
 
     public void begin_static() {
         cv = cw.visitMethod(Modifier.STATIC,
                             Constants.STATIC_NAME,
-                            ASMUtils.getMethodDescriptor(Void.TYPE, Constants.TYPES_EMPTY),
+                            getInternalName(ReflectUtils.getMethodDescriptor(Void.TYPE, Constants.TYPES_EMPTY)),
                             null);
     }
 
@@ -159,13 +159,13 @@ public class ASMBackend implements CodeGeneratorBackend {
                             Class returnType,
                             Class[] parameterTypes) {
         cv.visitMethodInsn(opcode,
-                           ASMUtils.getInternalName(className),
+                           getInternalName(className),
                            methodName,
-                           ASMUtils.getMethodDescriptor(returnType, parameterTypes));
+                           getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)));
     }
 
     public void declare_field(int modifiers, Class type, String name) {
-        cw.visitField(modifiers, name, ASMUtils.getDescriptor(type), null);
+        cw.visitField(modifiers, name, getInternalName(ReflectUtils.getDescriptor(type)), null);
     }
 
     public void emit_iinc(int index, int amount) {
@@ -198,5 +198,23 @@ public class ASMBackend implements CodeGeneratorBackend {
             converted[i] = convertLabel(labels[i]);
         }
         return converted;
+    }
+
+    private static String getInternalName(Class type) {
+        return getInternalName(type.getName());
+    }
+
+    private static String getInternalName(String className) {
+        return (className == null) ? null : className.replace('.', '/');
+    }
+
+    private static String[] getInternalNames(Class[] classes) {
+        if (classes == null)
+            return null;
+        String[] copy = new String[classes.length];
+        for (int i = 0; i < copy.length; i++) {
+            copy[i] = getInternalName(classes[i]);
+        }
+        return copy;
     }
 }
