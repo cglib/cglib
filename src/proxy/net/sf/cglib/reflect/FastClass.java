@@ -53,40 +53,60 @@
  */
 package net.sf.cglib.reflect;
 
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 abstract public class FastClass
 {
-    private static final FactoryCache CACHE = new FactoryCache(FastClass.class);
-
     private Class type;
 
     protected FastClass(Class type) {
         this.type = type;
     }
-
     public static FastClass create(Class type) {
-        return create(type, null);
+        Generator gen = new Generator();
+        gen.setType(type);
+        return gen.create();
     }
 
-    public static FastClass create(final Class type, ClassLoader loader) {
-        if (loader == null) {
-            loader = type.getClassLoader();
+    public static class Generator extends CodeGenerator
+    {
+        private static final Source SOURCE = new Source(FastClass.class, true);
+        private Class type;
+        
+        public Generator() {
+            super(SOURCE);
         }
-        return (FastClass)CACHE.get(loader, type, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new FastClassGenerator(type);
-            }
-            public Object newFactory(Class ftype) {
-                return ReflectUtils.newInstance(ftype,
-                                                new Class[]{ Class.class },
-                                                new Object[]{ type });
-            }
-        });
-    }
 
+        public void setType(Class type) {
+            this.type = type;
+            setPackageName(ReflectUtils.getPackageName(type));
+        }
+        
+        public FastClass create() {
+            return (FastClass)super.create(type);
+        }
+
+        protected ClassLoader getDefaultClassLoader() {
+            return type.getClassLoader();
+        }
+
+        protected byte[] getBytes() throws Exception {
+            return new FastClassEmitter(getClassName(), type).getBytes();
+        }
+
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type,
+                                            new Class[]{ Class.class },
+                                            new Object[]{ this.type });
+        }
+
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
+    }
+    
     // TODO: change throws clause
     public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws Throwable {
         return invoke(getIndex(name, parameterTypes), obj, args);

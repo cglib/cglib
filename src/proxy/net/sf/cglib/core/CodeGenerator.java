@@ -66,11 +66,11 @@ abstract public class CodeGenerator
     private Source source;
     private ClassLoader classLoader;
 
-    // TODO: make these package-protected so emitter can access them?
     private String className;
+    private String packageName;
     private Class superclass;
-    private Class[] interfaces;
     private boolean used;
+    private int counter;
 
     static {
         debugLocation = System.getProperty("cglib.debugLocation");
@@ -106,20 +106,16 @@ abstract public class CodeGenerator
         this.superclass = superclass;
     }
 
-    protected void setInterfaces(Class[] interfaces) {
-        this.interfaces = interfaces;
-    }
-
     protected Class getSuperclass() {
         return superclass;
     }
 
-    protected Class[] getInterfaces() {
-        return interfaces;
-    }
-
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
     }
 
     // TODO: pluggable policy?
@@ -128,9 +124,23 @@ abstract public class CodeGenerator
             return className;
         } else {
             // TODO: use package of interface if applicable
-            return ((superclass != null) ? superclass : Object.class).getName()
-                + "$$" + ReflectUtils.getNameWithoutPackage(source.type)
-                + "ByCGLIB$$" + source.counter++;
+            StringBuffer sb = new StringBuffer();
+            if (superclass == null) {
+                if (packageName == null) {
+                    sb.append("net.sf.cglib.Object");
+                } else {
+                    sb.append(packageName).append('.').append("Object");
+                }
+            } else if (packageName != null) {
+                sb.append(packageName).append('.').append(ReflectUtils.getNameWithoutPackage(superclass));
+            } else {
+                sb.append(superclass.getName());
+            }
+            sb.append("$$");
+            sb.append(ReflectUtils.getNameWithoutPackage(source.type));
+            sb.append("ByCGLIB$$");
+            sb.append(counter);
+            return sb.toString();
         }
     }
 
@@ -141,29 +151,36 @@ abstract public class CodeGenerator
     // TODO: pluggable policy?
     protected ClassLoader getClassLoader() {
         ClassLoader t = classLoader;
-        if (t != null) {
-            return t;
+//         t = Thread.currentThread().getContextClassLoader();
+//         if (t != null) {
+//             return t;
+//         }
+
+        if (t == null) {
+            t = getDefaultClassLoader();
         }
-        if (superclass != null) {
+        if (t == null && superclass != null) {
             t = superclass.getClassLoader();
         }
-        if (t != null) {
-            return t;
+        if (t == null) {
+            t = getClass().getClassLoader();
         }
-        t = getClass().getClassLoader();
-        if (t != null) {
-            return t;
+        if (t == null) {
+            throw new IllegalStateException("Cannot determine classloader");
         }
-        throw new IllegalStateException("Cannot determine classloader");
-        // return Thread.currentThread().getContextClassLoader();
+        return t;
+    }
+
+    protected ClassLoader getDefaultClassLoader() {
+        return null;
     }
 
     protected Object create(Object key) {
         used();
         try {
             Object factory = null;
-            boolean isNew = false;
             synchronized (source) {
+                counter = source.counter++;
                 ClassLoader loader = getClassLoader();
                 Map cache2 = null;
                 if (source.cache != null) {
@@ -174,15 +191,16 @@ abstract public class CodeGenerator
                         source.cache.put(loader, cache2 = new HashMap());
                     }
                 }
-                isNew = factory == null;
-                if (isNew) {
-                    factory = newFactory(defineClass(source.defineClass, getClassName(), generate(), loader));
+                if (factory == null) {
+                    byte[] bytes = getBytes();
+                    factory = firstInstance(defineClass(source.defineClass, getClassName(), bytes, loader));
                     if (cache2 != null) {
                         cache2.put(key, factory);
                     }
+                    return factory;
                 }
             }
-            return newInstance(factory, isNew);
+            return nextInstance(factory);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -192,9 +210,9 @@ abstract public class CodeGenerator
         }
     }
 
-    abstract protected byte[] generate() throws Exception;
-    abstract protected Object newFactory(Class type) throws Exception;
-    abstract protected Object newInstance(Object factory, boolean isNew);
+    abstract protected byte[] getBytes() throws Exception;
+    abstract protected Object firstInstance(Class type) throws Exception;
+    abstract protected Object nextInstance(Object factory) throws Exception;
 
     private static Class defineClass(Method m, String className, byte[] b, ClassLoader loader) throws Exception {
         if (debugLocation != null) {

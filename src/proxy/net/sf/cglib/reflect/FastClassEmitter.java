@@ -53,12 +53,11 @@
  */
 package net.sf.cglib.reflect;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
     
-class FastClassGenerator extends CodeGenerator {
+class FastClassEmitter extends Emitter {
     private static final Method METHOD_GET_INDEX =
       ReflectUtils.findMethod("FastClass.getIndex(String, Class[])");
     private static final Method SIGNATURE_GET_INDEX =
@@ -73,13 +72,13 @@ class FastClassGenerator extends CodeGenerator {
 
     private final Class type;
         
-    public FastClassGenerator(Class type) {
+    public FastClassEmitter(String className, Class type) {
+        setClassName(className);
         setSuperclass(FastClass.class);
-        setNamePrefix(type.getName());
         this.type = type;
     }
-        
-    public void generate() throws Exception {
+
+    public byte[] getBytes() throws Exception {
         // constructor
         begin_constructor(CONSTRUCTOR_TYPES);
         load_this();
@@ -104,7 +103,10 @@ class FastClassGenerator extends CodeGenerator {
             }
         });
         load_arg(0);
-        string_switch((String[])signatures.toArray(new String[0]), SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        Virt.string_switch(this,
+                           (String[])signatures.toArray(new String[0]),
+                           Virt.SWITCH_STYLE_HASH,
+                           new Virt.ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf
                 push(signatures.indexOf(key));
@@ -120,13 +122,13 @@ class FastClassGenerator extends CodeGenerator {
         // getIndex(String, Class[])
         begin_method(METHOD_GET_INDEX);
         load_args();
-        method_switch(methods, new GetIndexCallback(methods));
+        Virt.method_switch(this, methods, new GetIndexCallback(methods));
         end_method();
 
         // getIndex(Class[])
         begin_method(CONSTRUCTOR_GET_INDEX);
         load_args();
-        constructor_switch(constructors, new GetIndexCallback(constructors));
+        Virt.constructor_switch(this, constructors, new GetIndexCallback(constructors));
         end_method();
 
         // invoke(int, Object, Object[])
@@ -134,24 +136,7 @@ class FastClassGenerator extends CodeGenerator {
         load_arg(1);
         checkcast(type);
         load_arg(0);
-        process_switch(getIntRange(methods.length), new ProcessSwitchCallback() {
-            public void processCase(int key, Label end) {
-                Method method = methods[key];
-                // checkcast(method.getDeclaringClass());
-                Class[] types = method.getParameterTypes();
-                for (int i = 0; i < types.length; i++) {
-                    load_arg(2);
-                    aaload(i);
-                    unbox(types[i]);
-                }
-                invoke(method);
-                box(method.getReturnType());
-                return_value();
-            }
-            public void processDefault() {
-                throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
-            }
-        });
+        invokeSwitchHelper(methods, 2);
         end_method();
 
         // newInstance(int, Object[])
@@ -159,27 +144,40 @@ class FastClassGenerator extends CodeGenerator {
         new_instance(type);
         dup();
         load_arg(0);
-        process_switch(getIntRange(constructors.length), new ProcessSwitchCallback() {
+        invokeSwitchHelper(constructors, 1);
+        end_method();
+
+        return super.getBytes();
+    }
+
+    private void invokeSwitchHelper(final Object[] members, final int arg) throws Exception {
+        process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                Constructor constructor = constructors[key];
-                Class[] types = constructor.getParameterTypes();
+                Member member = (Member)members[key];
+                Class[] types = ReflectUtils.getParameterTypes(member);
                 for (int i = 0; i < types.length; i++) {
-                    load_arg(1);
+                    load_arg(arg);
                     aaload(i);
-                    unbox(types[i]);
+                    Virt.unbox(FastClassEmitter.this, types[i]);
                 }
-                invoke(constructor);
+                if (member instanceof Method) {
+                    invoke((Method)member);
+                    Virt.box(FastClassEmitter.this, ((Method)member).getReturnType());
+                } else {
+                    invoke((Constructor)member);
+                }
                 return_value();
             }
             public void processDefault() {
-                throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
+                Virt.throw_exception(FastClassEmitter.this,
+                                     NoSuchMethodError.class,
+                                     "Cannot find matching method/constructor");
             }
         });
-        end_method();
     }
 
-    private class GetIndexCallback implements ObjectSwitchCallback {
-        final Map indexes = new HashMap();
+    private class GetIndexCallback implements Virt.ObjectSwitchCallback {
+        private Map indexes = new HashMap();
 
         public GetIndexCallback(Object[] members) {
             for (int i = 0; i < members.length; i++) {
