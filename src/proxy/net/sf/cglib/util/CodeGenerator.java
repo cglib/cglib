@@ -487,20 +487,18 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         void processDefault();
     }
 
+    // TODO: verify sorted
     // TODO: provide switch capabilities in BasicCodeGenerator?
     protected void process_switch(int[] keys, ProcessSwitchCallback callback) {
-        process_switch(keys, callback, 0.5f); // TODO: choose better default density cutoff?
+        float density = (float)keys.length / (keys[keys.length - 1] - keys[0] + 1);
+        process_switch(keys, callback, density >= 0.5f);
     }
 
-    protected void process_switch(int[] keys, ProcessSwitchCallback callback, float minTableDensity) {
-        // TODO: should we make a copy?
-        Arrays.sort(keys);
+    protected void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) {
         int len = keys.length;
         int min = keys[0];
         int max = keys[len - 1];
         int range = max - min + 1;
-        float density = (float)len / range;
-        boolean useTable = density >= minTableDensity;
 
         Label def = make_label();
         Label end = make_label();
