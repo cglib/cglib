@@ -4,19 +4,22 @@
   <HEAD>
     <TITLE></TITLE>
   </HEAD>
-  <BODY alink='navy' vlink='navy' link='navy'>
- <table>
+  <BODY LEFTMARGIN="10" RIGHTMARGIN="0" TOPMARGIN="10"
+        BOTTOMMARGIN="10" MARGINHEIGHT="0" MARGINWIDTH="0"
+                alink='navy' vlink='navy' link='navy'
+                style='background-color:a0c0fe' 
+       >
+ <table cellspacing='0' border='0'>
  <tr>
-  <td><A href="http://sourceforge.net"> 
+  <td colspan='5'><A href="http://sourceforge.net"> 
       <IMG src="http://sourceforge.net/sflogo.php?group_id=56933&amp;type=5" width="210" height="62" border="0" alt="SourceForge Logo">
       </A>
       <p> 
   </td>
-  <td></td>
+  
  </tr> 
  <tr> 
-   <td valign="top">
-    <p>
+   <td valign="top" >
      <H5> Project </h5>
 
        <li><a href='http://sourceforge.net/projects/cglib'> Summary   </a>
@@ -33,9 +36,15 @@
      <H5> Links </h5>
       <li> <a  href='http://jakarta.apache.org/bcel'> BCEL  </a>
    </td>
-   <td width="80%" valign="top">
+   <td width='5%' >&nbsp;</td>
+   <td width='10%' style='background-color:ffffff'>&nbsp;</td>
+   <td  valign='top' style='background-color:ffffff'>
+     
    <!-- Content   -->
-             <h3> Code Generation Library  </h3>
+       <br>
+             <h3 align='center'> Code Generation Library  </h3>
+       <br>
+      
        <p>
         CGLIB outputs generated classes. Byte code generation and class file
         format manipulation is hidden in static methods.
@@ -82,8 +91,11 @@
   after: public boolean Vector.add( Object ) <br>
       
   </span>
-   
+   <br>
+   <br>
    </td>
+   <td width='10%' style='background-color:ffffff'>&nbsp;</td>
+   <td width='5%' >&nbsp;</td>
  </tr>
  <table>
   </BODY>
