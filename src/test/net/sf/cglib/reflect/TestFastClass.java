@@ -100,6 +100,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         assertTrue(bean.init == 0);
         assertTrue(fc.getName().equals("net.sf.cglib.reflect.MemberSwitchBean"));
         assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
+        assertTrue(fc.getMaxIndex() == 18);
 
         Constructor c1 = MemberSwitchBean.class.getConstructor(new Class[0]);
         FastConstructor fc1 = fc.getConstructor(c1);
