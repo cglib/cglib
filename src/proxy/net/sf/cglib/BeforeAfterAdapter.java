@@ -57,9 +57,9 @@ import java.lang.reflect.Method;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeforeAfterAdapter.java,v 1.1 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: BeforeAfterAdapter.java,v 1.2 2002/11/29 22:34:18 herbyderby Exp $
  */
-public class BeforeAfterAdapter implements BeforeAfterInterceptor {
+public class BeforeAfterAdapter extends BeforeAfterInterceptor {
     public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
         return true;
     }

@@ -10,7 +10,7 @@ import java.util.*;
  *
  * @author  baliuka
  */
-public class Beans implements BeforeAfterInterceptor{
+public class Beans extends BeforeAfterInterceptor {
     
     private PropertyChangeSupport propertySupport;
    

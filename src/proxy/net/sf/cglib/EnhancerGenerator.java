@@ -65,21 +65,12 @@ import java.util.*;
     private static final String METHOD_FIELD_PREFIX = "METHOD_";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
-    private static final Method INVOKE_SUPER;
-    private static final Method AFTER_RETURN;
     private static final Method AROUND_ADVICE;
     private static final Method MAKE_PROXY;
 
     static {
         try {
-            Class[] types = new Class[]{ Object.class, Method.class, Object[].class };
-            INVOKE_SUPER = BeforeAfterInterceptor.class.getDeclaredMethod("invokeSuper", types);
-
-            types = new Class[]{ Object.class, Method.class, Object[].class,
-                                 Boolean.TYPE, Object.class, Throwable.class };
-            AFTER_RETURN = BeforeAfterInterceptor.class.getDeclaredMethod("afterReturn", types);
-
-            types = new Class[]{ Object.class, Method.class, Object[].class, MethodProxy.class };
+            Class[] types = new Class[]{ Object.class, Method.class, Object[].class, MethodProxy.class };
             AROUND_ADVICE = AroundInterceptor.class.getDeclaredMethod("aroundAdvice", types);
 
             types = new Class[]{ Method.class };
@@ -93,7 +84,6 @@ import java.util.*;
     private Method wreplace;
     private MethodInterceptor ih;
     private boolean delegating;
-    private boolean around;
         
     /* package */ EnhancerGenerator(String className, Class clazz, Class[] interfaces, MethodInterceptor ih,
                                     ClassLoader loader, Method wreplace, boolean delegating) {
@@ -103,11 +93,7 @@ import java.util.*;
         this.wreplace = wreplace;
         this.delegating = delegating;
 
-        if (ih instanceof BeforeAfterInterceptor) {
-            // ok
-        } else if (ih instanceof AroundInterceptor) {
-            around = true;
-        } else {
+        if (!(ih instanceof AroundInterceptor)) {
             throw new IllegalArgumentException("Unknown interceptor type: " + ih);
         }
 
@@ -209,14 +195,10 @@ import java.util.*;
             Method method = (Method)methodList.get(i);
             String fieldName = METHOD_FIELD_PREFIX + i;
             declare_field(privateFinalStatic, Method.class, fieldName);
-            if (around) {
-                String accessName = ACCESS_PREFIX + i;
-                declare_field(privateFinalStatic, MethodProxy.class, accessName);
-                generateAccessMethod(method, accessName);
-                generateAroundMethod(method, fieldName, accessName);
-            } else {
-                generateMethod(method, fieldName);
-            }
+            String accessName = ACCESS_PREFIX + i;
+            declare_field(privateFinalStatic, MethodProxy.class, accessName);
+            generateAccessMethod(method, accessName);
+            generateAroundMethod(method, fieldName, accessName);
         }
         generateClInit(methodList);
 
@@ -291,6 +273,7 @@ import java.util.*;
         athrow();
     }
 
+    // TODO: need to ensure that MethodInterceptor type is compatible
     private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
         begin_method(Factory.class.getMethod("newInstance", types));
         if (enabled) {
@@ -330,82 +313,6 @@ import java.util.*;
                 addDeclaredMethods(methodList, superclass);
             }
         }
-    }
-
-    private void generateMethod(Method method, String fieldName) {
-        Class returnType = method.getReturnType();
-        boolean returnsValue = !returnType.equals(Void.TYPE);
-        int mod = method.getModifiers();
-        boolean isAbstract = Modifier.isAbstract(mod);
-
-        begin_method(method);
-        int outer_eh = begin_handler();
-
-        create_arg_array();
-        store_local("args");
-        aconst_null();
-        store_local("resultFromSuper");
-        push(0);
-        local_type("superInvoked", boolean.class);
-        store_local("superInvoked");
-        aconst_null();
-        store_local("error");
-        
-        if (delegating || !isAbstract) {
-            load_this();
-            getfield(INTERCEPTOR_FIELD);
-            load_this();
-            getstatic(fieldName);
-            load_local("args");
-            invoke(INVOKE_SUPER);
-
-            ifeq("endif");
-            push(1);
-            store_local("superInvoked");
-
-            int eh = begin_handler();
-            load_this();
-            if (delegating) {
-                getfield(DELEGATE_FIELD);
-                load_args();
-                invoke(method);
-            } else {
-                load_args();
-                super_invoke();
-            }
-            if (returnsValue) {
-                box(returnType);
-                store_local("resultFromSuper");
-            }
-            goTo("endif");
-            end_handler();
-            
-            handle_exception(eh, Throwable.class);
-            store_local("error");
-            nop("endif");
-        }
-
-        load_this();
-        getfield(INTERCEPTOR_FIELD);
-        load_this();
-        getstatic(fieldName);
-        load_local("args");
-        load_local("superInvoked");
-        load_local("resultFromSuper");
-        load_local("error");
-        invoke(AFTER_RETURN);
-
-        /* generates:
-           if (result == null) {
-               return 0;
-           } else {
-               return ((Number)result).intValue();
-           }
-         */
-        return_zero_if_null();
-        end_handler();
-        generateHandleUndeclared(method, outer_eh);
-        end_method();
     }
 
     private void generateAccessMethod(Method method, String accessName) {
@@ -488,12 +395,11 @@ import java.util.*;
              Class cls = findClass("java.lang.Object");
              args = new Class[0];
              METHOD_1 = cls.getDeclaredMethod("toString", args);
-           }
-        */
-        /* for AroundInterceptor, also generates:
+
              Class thisClass = findClass("NameOfThisClass");
              Method proxied = thisClass.getDeclaredMethod("CGLIB$ACCESS_O", args);
              CGLIB$ACCESS_0 = MethodProxy.generate(proxied);
+           }
         */
         Method getDeclaredMethod =
             Class.class.getDeclaredMethod("getDeclaredMethod",
@@ -524,16 +430,14 @@ import java.util.*;
             invoke(getDeclaredMethod);
             putstatic(fieldName);
 
-            if (around) {
-                String accessName = ACCESS_PREFIX + i;
-                push(getClassName());
-                invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
-                push(accessName);
-                load_local("args");
-                invoke(getDeclaredMethod);
-                invoke(MAKE_PROXY);
-                putstatic(accessName);
-            }
+            String accessName = ACCESS_PREFIX + i;
+            push(getClassName());
+            invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
+            push(accessName);
+            load_local("args");
+            invoke(getDeclaredMethod);
+            invoke(MAKE_PROXY);
+            putstatic(accessName);
         }
         return_value();
         end_static();

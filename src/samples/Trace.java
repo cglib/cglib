@@ -6,7 +6,7 @@ import java.util.*;
  *
  * @author  baliuka
  */
-public class Trace implements  BeforeAfterInterceptor{
+public class Trace extends BeforeAfterInterceptor {
     
     int ident = 1;
     static Trace callback = new Trace();
