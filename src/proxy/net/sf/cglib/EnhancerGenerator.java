@@ -58,55 +58,59 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.util.*;
 
-class EnhancerGenerator extends CodeGenerator {
-    private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
-    private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
-    private static final String GET_CURRENT_INTERCEPTOR = "CGLIB$GET_CURRENT_INTERCEPTOR";
-    private static final String SET_CURRENT_INTERCEPTOR = "CGLIB$SET_CURRENT_INTERCEPTOR";
-    private static final String THREAD_INTERCEPTOR_FIELD = "CGLIB$THREAD_INTERCEPTOR";
-    private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
-
+class EnhancerGenerator
+extends CodeGenerator
+{
     private static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+    private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
+    private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
+    private static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
 
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor)");
-    private static final Method AROUND_ADVICE =
-      ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
-    private static final Method MAKE_PROXY =
-      ReflectUtils.findMethod("MethodProxy.create(Method,Method)");
     private static final Method MAKE_CONSTRUCTOR_PROXY =
       ReflectUtils.findMethod("ConstructorProxy.create(Constructor)");
+    private static final Method PROXY_NEW_INSTANCE = 
+      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
+    private static final Method NEW_CLASS_KEY = 
+      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
     private static final Method INTERNAL_WRITE_REPLACE =
       ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
-    private static final Method NEW_CLASS_KEY = 
-     ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
-    private static final Method PROXY_NEW_INSTANCE = 
-     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
+    private static final Method NEW_INSTANCE =
+      ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor)");
     private static final Method MULTIARG_NEW_INSTANCE = 
       ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], MethodInterceptor)");
     private static final Method GET_INTERCEPTOR =
       ReflectUtils.findMethod("Factory.interceptor()");
     private static final Method SET_INTERCEPTOR =
       ReflectUtils.findMethod("Factory.interceptor(MethodInterceptor)");
+    private static final Method CALLBACK_NEW_INSTANCE =
+      ReflectUtils.findMethod("Factory.newInstance(Callbacks)");
+    private static final Method CALLBACK_MULTIARG_NEW_INSTANCE = 
+      ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], Callbacks)");
+    private static final Method GET_CALLBACK =
+      ReflectUtils.findMethod("Factory.callback(int)");
+    private static final Method SET_CALLBACK =
+      ReflectUtils.findMethod("Factory.callback(int, Callback)");
+    private static final Method SET_CALLBACKS =
+      ReflectUtils.findMethod("Factory.callbacks(Callbacks)");
+    private static final Method CALLBACKS_GET =
+      ReflectUtils.findMethod("Callbacks.get(int)");
+    
+    private final Class[] interfaces;
+    private final Method wreplace;
+    private final CallbackFilter filter;
+    private final Callbacks initialCallbacks;
+    private final BitSet usedCallbacks = new BitSet();
 
-    private Class[] interfaces;
-    private Method wreplace;
-    private MethodFilter filter;
-    private Constructor cstruct;
-    private List constructorList;
-    private boolean isProxy;
-    private MethodInterceptor initialInterceptor;
-
-    public EnhancerGenerator(Class type, 
+    public EnhancerGenerator(Class type,
                              Class[] interfaces,
-                             Method wreplace, 
-                             MethodFilter filter,
-                             MethodInterceptor mi) {
+                             Method wreplace,
+                             CallbackFilter filter,
+                             Callbacks callbacks) {
         setSuperclass(type);
         this.interfaces = interfaces;
         this.wreplace = wreplace;
         this.filter = filter;
-        initialInterceptor = mi;
+        initialCallbacks = callbacks;
 
         if (interfaces != null) {
             addInterfaces(interfaces);
@@ -114,49 +118,16 @@ class EnhancerGenerator extends CodeGenerator {
         addInterface(Factory.class);
     }
 
-    private static boolean hasSuperclass(Class type, String superclassName) {
-        while (type != null) {
-            if (type.getName().equals(superclassName)) {
-                return true;
-            }
-            type = type.getSuperclass();
-        }
-        return false;
-    }
-
-    protected void generate() throws ClassNotFoundException, NoSuchMethodException {
+    protected void generate() throws Exception {
         Class type = getSuperclass();
-        isProxy = hasSuperclass(type, "net.sf.cglib.Proxy");
-     
-        if (wreplace != null && 
-            (!Modifier.isStatic(wreplace.getModifiers()) ||
-             !Modifier.isPublic(wreplace.getModifiers()) ||
-             wreplace.getReturnType() != Object.class || 
-             wreplace.getParameterTypes().length != 1 ||
-             wreplace.getParameterTypes()[0] != Object.class)) {
-            throw new IllegalArgumentException(wreplace.toString());
-        }
 
-        VisibilityFilter vis = new VisibilityFilter(type);
-        try {
-            cstruct = type.getDeclaredConstructor(Constants.TYPES_EMPTY);
-            if (!vis.accept(cstruct)) {
-                cstruct = null;
-            }
-        } catch (NoSuchMethodException ignore) {
-        }
-        constructorList = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
-        filterMembers(constructorList, vis);
-        if (constructorList.size() == 0) {
+        List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
+        filterMembers(constructors, new VisibilityFilter(type));
+        if (constructors.size() == 0) {
             throw new IllegalArgumentException("No visible constructors in " + type);
         }
 
-        if (wreplace == null) {
-            wreplace = INTERNAL_WRITE_REPLACE;
-        }
-
         ensureLoadable(type);
-        ensureLoadable(wreplace.getDeclaringClass());
         ensureLoadable(interfaces);
         
         // Order is very important: must add superclass, then
@@ -165,7 +136,7 @@ class EnhancerGenerator extends CodeGenerator {
         List methods = new ArrayList();
         addDeclaredMethods(methods, getSuperclass());
 
-        Set forcePublic;
+        Set forcePublic = Collections.EMPTY_SET;
         if (interfaces != null) {
             List interfaceMethods = new ArrayList();
             for (int i = 0; i < interfaces.length; i++) {
@@ -173,56 +144,54 @@ class EnhancerGenerator extends CodeGenerator {
             }
             forcePublic = MethodWrapper.createSet(interfaceMethods);
             methods.addAll(interfaceMethods);
-        } else {
-            forcePublic = Collections.EMPTY_SET;
         }
 
         filterMembers(methods, new VisibilityFilter(getSuperclass()));
         filterMembers(methods, new DuplicatesFilter());
         filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
-        if (filter != null) {
-            filterMembers(methods, filter);
-        }
-
-        declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
-        declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
-        declare_field(PRIVATE_FINAL_STATIC, ThreadLocal.class, THREAD_INTERCEPTOR_FIELD);
-        generateConstructors();
-        generateFactory();
 
         boolean declaresWriteReplace = false;
-       
-        for (int i = 0; i < methods.size(); i++) {
-            Method method = (Method)methods.get(i);
+        int len = Callbacks.MAX_VALUE + 1;
+        CallbackGenerator[] generators = new CallbackGenerator[len];
+        List[] group = new List[len];
+        for (Iterator it = methods.iterator(); it.hasNext();) {
+            Method method = (Method)it.next();
+            int ctype = (filter == null) ? Callbacks.INTERCEPT : filter.accept(method);
+            if (ctype > Callbacks.MAX_VALUE) {
+                // TODO: error
+            }
+            if (group[ctype] == null) {
+                group[ctype] = new ArrayList(methods.size());
+                generators[ctype] = Callbacks.getGenerator(ctype);
+            }
+            group[ctype].add(method);
+
             if (method.getName().equals("writeReplace") &&
                 method.getParameterTypes().length == 0) {
                 declaresWriteReplace = true;
             }
-            String fieldName = getFieldName(i);
-            String accessName = getAccessName(method, i);
-            declare_field(PRIVATE_FINAL_STATIC, Method.class, fieldName);
-            declare_field(PRIVATE_FINAL_STATIC, MethodProxy.class, accessName);
-            generateAccessMethod(method, accessName);
-            generateAroundMethod(method, fieldName, accessName,
-                                 forcePublic.contains(MethodWrapper.create(method)));
         }
-       
-        generateClInit(methods);
-        generateCurrentInterceptor();
-
         if (!declaresWriteReplace) {
             generateWriteReplace();
         }
+
+        // the order of these methods is important
+        generateConstructors(constructors); // #1
+        generateMethods(generators, group, forcePublic); // #2
+        // #3 .. N
+        generateLegacyFactory();
+        generateFactory();
+        generateStatic(constructors, generators, group);
+        generateSetThreadCallbacks();
     }
 
     protected void postDefine(Class type) throws Exception {
-        Method setter = type.getDeclaredMethod(SET_CURRENT_INTERCEPTOR,
-                                               new Class[]{ MethodInterceptor.class });
-        setter.invoke(null, new Object[]{ initialInterceptor });
+        Method setter = type.getDeclaredMethod(SET_THREAD_CALLBACKS,
+                                               new Class[]{ Callbacks.class });
+        setter.invoke(null, new Object[]{ initialCallbacks });
     }
     
-
-    private void filterMembers(List members, MethodFilter filter) {
+    private static void filterMembers(List members, MethodFilter filter) {
         Iterator it = members.iterator();
         while (it.hasNext()) {
             if (!filter.accept((Member)it.next())) {
@@ -231,16 +200,23 @@ class EnhancerGenerator extends CodeGenerator {
         }
     }
 
-    private String getFieldName(int index) {
-        return "METHOD_" + index;
-    }
-    
-    private String getAccessName(Method method, int index) {
-        return "CGLIB$ACCESS_" + index + "_" + method.getName();
+    private static void addDeclaredMethods(List methodList, Class type) {
+        methodList.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
+      
+        Class superclass = type.getSuperclass();
+        if (superclass != null) {
+            addDeclaredMethods(methodList, superclass);
+        }
+
+        Class[] interfaces = type.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            addDeclaredMethods(methodList, interfaces[i]);
+        }
     }
 
-    private void generateConstructors() throws NoSuchMethodException {
-        for (Iterator i = constructorList.iterator(); i.hasNext();) {
+    private void generateConstructors(List constructors) throws NoSuchMethodException {
+        declare_field(Modifier.PRIVATE, Boolean.TYPE, CONSTRUCTED_FIELD);
+        for (Iterator i = constructors.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
             begin_constructor(constructor);
             load_this();
@@ -253,49 +229,160 @@ class EnhancerGenerator extends CodeGenerator {
             end_method();
         }
     }
-    
-    private void generateFactory() {
-        generateMultiArgFactory();
 
-        begin_method(GET_INTERCEPTOR);
+    private void generateWriteReplace() throws ClassNotFoundException {
+        Method wr = wreplace;
+        if (wr == null) {
+            wr = INTERNAL_WRITE_REPLACE;
+        } else if (!Modifier.isStatic(wr.getModifiers()) ||
+                   !Modifier.isPublic(wr.getModifiers()) ||
+                   wr.getReturnType() != Object.class || 
+                   wr.getParameterTypes().length != 1 ||
+                   wr.getParameterTypes()[0] != Object.class) {
+            throw new IllegalArgumentException(wr.toString());
+        }
+        ensureLoadable(wr.getDeclaringClass());
+
+        begin_method(Modifier.PRIVATE,
+                     Object.class, 
+                     "writeReplace",
+                     null,
+                     new Class[]{ ObjectStreamException.class });
         load_this();
-        getfield(INTERCEPTOR_FIELD);
+        invoke(wr);
+        return_value();
+        end_method();
+    }
+
+    private void generateLegacyFactory() {
+        if (!usedCallbacks.get(Callbacks.INTERCEPT)) {
+            throwIllegalState(GET_INTERCEPTOR);
+            throwIllegalState(SET_INTERCEPTOR);
+            throwIllegalState(NEW_INSTANCE);
+            throwIllegalState(MULTIARG_NEW_INSTANCE);
+        } else {
+            // Factory.interceptor()
+            begin_method(GET_INTERCEPTOR);
+            load_this();
+            push(Callbacks.INTERCEPT);
+            invoke(GET_CALLBACK);
+            return_value();
+            end_method();
+
+            // Factory.interceptor(MethodInterceptor)
+            begin_method(SET_INTERCEPTOR);
+            load_this();
+            push(Callbacks.INTERCEPT);
+            load_arg(0);
+            invoke(SET_CALLBACK);
+            return_value();
+            end_method();
+
+            // Factory.newInstance(MethodInterceptor)
+            begin_method(NEW_INSTANCE);
+            load_this();
+            getfield(getThreadLocal(Callbacks.INTERCEPT));
+            load_arg(0);
+            invoke(MethodConstants.THREADLOCAL_SET);
+            new_instance_this();
+            dup();
+            invoke_constructor_this();
+            dup();
+            load_arg(0);
+            putfield(getCallbackField(Callbacks.INTERCEPT));
+            return_value();
+            end_method();
+
+            // Factory.newInstance(Class[], Object[], MethodInterceptor)
+            begin_method(MULTIARG_NEW_INSTANCE);
+            load_this();
+            getfield(getThreadLocal(Callbacks.INTERCEPT));
+            load_arg(2);
+            invoke(MethodConstants.THREADLOCAL_SET);
+            load_this();
+            load_arg(0);
+            load_arg(1);
+            aconst_null();
+            invoke(CALLBACK_MULTIARG_NEW_INSTANCE);
+            load_this();
+            load_arg(2);
+            putfield(getCallbackField(Callbacks.INTERCEPT));
+            return_value();
+            end_method();
+        }
+    }
+
+    private void generateFactory() throws Exception {
+        int[] keys = getCallbackKeys();
+
+        // Factory.callback(int)
+        begin_method(GET_CALLBACK);
+        load_this();
+        load_arg(0);
+        process_switch(keys, new ProcessSwitchCallback() {
+                public void processCase(int key, Label end) throws Exception {
+                    getfield(getCallbackField(key));
+                    goTo(end);
+                }
+                public void processDefault() throws Exception {
+                    pop(); // stack height
+                    aconst_null();
+                }
+            });
         return_value();
         end_method();
 
-        begin_method(SET_INTERCEPTOR);
+        // Factory.callback(int, Callback)
+        begin_method(SET_CALLBACK);
+        load_this();
+        load_arg(1);
+        load_arg(0);
+        process_switch(keys, new ProcessSwitchCallback() {
+                public void processCase(int key, Label end) throws Exception {
+                    putfield(getCallbackField(key));
+                    goTo(end);
+                }
+                public void processDefault() {
+                    pop2(); // stack height
+                }
+            });
+        return_value();
+        end_method();
+        
+        // Factory.callbacks(Callbacks);
+        begin_method(SET_CALLBACKS);
         load_this();
         load_arg(0);
-        putfield(INTERCEPTOR_FIELD);
+        generateSetCallbacks();
         return_value();
         end_method();
 
-        begin_method(NEW_INSTANCE);
+        // Factory.newInstance(Callbacks)
+        begin_method(CALLBACK_NEW_INSTANCE);
         load_arg(0);
-        invoke_static_this(SET_CURRENT_INTERCEPTOR, Void.TYPE, new Class[]{ MethodInterceptor.class });
+        invoke_static_this(SET_THREAD_CALLBACKS, Void.TYPE, new Class[]{ Callbacks.class });
         new_instance_this();
         dup();
         invoke_constructor_this();
         dup();
         load_arg(0);
-        putfield(INTERCEPTOR_FIELD);
+        generateSetCallbacks();
         return_value();
         end_method();
-    }
-   
-    private void generateMultiArgFactory() {
+
+        // Factory.newInstance(Class[], Object[], Callbacks)
+        Label skipSetCallbacks = make_label();
         Label fail = make_label();
-        Label skipSetInterceptor = make_label();
-        
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
-        begin_method(MULTIARG_NEW_INSTANCE);
+        begin_method(CALLBACK_MULTIARG_NEW_INSTANCE);
+
         load_arg(2);
-        invoke_static_this(SET_CURRENT_INTERCEPTOR, Void.TYPE, new Class[]{ MethodInterceptor.class });
-        
+        invoke_static_this(SET_THREAD_CALLBACKS, Void.TYPE, new Class[]{ Callbacks.class });
+
         getfield(CONSTRUCTOR_PROXY_MAP);
-        load_arg(0);// Class[] types
-        invoke(NEW_CLASS_KEY);//key
-        invoke(MethodConstants.MAP_GET);// PROXY_MAP.get( key(types) )    
+        load_arg(0); // Class[] types
+        invoke(NEW_CLASS_KEY); // key
+        invoke(MethodConstants.MAP_GET); // PROXY_MAP.get(key(types))
         checkcast(ConstructorProxy.class);
         dup();
         ifnull(fail);
@@ -303,239 +390,172 @@ class EnhancerGenerator extends CodeGenerator {
         invoke(PROXY_NEW_INSTANCE);
         checkcast_this();
         load_arg(2);
-        ifnull(skipSetInterceptor);
+        ifnull(skipSetCallbacks);
         dup();
         load_arg(2);
-        putfield(INTERCEPTOR_FIELD);
-
-        mark(skipSetInterceptor);
+        generateSetCallbacks();
+        
+        mark(skipSetCallbacks);
         return_value();
 
         mark(fail);
-        throw_exception(IllegalArgumentException.class, "Constructor not found ");
+        throw_exception(IllegalArgumentException.class, "Constructor not found");
         end_method();
     }
 
-    private void generateWriteReplace() {
-        begin_method(Modifier.PRIVATE,
-                     Object.class, 
-                     "writeReplace",
-                     Constants.TYPES_EMPTY,
-                     new Class[]{ ObjectStreamException.class });
-        load_this();
-        invoke(wreplace);
-        return_value();
-        end_method();
-    }
-
-    private static void addDeclaredMethods(List methodList, Class type) {
-        methodList.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
-      
-           Class superclass = type.getSuperclass();
-            if (superclass != null) {
-                addDeclaredMethods(methodList, superclass);
-            }
-
-            Class[] interfaces = type.getInterfaces();
-            for (int i = 0; i < interfaces.length; i++) {
-                addDeclaredMethods(methodList, interfaces[i]);
-            }
-      
-    }
-
-    private void generateAccessMethod(Method method, String accessName) {
-        begin_method(Modifier.FINAL,
-                     method.getReturnType(),
-                     accessName,
-                     method.getParameterTypes(),
-                     method.getExceptionTypes());
-        if( Modifier.isAbstract(method.getModifiers()) ) {
-            throw_exception(AbstractMethodError.class, method.toString() + " is abstract" );
+    private void generateSetCallbacks() {
+        if (usedCallbacks.length() == 0) {
+            pop2(); // stack height
         } else {
-            load_this();
-            load_args();
-            super_invoke(method);
+            for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+                if (usedCallbacks.get(i)) {
+                    if (i + 1 < usedCallbacks.length())
+                        dup2();
+                    push(i);
+                    invoke(CALLBACKS_GET);
+                    checkcast(Callbacks.getType(i));
+                    putfield(getCallbackField(i));
+                }
+            }
         }
+    }
+
+    private int[] getCallbackKeys() {
+        int c = 0;
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            if (usedCallbacks.get(i)) {
+                c++;
+            }
+        }
+        int[] keys = new int[c];
+        c = 0;
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            if (usedCallbacks.get(i)) {
+                keys[c++] = i;
+            }
+        }
+        return keys;
+    }
+
+    private void throwIllegalState(Method method) {
+        begin_method(method);
+        throw_exception(IllegalStateException.class, "MethodInterceptor does not apply to this object");
         return_value();
         end_method();
     }
 
-    private void generateAroundMethod(Method method, String fieldName, String accessName, boolean forcePublic) {
-        int modifiers = getDefaultModifiers(method);
-        if (forcePublic) {
-            modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
-        }
-        begin_method(method, modifiers);
-        Block handler = begin_block();
-
-        Label nullInterceptor = make_label();
-        load_this();
-        invoke_virtual_this(GET_CURRENT_INTERCEPTOR, MethodInterceptor.class, Constants.TYPES_EMPTY);
-        dup();
-        ifnull(nullInterceptor);
-
-        load_this();
-        getfield(fieldName);
-        create_arg_array();
-        getfield(accessName);
-        invoke(AROUND_ADVICE);
-        if (isProxy) {
-            unbox(method.getReturnType());
-        } else {
-            unbox_or_zero(method.getReturnType());
-        }
-        return_value();
-
-        mark(nullInterceptor);
-        load_this();
-        load_args();
-        super_invoke(method);
-        return_value();
-
-        end_block();
-        generateHandleUndeclared(method, handler);
-        end_method();
-    }
-
-    private void generateHandleUndeclared(Method method, Block handler) {
-        /* generates:
-           } catch (RuntimeException e) {
-               throw e;
-           } catch (Error e) {
-               throw e;
-           } catch (<DeclaredException> e) {
-               throw e;
-           } catch (Throwable e) {
-               throw new UndeclaredThrowableException(e);
-           }
-        */
-        Class[] exceptionTypes = method.getExceptionTypes();
-        Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
-        if (!(exceptionSet.contains(Exception.class) ||
-              exceptionSet.contains(Throwable.class))) {
-            if (!exceptionSet.contains(RuntimeException.class)) {
-                catch_exception(handler, RuntimeException.class);
-                athrow();
+    private void generateMethods(CallbackGenerator[] generators, List[] methods, final Set forcePublic) throws Exception {
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            final int type = i;
+            if (generators[type] != null) {
+                generators[type].generate(this, methods[i], new CallbackGenerator.Context() {
+                    public void emitCallback() {
+                        generateCurrentCallback(type);
+                    }
+                    public int getModifiers(Method method) {
+                        int modifiers = getDefaultModifiers(method);
+                        if (forcePublic.contains(MethodWrapper.create(method))) {
+                            modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
+                        }
+                        return modifiers;
+                    }
+                });
             }
-            if (!exceptionSet.contains(Error.class)) {
-                catch_exception(handler, Error.class);
-                athrow();
-            }
-            for (int i = 0; i < exceptionTypes.length; i++) {
-                catch_exception(handler, exceptionTypes[i]);
-                athrow();
-            }
-            // e -> eo -> oeo -> ooe -> o
-            catch_exception(handler, Throwable.class);
-            new_instance(UndeclaredThrowableException.class);
-            dup_x1();
-            swap();
-            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
-            athrow();
         }
     }
 
-    private void generateCurrentInterceptor() {
-        // get
-        begin_method(Modifier.PRIVATE | Modifier.FINAL,
-                     MethodInterceptor.class,
-                     GET_CURRENT_INTERCEPTOR,
-                     Constants.TYPES_EMPTY,
-                     Constants.TYPES_EMPTY);
+    private void generateSetThreadCallbacks() {
+        begin_method(Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL,
+                     Void.TYPE,
+                     SET_THREAD_CALLBACKS,
+                     new Class[]{ Callbacks.class },
+                     null);
         Label end = make_label();
+        load_arg(0);
+        ifnull(end);
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            if (usedCallbacks.get(i)) {
+                load_arg(0);
+                push(i);
+                invoke(CALLBACKS_GET);
+                getfield(getThreadLocal(i));
+                swap();
+                invoke(MethodConstants.THREADLOCAL_SET);
+            }
+        }
+        mark(end);
+        return_value();
+        end_method();
+    }
+
+    private void generateCurrentCallback(int type) {
+        if (!usedCallbacks.get(type)) {
+            declare_field(Modifier.PRIVATE, Callbacks.getType(type), getCallbackField(type));
+            declare_field(PRIVATE_FINAL_STATIC, ThreadLocal.class, getThreadLocal(type));
+            usedCallbacks.set(type);
+        }
         load_this();
-        getfield(INTERCEPTOR_FIELD);
+        getfield(getCallbackField(type));
         dup();
+        Label end = make_label();
         ifnonnull(end);
         load_this();
         getfield(CONSTRUCTED_FIELD);
         ifne(end);
-        pop(); // make stack sizes equal
-        getfield(THREAD_INTERCEPTOR_FIELD);
+        pop();
+        getfield(getThreadLocal(type));
         invoke(MethodConstants.THREADLOCAL_GET);
-        checkcast(MethodInterceptor.class);
+        checkcast(Callbacks.getType(type));
         mark(end);
-        return_value();
-        end_method();
-
-        // set
-        begin_method(Modifier.PUBLIC | Modifier.STATIC,
-                     Void.TYPE,
-                     SET_CURRENT_INTERCEPTOR,
-                     new Class[]{ MethodInterceptor.class },
-                     Constants.TYPES_EMPTY);
-        getfield(THREAD_INTERCEPTOR_FIELD);
-        load_arg(0);
-        invoke(MethodConstants.THREADLOCAL_SET);
-        return_value();
-        end_method();
     }
 
-    private void generateClInit(List methodList) throws NoSuchMethodException {
-            
-        /* generates:
-           static {
-             Class [] args;
-             Class cls = findClass("java.lang.Object");
-             args = new Class[0];
-             METHOD_1 = cls.getDeclaredMethod("toString", args);
+    private String getCallbackField(int type) {
+        return "CGLIB$CALLBACK_" + type;
+    }
 
-             Class thisClass = findClass("NameOfThisClass");
-             Method proxied = thisClass.getDeclaredMethod("CGLIB$ACCESS_O", args);
-             CGLIB$ACCESS_0 = MethodProxy.create(proxied);
-           }
-        */
-        
+    private String getThreadLocal(int type) {
+        return "CGLIB$TL_CALLBACK_" + type;
+    }
+
+    private void generateStatic(List constructors, CallbackGenerator[] generators, List[] methods)  throws Exception {
         begin_static();
-        Local args = make_local();
-        for (int i = 0, size = methodList.size(); i < size; i++) {
-            Method method = (Method)methodList.get(i);
-            String fieldName = getFieldName(i);
-
-            load_class(method.getDeclaringClass());
-            push(method.getName());
-            push_object(method.getParameterTypes());
-            dup();
-            store_local(args);
-            invoke(MethodConstants.GET_DECLARED_METHOD);
-            dup();
-            putfield(fieldName);
-
-            String accessName = getAccessName(method, i);
-            load_class_this();
-            push(accessName);
-            load_local(args);
-            invoke(MethodConstants.GET_DECLARED_METHOD);
-            
-            invoke(MAKE_PROXY);
-            putfield(accessName);
-        }
 
         new_instance(HashMap.class);
         dup();
-        dup();
         invoke_constructor(HashMap.class);
+        dup();
         putfield(CONSTRUCTOR_PROXY_MAP);
         Local map = make_local();
         store_local(map);
-        for (int i = 0, size = constructorList.size(); i < size; i++) {
-            Constructor constructor = (Constructor)constructorList.get(i);
+        for (int i = 0, size = constructors.size(); i < size; i++) {
+            Constructor constructor = (Constructor)constructors.get(i);
             Class[] types = constructor.getParameterTypes();
             load_local(map);
             push(types);
-            invoke(NEW_CLASS_KEY);//key
+            invoke(NEW_CLASS_KEY); // key
             load_class_this();
             push(types);
             invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
-            invoke(MAKE_CONSTRUCTOR_PROXY);//value
-            invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
+            invoke(MAKE_CONSTRUCTOR_PROXY); // value
+            invoke(MethodConstants.MAP_PUT); // put(key(agrgTypes[]), proxy)
+            pop();
         }
 
-        new_instance(ThreadLocal.class);
-        dup();
-        invoke_constructor(ThreadLocal.class);
-        putfield(THREAD_INTERCEPTOR_FIELD);
-        
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            if (usedCallbacks.get(i)) {
+                new_instance(ThreadLocal.class);
+                dup();
+                invoke_constructor(ThreadLocal.class);
+                putfield(getThreadLocal(i));
+            }
+        }
+
+        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+            if (generators[i] != null) {
+                generators[i].generateStatic(this, methods[i]);
+            }
+        }
+
         return_value();
         end_method();
     }

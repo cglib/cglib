@@ -26,8 +26,10 @@ public class ASMUtils {
     public static String getMethodDescriptor(Class returnType, Class[] parameterTypes) {
         StringBuffer buf = new StringBuffer();
         buf.append('(');
-        for (int i = 0; i < parameterTypes.length; ++i) {
-            getDescriptor(buf, parameterTypes[i]);
+        if (parameterTypes != null) {
+            for (int i = 0; i < parameterTypes.length; ++i) {
+                getDescriptor(buf, parameterTypes[i]);
+            }
         }
         buf.append(')');
         getDescriptor(buf, returnType);

@@ -56,10 +56,11 @@ package net.sf.cglib;
 /**
  * Callback that can be registered with an enhanced class.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.6 2003/05/13 06:17:08 herbyderby Exp $
+ * @version $Id: MethodInterceptor.java,v 1.7 2003/08/27 16:51:53 herbyderby Exp $
  */
-public interface MethodInterceptor {
-    
+public interface MethodInterceptor
+extends Callback
+{
     /**
      * All generated proxied methods call this method instead of the original method.
      * The original method may either be invoked by normal reflection using the Method object,
