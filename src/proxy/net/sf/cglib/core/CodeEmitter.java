@@ -61,26 +61,51 @@ public class CodeEmitter extends RemappingCodeVisitor {
     private ClassEmitter ce;
     private State state;
 
-    private static class State {
+    private static class State
+    extends MethodInfo
+    {
+        ClassInfo classInfo;
         int access;
         Signature sig;
         Type[] argumentTypes;
         int localOffset;
         Type[] exceptionTypes;
 
-        State(int access, Signature sig, Type[] exceptionTypes) {
+        State(ClassInfo classInfo, int access, Signature sig, Type[] exceptionTypes) {
+            this.classInfo = classInfo;
             this.access = access;
             this.sig = sig;
             this.exceptionTypes = exceptionTypes;
             localOffset = TypeUtils.isStatic(access) ? 0 : 1;
             argumentTypes = sig.getArgumentTypes();
         }
+
+        public ClassInfo getClassInfo() {
+            return classInfo;
+        }
+
+        public int getModifiers() {
+            return access;
+        }
+
+        public Signature getSignature() {
+            return sig;
+        }
+
+        public Type[] getExceptionTypes() {
+            return exceptionTypes;
+        }
+
+        public Attribute getAttribute() {
+            // TODO
+            return null;
+        }
     }
 
     CodeEmitter(ClassEmitter ce, CodeVisitor cv, int access, Signature sig, Type[] exceptionTypes) {
         super(cv, access, sig.getArgumentTypes());
         this.ce = ce;
-        state = new State(access, sig, exceptionTypes);
+        state = new State(ce.getClassInfo(), access, sig, exceptionTypes);
     }
 
     public CodeEmitter(CodeEmitter wrap) {
@@ -101,15 +126,9 @@ public class CodeEmitter extends RemappingCodeVisitor {
         return state.sig.getReturnType();
     }
 
-    /* wait until these are needed
-    public Type[] getArgumentTypes() {
-        return state.argumentTypes;
+    public MethodInfo getMethodInfo() {
+        return state;
     }
-
-    public Type[] getExceptionTypes() {
-        return state.getExceptionTypes();
-    }
-    */
 
     public ClassEmitter getClassEmitter() {
         return ce;

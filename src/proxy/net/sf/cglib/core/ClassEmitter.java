@@ -23,9 +23,7 @@ import org.objectweb.asm.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class ClassEmitter extends ClassAdapter {
-    private int access;
-    private Type classType;
-    private Type superType;
+    private ClassInfo classInfo;
     private Map fieldInfo;
 
     private static int hookCounter;
@@ -56,20 +54,36 @@ public class ClassEmitter extends ClassAdapter {
         return ++hookCounter;
     }
 
-    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-        this.access = access;
-        this.classType = Type.getType("L" + className.replace('.', '/') + ";");
-        this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
+    public ClassInfo getClassInfo() {
+        return classInfo;
+    }
+
+    public void begin_class(final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
+        final Type classType = Type.getType("L" + className.replace('.', '/') + ";");
+        classInfo = new ClassInfo() {
+            public Type getType() {
+                return classType;
+            }
+            public Type getSuperType() {
+                return (superType != null) ? superType : Constants.TYPE_OBJECT;
+            }
+            public Type[] getInterfaces() {
+                return interfaces;
+            }
+            public int getModifiers() {
+                return access;
+            }
+        };
         cv.visit(access,
-                 this.classType.getInternalName(),
-                 this.superType.getInternalName(),
+                 classInfo.getType().getInternalName(),
+                 classInfo.getSuperType().getInternalName(),
                  TypeUtils.toInternalNames(interfaces),
                  sourceFile);
         init();
     }
 
     public CodeEmitter getStaticHook() {
-         if (TypeUtils.isInterface(access)) {
+         if (TypeUtils.isInterface(getAccess())) {
              throw new IllegalStateException("static hook is invalid for this class");
          }
          if (staticHook == null) {
@@ -89,15 +103,15 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public int getAccess() {
-        return access;
+        return classInfo.getModifiers();
     }
 
     public Type getClassType() {
-        return classType;
+        return classInfo.getType();
     }
 
     public Type getSuperType() {
-        return superType;
+        return classInfo.getSuperType();
     }
 
     public void end_class() {
@@ -117,14 +131,14 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
-        if (classType == null)
-            throw new IllegalStateException("classtype is null! " + this);
+        if (classInfo == null)
+            throw new IllegalStateException("classInfo is null! " + this);
         CodeVisitor v = cv.visitMethod(access,
                                        sig.getName(),
                                        sig.getDescriptor(),
                                        TypeUtils.toInternalNames(exceptions),
                                        attrs);
-        if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(this.access)) {
+        if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(getAccess())) {
             rawStaticInit = v;
             CodeVisitor wrapped = new CodeAdapter(v) {
                 public void visitMaxs(int maxStack, int maxLocals) {
@@ -184,7 +198,7 @@ public class ClassEmitter extends ClassAdapter {
     FieldInfo getFieldInfo(String name) {
         FieldInfo field = (FieldInfo)fieldInfo.get(name);
         if (field == null) {
-            throw new IllegalArgumentException("Field " + name + " is not declared in " + classType.getClassName());
+            throw new IllegalArgumentException("Field " + name + " is not declared in " + getClassType().getClassName());
         }
         return field;
     }
