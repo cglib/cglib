@@ -106,13 +106,13 @@ class FastClassEmitter extends ClassEmitter {
         // getIndex(String, Class[])
         e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
         e.load_args();
-        ComplexOps.method_switch(e, methods, new GetIndexCallback(e, methods));
+        EmitUtils.method_switch(e, methods, new GetIndexCallback(e, methods));
         e.end_method();
 
         // getIndex(Class[])
         e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
         e.load_args();
-        ComplexOps.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
+        EmitUtils.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
         e.end_method();
 
         // invoke(int, Object, Object[])
@@ -154,7 +154,7 @@ class FastClassEmitter extends ClassEmitter {
                 e.return_value();
             }
         };
-        ComplexOps.string_switch(e,
+        EmitUtils.string_switch(e,
                                  (String[])signatures.toArray(new String[0]),
                                  Constants.SWITCH_STYLE_HASH,
                                  callback);
@@ -188,7 +188,7 @@ class FastClassEmitter extends ClassEmitter {
             }
         });
         block.end();
-        ComplexOps.wrap_throwable(block, INVOCATION_TARGET_EXCEPTION);
+        EmitUtils.wrap_throwable(block, INVOCATION_TARGET_EXCEPTION);
         e.mark(illegalArg);
         e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Cannot find matching method/constructor");
     }

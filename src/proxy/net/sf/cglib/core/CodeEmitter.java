@@ -483,7 +483,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
         emit_field(Constants.PUTSTATIC, owner, name, type);
     }
 
-    // package-protected for ComplexOps, try to fix
+    // package-protected for EmitUtils, try to fix
     void emit_field(int opcode, Type ctype, String name, Type ftype) {
         cv.visitFieldInsn(opcode,
                           ctype.getInternalName(),

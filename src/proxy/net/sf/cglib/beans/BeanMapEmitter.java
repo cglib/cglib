@@ -84,8 +84,8 @@ class BeanMapEmitter extends ClassEmitter {
         super(v);
 
         begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
-        ComplexOps.null_constructor(this);
-        ComplexOps.factory_method(this, NEW_INSTANCE);
+        EmitUtils.null_constructor(this);
+        EmitUtils.factory_method(this, NEW_INSTANCE);
         generateConstructor();
             
         Map getters = makePropertyMap(ReflectUtils.getBeanGetters(type));
@@ -130,7 +130,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         e.checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(e, getNames(getters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        EmitUtils.string_switch(e, getNames(getters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                 e.invoke(pd.getReadMethod());
@@ -152,7 +152,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         e.checkcast(Constants.TYPE_STRING);
-        ComplexOps.string_switch(e, getNames(setters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        EmitUtils.string_switch(e, getNames(setters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                 if (pd.getReadMethod() == null) {
@@ -184,7 +184,7 @@ class BeanMapEmitter extends ClassEmitter {
         CodeEmitter e = begin_static();
         e.new_instance(FIXED_KEY_SET);
         e.dup();
-        ComplexOps.push_array(e, allNames);
+        EmitUtils.push_array(e, allNames);
         e.invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
         e.putfield("keys");
         e.return_value();
@@ -201,10 +201,10 @@ class BeanMapEmitter extends ClassEmitter {
     private void generateGetPropertyType(final Map allProps, String[] allNames) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_TYPE, null);
         e.load_arg(0);
-        ComplexOps.string_switch(e, allNames, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        EmitUtils.string_switch(e, allNames, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)allProps.get(key);
-                ComplexOps.load_class(e, Type.getType(pd.getPropertyType()));
+                EmitUtils.load_class(e, Type.getType(pd.getPropertyType()));
                 e.return_value();
             }
             public void processDefault() {

@@ -121,13 +121,13 @@ public class TestStringSwitch extends CodeGenTestCase {
                            null,
                            new Type[]{ Type.getType(Indexed.class) },
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                                   ReflectUtils.getSignature(method),
                                                   ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
-            ComplexOps.string_switch(e, keys, switchStyle, new ObjectSwitchCallback() {
+            EmitUtils.string_switch(e, keys, switchStyle, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         String string = (String)key;
                         e.push((int)string.charAt(string.length() - 1));

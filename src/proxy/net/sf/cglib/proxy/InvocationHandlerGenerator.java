@@ -87,7 +87,7 @@ implements CallbackGenerator
     public void generateStatic(CodeEmitter e, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            ComplexOps.load_method(e, method);
+            EmitUtils.load_method(e, method);
             e.putfield(getFieldName(context, method));
         }
     }

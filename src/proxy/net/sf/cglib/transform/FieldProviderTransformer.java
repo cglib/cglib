@@ -83,7 +83,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
 
     private void initFieldProvider(String[] names) {
         CodeEmitter e = getStaticHook();
-        ComplexOps.push_object(e, names);
+        EmitUtils.push_object(e, names);
         e.putstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
         
         e.push(names.length);
@@ -93,7 +93,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
             e.dup();
             e.push(i);
             Type type = (Type)fields.get(names[i]);
-            ComplexOps.load_class(e, type);
+            EmitUtils.load_class(e, type);
             e.aastore();
         }
         e.putstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
@@ -156,7 +156,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null);
         e.load_this();
         e.load_arg(0);
-        ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 Type type = (Type)fields.get(key);
                 e.getfield((String)key);
@@ -175,7 +175,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);
-        ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+        EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 Type type = (Type)fields.get(key);
                 e.unbox(type);

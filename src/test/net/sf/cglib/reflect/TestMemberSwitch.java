@@ -113,13 +113,13 @@ public class TestMemberSwitch extends CodeGenTestCase {
                            getClassName(), null,
                            new Type[]{ Type.getType(Indexed.class) },
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                                   ReflectUtils.getSignature(method),
                                                   ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
-            ComplexOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
+            EmitUtils.constructor_switch(e, constructors, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         e.push(clist.indexOf(key));
                         e.goTo(end);

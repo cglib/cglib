@@ -96,7 +96,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.14 2003/10/06 07:50:16 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.15 2003/10/29 03:59:12 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -217,8 +217,8 @@ abstract public class KeyFactory {
                            KEY_FACTORY,
                            new Type[]{ Type.getType(keyInterface) },
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
-            ComplexOps.factory_method(ce, ReflectUtils.getSignature(newInstance));
+            EmitUtils.null_constructor(ce);
+            EmitUtils.factory_method(ce, ReflectUtils.getSignature(newInstance));
 
             int seed = 0;
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
@@ -248,7 +248,7 @@ abstract public class KeyFactory {
             for (int i = 0; i < parameterTypes.length; i++) {
                 e.load_this();
                 e.getfield(getFieldName(i));
-                ComplexOps.hash_code(e, parameterTypes[i], hm, customizer);
+                EmitUtils.hash_code(e, parameterTypes[i], hm, customizer);
             }
             e.return_value();
             e.end_method();
@@ -265,7 +265,7 @@ abstract public class KeyFactory {
                 e.load_arg(0);
                 e.checkcast_this();
                 e.getfield(getFieldName(i));
-                ComplexOps.not_equals(e, parameterTypes[i], fail, customizer);
+                EmitUtils.not_equals(e, parameterTypes[i], fail, customizer);
             }
             e.push(1);
             e.return_value();
@@ -286,7 +286,7 @@ abstract public class KeyFactory {
                 }
                 e.load_this();
                 e.getfield(getFieldName(i));
-                ComplexOps.append_string(e, parameterTypes[i], ComplexOps.DEFAULT_DELIMITERS, customizer);
+                EmitUtils.append_string(e, parameterTypes[i], EmitUtils.DEFAULT_DELIMITERS, customizer);
             }
             e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
             e.return_value();

@@ -60,7 +60,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.14 2003/10/03 19:25:07 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.15 2003/10/29 03:59:12 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -131,7 +131,7 @@ abstract public class ConstructorDelegate {
                            new Type[]{ Type.getType(iface) },
                            Constants.SOURCE_FILE);
             Type declaring = Type.getType(constructor.getDeclaringClass());
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                             ReflectUtils.getSignature(newInstance),
                                             ReflectUtils.getExceptionTypes(newInstance));

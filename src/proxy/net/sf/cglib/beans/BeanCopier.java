@@ -131,7 +131,7 @@ abstract public class BeanCopier
                            null,
                            Constants.SOURCE_FILE);
 
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, COPY, null);
             PropertyDescriptor[] getters = ReflectUtils.getBeanGetters(source);
             PropertyDescriptor[] setters = ReflectUtils.getBeanGetters(target);
@@ -167,7 +167,7 @@ abstract public class BeanCopier
                         e.load_local(sourceLocal);
                         e.invoke(getter.getReadMethod());
                         e.box(getterType);
-                        ComplexOps.load_class(e, setterType);
+                        EmitUtils.load_class(e, setterType);
                         e.push(setter.getName());
                         e.invoke_interface(CONVERTER, CONVERT);
                         e.unbox_or_zero(setterType);
