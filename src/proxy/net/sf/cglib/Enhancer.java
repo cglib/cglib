@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.12 2002/12/22 00:21:17 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.13 2002/12/27 12:11:37 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -91,7 +91,7 @@ public class Enhancer {
     // should be package-protected but causes problems on jdk1.2
     public interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
-                                  Class interceptor, boolean delegating);
+                                  Class interceptor, boolean delegating, Object filter);
     }
     
     private Enhancer() {}
@@ -114,8 +114,12 @@ public class Enhancer {
     
      public static Factory decorate(Object obj, MethodInterceptor interceptor ){
      
-         return (Factory)enhanceHelper(true, obj, obj.getClass(), null , interceptor,
-                               obj.getClass().getClassLoader(), null, null );
+         return (Factory)enhanceHelper(true, obj,
+                                       obj.getClass().isInterface() ? null : obj.getClass(),
+                                       obj.getClass().isInterface() ? new Class[]{obj.getClass()} : null,
+                                       interceptor,
+                                       obj.getClass().getClassLoader(),
+                                       null, null );
      }
     
     
@@ -219,7 +223,7 @@ public class Enhancer {
             loader = defaultLoader;
         }
         
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating,filter);
         Factory factory;
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
