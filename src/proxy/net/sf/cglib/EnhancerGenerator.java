@@ -142,7 +142,7 @@ extends CodeGenerator
             }
             if (group[ctype] == null) {
                 group[ctype] = new ArrayList(methods.size());
-                generators[ctype] = Callbacks.getGenerator(ctype);
+                generators[ctype] = CallbackUtils.getGenerator(ctype);
             }
             group[ctype].add(method);
         }
@@ -219,7 +219,7 @@ extends CodeGenerator
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
                 public void processCase(int key, Label end) throws Exception {
-                    checkcast(Callbacks.getType(key));
+                    checkcast(CallbackUtils.getType(key));
                     putfield(getCallbackField(key));
                     goTo(end);
                 }
@@ -321,7 +321,7 @@ extends CodeGenerator
                         dup2();
                     push(i);
                     invoke(CALLBACKS_GET);
-                    checkcast(Callbacks.getType(i));
+                    checkcast(CallbackUtils.getType(i));
                     putfield(getCallbackField(i));
                 }
             }
@@ -418,7 +418,7 @@ extends CodeGenerator
 
     private void generateCurrentCallback(int type) {
         if (!usedCallbacks.get(type)) {
-            declare_field(Modifier.PRIVATE, Callbacks.getType(type), getCallbackField(type));
+            declare_field(Modifier.PRIVATE, CallbackUtils.getType(type), getCallbackField(type));
             declare_field(Constants.PRIVATE_FINAL_STATIC, ThreadLocal.class, getThreadLocal(type));
             usedCallbacks.set(type);
         }
@@ -433,7 +433,7 @@ extends CodeGenerator
         pop();
         getfield(getThreadLocal(type));
         invoke(MethodConstants.THREADLOCAL_GET);
-        checkcast(Callbacks.getType(type));
+        checkcast(CallbackUtils.getType(type));
         mark(end);
     }
 

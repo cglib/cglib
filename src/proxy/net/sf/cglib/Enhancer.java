@@ -91,7 +91,7 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.46 2003/09/04 19:30:38 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.47 2003/09/09 17:08:08 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
@@ -190,7 +190,7 @@ public class Enhancer {
             }
         };
         if (filter == null) {
-            filter = new SimpleFilter(Callbacks.determineType(callback));
+            filter = new SimpleFilter(CallbackUtils.determineType(callback));
         }
         return enhanceHelper(cls, interfaces, callbacks, loader, filter);
     }
