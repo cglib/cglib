@@ -40,8 +40,10 @@ public class Trace implements MethodInterceptor{
        list.toString(); 
        list.set( 0, null ); 
        list.toString();
-       
-        
+       list.add(list);
+       list.get(1);
+       list.toArray();
+       list.remove(list);
     }
     
     /** this method is invoked after execution
