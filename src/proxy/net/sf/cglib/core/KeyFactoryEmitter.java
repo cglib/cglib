@@ -60,7 +60,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.9 2003/09/30 18:21:50 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.10 2003/10/01 06:05:37 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -116,6 +116,7 @@ class KeyFactoryEmitter extends Emitter {
     private Type[] parameterTypes;
     private Customizer customizer;
     private Method newInstance;
+    private int seed;
 
     public KeyFactoryEmitter(ClassVisitor v,
                              String className,
@@ -143,19 +144,18 @@ class KeyFactoryEmitter extends Emitter {
         null_constructor();
         factory_method(ReflectUtils.getSignature(newInstance));
         generateConstructor();
+        generateHashCode();
         generateEquals();
         generateToString();
         end_class();
     }
 
-    // TODO: this doesn't exactly follow Effective Java recommendations
-    // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
+    // TODO: change to exactly follow Effective Java recommendations
     private void generateConstructor() {
         begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(parameterTypes), null);
         load_this();
         super_invoke_constructor();
         load_this();
-        int seed = 0;
         for (int i = 0; i < parameterTypes.length; i++) {
             seed += parameterTypes[i].hashCode();
             declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
@@ -166,15 +166,20 @@ class KeyFactoryEmitter extends Emitter {
             load_arg(i);
             putfield(getFieldName(i));
         }
+        return_value();
+    }
+
+    private void generateHashCode() {
+        begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
         push(PRIMES[(int)(seed % PRIMES.length)]);
         push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
         for (int i = 0; i < parameterTypes.length; i++) {
-            load_arg(i);
+            load_this();
+            getfield(getFieldName(i));
             hash_code(parameterTypes[i]);
         }
         swap();
         pop();
-        super_putfield("hash", Type.INT_TYPE);
         return_value();
     }
 
