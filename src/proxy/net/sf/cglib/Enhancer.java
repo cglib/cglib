@@ -91,7 +91,7 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.45 2003/09/04 19:18:56 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.46 2003/09/04 19:30:38 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
@@ -146,7 +146,6 @@ public class Enhancer {
      * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
      * @return an instance of the enhanced class. Will extend the source class and implement the given
      * interfaces, plus the CGLIB Factory interface.
-     * @see InternalReplace#writeReplace(Object)
      * @see Factory
      */
     public static Object enhance(Class cls, Class[] interfaces, Callbacks callbacks,
@@ -216,79 +215,5 @@ public class Enhancer {
                 }
             }
         });
-    }
-    
-    /**
-     * Class containing the default implementation of the <code>writeReplace</code> method.
-     * TODO: document what I do
-     */
-    public static class InternalReplace implements Serializable {
-        private String parentClassName;
-        private String [] interfaceNames;
-        private MethodInterceptor mi;
-        
-        public InternalReplace() {
-        }
-        
-        private InternalReplace(String parentClassName, String[] interfaceNames,
-                                MethodInterceptor mi) {
-            this.parentClassName = parentClassName;
-            this.interfaceNames   = interfaceNames;
-            this.mi = mi;
-        }
-
-        public static Object writeReplace(Object enhanced) throws ObjectStreamException {
-            MethodInterceptor mi = (MethodInterceptor)((Factory)enhanced).getCallback(Callbacks.INTERCEPT);
-            String parentClassName = enhanced.getClass().getSuperclass().getName();
-            Class interfaces[] = enhanced.getClass().getInterfaces();
-            List interfaceNames = new ArrayList(interfaces.length);
-            
-            for (int i = 0; i < interfaces.length; i++) {
-                // skip CGLIB interfaces
-                if (!ReflectUtils.getPackageName(interfaces[i]).equals("net.sf.cglib")) {
-                    interfaceNames.add(interfaces[i].getName());
-                }
-            }
-
-            return new InternalReplace(
-                parentClassName, 
-                (String[]) interfaceNames.toArray(new String[interfaceNames.size()]), 
-                mi
-            );
-        }
-        
-        
-        private Object readResolve() throws ObjectStreamException {
-            try {
-                ClassLoader loader = getClass().getClassLoader();
-                Class parent = loader.loadClass(parentClassName);
-                Class interfaces[] = null;
-                
-                if (interfaceNames != null) {
-                    interfaces = new Class[interfaceNames.length];
-                    for (int i = 0; i< interfaceNames.length; i++) {
-                        interfaces[i] = loader.loadClass(interfaceNames[i]);
-                    }
-                }
-                return Enhancer.enhance(parent, interfaces, mi, loader);
-            } catch (ClassNotFoundException e) {
-                throw new ReadResolveException(e);
-            } catch (CodeGenerationException e) {
-                throw new ReadResolveException(e.getCause());
-            }
-        }
-    }
-
-     static class ReadResolveException extends ObjectStreamException {
-        private Throwable cause;
-
-        public ReadResolveException(Throwable cause) {
-            super(cause.getMessage());
-            this.cause = cause;
-        }
-
-        public Throwable getCause() {
-            return cause;
-        }
     }
 }
