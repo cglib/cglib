@@ -53,25 +53,90 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.sf.cglib.proxysample.InvocationHandlerSample;
+import net.sf.cglib.proxysample.ProxySampleInterface_ReturnsBasic;
+import net.sf.cglib.proxysample.ProxySampleInterface_ReturnsObject;
+import net.sf.cglib.proxysample.SampleImpl;
+
 import junit.framework.*;
-import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestJdkCompatibleProxy.java,v 1.3 2003/01/23 11:19:02 nemecec Exp $
+ * @version $Id: TestJdkCompatibleProxy.java,v 1.4 2003/01/28 11:54:09 nemecec Exp $
  */
 public class TestJdkCompatibleProxy extends CodeGenTestCase {
-    public void testBeanMap() throws Exception {
-        HashMap identity = new HashMap();
-        Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });
-        person.setName("Chris");
-        assertTrue("Chris".equals(person.getName()));
-        assertTrue("Chris".equals(identity.get("Name")));
+
+    private class SimpleInvocationHandler implements InvocationHandler {
+        Object o = null;
+        public SimpleInvocationHandler(Object o) {
+            this.o = o;
+        }
+        public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
+            System.out.println("invoking " + m + " on " + o + " with " + args);
+            Object r = m.invoke(o, args);
+            System.out.println("done: " + m + " on " + o + " with " + args + ", result is " + r);
+            return r; 
+        }
+     }
+
+    public void testGetProxyClassAndConstructor() throws Exception {
+        HashMap map = new HashMap();
+        map.put("test", "test");
+        InvocationHandler handler = new SimpleInvocationHandler(map);
+        Class proxyClass = Proxy.getProxyClass(TestJdkCompatibleProxy.class.getClassLoader(), new Class[] { Map.class });
+        Map proxyMap = (Map) proxyClass.getConstructor(new Class[] { InvocationHandler.class }).
+            newInstance(new Object[] { handler });
+        assertEquals("proxy delegation not correct", 
+                            map.get("test"), proxyMap.get("test"));
     }
 
-   public interface Person {
-        public String getName();
-        public void setName(String name);
+    public void testGetProxyInstance() throws Exception {
+        HashMap map = new HashMap();
+        map.put("test", "test");
+        InvocationHandler handler = new SimpleInvocationHandler(map);
+        Map proxyMap = (Map) Proxy.newProxyInstance(TestJdkCompatibleProxy.class.getClassLoader(), new Class[] { Map.class }, handler);
+        assertEquals("proxy delegation not correct", map.get("test"), proxyMap.get("test"));
+    }
+
+    public void testIsProxyClass() throws Exception {
+        HashMap map = new HashMap();
+        map.put("test", "test");
+        InvocationHandler handler = new SimpleInvocationHandler(map);
+        Map proxyMap = (Map) Proxy.newProxyInstance(TestJdkCompatibleProxy.class.getClassLoader(), new Class[] { Map.class }, handler);
+        assertTrue("real proxy not accepted", Proxy.isProxyClass(proxyMap.getClass()));
+    }
+
+    private class FakeProxy extends Proxy {
+        public FakeProxy(InvocationHandler ih) {
+            super(ih);
+        }
+    }
+
+    public void testIsNotProxyClass() throws Exception {
+        assertTrue("fake proxy accepted as real", 
+                        !Proxy.isProxyClass(FakeProxy.class));
+    }
+
+    public void testWithSample() throws Exception {
+        Class[] interfaces = new Class[] {ProxySampleInterface_ReturnsObject.class, ProxySampleInterface_ReturnsBasic.class};
+        InvocationHandlerSample ih = new InvocationHandlerSample(new SampleImpl());
+        System.out.println("creating proxy ... ");
+        Object p = Proxy.newProxyInstance(TestJdkCompatibleProxy.class.getClassLoader(), interfaces, ih);
+        System.out.println("proxy created: " + p + ". casting...");
+        ProxySampleInterface_ReturnsObject ro = (ProxySampleInterface_ReturnsObject) p;
+        System.out.println("proxy created. testing...");
+        System.out.println("calling getKala(\"mees\")");
+        String r_ro = ro.getKala("mees");
+        System.out.println("getKala(String) returned: " + r_ro);
+        ProxySampleInterface_ReturnsBasic rb = (ProxySampleInterface_ReturnsBasic) p;
+        System.out.println();
+        System.out.println("calling getKala(11)");
+        int r_rb = rb.getKala(11);
+        System.out.println("getKala(float) returned: " + r_rb);
     }
 
     public TestJdkCompatibleProxy(String testName) {

@@ -51,37 +51,43 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.proxysample;
 
 import java.lang.reflect.Method;
-import java.util.Map;
+
+import net.sf.cglib.InvocationHandler;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * @author neeme
+ *
  */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
+public class InvocationHandlerSample implements InvocationHandler {
 
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+    private Object o;
+
+    /**
+     * Constructor for InvocationHandlerSample.
+     */
+    public InvocationHandlerSample(Object o) {
+        this.o = o;
     }
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
-    }
-
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
+    /**
+     * @see org.apache.bcel.proxy.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object)
+     */
+    public Object invoke(Object proxy, Method method, Object[] args)
+        throws Throwable {
+        System.out.println("invoke() start");
+        System.out.println("    method: " + method.getName());
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                System.out.println("    arg: " + args[i]);
+            }
         }
-        return null;
+        Object r = method.invoke(o, args);
+        System.out.println("    return: " + r);
+        System.out.println("invoke() end");
+        return r;
     }
-}
 
+}

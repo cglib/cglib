@@ -53,35 +53,73 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
+import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
+
 
 /**
+ * This class is meant to be used as a implementation of
+ * <code>java.lang.reflect.Proxy</code> under JDK 1.2. There are some known
+ * subtle differences:
+ * <ul>
+ * <li>The exceptions returned by invoking <code>getExceptionTypes</code>
+ * on the <code>Method</code> passed to the <code>invoke</code> method
+ * <b>are</b> the exact set that can be thrown without resulting in an
+ * <code>UndeclaredThrowableException</code> being thrown.
+ * <li>There is no protected constructor which accepts an
+ * <code>InvocationHandler</code>. Instead, use the more convenient
+ * <code>newProxyInstance</code> static method.
+ * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
+ * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
+ * </ul> 
+ * 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
+ * @version $Id: Proxy.java,v 1.1 2003/01/28 11:52:23 nemecec Exp $
  */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
+public class Proxy implements Serializable {
+    private static final Class TYPE = Proxy.class;
+    private static Map generatedClasses = Collections.synchronizedMap(new WeakHashMap());
+    private static final FactoryCache cache = new FactoryCache(Collections.synchronizedMap(new WeakHashMap()));
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("CGLIB$Proxy");
 
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+    private InvocationHandler ih;
+
+    protected Proxy(InvocationHandler ih) {
+        this.ih = ih;
     }
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
+    public static InvocationHandler getInvocationHandler(Object proxy) {
+        return ((Proxy) proxy).ih;
     }
 
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
+    public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
+        Class clazz = (Class) cache.get(loader, interfaces);
+        if (clazz == null) {
+            try {
+                ProxyGenerator generator = new ProxyGenerator(nameFactory.getNextName(TYPE), interfaces, loader);
+                clazz = generator.define();
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+            cache.put(loader, interfaces, clazz);
+            generatedClasses.put(clazz, null);
         }
-        return null;
+        return clazz;
     }
-}
 
+    public static boolean isProxyClass(Class cl) {
+        return generatedClasses.containsKey(cl);
+    }
+
+    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler ih) {
+        Class clazz = getProxyClass(loader, interfaces);
+        try {
+            return clazz.getConstructor(new Class[] { InvocationHandler.class }).newInstance(new Object[] { ih });
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }        
+}

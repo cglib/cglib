@@ -51,37 +51,26 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
-
-import java.lang.reflect.Method;
-import java.util.Map;
+package net.sf.cglib.proxysample;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * @author neeme
+ *
  */
-public class BeanMapProxy implements InvocationHandler {
-    private Map map;
+public class SampleImpl implements ProxySampleInterface_ReturnsObject, ProxySampleInterface_ReturnsBasic {
 
-    public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+    /**
+     * @see org.apache.bcel.proxy.sample.ProxySampleInterface_ReturnsObject#getKala(java.lang.String)
+     */
+    public String getKala(String kalamees) throws Exception {
+        return "kala " + kalamees;
     }
 
-    public BeanMapProxy(Map map) {
-        this.map = map;
+    /**
+     * @see org.apache.bcel.proxy.sample.ProxySampleInterface_ReturnsBasic#getKala(float)
+     */
+    public int getKala(float kalamees) {
+        return (int) (100 + kalamees);
     }
 
-    public Object invoke(Object proxy, Method m, Object[] args) throws Throwable {
-        String name = m.getName();
-        if (name.startsWith("get")) {
-            return map.get(name.substring(3));
-        } else if (name.startsWith("set")) {
-            map.put(name.substring(3), args[0]);
-            return null;
-        }
-        return null;
-    }
 }
-
