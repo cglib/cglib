@@ -63,11 +63,9 @@ import net.sf.cglib.reflect.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.29 2003/10/05 17:05:46 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.30 2003/10/05 17:17:16 herbyderby Exp $
  */
 public class MethodProxy {
-    private String m1;
-    private String m2;
     private FastClass f1;
     private FastClass f2;
     private int i1;
@@ -77,21 +75,35 @@ public class MethodProxy {
      * For internal use by Enhancer only; see the FastMethod class in the reflect package
      * for similar functionality.
      */
-    public static MethodProxy create(ClassLoader loader, Class c1, String m1, Class c2, String m2) {
-        return new MethodProxy(loader, c1, m1, c2, m2);
-    }
-    
-    private MethodProxy(ClassLoader loader ,Class c1, String m1, Class c2, String m2) {
-        this.m1 = m1;
-        this.m2 = m2;
-        f1 = helper(loader, c1);
-        f2 = helper(loader, c2);
-        i1 = f1.getIndex(m1);
-        i2 = f2.getIndex(m2);
-        // TODO: handle protected method exception here instead of inside invoke
+    public static MethodProxy create(ClassLoader loader, Class c1, final String m1, Class c2, String m2) {
+        FastClass f1 = helper(loader, c1);
+        FastClass f2 = helper(loader, c2);
+        int i1 = f1.getIndex(m1);
+        int i2 = f2.getIndex(m2);
+        if (i1 < 0) {
+            return new MethodProxy(f2, i2) {
+                public Object invoke(Object obj, Object[] args) throws Throwable {
+                    throw new IllegalArgumentException("Protected method: " + m1);
+                }
+            };
+        } else {
+            return new MethodProxy(f1, i1, f2, i2);
+        }
     }
 
-    private FastClass helper(ClassLoader loader, Class type) {
+    private MethodProxy(FastClass f1, int i1, FastClass f2, int i2) {
+        this.f1 = f1;
+        this.i1 = i1;
+        this.f2 = f2;
+        this.i2 = i2;
+    }
+
+    private MethodProxy(FastClass f2, int i2) {
+        this.f2 = f2;
+        this.i2 = i2;
+    }
+
+    private static FastClass helper(ClassLoader loader, Class type) {
         FastClass.Generator g = new FastClass.Generator();
         g.setType(type);
         g.setClassLoader(loader);
@@ -107,14 +119,10 @@ public class MethodProxy {
      * @see MethodInterceptor#intercept
      */
     public Object invoke(Object obj, Object[] args) throws Throwable {
-        if (i1 == -1) {
-            throw new IllegalAccessException("Protected method: " + m1);
-        } else {
-            try {
-                return f1.invoke(i1, obj, args);
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
-            }
+        try {
+            return f1.invoke(i1, obj, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
         }
     }
 
@@ -127,14 +135,10 @@ public class MethodProxy {
      * @see MethodInterceptor#intercept
      */
     public Object invokeSuper(Object obj, Object[] args) throws Throwable {
-        if (i2 == -1) {
-            throw new IllegalAccessException("Protected method: " + m2);
-        } else {
-            try {
-                return f2.invoke(i2, obj, args);
-            } catch (InvocationTargetException e) {
-                throw e.getTargetException();
-            }
+        try {
+            return f2.invoke(i2, obj, args);
+        } catch (InvocationTargetException e) {
+            throw e.getTargetException();
         }
     }
 }
