@@ -53,6 +53,7 @@
  */
 package net.sf.cglib;
 
+import net.sf.cglib.beans.*;
 import java.lang.reflect.Method;
 import junit.framework.*;
 
@@ -60,7 +61,7 @@ import junit.framework.*;
  *
  * @author baliuka
  */
-public class TestMetaClass extends TestCase {
+public class TestBulkBean extends TestCase {
     private String getters[] = {
         "getIntP",
         "getLongP",
@@ -123,7 +124,7 @@ public class TestMetaClass extends TestCase {
        
     
     
-    public TestMetaClass(java.lang.String testName) {
+    public TestBulkBean(java.lang.String testName) {
         super(testName);
     }
     
@@ -132,15 +133,14 @@ public class TestMetaClass extends TestCase {
     }
     
     public static Test suite() {
-        return new TestSuite(TestMetaClass.class);
+        return new TestSuite(TestBulkBean.class);
     }
     
-    /** Test of getInstance method, of class net.sf.cglib.MetaClass. */
+    /** Test of getInstance method, of class net.sf.cglib.BulkBean. */
     public void testGetInstance() throws Throwable {
-        MetaClass mClass = MetaClass.getInstance(getClass().getClassLoader(),
-                                                 MA.class, getters, setters, types);
+        BulkBean mClass = BulkBean.getInstance(MA.class, getters, setters, types);
       
-        MA bean = (MA)mClass.newInstance();
+        MA bean = new MA();
       
         mClass.setPropertyValues( bean, values );
         Object values1[] = mClass.getPropertyValues( bean );
@@ -150,7 +150,7 @@ public class TestMetaClass extends TestCase {
         }  
     }
     
-    public void testMetaClassPerformance() throws Throwable{
+    public void testBulkBeanPerformance() throws Throwable{
     
         int iterations = 100000;
        
@@ -158,7 +158,7 @@ public class TestMetaClass extends TestCase {
         System.out.println("iteration count: " + iterations);
         System.out.println(); 
        
-        MetaClass mClass = new MetaClassReflectImpl( MA.class,getters,setters,types );
+        BulkBean mClass = new BulkBeanReflectImpl( MA.class,getters,setters,types );
        
         System.out.println( mClass.getClass().getName() + ": " );
         int b = performanceTest( mClass, iterations );
@@ -166,8 +166,8 @@ public class TestMetaClass extends TestCase {
         System.out.println(); 
        
        
-        mClass = MetaClass.getInstance(getClass().getClassLoader(),
-                                       MA.class, getters, setters, types);
+        mClass = BulkBean.getInstance(MA.class, getters, setters, types);
+                                       
       
         System.out.println( mClass.getClass().getName() + ": " );
         int a = performanceTest( mClass, iterations );
@@ -177,27 +177,27 @@ public class TestMetaClass extends TestCase {
         System.out.println( "factor: " + b/(float)a );
     }
     
-    public int performanceTest( MetaClass mc, int iterations ) throws Throwable{
+    public int performanceTest( BulkBean mc, int iterations ) throws Throwable{
        
          
          
         long start = System.currentTimeMillis();
         for( int i = 0; i< iterations; i++   ){
-            MA bean = (MA)mc.newInstance();
+            MA bean = new MA(); // (MA)mc.newInstance();
             mc.setPropertyValues( bean, values );
-         
+            mc.getPropertyValues( bean, values );
         }
        
         return (int)( System.currentTimeMillis() - start );
     }
     
-    /** Generated implementation of abstract class net.sf.cglib.MetaClass. Please fill dummy bodies of generated methods. */
-    private static class MetaClassReflectImpl extends MetaClass {
+    /** Generated implementation of abstract class net.sf.cglib.BulkBean. Please fill dummy bodies of generated methods. */
+    private static class BulkBeanReflectImpl extends BulkBean {
         
         private   Method gets[];
         private   Method sets[];
         private   int size ;    
-        public MetaClassReflectImpl(Class target, String[] getters, String[] setters, Class[] types) {
+        public BulkBeanReflectImpl(Class target, String[] getters, String[] setters, Class[] types) {
             this.target = target;
             this.types = types;
             this.getters = getters;
@@ -227,26 +227,14 @@ public class TestMetaClass extends TestCase {
             } 
         }
         
-        public Object newInstance() {
-            try{            
-                return target.newInstance();
-            }catch( Exception e ){
-                throw new Error(e.getMessage());
-            }   
-        }
-        
-        public Object[] getPropertyValues(Object bean) {
+        public void getPropertyValues(Object bean, Object[] values) {
             
             try{
-                
-                Object[] result = new Object[ size ];
-           
                 for( int i = 0; i < size ; i++  ){
                     if( this.gets[i] != null ){
-                        result[i] = gets[i].invoke(bean, null );             
+                        values[i] = gets[i].invoke(bean, null );             
                     }
                 }
-                return result;
             }catch( Exception e ){
                 throw new Error( e.getMessage() );     
             } 
