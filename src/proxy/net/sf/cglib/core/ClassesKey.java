@@ -53,8 +53,13 @@
  */
 package net.sf.cglib.core;
 
-public class ClassesKey
-{
+public class ClassesKey {
+    private Transformer GET_CLASS_TRANSFORMER = new Transformer() {
+        public Object transform(Object value) {
+            return value.getClass().getName();
+        }
+    };
+        
     private Object[] array;
     private int hashCode;
 
@@ -70,7 +75,7 @@ public class ClassesKey
     public boolean equals(Object o) {
         return o != null
             && (o instanceof ClassesKey)
-            && CollectionUtils.arrayEquals(array, ((ClassesKey)o).array);
+            && CollectionUtils.arrayEquals(array, ((ClassesKey)o).array, GET_CLASS_TRANSFORMER);
     }
 
     public int hashCode() {

@@ -101,7 +101,7 @@ abstract public class MulticastDelegate implements Cloneable {
     }
 
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(MulticastDelegate.class.getName(), true);
+        private static final Source SOURCE = new Source(MulticastDelegate.class.getName());
         private static final Signature NEW_INSTANCE =
           TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate newInstance()");
         private static final Signature ADD =
@@ -127,7 +127,7 @@ abstract public class MulticastDelegate implements Cloneable {
 
         public MulticastDelegate create() {
             setNamePrefix(MulticastDelegate.class.getName());
-            return (MulticastDelegate)super.create(iface);
+            return (MulticastDelegate)super.create(iface.getName());
         }
 
         public void generateClass(ClassVisitor v) throws NoSuchFieldException {

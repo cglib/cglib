@@ -104,7 +104,7 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
 
     private static class Generator extends TestGenerator {
-        private static final Source SOURCE = new Source(TestStringSwitch.class.getName(), false);
+        private static final Source SOURCE = new Source(TestStringSwitch.class.getName());
         private String[] keys;
         private int switchStyle;
 

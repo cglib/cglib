@@ -84,9 +84,7 @@ implements ClassGenerator
     protected static class Source {
         String name;
         Map cache = new WeakHashMap();
-
-        // TODO: get rid of useCache
-        public Source(String name, boolean useCache) {
+        public Source(String name) {
             this.name = name;
         }
     }
