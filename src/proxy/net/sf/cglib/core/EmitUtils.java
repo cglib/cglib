@@ -602,7 +602,7 @@ public class EmitUtils {
                                      final ArrayDelimiters delims,
                                      final Customizer customizer) {
         final ArrayDelimiters d = (delims != null) ? delims : DEFAULT_DELIMITERS;
-        ProcessArrayCallback callback =new ProcessArrayCallback() {
+        ProcessArrayCallback callback = new ProcessArrayCallback() {
             public void processElement(Type type) {
                 append_string_helper(e, type, d, customizer, this);
                 e.push(d.inside);
@@ -646,13 +646,17 @@ public class EmitUtils {
             e.dup();
             e.ifnull(skip);
             e.swap();
-            e.push(delims.before);
-            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
-            e.swap();
+            if (delims != null && delims.before != null && !"".equals(delims.before)) {
+                e.push(delims.before);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+                e.swap();
+            }
             EmitUtils.process_array(e, type, callback);
             shrinkStringBuffer(e, 2);
-            e.push(delims.after);
-            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            if (delims != null && delims.after != null && !"".equals(delims.after)) {
+                e.push(delims.after);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            }
         } else {
             e.dup();
             e.ifnull(skip);
@@ -804,9 +808,9 @@ public class EmitUtils {
                                            final Label end,
                                            final TinyBitSet checked) throws Exception {
         if (members.size() == 1) {
-            // need to check classes that have not already been checked via switches
             Member member = (Member)members.get(0);
             Class[] types = typer.getParameterTypes(member);
+            // need to check classes that have not already been checked via switches
             for (int i = 0; i < types.length; i++) {
                 if (checked == null || !checked.get(i)) {
                     e.dup();
