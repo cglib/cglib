@@ -53,43 +53,41 @@
  */
 package net.sf.cglib;
 
+import java.beans.*;
+import java.lang.reflect.Method;
+import java.util.*;
 import junit.framework.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.19 2003/07/08 05:56:45 herbyderby Exp $
+ * @author Chris Nokleberg
+ * @version $Id: TestLookupDelegator.java,v 1.1 2003/07/08 05:56:45 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestLookupDelegator extends CodeGenTestCase {
+    public void testSimple() throws Exception {
+        final Map map = new HashMap();
+        map.put(DI1.class.getName(), new D1());
+        map.put(DI2.class.getName(), new D2());
+        LookupDelegator.Callback callback = new LookupDelegator.Callback() {
+            public Object lookupDelegate(String className) {
+                return map.get(className);
+            }
+        };
+        Object obj = LookupDelegator.create(new Class[]{ DI1.class, DI2.class },
+                                            callback,
+                                            null);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D2"));
+    }
+
+    public TestLookupDelegator(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestInterface.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestLookupDelegator.suite());
-           
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestLookupDelegator.class);
     }
 }
-
