@@ -74,7 +74,7 @@ abstract public class BeanMap implements Map {
     }
 
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(BeanMap.class.getName(), true);
+        private static final Source SOURCE = new Source(BeanMap.class.getName());
 
         private Object bean;
         private int switchStyle;

@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.11 2003/09/29 22:56:28 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.12 2003/09/29 23:08:52 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -99,7 +99,7 @@ abstract public class Mixin {
     }
     
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(Mixin.class.getName(), true);
+        private static final Source SOURCE = new Source(Mixin.class.getName());
 
         private Class[] classes;
         private Object[] delegates;

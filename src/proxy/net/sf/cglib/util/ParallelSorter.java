@@ -301,7 +301,7 @@ abstract public class ParallelSorter extends SorterTemplate {
 
 
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(ParallelSorter.class.getName(), true);
+        private static final Source SOURCE = new Source(ParallelSorter.class.getName());
 
         private Object[] arrays;
 

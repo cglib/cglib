@@ -60,7 +60,7 @@ import org.objectweb.asm.ClassVisitor;
 
 public class Enhancer extends AbstractClassGenerator
 {
-    private static final Source SOURCE = new Source(Enhancer.class.getName(), true);
+    private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.CLASS_BY_NAME);
 

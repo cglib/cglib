@@ -60,7 +60,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.12 2003/09/29 22:56:27 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.13 2003/09/29 23:08:52 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -81,7 +81,7 @@ abstract public class ConstructorDelegate {
     }
 
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(ConstructorDelegate.class.getName(), true);
+        private static final Source SOURCE = new Source(ConstructorDelegate.class.getName());
         private static final Type CONSTRUCTOR_DELEGATE =
           TypeUtils.parseType("net.sf.cglib.reflect.ConstructorDelegate");
 

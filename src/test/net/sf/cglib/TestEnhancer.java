@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.42 2003/09/23 10:54:35 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.43 2003/09/29 23:08:52 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -248,7 +248,6 @@ public class TestEnhancer extends CodeGenTestCase {
         == ClassLoader.getSystemClassLoader()  );
         
     }
-
     
     public void testCustomClassLoader()throws Throwable{
         
@@ -266,7 +265,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
         
     }
-    
+
     public void testRuntimException()throws Throwable{
     
         Source source =  (Source)Helpers.enhance(

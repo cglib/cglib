@@ -98,7 +98,7 @@ public class TestMemberSwitch extends CodeGenTestCase {
     }
 
     private static class Generator extends TestGenerator {
-        private static final Source SOURCE = new Source(TestMemberSwitch.class.getName(), false);
+        private static final Source SOURCE = new Source(TestMemberSwitch.class.getName());
         private Constructor[] constructors;
 
         public Generator(Constructor[] constructors) {
