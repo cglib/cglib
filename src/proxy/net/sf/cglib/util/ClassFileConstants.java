@@ -60,6 +60,7 @@ import org.apache.bcel.generic.*;
 /**
  * private utility
  * @author  baliuka
+ * @deprecated ClassFileConstants is internal utility and can be removed in the future
  */
 public interface ClassFileConstants extends org.apache.bcel.Constants{
 

@@ -61,6 +61,7 @@ import org.apache.bcel.generic.*;
 /**
  *  private utility
  * @author  baliuka
+ * @deprecated ClassFileUtils is internal utility and can be removed in the future 
  */
 public class ClassFileUtils implements ClassFileConstants {
     
