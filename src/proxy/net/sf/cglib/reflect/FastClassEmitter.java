@@ -56,6 +56,7 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
     
 class FastClassEmitter extends Emitter {
     private static final Method METHOD_GET_INDEX =
@@ -70,15 +71,10 @@ class FastClassEmitter extends Emitter {
       ReflectUtils.findMethod("FastClass.newInstance(int, Object[])");
     private static final Class[] CONSTRUCTOR_TYPES = { Class.class };
 
-    private final Class type;
-        
-    public FastClassEmitter(String className, Class type) {
-        setClassName(className);
-        setSuperclass(FastClass.class);
-        this.type = type;
-    }
+    public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
+        setClassVisitor(v);
+        begin_class(Modifier.PUBLIC, className, FastClass.class, null);
 
-    public byte[] getBytes() throws Exception {
         // constructor
         begin_constructor(CONSTRUCTOR_TYPES);
         load_this();
@@ -147,7 +143,7 @@ class FastClassEmitter extends Emitter {
         invokeSwitchHelper(constructors, 1);
         end_method();
 
-        return super.getBytes();
+        end_class();
     }
 
     private void invokeSwitchHelper(final Object[] members, final int arg) throws Exception {

@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.2 2003/09/12 19:08:24 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.3 2003/09/14 03:27:53 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -74,8 +74,6 @@ public class ReflectUtils {
         "net.sf.cglib",
         "net.sf.cglib.beans",
         "net.sf.cglib.reflect",
-        "net.sf.cglib.delegates",
-        "net.sf.cglib.algorithm"
     };
     static {
         primitives.put("byte", Byte.TYPE);
@@ -450,5 +448,24 @@ public class ReflectUtils {
         } else {
             return ((Constructor)member).getParameterTypes();
         }
+    }
+
+    public static Class[] add(Class[] classes, Class extra) {
+        if (classes == null) {
+            return new Class[]{ extra };
+        } else {
+            Class[] copy = new Class[classes.length + 1];
+            System.arraycopy(classes, 0, copy, 0, classes.length);
+            copy[classes.length] = extra;
+            return copy;
+        }
+    }
+
+    public static int getDefaultModifiers(Method method) {
+        return Modifier.FINAL
+            | (method.getModifiers()
+               & ~Modifier.ABSTRACT
+               & ~Modifier.NATIVE
+               & ~Modifier.SYNCHRONIZED);
     }
 }

@@ -57,10 +57,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.1 2003/09/12 19:08:25 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.2 2003/09/14 03:27:53 herbyderby Exp $
  */
 class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -68,20 +69,14 @@ class MixinEmitter extends Emitter {
       ReflectUtils.findMethod("Mixin$Factory.newInstance(Object[])");
     private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
 
-    private Class[] classes;
-    private int[] route;
-        
-    public MixinEmitter(String className, Class[] classes, int[] route) {
-        setClassName(className);
-        this.classes = classes;
-        this.route = route;
-        if (classes[0].isInterface()) {
-            addInterfaces(classes);
-        }
-        addInterface(Mixin.Factory.class);
-    }
+    public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
+        setClassVisitor(v);
 
-    public byte[] getBytes() throws Exception {
+        begin_class(Modifier.PUBLIC,
+                    className,
+                    null,
+                    ReflectUtils.add(classes, Mixin.Factory.class));
+
         Virt.null_constructor(this);
         generateConstructor();
         Virt.factory_method(this, NEW_INSTANCE);
@@ -96,7 +91,7 @@ class MixinEmitter extends Emitter {
             }
         }
 
-        return super.getBytes();
+        end_class();
     }
 
     protected Method[] getMethods(Class type) {

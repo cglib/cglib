@@ -56,27 +56,20 @@ package net.sf.cglib.core;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeVisitor;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
 abstract public class Emitter {
-//     private static String debugLocation;
-
-    private boolean inited;
     private String className;
-    private Class superclass = Object.class;
-
-    // TODO: remove default?
-    private int modifiers = Modifier.PUBLIC;
-
-    private EmitterBackend backend;
-    private List interfaces = new LinkedList();
+    private Class superclass;
 
     private String methodName;
     private Class returnType;
     private Class[] parameterTypes;
-    private boolean inMethod;
     private boolean isStatic;
     private int nextLocal;
 
@@ -84,16 +77,18 @@ abstract public class Emitter {
     private Block curBlock;
     private Map finalizeCallbacks = new HashMap();
 
-    public Emitter() {
-        this(new ASMBackend());
-    }
+    private ClassVisitor classv;
+    private CodeVisitor codev;
 
-    public Emitter(EmitterBackend backend) {
-        this.backend = backend;
+//     public Emitter(String className, Class superclass) {
+//         this.className = className;
+//         this.superclass = superclass;
+//     }
+
+    public Emitter() {
     }
 
     public void setClassName(String className) {
-        checkInit(false);
         this.className = className;
     }
 
@@ -109,116 +104,91 @@ abstract public class Emitter {
         if (superclass == null) {
             superclass = Object.class;
         }
-        checkInit(false);
         this.superclass = superclass;
     }
 
-    public void setClassModifiers(int modifiers) {
-        checkInit(false);
-        this.modifiers = modifiers;
-    }
-    
-    public int getClassModifiers() {
-        return modifiers;
+    public void setClassVisitor(ClassVisitor v) {
+        classv = v;
     }
 
+    public void setCodeVisitor(CodeVisitor v) {
+        codev = v;
+    }
+
+    // TODO: SOURCE_FILE argument?
+    public void begin_class(int modifiers,
+                            String className,
+                            Class superclass,
+                            Class[] interfaces) {
+        setClassName(className);
+        setSuperclass(superclass);
+        classv.visit(modifiers,
+                     getInternalName(getClassName()),
+                     getInternalName(getSuperclass()),
+                     getInternalNames(interfaces),
+                     Constants.SOURCE_FILE);
+    }
+
+    public void end_class() {
+        // TODO: any checking?
+        for (Iterator it = finalizeCallbacks.values().iterator(); it.hasNext();) {
+            ((FinalizeCallback)it.next()).process();
+        }
+        classv.visitEnd();
+        classv = null;
+    }
+
+//     private Class generate(ClassLoader loader) {
+//         String className = getClassName();
+//         ClassWriter cw = new ClassWriter();
+//         cw.visit(Modifier.PUBLIC,
+//                  ReflectUtils.getInternalName(className),
+//                  ReflectUtils.getInternalName(superclass),
+//                  ReflectUtils.getInternalNames(interfaces),
+//                  Constants.SOURCE_FILE);
+//         accept(cw);
+//         cw.visitEnd();
+//         byte[] b = cw.toByteArray();
+//         return defineClass(source.defineClass, className, b, loader);
+//     }
+    
+
+    // TODO: what if end_class will not be called?
     public void register(Object key, FinalizeCallback callback) {
         finalizeCallbacks.put(key, callback);
     }
 
-    private void checkInit(boolean flag) {
-        if (flag) {
-            if (!inited) {
-                if (className == null) {
-                    throw new IllegalStateException("class name cannot be null");
-                }
-                backend.init(this);
-                inited = true;
-            }
-        } else if (inited) {
-            throw new IllegalStateException("Emitter has already been initialized");
-        }
-    }
-
-    /*
-    protected void ensureLoadable(String className) throws ClassNotFoundException {
-        if (className != null) {
-            classLoader.loadClass(className);
-        }
-    }
-
-    protected void ensureLoadable(Class type) throws ClassNotFoundException {
-        if (type != null) {
-            ensureLoadable(type.getName());
-        }
-    }
-
-    protected void ensureLoadable(Class[] types) throws ClassNotFoundException {
-        if (types != null) {
-            for (int i = 0; i < types.length; i++) {
-                ensureLoadable(types[i]);
-            }
-        }
-    }
-    */
-
-    public byte[] getBytes() throws Exception {
-        checkInit(true);
-        for (Iterator it = finalizeCallbacks.values().iterator(); it.hasNext();) {
-            ((FinalizeCallback)it.next()).process();
-        }
-        return backend.getBytes();
-    }
-
-    public void addInterfaces(Class[] interfaces) {
-        if (interfaces != null) {
-            for (int i = 0; i < interfaces.length; i++) {
-                addInterface(interfaces[i]);
-            }
-        }
-    }
-
-    public void addInterface(Class type) {
-        checkInit(false);
-        if (!type.isInterface()) {
-            throw new IllegalArgumentException(type + " is not an interface");
-        }
-        interfaces.add(type);
-    }
-
-    public Class[] getInterfaces() {
-        return (Class[])interfaces.toArray(new Class[interfaces.size()]);
-    }
+//     public byte[] getBytes() throws Exception {
+//         for (Iterator it = finalizeCallbacks.values().iterator(); it.hasNext();) {
+//             ((FinalizeCallback)it.next()).process();
+//         }
+//         return this.getBytes();
+//     }
 
     public Class[] getParameterTypes() {
         return parameterTypes;
     }
 
-    public Class getReturnType() {
-        return returnType;
-    }
+//     public Class getReturnType() {
+//         return returnType;
+//     }
     
     public void begin_method(int modifiers, Class returnType, String methodName,
-    Class[] parameterTypes, Class[] exceptionTypes) {
-        checkInMethod();
+                             Class[] parameterTypes, Class[] exceptionTypes) {
         this.methodName = methodName;
         this.returnType = returnType;
         this.parameterTypes = parameterTypes;
         isStatic = Modifier.isStatic(modifiers);
-        backend.begin_method(modifiers, returnType, methodName, parameterTypes, exceptionTypes);
+
+        codev = classv.visitMethod(modifiers, // ASM modifier constants are same as JDK
+                                   methodName,
+                                   getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)),
+                                   getInternalNames(exceptionTypes));
         setNextLocal();
     }
     
-    public static int getDefaultModifiers(Method method) {
-        return Modifier.FINAL
-            | (method.getModifiers()
-               & ~Modifier.ABSTRACT
-               & ~Modifier.NATIVE
-               & ~Modifier.SYNCHRONIZED);
-    }
-    
     public void begin_method(Method method) {
-        begin_method(method, getDefaultModifiers(method));
+        begin_method(method, ReflectUtils.getDefaultModifiers(method));
     }
     
     public void begin_method(Method method, int modifiers) {
@@ -235,46 +205,45 @@ abstract public class Emitter {
     }
     
     public void begin_constructor(Class[] parameterTypes) {
-        checkInMethod();
         this.returnType = Void.TYPE;
         this.parameterTypes = parameterTypes;
-        backend.begin_constructor(parameterTypes);
+
+        codev = classv.visitMethod(Modifier.PUBLIC,
+                            Constants.CONSTRUCTOR_NAME,
+                            getInternalName(ReflectUtils.getMethodDescriptor(Void.TYPE, parameterTypes)),
+                            null);
+
         setNextLocal();
     }
     
     public void begin_static() {
-        checkInMethod();
         this.returnType = Void.TYPE;
         this.parameterTypes = Constants.TYPES_EMPTY;
-        backend.begin_static();
+
+        codev = classv.visitMethod(Modifier.STATIC,
+                            Constants.STATIC_NAME,
+                            getInternalName(ReflectUtils.getMethodDescriptor(Void.TYPE, Constants.TYPES_EMPTY)),
+                            null);
         setNextLocal();
     }
-    
-    private void checkInMethod() {
-        checkInit(true);
-        if (inMethod) {
-            throw new IllegalStateException("cannot nest methods");
-        }
-        inMethod = true;
-    }
-    
+
     private void setNextLocal() {
         nextLocal = getLocalOffset() + getStackSize(parameterTypes);
     }
     
     public void end_method() {
-        backend.end_method();
+        codev.visitMaxs(0, 0); // values are ignored
+        
         parameterTypes = null;
         returnType = null;
         methodName = null;
         if (curBlock != null) {
             throw new IllegalStateException("unclosed exception block");
         }
-        inMethod = false;
     }
 
     public Block begin_block() {
-        Block newBlock = new Block(curBlock, backend.mark());
+        Block newBlock = new Block(curBlock, mark());
         curBlock = newBlock;
         return curBlock;
     }
@@ -283,7 +252,7 @@ abstract public class Emitter {
         if (curBlock == null) {
             throw new IllegalStateException("mismatched block boundaries");
         }
-        curBlock.setEnd(backend.mark());
+        curBlock.setEnd(mark());
         curBlock = curBlock.getParent();
     }
     
@@ -294,36 +263,39 @@ abstract public class Emitter {
         if (block.getEnd() == null) {
             throw new IllegalStateException("end of block is unset");
         }
-        backend.catch_exception(block, exceptionType);
+        codev.visitTryCatchBlock(convertLabel(block.getStart()),
+                              convertLabel(block.getEnd()),
+                              convertLabel(mark()),
+                              getInternalName(exceptionType));
     }
     
-    public void ifeq(Label label) { backend.emit(Opcodes.IFEQ, label); }
-    public void ifne(Label label) { backend.emit(Opcodes.IFNE, label); }
-    public void iflt(Label label) { backend.emit(Opcodes.IFLT, label); }
-    public void ifge(Label label) { backend.emit(Opcodes.IFGE, label); }
-    public void ifgt(Label label) { backend.emit(Opcodes.IFGT, label); }
-    public void ifle(Label label) { backend.emit(Opcodes.IFLE, label); }
-    public void goTo(Label label) { backend.emit(Opcodes.GOTO, label); }
-    public void ifnull(Label label) { backend.emit(Opcodes.IFNULL, label); }
-    public void ifnonnull(Label label) { backend.emit(Opcodes.IFNONNULL, label); }
-    public void if_icmplt(Label label) { backend.emit(Opcodes.IF_ICMPLT, label); }
-    public void if_icmpgt(Label label) { backend.emit(Opcodes.IF_ICMPGT, label); }
-    public void if_icmpne(Label label) { backend.emit(Opcodes.IF_ICMPNE, label); }
-    public void if_icmpeq(Label label) { backend.emit(Opcodes.IF_ICMPEQ, label); }
-    public void if_acmpeq(Label label) { backend.emit(Opcodes.IF_ACMPEQ, label); }
-    public void if_acmpne(Label label) { backend.emit(Opcodes.IF_ACMPNE, label); }
+    public void ifeq(Label label) { emit(Opcodes.IFEQ, label); }
+    public void ifne(Label label) { emit(Opcodes.IFNE, label); }
+    public void iflt(Label label) { emit(Opcodes.IFLT, label); }
+    public void ifge(Label label) { emit(Opcodes.IFGE, label); }
+    public void ifgt(Label label) { emit(Opcodes.IFGT, label); }
+    public void ifle(Label label) { emit(Opcodes.IFLE, label); }
+    public void goTo(Label label) { emit(Opcodes.GOTO, label); }
+    public void ifnull(Label label) { emit(Opcodes.IFNULL, label); }
+    public void ifnonnull(Label label) { emit(Opcodes.IFNONNULL, label); }
+    public void if_icmplt(Label label) { emit(Opcodes.IF_ICMPLT, label); }
+    public void if_icmpgt(Label label) { emit(Opcodes.IF_ICMPGT, label); }
+    public void if_icmpne(Label label) { emit(Opcodes.IF_ICMPNE, label); }
+    public void if_icmpeq(Label label) { emit(Opcodes.IF_ICMPEQ, label); }
+    public void if_acmpeq(Label label) { emit(Opcodes.IF_ACMPEQ, label); }
+    public void if_acmpne(Label label) { emit(Opcodes.IF_ACMPNE, label); }
 
-    public void pop() { backend.emit(Opcodes.POP); }
-    public void pop2() { backend.emit(Opcodes.POP2); }
-    public void dup() { backend.emit(Opcodes.DUP); }
-    public void dup2() { backend.emit(Opcodes.DUP2); }
-    public void dup_x1() { backend.emit(Opcodes.DUP_X1); }
-    public void dup_x2() { backend.emit(Opcodes.DUP_X2); }
-    public void swap() { backend.emit(Opcodes.SWAP); }
-    public void aconst_null() { backend.emit(Opcodes.ACONST_NULL); }
+    public void pop() { emit(Opcodes.POP); }
+    public void pop2() { emit(Opcodes.POP2); }
+    public void dup() { emit(Opcodes.DUP); }
+    public void dup2() { emit(Opcodes.DUP2); }
+    public void dup_x1() { emit(Opcodes.DUP_X1); }
+    public void dup_x2() { emit(Opcodes.DUP_X2); }
+    public void swap() { emit(Opcodes.SWAP); }
+    public void aconst_null() { emit(Opcodes.ACONST_NULL); }
 
-    public void monitorenter() { backend.emit(Opcodes.MONITORENTER); }
-    public void monitorexit() { backend.emit(Opcodes.MONITOREXIT); }
+    public void monitorenter() { emit(Opcodes.MONITORENTER); }
+    public void monitorexit() { emit(Opcodes.MONITOREXIT); }
 
     public void if_cmpeq(Class type, Label label) {
         cmpHelper(type, label, Opcodes.IF_ICMPEQ, Opcodes.IFEQ);
@@ -340,119 +312,119 @@ abstract public class Emitter {
     
     private void cmpHelper(Class type, Label label, int intOp, int numOp) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LCMP);
+            emit(Opcodes.LCMP);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DCMPG);
+            emit(Opcodes.DCMPG);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FCMPG);
+            emit(Opcodes.FCMPG);
         } else {
-            backend.emit(intOp, label);
+            emit(intOp, label);
             return;
         }
-        backend.emit(numOp, label);
+        emit(numOp, label);
     }
 
     public void add(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LADD);
+            emit(Opcodes.LADD);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DADD);
+            emit(Opcodes.DADD);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FADD);
+            emit(Opcodes.FADD);
         } else if (type == Integer.TYPE) {
-            backend.emit(Opcodes.IADD);
+            emit(Opcodes.IADD);
         }
     }
 
     public void mul(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LMUL);
+            emit(Opcodes.LMUL);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DMUL);
+            emit(Opcodes.DMUL);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FMUL);
+            emit(Opcodes.FMUL);
         } else {
-            backend.emit(Opcodes.IMUL);
+            emit(Opcodes.IMUL);
         }
     }
 
     public void xor(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LXOR);
+            emit(Opcodes.LXOR);
         } else {
-            backend.emit(Opcodes.IXOR);
+            emit(Opcodes.IXOR);
         }
     }
 
     public void ushr(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LUSHR);
+            emit(Opcodes.LUSHR);
         } else {
-            backend.emit(Opcodes.IUSHR);
+            emit(Opcodes.IUSHR);
         }
     }
 
     public void sub(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LSUB);
+            emit(Opcodes.LSUB);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DSUB);
+            emit(Opcodes.DSUB);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FSUB);
+            emit(Opcodes.FSUB);
         } else {
-            backend.emit(Opcodes.ISUB);
+            emit(Opcodes.ISUB);
         }
     }
 
     public void div(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LDIV);
+            emit(Opcodes.LDIV);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DDIV);
+            emit(Opcodes.DDIV);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FDIV);
+            emit(Opcodes.FDIV);
         } else {
-            backend.emit(Opcodes.IDIV);
+            emit(Opcodes.IDIV);
         }
     }
 
     public void neg(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LNEG);
+            emit(Opcodes.LNEG);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DNEG);
+            emit(Opcodes.DNEG);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FNEG);
+            emit(Opcodes.FNEG);
         } else {
-            backend.emit(Opcodes.INEG);
+            emit(Opcodes.INEG);
         }
     }
 
     public void rem(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LREM);
+            emit(Opcodes.LREM);
         } else if (type == Double.TYPE) {
-            backend.emit(Opcodes.DREM);
+            emit(Opcodes.DREM);
         } else if (type == Float.TYPE) {
-            backend.emit(Opcodes.FREM);
+            emit(Opcodes.FREM);
         } else {
-            backend.emit(Opcodes.IREM);
+            emit(Opcodes.IREM);
         }
     }
 
     public void and(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LAND);
+            emit(Opcodes.LAND);
         } else {
-            backend.emit(Opcodes.IAND);
+            emit(Opcodes.IAND);
         }
     }
     
     public void or(Class type) {
         if (type == Long.TYPE) {
-            backend.emit(Opcodes.LOR);
+            emit(Opcodes.LOR);
         } else {
-            backend.emit(Opcodes.IOR);
+            emit(Opcodes.IOR);
         }
     }
 
@@ -463,44 +435,44 @@ abstract public class Emitter {
         if (from != to) {
             if (from == Double.TYPE) {
                 if (to == Float.TYPE) {
-                    backend.emit(Opcodes.D2F);
+                    emit(Opcodes.D2F);
                 } else if (to == Long.TYPE) {
-                    backend.emit(Opcodes.D2L);
+                    emit(Opcodes.D2L);
                 } else {
-                    backend.emit(Opcodes.D2I);
+                    emit(Opcodes.D2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else if (from == Float.TYPE) {
                 if (to == Double.TYPE) {
-                    backend.emit(Opcodes.F2D);
+                    emit(Opcodes.F2D);
                 } else if (to == Long.TYPE) {
-                    backend.emit(Opcodes.F2L);
+                    emit(Opcodes.F2L);
                 } else {
-                    backend.emit(Opcodes.F2I);
+                    emit(Opcodes.F2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else if (from == Long.TYPE) {
                 if (to == Double.TYPE) {
-                    backend.emit(Opcodes.L2D);
+                    emit(Opcodes.L2D);
                 } else if (to == Float.TYPE) {
-                    backend.emit(Opcodes.L2F);
+                    emit(Opcodes.L2F);
                 } else {
-                    backend.emit(Opcodes.L2I);
+                    emit(Opcodes.L2I);
                     cast_numeric(Integer.TYPE, to);
                 }
             } else {
                 if (to == Byte.TYPE) {
-                    backend.emit(Opcodes.I2B);
+                    emit(Opcodes.I2B);
                 } else if (to == Character.TYPE) {
-                    backend.emit(Opcodes.I2C);
+                    emit(Opcodes.I2C);
                 } else if (to == Double.TYPE) {
-                    backend.emit(Opcodes.I2D);
+                    emit(Opcodes.I2D);
                 } else if (to == Float.TYPE) {
-                    backend.emit(Opcodes.I2F);
+                    emit(Opcodes.I2F);
                 } else if (to == Long.TYPE) {
-                    backend.emit(Opcodes.I2L);
+                    emit(Opcodes.I2L);
                 } else if (to == Short.TYPE) {
-                    backend.emit(Opcodes.I2S);
+                    emit(Opcodes.I2S);
                 }
             }
         }
@@ -508,43 +480,43 @@ abstract public class Emitter {
 
     public void push(int i) {
         if (i < -1) {
-            backend.emit_ldc(new Integer(i));
+            emit_ldc(new Integer(i));
         } else if (i <= 5) {
-            backend.emit(Opcodes.iconst(i));
+            emit(Opcodes.iconst(i));
         } else if (i <= Byte.MAX_VALUE) {
-            backend.emit_int(Opcodes.BIPUSH, i);
+            emit_int(Opcodes.BIPUSH, i);
         } else if (i <= Short.MAX_VALUE) {
-            backend.emit_int(Opcodes.SIPUSH, i);
+            emit_int(Opcodes.SIPUSH, i);
         } else {
-            backend.emit_ldc(new Integer(i));
+            emit_ldc(new Integer(i));
         }
     }
     
     public void push(long value) {
         if (value == 0L || value == 1L) {
-            backend.emit(Opcodes.lconst(value));
+            emit(Opcodes.lconst(value));
         } else {
-            backend.emit_ldc(new Long(value));
+            emit_ldc(new Long(value));
         }
     }
     
     public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            backend.emit(Opcodes.fconst(value));
+            emit(Opcodes.fconst(value));
         } else {
-            backend.emit_ldc(new Float(value));
+            emit_ldc(new Float(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
-            backend.emit(Opcodes.dconst(value));
+            emit(Opcodes.dconst(value));
         } else {
-            backend.emit_ldc(new Double(value));
+            emit_ldc(new Double(value));
         }
     }
     
     public void push(String value) {
-        backend.emit_ldc(value);
+        emit_ldc(value);
     }
 
     public void newarray() {
@@ -553,57 +525,57 @@ abstract public class Emitter {
     
     public void newarray(Class type) {
         if (type.isPrimitive()) {
-            backend.emit_int(Opcodes.NEWARRAY, Opcodes.newarray(type));
+            emit_int(Opcodes.NEWARRAY, Opcodes.newarray(type));
         } else {
-            backend.emit_type(Opcodes.ANEWARRAY, type.getName());
+            emit_type(Opcodes.ANEWARRAY, type.getName());
         }
     }
     
     public void arraylength() {
-        backend.emit(Opcodes.ARRAYLENGTH);
+        emit(Opcodes.ARRAYLENGTH);
     }
     
     public void array_load(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
-                backend.emit(Opcodes.LALOAD);
+                emit(Opcodes.LALOAD);
             } else if (type.equals(Double.TYPE)) {
-                backend.emit(Opcodes.DALOAD);
+                emit(Opcodes.DALOAD);
             } else if (type.equals(Float.TYPE)) {
-                backend.emit(Opcodes.FALOAD);
+                emit(Opcodes.FALOAD);
             } else if (type.equals(Short.TYPE)) {
-                backend.emit(Opcodes.SALOAD);
+                emit(Opcodes.SALOAD);
             } else if (type.equals(Character.TYPE)) {
-                backend.emit(Opcodes.CALOAD);
+                emit(Opcodes.CALOAD);
             } else if (type.equals(Integer.TYPE)) {
-                backend.emit(Opcodes.IALOAD);
+                emit(Opcodes.IALOAD);
             } else {
-                backend.emit(Opcodes.BALOAD);
+                emit(Opcodes.BALOAD);
             }
         } else {
-            backend.emit(Opcodes.AALOAD);
+            emit(Opcodes.AALOAD);
         }
     }
 
     public void array_store(Class type) {
         if (type.isPrimitive()) {
             if (type.equals(Long.TYPE)) {
-                backend.emit(Opcodes.LASTORE);
+                emit(Opcodes.LASTORE);
             } else if (type.equals(Double.TYPE)) {
-                backend.emit(Opcodes.DASTORE);
+                emit(Opcodes.DASTORE);
             } else if (type.equals(Float.TYPE)) {
-                backend.emit(Opcodes.FASTORE);
+                emit(Opcodes.FASTORE);
             } else if (type.equals(Short.TYPE)) {
-                backend.emit(Opcodes.SASTORE);
+                emit(Opcodes.SASTORE);
             } else if (type.equals(Character.TYPE)) {
-                backend.emit(Opcodes.CASTORE);
+                emit(Opcodes.CASTORE);
             } else if (type.equals(Integer.TYPE)) {
-                backend.emit(Opcodes.IASTORE);
+                emit(Opcodes.IASTORE);
             } else {
-                backend.emit(Opcodes.BASTORE);
+                emit(Opcodes.BASTORE);
             }
         } else {
-            backend.emit(Opcodes.AASTORE);
+            emit(Opcodes.AASTORE);
         }
     }
     
@@ -611,7 +583,7 @@ abstract public class Emitter {
         if (isStatic) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
-        backend.emit_var(Opcodes.ALOAD, 0);
+        emit_var(Opcodes.ALOAD, 0);
     }
     
     /**
@@ -654,37 +626,37 @@ abstract public class Emitter {
     private void load_local(Class t, int pos) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
-                backend.emit_var(Opcodes.LLOAD, pos);
+                emit_var(Opcodes.LLOAD, pos);
             } else if (t.equals(Double.TYPE)) {
-                backend.emit_var(Opcodes.DLOAD, pos);
+                emit_var(Opcodes.DLOAD, pos);
             } else if (t.equals(Float.TYPE)) {
-                backend.emit_var(Opcodes.FLOAD, pos);
+                emit_var(Opcodes.FLOAD, pos);
             } else {
-                backend.emit_var(Opcodes.ILOAD, pos);
+                emit_var(Opcodes.ILOAD, pos);
             }
         } else {
-            backend.emit_var(Opcodes.ALOAD, pos);
+            emit_var(Opcodes.ALOAD, pos);
         }
     }
 
     private void store_local(Class t, int pos) {
         if (t != null && t.isPrimitive()) {
             if (t.equals(Long.TYPE)) {
-                backend.emit_var(Opcodes.LSTORE, pos);
+                emit_var(Opcodes.LSTORE, pos);
             } else if (t.equals(Double.TYPE)) {
-                backend.emit_var(Opcodes.DSTORE, pos);
+                emit_var(Opcodes.DSTORE, pos);
             } else if (t.equals(Float.TYPE)) {
-                backend.emit_var(Opcodes.FSTORE, pos);
+                emit_var(Opcodes.FSTORE, pos);
             } else {
-                backend.emit_var(Opcodes.ISTORE, pos);
+                emit_var(Opcodes.ISTORE, pos);
             }
         } else {
-            backend.emit_var(Opcodes.ASTORE, pos);
+            emit_var(Opcodes.ASTORE, pos);
         }
     }
     
     public void iinc(Local local, int amount) {
-        backend.emit_iinc(local.getIndex(), amount);
+        emit_iinc(local.getIndex(), amount);
     }
     
     public void store_local(Local local) {
@@ -698,27 +670,26 @@ abstract public class Emitter {
     public void return_value() {
         if (returnType.isPrimitive()) {
             if (returnType.equals(Void.TYPE)) {
-                backend.emit(Opcodes.RETURN);
+                emit(Opcodes.RETURN);
             } else if (returnType.equals(Long.TYPE)) {
-                backend.emit(Opcodes.LRETURN);
+                emit(Opcodes.LRETURN);
             } else if (returnType.equals(Double.TYPE)) {
-                backend.emit(Opcodes.DRETURN);
+                emit(Opcodes.DRETURN);
             } else if (returnType.equals(Float.TYPE)) {
-                backend.emit(Opcodes.FRETURN);
+                emit(Opcodes.FRETURN);
             } else {
-                backend.emit(Opcodes.IRETURN);
+                emit(Opcodes.IRETURN);
             }
         } else {
-            backend.emit(Opcodes.ARETURN);
+            emit(Opcodes.ARETURN);
         }
     }
 
     public void declare_field(int modifiers, Class type, String name) {
-        checkInit(true);
         if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
-        backend.declare_field(modifiers, type, name);
+        classv.visitField(modifiers, name, getInternalName(ReflectUtils.getDescriptor(type)), null);
         fieldInfo.put(name, new FieldInfo(Modifier.isStatic(modifiers), type));
     }
     
@@ -751,13 +722,13 @@ abstract public class Emitter {
     public void getfield(String name) {
         FieldInfo info = getFieldInfo(name);
         int opcode = info.isStatic() ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
-        backend.emit_field(opcode, className, name, info.getType());
+        emit_field(opcode, className, name, info.getType());
     }
     
     public void putfield(String name) {
         FieldInfo info = getFieldInfo(name);
         int opcode = info.isStatic() ? Opcodes.PUTSTATIC : Opcodes.PUTFIELD;
-        backend.emit_field(opcode, className, name, info.getType());
+        emit_field(opcode, className, name, info.getType());
     }
     
     public void super_getfield(String name) throws NoSuchFieldException {
@@ -788,7 +759,7 @@ abstract public class Emitter {
     }
 
     private void fieldHelper(int opcode, Field field) {
-        backend.emit_field(opcode,
+        emit_field(opcode,
                            field.getDeclaringClass().getName(),
                            field.getName(),
                            field.getType());
@@ -803,7 +774,7 @@ abstract public class Emitter {
         } else {
             opcode = Opcodes.INVOKEVIRTUAL;
         }
-        backend.emit_invoke(opcode,
+        emit_invoke(opcode,
                             method.getDeclaringClass().getName(),
                             method.getName(),
                             method.getReturnType(),
@@ -811,7 +782,7 @@ abstract public class Emitter {
     }
     
     public void super_invoke(Method method) {
-        backend.emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Opcodes.INVOKESPECIAL,
                             superclass.getName(),
                             method.getName(),
                             method.getReturnType(),
@@ -819,15 +790,15 @@ abstract public class Emitter {
     }
 
     public void invoke_virtual_this(String methodName, Class returnType, Class[] parameterTypes) {
-        backend.emit_invoke(Opcodes.INVOKEVIRTUAL, className, methodName, returnType, parameterTypes);
+        emit_invoke(Opcodes.INVOKEVIRTUAL, className, methodName, returnType, parameterTypes);
     }
 
     public void invoke_static_this(String methodName, Class returnType, Class[] parameterTypes) {
-        backend.emit_invoke(Opcodes.INVOKESTATIC, className, methodName, returnType, parameterTypes);
+        emit_invoke(Opcodes.INVOKESTATIC, className, methodName, returnType, parameterTypes);
     }
 
     public void super_invoke() {
-        backend.emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Opcodes.INVOKESPECIAL,
                             superclass.getName(),
                             methodName,
                             returnType,
@@ -835,7 +806,7 @@ abstract public class Emitter {
     }
     
     public void invoke_constructor(String className, Class[] parameterTypes) {
-        backend.emit_invoke(Opcodes.INVOKESPECIAL,
+        emit_invoke(Opcodes.INVOKESPECIAL,
                             className,
                             Constants.CONSTRUCTOR_NAME,
                             Void.TYPE,
@@ -890,11 +861,11 @@ abstract public class Emitter {
     }
     
     public void new_instance_this() {
-        backend.emit_type(Opcodes.NEW, className);
+        emit_type(Opcodes.NEW, className);
     }
     
     public void new_instance(String className) {
-        backend.emit_type(Opcodes.NEW, className);
+        emit_type(Opcodes.NEW, className);
     }
     
     public void new_instance(Class type) {
@@ -906,12 +877,12 @@ abstract public class Emitter {
         aaload();
     }
 
-    public void aaload() { backend.emit(Opcodes.AALOAD); }
-    public void aastore() { backend.emit(Opcodes.AASTORE); }
-    public void athrow() { backend.emit(Opcodes.ATHROW); }
+    public void aaload() { emit(Opcodes.AALOAD); }
+    public void aastore() { emit(Opcodes.AASTORE); }
+    public void athrow() { emit(Opcodes.ATHROW); }
     
     public Label make_label() {
-        return backend.make_label();
+        return new ASMLabel();
     }
     
     public Local make_local() {
@@ -925,30 +896,27 @@ abstract public class Emitter {
     }
 
     public void checkcast_this() {
-        backend.emit_type(Opcodes.CHECKCAST, className);
+        emit_type(Opcodes.CHECKCAST, className);
     }
     
     public void checkcast(Class type) {
-        // TODO: necessary?
-        //         if (type.isArray()) {
-        //             append(new CHECKCAST(cp.addArrayClass((ArrayType)type)));
         if (type.equals(Object.class)) {
             // ignore
         } else {
-            backend.emit_type(Opcodes.CHECKCAST, type.getName());
+            emit_type(Opcodes.CHECKCAST, type.getName());
         }
     }
     
     public void instance_of(Class type) {
-        backend.emit_type(Opcodes.INSTANCEOF, type.getName());
+        emit_type(Opcodes.INSTANCEOF, type.getName());
     }
     
     public void instance_of_this() {
-        backend.emit_type(Opcodes.INSTANCEOF, className);
+        emit_type(Opcodes.INSTANCEOF, className);
     }
 
     public void mark(Label label) {
-        backend.emit(label);
+        emit(label);
     }
 
     public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
@@ -979,7 +947,7 @@ abstract public class Emitter {
                 for (int i = 0; i < len; i++) {
                     labels[keys[i] - min] = make_label();
                 }
-                backend.emit_switch(min, max, labels, def);
+                emit_switch(min, max, labels, def);
                 for (int i = 0; i < range; i++) {
                     Label label = labels[i];
                     if (label != def) {
@@ -992,7 +960,7 @@ abstract public class Emitter {
                 for (int i = 0; i < len; i++) {
                     labels[i] = make_label();
                 }
-                backend.emit_switch(keys, labels, def);
+                emit_switch(keys, labels, def);
                 for (int i = 0; i < len; i++) {
                     mark(labels[i]);
                     callback.processCase(keys[i], end);
@@ -1020,5 +988,112 @@ abstract public class Emitter {
                 return false;
         }
         return true;
+    }
+
+    ///////////////// METHODS FORMERLY IN THE BACKEND //////////////////
+
+
+    private void emit(int opcode) {
+        codev.visitInsn(opcode);
+    }
+
+    private void emit(Label label) {
+        codev.visitLabel(convertLabel(label));
+    }
+
+    private void emit(int opcode, Label label) {
+        codev.visitJumpInsn(opcode, convertLabel(label));
+    }
+    
+    private void emit_var(int opcode, int index) {
+        codev.visitVarInsn(opcode, index);
+    }
+    
+    private void emit_type(int opcode, String className) {
+        codev.visitTypeInsn(opcode, getInternalName(className));
+    }
+    
+    private void emit_int(int opcode, int value) {
+        codev.visitIntInsn(opcode, value);
+    }
+    
+    private void emit_field(int opcode, String className, String fieldName, Class type) {
+        codev.visitFieldInsn(opcode,
+                          getInternalName(className),
+                          fieldName,
+                          getInternalName(ReflectUtils.getDescriptor(type)));
+    }
+
+    private static class ASMLabel implements Label {
+        org.objectweb.asm.Label label = new org.objectweb.asm.Label();
+    }
+
+    private Label mark() {
+        Label label = make_label();
+        emit(label);
+        return label;
+    }
+
+    private void emit_invoke(int opcode,
+                            String className,
+                            String methodName,
+                            Class returnType,
+                            Class[] parameterTypes) {
+        codev.visitMethodInsn(opcode,
+                           getInternalName(className),
+                           methodName,
+                           getInternalName(ReflectUtils.getMethodDescriptor(returnType, parameterTypes)));
+    }
+
+    private void emit_iinc(int index, int amount) {
+        codev.visitIincInsn(index, amount);
+    }
+
+    private void emit_ldc(Object value) {
+        codev.visitLdcInsn(value);
+    }
+
+    private void emit_switch(int[] keys, Label[] labels, Label def) {
+        codev.visitLookupSwitchInsn(convertLabel(def),
+                                 keys,
+                                 convertLabels(labels));
+    }
+
+    private void emit_switch(int min, int max, Label[] labels, Label def) {
+        codev.visitTableSwitchInsn(min, max,
+                                convertLabel(def),
+                                convertLabels(labels));
+    }
+
+    private org.objectweb.asm.Label convertLabel(Label label) {
+        return ((ASMLabel)label).label;
+    }
+
+    private org.objectweb.asm.Label[] convertLabels(Label[] labels) {
+        org.objectweb.asm.Label[] converted = new org.objectweb.asm.Label[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            converted[i] = convertLabel(labels[i]);
+        }
+        return converted;
+    }
+
+    // TODO: use ASM methods instead
+    private static String getInternalName(Class type) {
+        return (type == null) ? null : getInternalName(type.getName());
+    }
+
+    private static String getInternalName(String className) {
+        return (className == null) ? null : className.replace('.', '/');
+    }
+
+    private static String[] getInternalNames(Class[] classes) {
+        if (classes == null) {
+            return null;
+        }
+        String[] copy = new String[classes.length];
+        for (int i = 0; i < copy.length; i++) {
+            copy[i] = getInternalName(classes[i]);
+        }
+        return copy;
     }
 }

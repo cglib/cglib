@@ -53,12 +53,12 @@
  */
 package net.sf.cglib;
 
-import net.sf.cglib.core.CodeGenerator;
-import net.sf.cglib.core.ReflectUtils;
+import net.sf.cglib.core.*;
 import java.lang.reflect.Method;
 import java.util.*;
+import org.objectweb.asm.ClassVisitor;
 
-public class Enhancer extends CodeGenerator
+public class Enhancer extends AbstractClassGenerator
 {
     private static final Source SOURCE = new Source(Enhancer.class, true);
     private static final EnhancerKey KEY_FACTORY =
@@ -77,9 +77,10 @@ public class Enhancer extends CodeGenerator
         super(SOURCE);
     }
 
+    // TODO: add Factory interface
     public void setSuperclass(Class superclass) {
         if (superclass != null && superclass.isInterface()) {
-            interfaces = new Class[]{ superclass };
+            this.interfaces = new Class[]{ superclass };
         } else {
             super.setSuperclass(superclass);
         }
@@ -121,8 +122,8 @@ public class Enhancer extends CodeGenerator
         return super.create(key);
     }
 
-    protected byte[] getBytes() throws Exception {
-        return new EnhancerEmitter(getClassName(), getSuperclass(), interfaces, filter).getBytes();
+    public void generateClass(ClassVisitor v) throws Exception {
+        new EnhancerEmitter(v, getClassName(), getSuperclass(), interfaces, filter);
     }
 
     protected Object firstInstance(Class type) throws Exception {
@@ -130,10 +131,11 @@ public class Enhancer extends CodeGenerator
             return type;
         }
         
-        // this is a hack
+        ////// this is a hack //////
         Method setter = type.getDeclaredMethod(EnhancerEmitter.SET_THREAD_CALLBACKS,
                                                new Class[]{ Callbacks.class });
         setter.invoke(null, new Object[]{ callbacks });
+        ////////////////////////////
 
         Factory instance = (Factory)ReflectUtils.newInstance(type);
         instance.setCallbacks(callbacks);

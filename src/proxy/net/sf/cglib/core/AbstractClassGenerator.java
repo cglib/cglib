@@ -56,8 +56,11 @@ package net.sf.cglib.core;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 
-abstract public class CodeGenerator
+abstract public class AbstractClassGenerator
+implements ClassGenerator
 {
     private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
@@ -69,7 +72,6 @@ abstract public class CodeGenerator
     private String className;
     private String packageName;
     private Class superclass;
-    private boolean used;
     private int counter;
 
     static {
@@ -91,14 +93,7 @@ abstract public class CodeGenerator
         }
     }
 
-    private void used() {
-        if (used) {
-            throw new IllegalStateException(getClass().getName() + " has already been used");
-        }
-        used = true;
-    }
-
-    protected CodeGenerator(Source source) {
+    protected AbstractClassGenerator(Source source) {
         this.source = source;
     }
 
@@ -107,6 +102,9 @@ abstract public class CodeGenerator
     }
 
     protected Class getSuperclass() {
+        if (superclass == null) {
+            return Object.class;
+        }
         return superclass;
     }
 
@@ -124,17 +122,12 @@ abstract public class CodeGenerator
             return className;
         } else {
             // TODO: use package of interface if applicable
+            Class sc = getSuperclass();
             StringBuffer sb = new StringBuffer();
-            if (superclass == null) {
-                if (packageName == null) {
-                    sb.append("net.sf.cglib.Object");
-                } else {
-                    sb.append(packageName).append('.').append("Object");
-                }
-            } else if (packageName != null) {
-                sb.append(packageName).append('.').append(ReflectUtils.getNameWithoutPackage(superclass));
+            if (packageName != null) {
+                sb.append(packageName).append('.').append(ReflectUtils.getNameWithoutPackage(sc));
             } else {
-                sb.append(superclass.getName());
+                sb.append(sc.getName());
             }
             sb.append("$$");
             sb.append(ReflectUtils.getNameWithoutPackage(source.type));
@@ -159,9 +152,9 @@ abstract public class CodeGenerator
         if (t == null) {
             t = getDefaultClassLoader();
         }
-        if (t == null && superclass != null) {
-            t = superclass.getClassLoader();
-        }
+//         if (t == null && superclass != null) {
+//             t = superclass.getClassLoader();
+//         }
         if (t == null) {
             t = getClass().getClassLoader();
         }
@@ -176,7 +169,6 @@ abstract public class CodeGenerator
     }
 
     protected Object create(Object key) {
-        used();
         try {
             Object factory = null;
             synchronized (source) {
@@ -192,8 +184,13 @@ abstract public class CodeGenerator
                     }
                 }
                 if (factory == null) {
-                    byte[] bytes = getBytes();
-                    factory = firstInstance(defineClass(source.defineClass, getClassName(), bytes, loader));
+                    ClassWriter cw = new ClassWriter(true);
+                    generateClass(cw);
+                    byte[] b = cw.toByteArray();
+                    Class gen = defineClass(source.defineClass, getClassName(), b, loader);
+
+                    factory = firstInstance(gen);
+
                     if (cache2 != null) {
                         cache2.put(key, factory);
                     }
@@ -210,7 +207,6 @@ abstract public class CodeGenerator
         }
     }
 
-    abstract protected byte[] getBytes() throws Exception;
     abstract protected Object firstInstance(Class type) throws Exception;
     abstract protected Object nextInstance(Object factory) throws Exception;
 
@@ -219,11 +215,8 @@ abstract public class CodeGenerator
             File file = new File(new File(debugLocation), className + ".class");
             // System.err.println("CGLIB writing " + file);
             OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-            try{
-             out.write(b);
-            }finally{
-             out.close();
-            }
+            out.write(b);
+            out.close();
         }
         
         m.setAccessible(true);

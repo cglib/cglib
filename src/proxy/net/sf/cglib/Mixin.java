@@ -56,6 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Constructor;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * <code>Mixin</code> allows
@@ -63,9 +64,9 @@ import net.sf.cglib.core.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.4 2003/09/12 19:08:25 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.5 2003/09/14 03:27:53 herbyderby Exp $
  */
-public class Mixin extends CodeGenerator {
+public class Mixin extends AbstractClassGenerator {
     private static final Source SOURCE = new Source(Mixin.class, true);
     private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
     private static final MixinKey KEY_FACTORY =
@@ -85,6 +86,7 @@ public class Mixin extends CodeGenerator {
 
     public Mixin() {
         super(SOURCE);
+        setPackageName("net.sf.cglib");
     }
 
     public void setInterfaces(Class[] interfaces) {
@@ -109,8 +111,8 @@ public class Mixin extends CodeGenerator {
         return (Mixin.Factory)super.create(key);
     }
 
-    protected byte[] getBytes() throws Exception {
-        return new MixinEmitter(getClassName(), interfaces, route).getBytes();
+    public void generateClass(ClassVisitor v) {
+        new MixinEmitter(v, getClassName(), interfaces, route);
     }
 
     protected Object firstInstance(Class type) {

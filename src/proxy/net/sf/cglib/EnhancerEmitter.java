@@ -57,6 +57,7 @@ import java.io.ObjectStreamException;
 import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
 class EnhancerEmitter extends Emitter
 {
@@ -78,34 +79,29 @@ class EnhancerEmitter extends Emitter
     private static final Method CALLBACKS_GET =
       ReflectUtils.findMethod("Callbacks.get(int)");
     
-    private final CallbackFilter filter;
     private final BitSet usedCallbacks = new BitSet();
 
-    public EnhancerEmitter(String className, Class superclass, Class[] interfaces, CallbackFilter filter) {
-        setClassName(className);
-        setSuperclass(superclass);
-        addInterfaces(interfaces);
-        this.filter = filter;
+    public EnhancerEmitter(ClassVisitor v,
+                           String className,
+                           Class superclass,
+                           Class[] interfaces,
+                           CallbackFilter filter) throws Exception {
+        setClassVisitor(v);
+        interfaces = ReflectUtils.add(interfaces, Factory.class);
+        begin_class(Modifier.PUBLIC, className, superclass, interfaces);
         
-        addInterface(Factory.class);
-    }
-
-    public byte[] getBytes() throws Exception {
-        Class type = getSuperclass();
-
-        List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
-        CollectionUtils.filter(constructors, new VisibilityPredicate(type, true));
+        List constructors = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
+        CollectionUtils.filter(constructors, new VisibilityPredicate(superclass, true));
         if (constructors.size() == 0) {
-            throw new IllegalArgumentException("No visible constructors in " + type);
+            throw new IllegalArgumentException("No visible constructors in " + superclass);
         }
 
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
         // its superinterfaces.
         List methods = new ArrayList();
-        ReflectUtils.addAllMethods(getSuperclass(), methods);
+        ReflectUtils.addAllMethods(superclass, methods);
 
-        Class[] interfaces = getInterfaces();
         List interfaceMethods = new ArrayList();
         for (int i = 0; i < interfaces.length; i++) {
             if (interfaces[i] != Factory.class) {
@@ -114,7 +110,7 @@ class EnhancerEmitter extends Emitter
         }
         Set forcePublic = MethodWrapper.createSet(interfaceMethods);
         methods.addAll(interfaceMethods);
-        CollectionUtils.filter(methods, new VisibilityPredicate(getSuperclass(), true));
+        CollectionUtils.filter(methods, new VisibilityPredicate(superclass, true));
         CollectionUtils.filter(methods, new DuplicatesPredicate());
         removeFinal(methods);
 
@@ -143,7 +139,7 @@ class EnhancerEmitter extends Emitter
         generateFactory(constructors);
         generateSetThreadCallbacks();
 
-        return super.getBytes();
+        end_class();
     }
 
     private void generateConstructors(List constructors) throws NoSuchMethodException {
@@ -222,8 +218,9 @@ class EnhancerEmitter extends Emitter
 
         // Factory.newInstance(Callback)
         begin_method(SINGLE_NEW_INSTANCE);
-        if (usedCallbacks.length() == 1) {
-            int type = usedCallbacks.nextSetBit(0);
+        switch (usedCallbacks.cardinality()) {
+        case 1:
+            int type = usedCallbacks.length() - 1;
             getfield(getThreadLocal(type));
             load_arg(0);
             invoke(MethodConstants.THREADLOCAL_SET);
@@ -234,12 +231,14 @@ class EnhancerEmitter extends Emitter
             push(type);
             load_arg(0);
             invoke(SET_CALLBACK);
-        } else if (usedCallbacks.length() == 0) {
+            break;
+        case 0:
             // TODO: make sure Callback is null?
             new_instance_this();
             dup();
             invoke_constructor_this();
-        } else {
+            break;
+        default:
             Virt.throw_exception(this, IllegalStateException.class, "More than one callback object required");
         }
         return_value();
@@ -337,7 +336,7 @@ class EnhancerEmitter extends Emitter
                         generateCurrentCallback(type);
                     }
                     public int getModifiers(Method method) {
-                        int modifiers = getDefaultModifiers(method);
+                        int modifiers = ReflectUtils.getDefaultModifiers(method);
                         if (forcePublic.contains(MethodWrapper.create(method))) {
                             modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
                         }
