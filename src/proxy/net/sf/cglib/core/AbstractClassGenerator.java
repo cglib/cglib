@@ -64,6 +64,7 @@ abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
     private static final String KEY_FIELD = "CGLIB$ACGKEY";
+    private static final Object NAME_KEY = new Object();
     
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
         public String getClassName(String prefix, String source, Object key) {
@@ -138,11 +139,13 @@ implements ClassGenerator
                 if (cache2 != null) {
                     instance = cache2.get(key);
                 } else {
-                    source.cache.put(loader, cache2 = new HashMap());
+                    cache2 = new HashMap();
+                    cache2.put(NAME_KEY, new HashSet());
+                    source.cache.put(loader, cache2);
                 }
                 if (instance == null) {
                     this.key = key;
-                    final String keyFieldValue = key.toString(); // TODO: add generator name, etc?
+                    final String keyFieldValue = key.toString();
                     String className = getClassName();
                     Class gen = null;
                     try {
@@ -156,7 +159,7 @@ implements ClassGenerator
                     } catch (ClassNotFoundException e) {
                     }
                     if (gen == null) {
-                        // TODO: per-loader cache of names to prevent duplicates
+                        className = uniquify(className, (Set)cache2.get(NAME_KEY));
                         DebuggingClassWriter w = new DebuggingClassWriter(true) {
                             public void visitEnd() {
                                 visitField(Constants.ACC_STATIC | Constants.ACC_PUBLIC,
@@ -186,6 +189,16 @@ implements ClassGenerator
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    private static String uniquify(String origName, Set names) {
+        String className = origName;
+        int index = 2;
+        while (names.contains(className)) {
+            className = origName + "-" + index++;
+        }
+        names.add(className);
+        return className;
     }
 
     private static String getKeyField(Class type) {
