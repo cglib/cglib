@@ -55,13 +55,13 @@
 package net.sf.cglib;
 
 import java.lang.reflect.*;
+import net.sf.cglib.util.*;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.13 2003/01/31 01:15:13 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.14 2003/06/13 21:12:49 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
-    private Class keyInterface;
     private Method newInstance;
     private Class[] parameterTypes;
     private int numArgs;
@@ -91,20 +91,22 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     public KeyFactoryGenerator(String className, Class keyInterface, ClassLoader loader) {
         super(className, KeyFactory.TYPE, loader);
-        this.keyInterface = keyInterface;
-    }
 
-    protected void generate() throws NoSuchFieldException {
         newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
+        
         parameterTypes = newInstance.getParameterTypes();
         numArgs = parameterTypes.length;
-        declare_interface(keyInterface);
-        generateNullConstructor();
+
+        addInterface(keyInterface);
+    }
+
+    protected void generate() throws NoSuchFieldException {
+        null_constructor();
+        factory_method(newInstance);
         generateConstructor();
-        generateFactoryMethod(newInstance);
         generateEquals();
         generateGetArgs();
     }
@@ -158,29 +160,29 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void hash_array(Class clazz) {
-        Object isNull = make_label();
-        Object end = make_label();
+        Label isNull = make_label();
+        Label end = make_label();
         dup();
         ifnull(isNull);
         process_array(clazz, hashCallback);
         goTo(end);
-        nop(isNull);
+        mark(isNull);
         pop();
-        nop(end);
+        mark(end);
     }
 
     private void hash_object() {
         // (f == null) ? 0 : f.hashCode();
-        Object isNull = make_label();
-        Object end = make_label();
+        Label isNull = make_label();
+        Label end = make_label();
         dup();
         ifnull(isNull);
         invoke(MethodConstants.HASH_CODE);
         goTo(end);
-        nop(isNull);
+        mark(isNull);
         pop();
         push(0);
-        nop(end);
+        mark(end);
     }
 
     private void hash_primitive(Class clazz) {
@@ -219,21 +221,22 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void generateEquals() {
+        Label fail = make_label();
         begin_method(MethodConstants.EQUALS);
         load_arg(0);
         instance_of_this();
-        ifeq("failure");
+        ifeq(fail);
         for (int i = 0; i < numArgs; i++) {
             load_this();
             getfield(getFieldName(i));
             load_arg(0);
             checkcast_this();
             getfield(getFieldName(i));
-            not_equals(parameterTypes[i], "failure");
+            not_equals(parameterTypes[i], fail);
         }
         push(1);
         return_value();
-        nop("failure");
+        mark(fail);
         push(0);
         return_value();
         end_method();

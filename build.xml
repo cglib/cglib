@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.19 2003/06/13 04:14:33 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.20 2003/06/13 21:12:49 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="1.0"/>
+    <property name="component.version" value="1.1-pre1"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -118,7 +118,7 @@
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
       <zipfileset src="lib/asm.jar"/>
       <include name="**/*"/>
-      <exclude name="samples/**" />  
+      <exclude name="samples/**"/>
     </jar> 
   </target>
 

@@ -57,6 +57,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import net.sf.cglib.util.*;
 
 /**
  *
@@ -336,7 +337,7 @@ public abstract class MetaClass  {
             
             begin_method(getPropertyValues);
             
-            Object bean = make_local();
+            Local bean = make_local();
             load_arg(0);
             checkcast(target);
             store_local(bean);

@@ -56,8 +56,9 @@ package net.sf.cglib;
 import java.io.ObjectStreamException;
 import java.lang.reflect.*;
 import java.util.*;
+import net.sf.cglib.util.*;
 
-/*package*/ class EnhancerGenerator extends CodeGenerator {
+class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
     
     private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
@@ -140,7 +141,10 @@ import java.util.*;
                     }
                     loader.loadClass(interfaces[i].getName());
                 }
+                addInterfaces(interfaces);
             }
+            addInterface(Factory.class);
+            
         } catch (ClassNotFoundException e) {
             throw new CodeGenerationException(e);
         }
@@ -160,7 +164,6 @@ import java.util.*;
         if (wreplace == null) {
             wreplace = INTERNAL_WRITE_REPLACE;
         }
-        declare_interface(Factory.class);
 
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
@@ -170,7 +173,6 @@ import java.util.*;
 
         Set forcePublic;
         if (interfaces != null) {
-            declare_interfaces(interfaces);
             List interfaceMethods = new ArrayList();
             for (int i = 0; i < interfaces.length; i++) {
                 addDeclaredMethods(interfaceMethods, interfaces[i]);
@@ -273,6 +275,9 @@ import java.util.*;
     }
    
     private void generateMultiArgFactory() {
+        Label fail = make_label();
+        Label skipSetInterceptor = make_label();
+        
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         begin_method(MULTIARG_NEW_INSTANCE);
         getfield(CONSTRUCTOR_PROXY_MAP);
@@ -281,18 +286,18 @@ import java.util.*;
         invoke(MethodConstants.MAP_GET);// PROXY_MAP.get( key(types) )    
         checkcast(ConstructorProxy.class);
         dup();
-        ifnull("fail");
+        ifnull(fail);
         load_arg(1);
         invoke(PROXY_NEW_INSTANCE);
         checkcast_this();
         load_arg(2);
-        ifnull("skip_set_interceptor");
+        ifnull(skipSetInterceptor);
         dup();
         load_arg(2);
         putfield(INTERCEPTOR_FIELD);
-        nop("skip_set_interceptor");
+        mark(skipSetInterceptor);
         return_value();
-        nop("fail");
+        mark(fail);
         throw_exception(IllegalArgumentException.class, "Constructor not found ");
         end_method();
     }
@@ -347,12 +352,13 @@ import java.util.*;
             modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
         }
         begin_method(method, modifiers);
-        Object handler = begin_handler();
+        Block handler = begin_block();
 
+        Label nullInterceptor = make_label();
         load_this();
         getfield(INTERCEPTOR_FIELD);
         dup();
-        ifnull("null_interceptor");
+        ifnull(nullInterceptor);
 
         load_this();
         getfield(fieldName);
@@ -366,18 +372,18 @@ import java.util.*;
         }
         return_value();
 
-        nop("null_interceptor");
+        mark(nullInterceptor);
         load_this();
         load_args();
         super_invoke(method);
         return_value();
 
-        end_handler();
+        end_block();
         generateHandleUndeclared(method, handler);
         end_method();
     }
 
-    private void generateHandleUndeclared(Method method, Object handler) {
+    private void generateHandleUndeclared(Method method, Block handler) {
         /* generates:
            } catch (RuntimeException e) {
                throw e;
@@ -394,19 +400,19 @@ import java.util.*;
         if (!(exceptionSet.contains(Exception.class) ||
               exceptionSet.contains(Throwable.class))) {
             if (!exceptionSet.contains(RuntimeException.class)) {
-                handle_exception(handler, RuntimeException.class);
+                catch_exception(handler, RuntimeException.class);
                 athrow();
             }
             if (!exceptionSet.contains(Error.class)) {
-                handle_exception(handler, Error.class);
+                catch_exception(handler, Error.class);
                 athrow();
             }
             for (int i = 0; i < exceptionTypes.length; i++) {
-                handle_exception(handler, exceptionTypes[i]);
+                catch_exception(handler, exceptionTypes[i]);
                 athrow();
             }
             // e -> eo -> oeo -> ooe -> o
-            handle_exception(handler, Throwable.class);
+            catch_exception(handler, Throwable.class);
             new_instance(UndeclaredThrowableException.class);
             dup_x1();
             swap();
@@ -431,7 +437,7 @@ import java.util.*;
         */
         
         begin_static();
-        Object args = make_local();
+        Local args = make_local();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
             String fieldName = getFieldName(i);
@@ -462,7 +468,7 @@ import java.util.*;
             dup();
             invoke_constructor(HashMap.class);
             putfield(CONSTRUCTOR_PROXY_MAP);
-            Object map = make_local();
+            Local map = make_local();
             store_local(map);
             for (int i = 0, size = constructorList.size(); i < size; i++) {
                 Constructor constructor = (Constructor)constructorList.get(i);

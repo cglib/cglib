@@ -56,6 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import net.sf.cglib.util.*;
 
 /**
  * Generates interfaces from a list of classes or methods.
@@ -63,7 +64,7 @@ import java.util.*;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.3 2003/05/28 03:56:30 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.4 2003/06/13 21:12:49 herbyderby Exp $
  */
 public class InterfaceMaker {
     private static final Class TYPE = InterfaceMaker.class;
@@ -132,7 +133,7 @@ public class InterfaceMaker {
 
         public Generator(String className, Method[] methods, ClassLoader loader) {
             super(className, Object.class, loader);
-            setInterface(true);
+            setClassModifiers(getClassModifiers() | Modifier.INTERFACE);
             this.methods = methods;
         }
 

@@ -54,16 +54,17 @@
 package net.sf.cglib;
 
 import junit.framework.*;
+import net.sf.cglib.util.BasicCodeGenerator;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.1 2002/12/03 08:02:42 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.2 2003/06/13 21:12:48 herbyderby Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
     public void setUp() {
         String debugLocation = System.getProperty("cglib.debugLocation");
         if (debugLocation != null) {
-            CodeGenerator.setDebugLocation(debugLocation);
+            BasicCodeGenerator.setDebugLocation(debugLocation);
         }
     }
 

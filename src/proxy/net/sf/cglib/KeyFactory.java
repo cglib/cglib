@@ -54,6 +54,8 @@
 
 package net.sf.cglib;
 
+import net.sf.cglib.util.*;
+
 /**
  * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
  * Code for <code>equals</code> and <code>hashCode</code> methods follow the
@@ -91,7 +93,7 @@ package net.sf.cglib;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.14 2003/01/31 01:18:50 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.15 2003/06/13 21:12:49 herbyderby Exp $
  */
 abstract public class KeyFactory {
      static final Class TYPE = KeyFactory.class;

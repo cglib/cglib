@@ -52,14 +52,16 @@
  * <http://www.apache.org/>.
  */
 package net.sf.cglib;
+
 import java.util.*;
+import net.sf.cglib.util.*;
 
 /**
  * <code>Delegator</code> provides a number of static methods that allow
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.19 2003/06/07 05:51:33 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.20 2003/06/13 21:12:49 herbyderby Exp $
  */
 public class Delegator {
     static final Class TYPE = Delegator.class;

@@ -55,6 +55,7 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import net.sf.cglib.util.*;
 
 abstract public class MulticastDelegate implements Cloneable {
     private static final FactoryCache cache = new FactoryCache();
@@ -141,17 +142,17 @@ abstract public class MulticastDelegate implements Cloneable {
             super(className, MulticastDelegate.class, loader);
             this.method = method;
             this.iface = iface;
+            addInterface(iface);
         }
 
         protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            declare_interface(iface);
-            generateNullConstructor();
+            null_constructor();
 
             // generate proxied method
             begin_method(method);
             Class returnType = method.getReturnType();
             final boolean returns = returnType != Void.TYPE;
-            Object result = null;
+            Local result = null;
             if (returns) {
                 result = make_local(returnType);
                 zero_or_null(returnType);
@@ -159,7 +160,7 @@ abstract public class MulticastDelegate implements Cloneable {
             }
             load_this();
             super_getfield("delegates");
-            final Object result2 = result;
+            final Local result2 = result;
             process_array(Object[].class, new ProcessArrayCallback() {
                     public void processElement(Class type) {
                         checkcast(iface);
