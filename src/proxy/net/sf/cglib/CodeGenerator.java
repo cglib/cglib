@@ -62,7 +62,6 @@ import java.util.*;
  */
 /* package */ abstract class CodeGenerator {
     private static final String FIND_CLASS = "CGLIB$findClass";
-    private static final String PRIVATE_PREFIX = "CGLIB$PRIV";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static String debugLocation;
@@ -76,8 +75,6 @@ import java.util.*;
     private Class superclass;
     private boolean needsFindClass;
     
-    private int nextPrivateLabel;
-	private Set labels = new HashSet();
     private Map locals = new HashMap();
     private Map localTypes = new HashMap();
     private int nextLocal;
@@ -267,7 +264,6 @@ import java.util.*;
         parameterTypes = null;
         returnType = null;
         methodName = null;
-        labels.clear();
         locals.clear();
         localTypes.clear();
         if (handlerStack.size() > 0) {
@@ -325,19 +321,19 @@ import java.util.*;
         backend.handle_exception(range[0], range[1], exceptionType);
     }
 
-    protected void ifeq(String label) { backend.ifeq(label); }
-    protected void ifne(String label) { backend.ifne(label); }
-    protected void iflt(String label) { backend.iflt(label); }
-    protected void ifge(String label) { backend.ifge(label); }
-    protected void ifgt(String label) { backend.ifgt(label); }
-    protected void ifle(String label) { backend.ifle(label); }
-    protected void goTo(String label) { backend.goTo(label); }
-    protected void ifnull(String label) { backend.ifnull(label); }
-    protected void ifnonnull(String label) { backend.ifnonnull(label); }
-    protected void if_icmplt(String label) { backend.if_icmplt(label); }
-    protected void if_icmpne(String label) { backend.if_icmpne(label); }
-    protected void if_icmpeq(String label) { backend.if_icmpeq(label); }
-    protected void nop(String label) { backend.nop(label); }
+    protected void ifeq(Object label) { backend.ifeq(label); }
+    protected void ifne(Object label) { backend.ifne(label); }
+    protected void iflt(Object label) { backend.iflt(label); }
+    protected void ifge(Object label) { backend.ifge(label); }
+    protected void ifgt(Object label) { backend.ifgt(label); }
+    protected void ifle(Object label) { backend.ifle(label); }
+    protected void goTo(Object label) { backend.goTo(label); }
+    protected void ifnull(Object label) { backend.ifnull(label); }
+    protected void ifnonnull(Object label) { backend.ifnonnull(label); }
+    protected void if_icmplt(Object label) { backend.if_icmplt(label); }
+    protected void if_icmpne(Object label) { backend.if_icmpne(label); }
+    protected void if_icmpeq(Object label) { backend.if_icmpeq(label); }
+    protected void nop(Object label) { backend.nop(label); }
     protected void imul() { backend.imul(); }
     protected void iadd() { backend.iadd(); }
     protected void lushr() { backend.lushr(); }
@@ -795,12 +791,8 @@ import java.util.*;
     protected void aastore() { backend.aastore(); }
     protected void athrow() { backend.athrow(); }
   
-    protected String anon_label() {
-        String label;
-        do {
-            label = PRIVATE_PREFIX + nextPrivateLabel++;
-        } while (labels.contains(label));
-        return label;
+    protected Object make_label() {
+        return new Object();
     }
 
     protected Object make_local() {
@@ -843,8 +835,8 @@ import java.util.*;
     protected void unbox_or_zero(Class type) {
         if (type.isPrimitive()) {
             if (!type.equals(Void.TYPE)) {
-                String nonNull = anon_label();
-                String end = anon_label();
+                Object nonNull = make_label();
+                Object end = make_label();
                 dup();
                 ifnonnull(nonNull);
                 pop();
@@ -985,8 +977,8 @@ import java.util.*;
         Class compType = type.getComponentType();
         Object array = make_local();
         Object loopvar = make_local(Integer.TYPE);
-        String loopbody = anon_label();
-        String checkloop = anon_label();
+        Object loopbody = make_label();
+        Object checkloop = make_label();
         store_local(array);
         push(0);
         store_local(loopvar);
@@ -1018,8 +1010,8 @@ import java.util.*;
         Object array1 = make_local();
         Object array2 = make_local();
         Object loopvar = make_local(Integer.TYPE);
-        String loopbody = anon_label();
-        String checkloop = anon_label();
+        Object loopbody = make_label();
+        Object checkloop = make_label();
         store_local(array1);
         store_local(array2);
         push(0);
@@ -1050,7 +1042,7 @@ import java.util.*;
      * directly and by invoking the <code>equals</code> method for
      * Objects. Arrays are recursively processed in the same manner.
      */
-    protected void not_equals(Class clazz, final String notEquals) {
+    protected void not_equals(Class clazz, final Object notEquals) {
         (new ProcessArrayCallback() {
                 public void processElement(Class type) {
                     not_equals_helper(type, notEquals, this);
@@ -1058,7 +1050,7 @@ import java.util.*;
             }).processElement(clazz);
     }
 
-    private void not_equals_helper(Class clazz, String notEquals, ProcessArrayCallback callback) {
+    private void not_equals_helper(Class clazz, Object notEquals, ProcessArrayCallback callback) {
         if (clazz.isPrimitive()) {
             if (returnType.equals(Double.TYPE)) {
                 dcmpg();
@@ -1073,10 +1065,10 @@ import java.util.*;
                 if_icmpne(notEquals);
             }
         } else {
-            String end = anon_label();
+            Object end = make_label();
             nullcmp(notEquals, end);
             if (clazz.isArray()) {
-                String checkContents = anon_label();
+                Object checkContents = make_label();
                 dup2();
                 arraylength();
                 swap();
@@ -1109,11 +1101,11 @@ import java.util.*;
      * @param oneNull label to branch to if only one of the objects is null
      * @param bothNull label to branch to if both of the objects are null
      */
-    protected void nullcmp(String oneNull, String bothNull) {
+    protected void nullcmp(Object oneNull, Object bothNull) {
         dup2();
-        String nonNull = anon_label();
-        String oneNullHelper = anon_label();
-        String end = anon_label();
+        Object nonNull = make_label();
+        Object oneNullHelper = make_label();
+        Object end = make_label();
         ifnonnull(nonNull);
         ifnonnull(oneNullHelper);
         pop2();

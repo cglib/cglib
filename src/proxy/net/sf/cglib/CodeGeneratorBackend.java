@@ -68,19 +68,19 @@ abstract public class CodeGeneratorBackend {
     }
     
     abstract public byte[] getBytes();
-    abstract public void ifeq(String label);
-    abstract public void ifne(String label);
-    abstract public void iflt(String label);
-    abstract public void ifge(String label);
-    abstract public void ifgt(String label);
-    abstract public void ifle(String label);
-    abstract public void goTo(String label);
-    abstract public void ifnull(String label);
-    abstract public void ifnonnull(String label);
-    abstract public void if_icmplt(String label);
-    abstract public void if_icmpne(String label);
-    abstract public void if_icmpeq(String label);
-    abstract public void nop(String label);
+    abstract public void ifeq(Object label);
+    abstract public void ifne(Object label);
+    abstract public void iflt(Object label);
+    abstract public void ifge(Object label);
+    abstract public void ifgt(Object label);
+    abstract public void ifle(Object label);
+    abstract public void goTo(Object label);
+    abstract public void ifnull(Object label);
+    abstract public void ifnonnull(Object label);
+    abstract public void if_icmplt(Object label);
+    abstract public void if_icmpne(Object label);
+    abstract public void if_icmpeq(Object label);
+    abstract public void nop(Object label);
     abstract public void imul();
     abstract public void iadd();
     abstract public void lushr();
