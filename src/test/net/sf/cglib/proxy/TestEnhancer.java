@@ -65,7 +65,7 @@ import java.lang.reflect.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.6 2002/09/23 18:15:01 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.7 2002/09/23 20:08:57 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -253,7 +253,7 @@ public class TestEnhancer extends TestCase {
        source.throwChecked();
        fail("lost exeption");
        
-   }catch( ClassCastException cce  ){
+   }catch( Source.CheckedException1 e1  ){
    
    }
  
@@ -268,7 +268,7 @@ public class TestEnhancer extends TestCase {
             Object args[],
             boolean invokedSuper, Object retValFromSuper,
             java.lang.Throwable e )throws java.lang.Throwable{
-                throw new CloneNotSupportedException();
+                throw new Source.CheckedException2();
           }
      };     
      
@@ -284,7 +284,7 @@ public class TestEnhancer extends TestCase {
    
         // not very usual for java progammer, 
        // is it OK or we need to rethrow some runtime exception ?  
-     if( !( cnse instanceof CloneNotSupportedException ) ){
+     if( !( cnse instanceof Source.CheckedException2 ) ){
           fail("invalid exeption");
      }
     
@@ -292,6 +292,12 @@ public class TestEnhancer extends TestCase {
      
      
  }
+ 
+  public void testSerializable()throws Throwable{
+ 
+      
+ 
+  }
  
  
 }
