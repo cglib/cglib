@@ -59,7 +59,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.3 2002/12/21 21:49:43 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.4 2002/12/21 23:44:58 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -113,7 +113,7 @@ public class TestMethodProxy extends CodeGenTestCase {
     }
 
     public void testMethodProxyPerformance() throws Throwable {
-        int iterations = 5000000;
+        int iterations = 500000;
         System.out.println();
         System.out.println("iteration count: " + iterations);
 
