@@ -9,12 +9,6 @@ abstract public class AbstractFilterTransformer extends AbstractTransformer {
         this.pass = pass;
     }
 
-    public Object clone() {
-        AbstractFilterTransformer t = (AbstractFilterTransformer)super.clone();
-        t.pass = (ClassTransformer)pass.clone();
-        return t;
-    }
-
     public void setTarget(ClassVisitor target, ClassVisitor outer) {
         super.setTarget(target, outer);
         pass.setTarget(target, outer);

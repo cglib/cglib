@@ -1,5 +1,6 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
+import net.sf.cglib.transform.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;

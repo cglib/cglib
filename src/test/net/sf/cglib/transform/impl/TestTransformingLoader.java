@@ -51,8 +51,9 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
+import net.sf.cglib.transform.*;
 import net.sf.cglib.core.Constants;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.beans.*;
@@ -62,7 +63,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.10 2003/10/08 23:29:48 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.1 2003/11/18 10:23:21 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -97,7 +98,7 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
     }
 
     public void testAddStatic() throws Exception {
-        Method m = ReflectUtils.findMethod("net.sf.cglib.transform.TestTransformingLoader.initStatic(Class)");
+        Method m = ReflectUtils.findMethod("net.sf.cglib.transform.impl.TestTransformingLoader.initStatic(Class)");
         Class loaded = loadHelper(new AddStaticInitTransformer(m), Example.class);
         Object obj = loaded.newInstance();
         // TODO
