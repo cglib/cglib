@@ -3,8 +3,6 @@ package net.sf.cglib.transform;
 import java.io.*;
 
 
-import net.sf.cglib.util.Opcodes;
-import net.sf.cglib.util.ReflectUtils;
 import net.sf.cglib.core.*;
 
 import org.objectweb.asm.*;

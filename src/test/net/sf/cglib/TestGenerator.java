@@ -51,23 +51,29 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib;
 
-public class Local
-{
-    private Class type;
-    private int index;
-    
-    public Local(Class type, int index) {
-        this.type = type;
-        this.index = index;
-    }
-    
-    public int getIndex() {
-        return index;
+import net.sf.cglib.core.AbstractClassGenerator;
+import net.sf.cglib.core.ReflectUtils;
+
+abstract public class TestGenerator extends AbstractClassGenerator {
+    public TestGenerator(Source source) {
+        super(source);
     }
 
-    public Class getType() {
-        return type;
+    protected ClassLoader getDefaultClassLoader() {
+        return null;
+    }
+
+    protected Object firstInstance(Class type) throws Exception {
+        return ReflectUtils.newInstance(type);
+    }
+
+    protected Object nextInstance(Object instance) throws Exception {
+        return instance;
+    }
+
+    public Object create() {
+        return create(null);
     }
 }

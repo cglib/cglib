@@ -142,7 +142,7 @@ implements ClassGenerator
 
     protected Object create(Object key) {
         try {
-            Object factory = null;
+            Object instance = null;
             synchronized (source) {
                 counter = source.counter++;
                 ClassLoader loader = getClassLoader();
@@ -150,26 +150,26 @@ implements ClassGenerator
                 if (source.cache != null) {
                     cache2 = (Map)source.cache.get(loader);
                     if (cache2 != null) {
-                        factory = cache2.get(key);
+                        instance = cache2.get(key);
                     } else {
                         source.cache.put(loader, cache2 = new HashMap());
                     }
                 }
-                if (factory == null) {
+                if (instance == null) {
                     ClassWriter cw = new ClassWriter(true);
                     generateClass(cw);
                     byte[] b = cw.toByteArray();
                     Class gen = defineClass(source.defineClass, getClassName(), b, loader);
 
-                    factory = firstInstance(gen);
+                    instance = firstInstance(gen);
 
                     if (cache2 != null) {
-                        cache2.put(key, factory);
+                        cache2.put(key, instance);
                     }
-                    return factory;
+                    return instance;
                 }
             }
-            return nextInstance(factory);
+            return nextInstance(instance);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -180,7 +180,7 @@ implements ClassGenerator
     }
 
     abstract protected Object firstInstance(Class type) throws Exception;
-    abstract protected Object nextInstance(Object factory) throws Exception;
+    abstract protected Object nextInstance(Object instance) throws Exception;
 
     private static Class defineClass(Method m, String className, byte[] b, ClassLoader loader) throws Exception {
         if (debugLocation != null) {

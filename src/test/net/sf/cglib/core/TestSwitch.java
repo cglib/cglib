@@ -51,32 +51,82 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib.core;
 
-public class Block
-{
-    private Block parent;
-    private Label start;
-    private Label end;
+import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.TestGenerator;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import junit.framework.*;
+import org.objectweb.asm.ClassVisitor;
+
+public class TestSwitch extends CodeGenTestCase {
+    private static int index = 0;
+
+    public static interface Alphabet {
+        String getLetter(int index);
+    }
+
+    public void testAlphabet() {
+        int[] keys = new int[26];
     
-    public Block(Block parent, Label start) {
-        this.parent = parent;
-        this.start = start;
+        for (int i = 0; i < 26; i++) {
+            keys[i] = i + 1;
+        }
+        String[] letters = new String[] {
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "k", "j", "l", "m",
+            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+        };
+        
+        Alphabet alpha = (Alphabet)new Generator(keys, letters).create();
+        assertTrue("c".equals(alpha.getLetter(3)));
+        assertTrue("f".equals(alpha.getLetter(6)));
+        assertTrue("!".equals(alpha.getLetter(27)));
     }
 
-    public Block getParent() {
-        return parent;
+    private static class Generator extends TestGenerator {
+        private static final Source SOURCE = new Source(TestSwitch.class, false);
+        private int[] keys;
+        private String[] values;
+
+        public Generator(int[] keys, String[] values) {
+            super(SOURCE);
+            this.keys = keys;
+            this.values = values;
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            final Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Alphabet.class });
+            Virt.null_constructor(e);
+            Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
+            e.begin_method(method);
+            e.load_arg(0);
+            e.process_switch(keys, new Emitter.ProcessSwitchCallback() {
+                    public void processCase(int index, Label end) {
+                        e.push(values[index - 1]);
+                        e.goTo(end);
+                    }
+                    public void processDefault() {
+                        e.push("!");
+                    }
+                });
+            e.return_value();
+            e.end_method();
+            e.end_class();
+        }
     }
 
-    public Label getStart() {
-        return start;
+    public TestSwitch(String testName) {
+        super(testName);
     }
-
-    public Label getEnd() {
-        return end;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public void setEnd(Label end) {
-        this.end = end;
+    
+    public static Test suite() {
+        return new TestSuite(TestSwitch.class);
     }
 }
