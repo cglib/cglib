@@ -107,16 +107,16 @@ public class Emitter {
 
     // current method
     private Signature currentSig;
-    private CodeVisitor rawcodev;
     private CodeVisitor codev;
     private int methodAccess;
     private String methodName;
     private Type returnType;
     private Type[] argumentTypes;
     private boolean isStatic;
-    private Map remap = new HashMap();
+    private int localOffset;
     private int firstLocal;
     private int nextLocal;
+    private Map remap = new HashMap();
 
     // current block
     private Block curBlock;
@@ -126,69 +126,7 @@ public class Emitter {
     }
 
     public CodeVisitor getCodeVisitor() {
-        return codev;
-    }
-
-    public Type getClassType() {
-        return classType;
-    }
-
-    public Type getSuperType() {
-        return superType;
-    }
-
-    public Type getReturnType() {
-        return returnType;
-    }
-    
-    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-        this.classType = Type.getType("L" + className.replace('.', '/') + ";");
-        this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
-        classv.visit(access,
-                     this.classType.getInternalName(),
-                     this.superType.getInternalName(),
-                     toInternalNames(interfaces),
-                     sourceFile);
-    }
-
-    public void end_class() {
-        for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
-            ((EndClassCallback)it.next()).process();
-        }
-        classv.visitEnd();
-
-        closeMethod();
-        classv = null; // for safety
-    }
-
-    public void register(Object key, EndClassCallback callback) {
-        endClassCallbacks.put(key, callback);
-    }
-    
-    private static boolean isStatic(int access) {
-        return (Constants.ACC_STATIC & access) != 0;
-    }
-
-    private static boolean isAbstract(int access) {
-        return (Constants.ACC_ABSTRACT & access) != 0;
-    }
-
-    public void begin_method(int access, Signature sig, Type[] exceptions) {
-        closeMethod();
-        currentSig = sig;
-        methodAccess = access;
-        methodName = sig.getName();
-        returnType = sig.getReturnType();
-        argumentTypes = sig.getArgumentTypes();
-        isStatic = isStatic(access);
-        remap.clear();
-        firstLocal = nextLocal = getLocalOffset() + getStackSize(argumentTypes);
-
-        rawcodev = classv.visitMethod(access,
-                                      methodName,
-                                      sig.getDescriptor(),
-                                      toInternalNames(exceptions));
-        codev = new CodeAdapter(rawcodev) {
+        return new CodeAdapter(codev) {
             public void visitMaxs(int maxStack, int maxLocals) {
                 // ignore
                 // System.err.println("Ignoring visitMaxs(" + maxStack + ", " + maxLocals + ")");
@@ -230,6 +168,67 @@ public class Emitter {
         };
     }
 
+    public Type getClassType() {
+        return classType;
+    }
+
+    public Type getSuperType() {
+        return superType;
+    }
+
+    public Type getReturnType() {
+        return returnType;
+    }
+    
+    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        this.classType = Type.getType("L" + className.replace('.', '/') + ";");
+        this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
+        classv.visit(access,
+                     this.classType.getInternalName(),
+                     this.superType.getInternalName(),
+                     toInternalNames(interfaces),
+                     sourceFile);
+    }
+
+    public void end_class() {
+        closeMethod();
+        for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
+            ((EndClassCallback)it.next()).process();
+        }
+        classv.visitEnd();
+        classv = null; // for safety
+    }
+
+    public void register(Object key, EndClassCallback callback) {
+        endClassCallbacks.put(key, callback);
+    }
+    
+    private static boolean isStatic(int access) {
+        return (Constants.ACC_STATIC & access) != 0;
+    }
+
+    private static boolean isAbstract(int access) {
+        return (Constants.ACC_ABSTRACT & access) != 0;
+    }
+
+    public void begin_method(int access, Signature sig, Type[] exceptions) {
+        closeMethod();
+        currentSig = sig;
+        methodAccess = access;
+        methodName = sig.getName();
+        returnType = sig.getReturnType();
+        argumentTypes = sig.getArgumentTypes();
+        isStatic = isStatic(access);
+        localOffset = isStatic ? 0 : 1;
+        remap.clear();
+        
+        firstLocal = nextLocal = localOffset + getStackSize(argumentTypes);
+        codev = classv.visitMethod(access,
+                                      methodName,
+                                      sig.getDescriptor(),
+                                      toInternalNames(exceptions));
+    }
+
     private int remapLocal(int index, Type type) {
         if (index < firstLocal) {
             // System.err.println("remap keeping " + index);
@@ -239,6 +238,7 @@ public class Emitter {
         Local local = (Local)remap.get(key);
         if (local == null) {
             local = make_local(type);
+            remap.put(new Integer(index), local);
         }
         
         if (local.getType().getOpcode(Constants.ISTORE) != type.getOpcode(Constants.ISTORE)) {
@@ -251,8 +251,8 @@ public class Emitter {
     private void closeMethod() {
         if (codev != null) {
             if (!isAbstract(methodAccess)) {
-                // System.err.println("Calling visitMaxs(0, 0)");
-                rawcodev.visitMaxs(0, 0);
+                // System.err.println("Calling visitMaxs(0, 0) for method " + currentSig);
+                codev.visitMaxs(0, 0);
             }
             
             if (curBlock != null) {
@@ -260,10 +260,6 @@ public class Emitter {
             }
             codev = null;
         }
-    }
-
-    private int getLocalOffset() {
-        return isStatic ? 0 : 1;
     }
 
     private static int getStackSize(Type[] types) {
@@ -509,12 +505,12 @@ public class Emitter {
      * @param index the zero-based index into the argument list
      */
     public void load_arg(int index) {
-        load_local(argumentTypes[index], getLocalOffset() + skipArgs(index));
+        load_local(argumentTypes[index], localOffset + skipArgs(index));
     }
 
     // zero-based (see load_this)
     public void load_args(int fromArg, int count) {
-        int pos = getLocalOffset() + skipArgs(fromArg);
+        int pos = localOffset + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
             Type t = argumentTypes[fromArg + i];
             load_local(t, pos);
@@ -655,7 +651,11 @@ public class Emitter {
     }
 
     private void emit_invoke(int opcode, Type type, Signature sig) {
-        // TOOD: make sure that signature matches opcode
+        if (sig.getName().equals(Constants.CONSTRUCTOR_NAME) &&
+            ((opcode == Constants.INVOKEVIRTUAL) ||
+             (opcode == Constants.INVOKESTATIC))) {
+            // TODO: error
+        }
         codev.visitMethodInsn(opcode,
                               type.getInternalName(),
                               sig.getName(),
@@ -731,7 +731,6 @@ public class Emitter {
     
     public Local make_local(Type type) {
         Local local = new Local(nextLocal, type);
-        remap.put(new Integer(nextLocal), local);
         nextLocal += type.getSize();
         return local;
     }

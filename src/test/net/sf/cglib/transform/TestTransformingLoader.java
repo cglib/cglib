@@ -53,12 +53,14 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.beans.*;
 import java.util.*;
+import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.3 2003/09/19 23:31:00 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.4 2003/09/21 08:13:16 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -73,6 +75,7 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         return new ExampleTransformer(new String[]{ name }, new Class[]{ type });
     }
 
+    /*
     public void testExample() throws Exception {
         ClassTransformer t1 = getExampleTransformer("herby", String.class);
         ClassTransformer t2 = getExampleTransformer("derby", Double.TYPE);
@@ -87,41 +90,25 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
         loaded.getMethod("setDerby", new Class[]{ Double.TYPE }).invoke(obj, new Object[]{ new Double(1.23456789d) });
     }
+    */
+
+    private static Class inited;
+
+    public static void initStatic(Class foo) {
+        System.err.println("INITING: " + foo);
+    }
+
+    public void testAddStatic() throws Exception {
+        Method m = ReflectUtils.findMethod("net.sf.cglib.transform.TestTransformingLoader.initStatic(Class)");
+        Class loaded = loadHelper(new AddStaticInitTransformer(m), Example.class);
+        Object obj = loaded.newInstance();
+    }
 
     private static Class loadHelper(ClassTransformer t, Class target) throws ClassNotFoundException {
         ClassLoader parent = TestTransformingLoader.class.getClassLoader();
         TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER, t);
         return loader.loadClass(target.getName());
     }
-
-    /*
-    private static class PatternTest1 {
-        public int foo = 1;
-        public int afoo = 2;
-        public int bar = 3;
-        public double dfoo = 4;
-
-        public static void main(String[] args) {
-            PatternTest1 p = new PatternTest1();
-            System.out.println(p.afoo + p.bar + p.foo + p.dfoo);
-        }
-    }
-
-    public void testPattern() throws Exception {
-        final List names = new ArrayList(3);
-        PatternTransformer t = new PatternTransformer(new CodeTransformer() {
-            public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-                names.add(name);
-                super.visitFieldInsn(opcode, owner, name, desc);
-            }
-        });
-        t.addGetFieldPattern("int *foo");
-        loadHelper(t, PatternTest1.class);
-        assertTrue(names.size() == 2);
-        assertTrue(names.get(0).equals("afoo"));
-        assertTrue(names.get(0).equals("foo"));
-    }
-    */
 
     public TestTransformingLoader(String testName) {
         super(testName);
