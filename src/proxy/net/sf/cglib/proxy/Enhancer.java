@@ -147,9 +147,9 @@ public class Enhancer extends AbstractClassGenerator
       TypeUtils.parseSignature("void set(Object)");
     private static final Signature BIND_CALLBACKS =
       TypeUtils.parseSignature("void CGLIB$BIND_CALLBACKS(Object)");
-    
 
-    interface EnhancerKey {
+    /** Internal interface, only public due to ClassLoader issues. */
+    public interface EnhancerKey {
         public Object newInstance(Class type,
                                   Class[] interfaces,
                                   Object filter,
@@ -518,8 +518,6 @@ public class Enhancer extends AbstractClassGenerator
         try {
             getCallbacksSetter(type, SET_THREAD_CALLBACKS_NAME);
             return true;
-        } catch (ClassNotFoundException e) {
-            return false;
         } catch (NoSuchMethodException e) {
             return false;
         }
@@ -544,15 +542,11 @@ public class Enhancer extends AbstractClassGenerator
             throw new CodeGenerationException(e);
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e);
-        } catch (ClassNotFoundException e) {
-            throw new CodeGenerationException(e);
         }
     }
 
-    private static Method getCallbacksSetter(Class type, String methodName) throws NoSuchMethodException, ClassNotFoundException {
-        // Class c = Class.forName("[Lnet.sf.cglib.proxy.Callback;", true, type.getClass().getClassLoader());
-        Class c = Callback[].class;
-        return type.getDeclaredMethod(methodName, new Class[]{ c });
+    private static Method getCallbacksSetter(Class type, String methodName) throws NoSuchMethodException {
+        return type.getDeclaredMethod(methodName, new Class[]{ Callback[].class });
     }
 
     private Object createUsingReflection(Class type) {
@@ -614,6 +608,13 @@ public class Enhancer extends AbstractClassGenerator
 
     ////////////////////////////////////////////////////////////
 
+    private static boolean isExcluded(Type superType) {
+        String desc = superType.getDescriptor();
+        return
+            desc.equals("Lnet/sf/cglib/reflect/FastClass;") ||
+            desc.equals("Lnet/sf/cglib/core/KeyFactory;");
+    }
+
     private class EnhancerTransformer extends ClassEmitterTransformer {
         private ClassInfo classInfo;
         private List constructors;
@@ -621,7 +622,7 @@ public class Enhancer extends AbstractClassGenerator
         private boolean collect;
 
         public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-            if (TypeUtils.isInterface(access)) {
+            if (TypeUtils.isInterface(access) || isExcluded(superType)) {
                 collect = false;
             } else {
                 collect = true;
@@ -916,7 +917,7 @@ public class Enhancer extends AbstractClassGenerator
         }
 
         Set seenGen = new HashSet();
-        CodeEmitter e = ce.begin_static();
+        CodeEmitter e = ce.getStaticHook();
         e.new_instance(THREAD_LOCAL);
         e.dup();
         e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
