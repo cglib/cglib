@@ -55,7 +55,7 @@ package net.sf.cglib;
 
 import java.lang.reflect.*;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 
 class MethodInterceptorGenerator
 implements CallbackGenerator
@@ -67,7 +67,7 @@ implements CallbackGenerator
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
 
-    public void generate(CodeGenerator cg, Context context) {
+    public void generate(Emitter cg, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             String accessName = getAccessName(context, method);
@@ -88,14 +88,14 @@ implements CallbackGenerator
         return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
-    private void generateAccessMethod(CodeGenerator cg, Context context, Method method) {
+    private void generateAccessMethod(Emitter cg, Context context, Method method) {
         cg.begin_method(Modifier.FINAL,
                         method.getReturnType(),
                         getAccessName(context, method),
                         method.getParameterTypes(),
                         method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            cg.throw_exception(AbstractMethodError.class, method.toString() + " is abstract" );
+            Virt.throw_exception(cg, AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             cg.load_this();
             cg.load_args();
@@ -105,7 +105,7 @@ implements CallbackGenerator
         cg.end_method();
     }
 
-    private void generateAroundMethod(CodeGenerator cg,
+    private void generateAroundMethod(Emitter cg,
                                       Context context,
                                       Method method) {
         cg.begin_method(method, context.getModifiers(method));
@@ -117,10 +117,10 @@ implements CallbackGenerator
 
         cg.load_this();
         cg.getfield(getFieldName(context, method));
-        cg.create_arg_array();
+        Virt.create_arg_array(cg);
         cg.getfield(getAccessName(context, method));
         cg.invoke(AROUND_ADVICE);
-        cg.unbox_or_zero(method.getReturnType());
+        Virt.unbox_or_zero(cg, method.getReturnType());
         cg.return_value();
 
         cg.mark(nullInterceptor);
@@ -130,11 +130,11 @@ implements CallbackGenerator
         cg.return_value();
 
         cg.end_block();
-        cg.handle_undeclared(method.getExceptionTypes(), handler);
+        Virt.handle_undeclared(cg, method.getExceptionTypes(), handler);
         cg.end_method();
     }
 
-    public void generateStatic(CodeGenerator cg, Context context) {
+    public void generateStatic(Emitter cg, Context context) {
         /* generates:
            static {
              Class [] args;
@@ -151,7 +151,7 @@ implements CallbackGenerator
         Local m = cg.make_local();
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
-            cg.load_method(method);
+            Virt.load_method(cg, method);
             cg.dup();
             cg.putfield(getFieldName(context, method));
 
@@ -159,7 +159,7 @@ implements CallbackGenerator
             String desc = ReflectUtils.getMethodDescriptor(method);
             cg.invoke(MethodConstants.GET_DECLARING_CLASS);
             cg.push(method.getName() + desc);
-            cg.load_class_this();            
+            Virt.load_class_this(cg);
             cg.push(accessName + desc);
             cg.invoke(MAKE_PROXY);
             cg.putfield(accessName);

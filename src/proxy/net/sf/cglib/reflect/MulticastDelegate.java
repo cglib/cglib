@@ -51,7 +51,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.delegates;
+package net.sf.cglib.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

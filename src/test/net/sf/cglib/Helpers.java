@@ -53,32 +53,42 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
-
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
+class Helpers
+{
+    public static Factory enhance(Class type, Callback callback) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(type);
+        e.setCallback(callback);
+        return e.create();
     }
 
-    public TestLazyLoader(String testName) {
-        super(testName);
+    public static Factory enhance(Class cls, Class interfaces[], Callback callback) {
+        return enhance(cls, interfaces, callback, null);
+    }
+
+    public static Factory enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(cls);
+        e.setInterfaces(interfaces);
+        e.setCallback(callback);
+        e.setClassLoader(loader);
+        return e.create();
     }
     
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+    public static Factory enhance(Class superclass, Class[] interfaces, CallbackFilter filter, Callbacks callbacks) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(filter);
+        e.setCallbacks(callbacks);
+        return e.create();
     }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
+
+    public static Class enhanceClass(Class superclass, Class[] interfaces, CallbackFilter filter) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(filter);
+        return e.createClass();
     }
 }

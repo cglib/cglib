@@ -51,34 +51,30 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
 import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
 
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
+public class VisibilityPredicate implements Predicate {
+    private boolean protectedOk;
+    private String pkg;
+
+    public VisibilityPredicate(Class source, boolean protectedOk) {
+        this.protectedOk = protectedOk;
+        pkg = ReflectUtils.getPackageName(source);
     }
 
-    public TestLazyLoader(String testName) {
-        super(testName);
-    }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
+    public boolean evaluate(Object arg) {
+        int mod = ((Member)arg).getModifiers();
+        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
+            return false;
+        } else if (Modifier.isPublic(mod)) {
+            return true;
+        } else if (Modifier.isProtected(mod)) {
+            return protectedOk;
+        } else {
+            return pkg.equals(ReflectUtils.getPackageName(((Member)arg).getDeclaringClass()));
+        }
     }
 }
+

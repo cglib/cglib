@@ -51,34 +51,81 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
 import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
+import java.lang.reflect.Array;
 
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
+/**
+ * @author Chris Nokleberg
+ * @version $Id: CollectionUtils.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ */
+public class CollectionUtils {
+    private CollectionUtils() { }
+
+    public static Map bucket(Collection c, Transformer t) {
+        Map buckets = new HashMap();
+        for (Iterator it = c.iterator(); it.hasNext();) {
+            Object value = (Object)it.next();
+            Object key = t.transform(value);
+            List bucket = (List)buckets.get(key);
+            if (bucket == null) {
+                buckets.put(key, bucket = new LinkedList());
+            }
+            bucket.add(value);
+        }
+        return buckets;
+    }
+
+    public static Object[] filter(Object[] a, Predicate p) {
+        List c = new ArrayList(Arrays.asList(a));
+        filter(c, p);
+        return c.toArray((Object[])Array.newInstance(a.getClass().getComponentType(), c.size()));
+    }
+
+    public static Collection filter(Collection c, Predicate p) {
+        Iterator it = c.iterator();
+        while (it.hasNext()) {
+            if (!p.evaluate(it.next())) {
+                it.remove();
+            }
+        }
+        return c;
+    }
+
+    public static List transform(List c, Transformer t) {
+        List result = new ArrayList(c.size());
+        for (Iterator it = c.iterator(); it.hasNext();) {
+            result.add(t.transform(it.next()));
+        }
+        return result;
+    }
+
+    public static boolean arrayEquals(Object[] a1, Object[] a2) {
+        if ((a1 == null) ^ (a2 == null)) {
+            return false;
+        }
+        if (a1.length != a2.length) {
+            return false;
+        }
+        for (int i = 0; i < a1.length; i++) {
+            Object o1 = a1[i];
+            Object o2 = a2[i];
+            if (o1 == null) {
+                if (o2 != null) {
+                    return false;
                 }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
+            } else if (o2 == null) {
+                return false;
+            } else {
+                Class c1 = o1.getClass();
+                Class c2 = o2.getClass();
+                if (!c1.equals(c2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
-
-    public TestLazyLoader(String testName) {
-        super(testName);
-    }
+}    
     
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
-    }
-}

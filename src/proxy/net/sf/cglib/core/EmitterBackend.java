@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * Copyright (c) 2003 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,34 +51,34 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
-
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
-    }
-
-    public TestLazyLoader(String testName) {
-        super(testName);
-    }
+public interface EmitterBackend
+{
+    void init(Emitter generator);
+    byte[] getBytes();
     
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
-    }
+    void declare_field(int modifiers, Class type, String name);
+
+    void emit(int opcode);
+    void emit(Label label);
+    void emit(int opcode, Label label);
+    void emit_var(int opcode, int index);
+    void emit_type(int opcode, String className);
+    void emit_int(int opcode, int value);
+    void emit_field(int opcode, String className, String fieldName, Class type);
+    void emit_invoke(int opcode, String className, String methodName, Class returnType, Class[] parameterTypes);
+    void emit_iinc(int index, int amount);
+    void emit_ldc(Object value);
+    void emit_switch(int[] keys, Label[] labels, Label def);
+    void emit_switch(int min, int max, Label[] labels, Label def);
+
+    Label make_label();
+    Label mark();
+    void catch_exception(Block block, Class exceptionType);
+
+    void begin_constructor(Class[] parameterTypes);
+    void begin_method(int modifiers, Class returnType, String name, Class[] parameterTypes, Class[] exceptionTypes);
+    void begin_static();
+    void end_method();
 }

@@ -56,7 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 
 class LazyLoaderGenerator
 implements CallbackGenerator
@@ -68,7 +68,7 @@ implements CallbackGenerator
     private static final Method LOAD_OBJECT =
       ReflectUtils.findMethod("LazyLoader.loadObject()");
 
-    public void generate(CodeGenerator cg, Context context) {
+    public void generate(Emitter cg, Context context) {
         cg.declare_field(Modifier.PRIVATE, Object.class, DELEGATE);
 
         cg.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
@@ -107,11 +107,11 @@ implements CallbackGenerator
                 cg.invoke(method);
                 cg.return_value();
                 cg.end_block();
-                cg.handle_undeclared(method.getExceptionTypes(), handler);
+                Virt.handle_undeclared(cg, method.getExceptionTypes(), handler);
                 cg.end_method();
             }
         }
     }
 
-    public void generateStatic(CodeGenerator cg, Context context) { }
+    public void generateStatic(Emitter cg, Context context) { }
 }
