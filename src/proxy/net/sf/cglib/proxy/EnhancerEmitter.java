@@ -236,10 +236,10 @@ class EnhancerEmitter extends ClassEmitter {
             }
             e.mark(skip);
 
-            // clear thread-locals
-            e.getfield(THREAD_CALLBACKS_FIELD);
-            e.aconst_null();
-            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+//             // clear thread-locals
+//             e.getfield(THREAD_CALLBACKS_FIELD);
+//             e.aconst_null();
+//             e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
             
             e.return_value();
             e.end_method();

@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.39 2004/01/18 13:29:41 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.40 2004/03/28 04:12:14 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -645,5 +645,34 @@ public class TestEnhancer extends CodeGenTestCase {
             }
         });
         e.createClass();
+    }
+
+    private static ArgInit newArgInit(Class clazz, String value) {
+        return (ArgInit)ReflectUtils.newInstance(clazz,
+                                                 new Class[]{ String.class },
+                                                 new Object[]{ value });
+    }
+   
+    public void testRegisterCallbacks() {
+         Enhancer e = new Enhancer();
+         e.setSuperclass(ArgInit.class);
+         e.setCallbackType(MethodInterceptor.class);
+         e.setUseFactory(false);
+         Class clazz = e.createClass();
+
+         assertTrue(!Factory.class.isAssignableFrom(clazz));
+         assertEquals("test", newArgInit(clazz, "test").toString());
+
+         Enhancer.registerCallbacks(clazz, new Callback[]{ new MethodInterceptor() {
+             public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                 return "fizzy";
+             }
+         }});
+         assertEquals("fizzy", newArgInit(clazz, "test").toString());
+         assertEquals("fizzy", newArgInit(clazz, "test").toString());
+
+         Enhancer.registerCallbacks(clazz, null);
+         assertEquals("test", newArgInit(clazz, "test").toString());
+         
     }
 }
