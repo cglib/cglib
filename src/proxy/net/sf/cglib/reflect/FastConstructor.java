@@ -53,13 +53,20 @@
  */
 package net.sf.cglib.reflect;
 
+import java.lang.reflect.Constructor;
+
 public class FastConstructor extends FastMember
 {
-    private int index;
-    
-    FastConstructor(FastClass fc, Class[] parameterTypes) {
-        super(fc, "<init>", parameterTypes);
-        index = fc.getIndex(parameterTypes);
+    FastConstructor(FastClass fc, Constructor constructor) {
+        super(fc, constructor, fc.getIndex(constructor.getParameterTypes()));
+    }
+
+    public Class[] getParameterTypes() {
+        return ((Constructor)member).getParameterTypes();
+    }
+
+    public Class[] getExceptionTypes() {
+        return ((Constructor)member).getExceptionTypes();
     }
 
     public Object newInstance() {
@@ -68,5 +75,9 @@ public class FastConstructor extends FastMember
 
     public Object newInstance(Object[] args) {
         return fc.newInstance(index, args);
+    }
+
+    public Constructor getJavaConstructor() {
+        return (Constructor)member;
     }
 }

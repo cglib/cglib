@@ -98,21 +98,29 @@ abstract public class FastClass
     public Object newInstance(Class[] parameterTypes, Object[] args) {
         return newInstance(getIndex(parameterTypes), args);
     }
-
-    public FastMethod getMethod(String name, Class[] parameterTypes) {
-        return new FastMethod(this, name, copyTypes(parameterTypes));
-    }
-
-    public FastConstructor getConstructor(Class[] parameterTypes) {
-        return new FastConstructor(this, copyTypes(parameterTypes));
-    }
     
     public FastMethod getMethod(Method method) {
-        return getMethod(method.getName(), method.getParameterTypes());
+        return new FastMethod(this, method);
     }
 
     public FastConstructor getConstructor(Constructor constructor) {
-        return getConstructor(constructor.getParameterTypes());
+        return new FastConstructor(this, constructor);
+    }
+
+    public FastMethod getMethod(String name, Class[] parameterTypes) {
+        try {
+            return getMethod(type.getMethod(name, parameterTypes));
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        }
+    }
+
+    public FastConstructor getConstructor(Class[] parameterTypes) {
+        try {
+            return getConstructor(type.getConstructor(parameterTypes));
+        } catch (NoSuchMethodException e) {
+            throw new NoSuchMethodError(e.getMessage());
+        }
     }
 
     public String getName() {
@@ -123,15 +131,23 @@ abstract public class FastClass
         return type;
     }
 
-    // package protected
-    abstract int getIndex(String name, Class[] parameterTypes);
-    abstract int getIndex(Class[] parameterTypes);
-    abstract Object invoke(int index, Object obj, Object[] args);
-    abstract Object newInstance(int index, Object[] args);
-
-    static Class[] copyTypes(Class[] types) {
-        Class[] copy = new Class[types.length];
-        System.arraycopy(types, 0, copy, 0, types.length);
-        return copy;
+    public String toString() {
+        return type.toString();
     }
+
+    public int hashCode() {
+        return type.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof FastClass)) {
+            return false;
+        }
+        return type.equals(((FastClass)o).type);
+    }
+    
+    abstract public int getIndex(String name, Class[] parameterTypes);
+    abstract public int getIndex(Class[] parameterTypes);
+    abstract public Object invoke(int index, Object obj, Object[] args);
+    abstract public Object newInstance(int index, Object[] args);
 }

@@ -53,16 +53,31 @@
  */
 package net.sf.cglib.reflect;
 
+import java.lang.reflect.Method;
+
 public class FastMethod extends FastMember
 {
-    private int index;
-    
-    FastMethod(FastClass fc, String name, Class[] parameterTypes) {
-        super(fc, name, parameterTypes);
-        index = fc.getIndex(name, parameterTypes);
+    FastMethod(FastClass fc, Method method) {
+        super(fc, method, fc.getIndex(method.getName(), method.getParameterTypes()));
+    }
+
+    public Class getReturnType() {
+        return ((Method)member).getReturnType();
+    }
+
+    public Class[] getParameterTypes() {
+        return ((Method)member).getParameterTypes();
+    }
+
+    public Class[] getExceptionTypes() {
+        return ((Method)member).getExceptionTypes();
     }
 
     public Object invoke(Object obj, Object[] args) {
         return fc.invoke(index, obj, args);
+    }
+
+    public Method getJavaMethod() {
+        return (Method)member;
     }
 }
