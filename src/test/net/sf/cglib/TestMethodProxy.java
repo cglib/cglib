@@ -59,7 +59,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.6 2002/12/29 23:50:23 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.7 2002/12/30 00:06:15 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 
@@ -161,6 +161,30 @@ public class TestMethodProxy extends CodeGenTestCase {
         p.removeListener(l1);
         p.fireEvent(); 
         assertTrue(p.test == 3);
+    }
+
+    public static interface SuperSimple {
+        public int execute();
+    }
+
+    public void testMulticastReturnValue() throws Throwable {
+        SuperSimple ss1 = new SuperSimple() {
+                public int execute() {
+                    return 1;
+                }
+            };
+        SuperSimple ss2 = new SuperSimple() {
+                public int execute() {
+                    return 2;
+                }
+            };
+        MulticastDelegate multi = MulticastDelegate.create(SuperSimple.class);
+        multi = multi.add(ss1);
+        multi = multi.add(ss2);
+        assertTrue(((SuperSimple)multi).execute() == 2);
+        multi = multi.remove(ss1);
+        multi = multi.add(ss1);
+        assertTrue(((SuperSimple)multi).execute() == 1);
     }
 
     public void testMethodProxyPerformance() throws Throwable {
