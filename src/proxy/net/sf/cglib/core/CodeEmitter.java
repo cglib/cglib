@@ -61,7 +61,7 @@ import org.objectweb.asm.*;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class CodeEmitter extends CodeAdapter {
+public class CodeEmitter extends RemappingCodeVisitor {
     private static final Signature BOOLEAN_VALUE =
       TypeUtils.parseSignature("boolean booleanValue()");
     private static final Signature CHAR_VALUE =
@@ -105,33 +105,31 @@ public class CodeEmitter extends CodeAdapter {
         Signature sig;
         Type[] argumentTypes;
         int localOffset;
-        int firstLocal;
-        int nextLocal;
-        Map remap;
+        Type[] exceptionTypes;
 
-        State(int access, Signature sig, Type[] exceptions) {
+        State(int access, Signature sig, Type[] exceptionTypes) {
             this.access = access;
             this.sig = sig;
-            argumentTypes = sig.getArgumentTypes();
+            this.exceptionTypes = exceptionTypes;
             localOffset = TypeUtils.isStatic(access) ? 0 : 1;
-            firstLocal = nextLocal = localOffset + TypeUtils.getStackSize(argumentTypes);
+            argumentTypes = sig.getArgumentTypes();
         }
     }
 
-    CodeEmitter(ClassEmitter ce, CodeVisitor cv, int access, Signature sig, Type[] exceptions) {
-        super(cv);
+    CodeEmitter(ClassEmitter ce, CodeVisitor cv, int access, Signature sig, Type[] exceptionTypes) {
+        super(cv, access, sig.getArgumentTypes());
         this.ce = ce;
-        state = new State(access, sig, exceptions);
+        state = new State(access, sig, exceptionTypes);
+    }
+
+    public CodeEmitter(CodeEmitter wrap) {
+        super(wrap);
+        this.ce = wrap.ce;
+        this.state = wrap.state;
     }
 
     public boolean isStaticHook() {
         return false;
-    }
-
-    public CodeEmitter(CodeEmitter wrap) {
-        super(wrap.cv);
-        this.ce = wrap.ce;
-        this.state = wrap.state;
     }
 
     public Signature getSignature() {
@@ -142,9 +140,15 @@ public class CodeEmitter extends CodeAdapter {
         return state.sig.getReturnType();
     }
 
-//     public Type[] getArgumentTypes() {
-//         return state.argumentTypes;
-//     }
+    /* wait until these are needed
+    public Type[] getArgumentTypes() {
+        return state.argumentTypes;
+    }
+
+    public Type[] getExceptionTypes() {
+        return state.getExceptionTypes();
+    }
+    */
 
     public ClassEmitter getClassEmitter() {
         return ce;
@@ -152,27 +156,6 @@ public class CodeEmitter extends CodeAdapter {
 
     public void end_method() {
         visitMaxs(0, 0);
-    }
-
-    private int remapLocal(int index, Type type) {
-        if (index < state.firstLocal) {
-            // System.err.println("remap keeping " + index + " (type=" + type.getDescriptor() + ")");
-            return index;
-        }
-        Integer key = new Integer((type.getSize() == 2) ? ~index : index);
-        if (state.remap == null) {
-            state.remap = new HashMap();
-        }
-        Local local = (Local)state.remap.get(key);
-        if (local == null) {
-            state.remap.put(key, local = make_local(type));
-        }
-
-        // System.err.println("remapping " + index + " --> " + local.getIndex()  + " (type=" + type.getDescriptor() + ")");
-        if (local.getType().getSize() != type.getSize()) {
-            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") in method " + state.sig + " requires different opcode sizes: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
-        }
-        return local.getIndex();
     }
 
     public Block begin_block() {
@@ -608,9 +591,7 @@ public class CodeEmitter extends CodeAdapter {
     }
     
     public Local make_local(Type type) {
-        Local local = new Local(state.nextLocal, type);
-        state.nextLocal += type.getSize();
-        return local;
+        return new Local(nextLocal(type.getSize()), type);
     }
 
     public void checkcast_this() {
@@ -874,50 +855,12 @@ public class CodeEmitter extends CodeAdapter {
             checkcast(type);
         }
     }
-    
-    ////////// VISITOR METHODS //////////
 
     public void visitMaxs(int maxStack, int maxLocals) {
         if (!TypeUtils.isAbstract(state.access)) {
             cv.visitMaxs(0, 0);
         }
     }
-
-    public void visitVarInsn(int opcode, int var) {
-        Type type;
-        switch (opcode) {
-        case Constants.RET: // is this correct?
-        case Constants.ILOAD:
-        case Constants.ISTORE:
-            type = Type.INT_TYPE;
-            break;
-        case Constants.FLOAD:
-        case Constants.FSTORE:
-            type = Type.FLOAT_TYPE;
-            break;
-        case Constants.LLOAD:
-        case Constants.LSTORE:
-            type = Type.LONG_TYPE;
-            break;
-        case Constants.DLOAD:
-        case Constants.DSTORE:
-            type = Type.DOUBLE_TYPE;
-            break;
-        default:
-            type = Constants.TYPE_OBJECT;
-        }
-        cv.visitVarInsn(opcode, remapLocal(var, type));
-    }
-
-    public void visitIincInsn(int var, int increment) {
-        cv.visitIincInsn(remapLocal(var, Type.INT_TYPE), increment);
-    }
-
-    public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
-        cv.visitLocalVariable(name, desc, start, end, remapLocal(index, null));
-    }
-
-    ////////// MOVED FROM REFLECTOPS //////////
 
     public void invoke(Method method) {
         Class declaring = method.getDeclaringClass();
