@@ -464,7 +464,7 @@ import java.util.*;
             putfield(accessName);
         }
 
-       // if (!delegating) {
+
             new_instance(HashMap.class);
             dup();
             dup();
@@ -483,7 +483,7 @@ import java.util.*;
                 invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
                 invoke(MAKE_CONSTRUCTOR_PROXY);//value
                 invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
-         //   }
+
         }
         
         return_value();

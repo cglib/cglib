@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * @version $Id: MethodProxy.java,v 1.15 2003/02/02 07:00:48 baliuka Exp $
+ * @version $Id: MethodProxy.java,v 1.16 2003/02/02 15:02:57 baliuka Exp $
  */
 abstract public class MethodProxy {
     
@@ -102,7 +102,7 @@ abstract public class MethodProxy {
         }
     }
 
-    private static class Generator extends CodeGenerator {
+   static class Generator extends CodeGenerator {
         private Method method;
         private Method superMethod;
         
@@ -112,12 +112,12 @@ abstract public class MethodProxy {
             this.superMethod = superMethod;
         }
 
-       protected void generate() {
+     public void generate() {
          generateNullConstructor();  
          generate(MethodProxy.INVOKE,method);
          generate(MethodProxy.INVOKE_SUPER,superMethod);
        }
-       protected void generate(Method proxyMethod, Method method) {
+       private void generate(Method proxyMethod, Method method) {
             
             begin_method(proxyMethod);
             if( Modifier.isProtected( method.getModifiers() ) ){

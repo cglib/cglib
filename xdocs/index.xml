@@ -30,6 +30,8 @@
         Uses cglib to generate persistent classes. 
       <li/>"<a href="http://hibernate.sourceforge.net">Hibernate</a> is a powerful, ultra-high performance object/relational persistence and query service for Java. Hibernate lets you develop persistent objects following common Java idiom, including association, inheritance, polymorphism, composition and the Java collections framework." 
         Uses cglib to generate  proxies  for persistent classes.
+      <li/>"<a href="http://staff.develop.com/halloway/code/gd.html">The Java Class File Editor</a> allows you to read & modify java .class files, either on disk or while loading classes at runtime.  The project grew out of the Generic Delegator, which creates new classes on the fly, allowing you to dynamically implement a group of interfaces by forwarding them to a shim"
+        Both cglib and JCFE provide dynamic proxy implementation
    </ul>
    </p>
    </section> 
