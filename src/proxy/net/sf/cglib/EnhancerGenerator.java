@@ -185,10 +185,6 @@ import java.util.*;
         }
 
         filterMembers(methods, new VisibilityFilter(getSuperclass()));
-    /*    if (delegating) {
-            filterMembers(methods, new ModifierFilter(Modifier.PROTECTED, 0));
-        }
-     */
         filterMembers(methods, new DuplicatesFilter());
         filterMembers(methods, new ModifierFilter(Modifier.FINAL, 0));
         if (filter != null) {
@@ -249,6 +245,8 @@ import java.util.*;
     }
     
     private void generateFactory() {
+        generateMultiArgFactory();
+
         begin_method(GET_INTERCEPTOR);
         load_this();
         getfield(INTERCEPTOR_FIELD);
@@ -261,13 +259,8 @@ import java.util.*;
         putfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
-        generateFactoryHelper(NEW_INSTANCE);
-        generateMultiArgFactory();
-    
-    }
 
-    private void generateFactoryHelper(Method method) {
-        begin_method(method);
+        begin_method(NEW_INSTANCE);
         new_instance_this();
         dup();
         invoke_constructor_this();
@@ -276,9 +269,7 @@ import java.util.*;
         putfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
-
     }
-
    
     private void generateMultiArgFactory() {
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
