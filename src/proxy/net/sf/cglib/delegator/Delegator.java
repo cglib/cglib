@@ -57,33 +57,29 @@
  */
 package net.sf.cglib.delegator;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import org.apache.bcel.classfile.*;
-import org.apache.bcel.generic.*;
 import net.sf.cglib.util.*;
 
-public class Delegator
-implements ClassFileConstants
+public class Delegator implements ClassFileConstants
 {
-    private static final Class OBJECT_CLASS = Object.class;
     private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
-    private static final String PARENT_CLASS = "java.lang.Object";
-    private static final Class[] EMPTY_CLASS_ARRAY = {};
-    private static final String FIELD_NAME = "delegates";
-    private static final Class ARG_CLASS = Object[].class;
-    private static final Class[] ARG_CLASS_ARRAY = { ARG_CLASS };
     private static int index = 0;
 
+    private static String getNextName() {
+        return CLASS_NAME + index++;
+    }
+    
     private static final Map loaders = new WeakHashMap();
     private static final Map infoCache = new HashMap();
+
+    private Delegator() { }
     
     // Inner and private because if the makeDelegator(Object[]) constructor
     // was used, the required order of the delegates may be different from
     // what was originally specified, which would be confusion. There is
     // not much overhead associated with going through the cache, anyway.
-    private interface Factory
+    interface Factory
     {
         public Object cglib_newInstance(Object[] delegates);
     }
@@ -101,7 +97,7 @@ implements ClassFileConstants
      * @return the dynamically created object
      */
     public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader)
-    throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
+    throws CodeGenerationException
     {
         return makeDelegatorHelper(new ArrayKey(interfaces), interfaces, delegates, loader);
     }
@@ -121,7 +117,7 @@ implements ClassFileConstants
      * @see #getInterfaceMap(Object[])
      */
     public static Object makeDelegator(Object[] delegates, ClassLoader loader)
-    throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
+    throws CodeGenerationException
     {
         Info info = getInfo(delegates);
         Object[] remapped = new Object[info.interfaces.length];
@@ -164,106 +160,29 @@ implements ClassFileConstants
                                                            Class[] interfaces,
                                                            Object[] delegates,
                                                            ClassLoader loader)
-    throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
+    throws CodeGenerationException
     {
-        if (loader == null)
+        if (loader == null) {
             loader = Delegator.class.getClassLoader();
+        }
         Map factories = (Map)loaders.get(loader);
-        if (factories == null)
+        if (factories == null) {
             loaders.put(loader, factories = new HashMap());
+        }
         Object factory = (Factory)factories.get(key);
         if (factory == null) {
-            Class clazz = new DelegatorGenerator(interfaces, loader).define();
-            factory = clazz.getConstructor(ARG_CLASS_ARRAY).newInstance(new Object[]{ delegates });
-            factories.put(key, factory);
-            return factory;
+            Class clazz = new DelegatorGenerator(getNextName(), interfaces, loader).define();
+            try {
+                factory = clazz.getConstructor(OBJECT_ARRAY_CLASS_ARRAY).newInstance(new Object[]{ delegates });
+                factories.put(key, factory);
+                return factory;
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new CodeGenerationException(e);
+            }
         } else {
             return ((Factory)factory).cglib_newInstance(delegates);
-        }
-    }
-
-    static private class DelegatorGenerator extends CodeGenerator {
-        private Class[] interfaces;
-        
-        private DelegatorGenerator(Class[] interfaces, ClassLoader loader) {
-            super(CLASS_NAME + index++, PARENT_CLASS, loader); // | ACC_FINAL ?
-            this.interfaces = interfaces;
-        }
-
-        protected Class define() {
-            return super.define();
-        }
-        
-        public void generate() throws NoSuchMethodException {
-            add_interfaces(interfaces);
-            add_interface(Factory.class);
-            add_field(ACC_PRIVATE, ARG_CLASS, FIELD_NAME);
-
-            addConstructor();
-            addFactory();
-
-            Set sigset = new HashSet();
-            for (int i = 0; i < interfaces.length; i++) {
-                Class iface = interfaces[i];
-                if (!iface.isInterface())
-                    throw new IllegalArgumentException(iface + " is not an interface");
-                Method[] methods = iface.getMethods();
-                for (int j = 0; j < methods.length; j++) {
-                    Method method = methods[j];
-                    Object sigkey = getSignatureKey(method);
-                    if (!sigset.contains(sigkey)) {
-                        sigset.add(sigkey);
-                        addProxy(iface, method, i);
-                    }
-                }
-            }
-        }
-
-        private void addConstructor()
-        {
-            begin_constructor(ARG_CLASS_ARRAY);
-            load_this();
-            super_invoke_constructor(EMPTY_CLASS_ARRAY);
-            load_this();
-            load_args();
-            putfield(FIELD_NAME);
-            return_value();
-            end_method();
-        }
-
-        private void addFactory()
-        throws NoSuchMethodException
-        {
-            Method newInstance = Factory.class.getMethod("cglib_newInstance", ARG_CLASS_ARRAY);
-            begin_method(newInstance);
-        	new_instance_this();
-	        dup();
-            load_args();
-            invoke_constructor_this(ARG_CLASS_ARRAY);
-            return_value();
-            end_method();
-        }
-
-        private Object getSignatureKey(Method method)
-        {
-            Class[] types = method.getParameterTypes();
-            Object[] key = new Object[types.length + 1];
-            key[0] = method.getName();
-            System.arraycopy(types, 0, key, 1, types.length);
-            return new ArrayKey(key);
-        }
-
-        private void addProxy(Class iface, Method method, int arrayref)
-        {
-            begin_method(method);
-            load_this();
-            getfield(FIELD_NAME);
-            aload(arrayref);
-            checkcast(iface);
-            load_args();
-            invoke(method);
-            return_value();
-            end_method();
         }
     }
 

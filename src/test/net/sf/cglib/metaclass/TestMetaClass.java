@@ -19,26 +19,65 @@ import org.apache.bcel.generic.*;
  * @author baliuka
  */
 public class TestMetaClass extends TestCase {
-    
-  private    String getters[] = {"getIntP","getLongP","getByteP",
-                           "getShortP","getFloatP","isBooleanP","getCharP","getDoubleP",
-                           "getStringP","getId", "getName", "getPrivateName" } ;
+    private String getters[] = {
+        "getIntP",
+        "getLongP",
+        "getByteP",
+        "getShortP",
+        "getFloatP",
+        "isBooleanP",
+        "getCharP",
+        "getDoubleP",
+        "getStringP",
+        "getId",
+        "getName",
+        "getPrivateName"
+    } ;
                            
-  private     String setters[] = {"setIntP","setLongP","setByteP",
-                           "setShortP","setFloatP","setBooleanP","setCharP","setDoubleP",
-                           "setStringP","setId", "setName", "setPrivateName" } ;
+    private String setters[] = {
+        "setIntP",
+        "setLongP",
+        "setByteP",
+        "setShortP",
+        "setFloatP",
+        "setBooleanP",
+        "setCharP",
+        "setDoubleP",
+        "setStringP",
+        "setId",
+        "setName",
+        "setPrivateName"
+    };
                            
-  private     Class types[] = {int.class,long.class,byte.class,
-                           short.class,float.class,
-                           boolean.class,
-                           char.class,double.class,
-                           String.class,Long.class, String.class,String.class } ;
+    private Class types[] = {
+        int.class,
+        long.class,
+        byte.class,
+        short.class,
+        float.class,
+        boolean.class,
+        char.class,
+        double.class,
+        String.class,
+        Long.class,
+        String.class,
+        String.class
+    };
                            
-   private    Object values[] = { new Integer(2) , new Long(4) , new Byte((byte)8),
-                           new Short((short)4),new Float(1.2),
-                           Boolean.TRUE,
-                           new Character('S'),new Double(5.6),
-                           "test",new Long(88), "test2", "private" } ;
+    private Object values[] = {
+        new Integer(2) ,
+        new Long(4) ,
+        new Byte((byte)8),
+        new Short((short)4),
+        new Float(1.2),
+        Boolean.TRUE,
+        new Character('S'),
+        new Double(5.6),
+        "test",
+        new Long(88),
+        "test2",
+        "private"
+    };
        
     
     

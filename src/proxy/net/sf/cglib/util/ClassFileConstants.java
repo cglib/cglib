@@ -83,5 +83,13 @@ public interface ClassFileConstants extends org.apache.bcel.Constants{
   public  static final String CONSTRUCTOR_NAME = "<init>";
   public  static final String SOURCE_FILE = "<generated>";
   public  static final String FIND_CLASS = "CGLIB$findClass";
-     
+
+    public static final String STATIC_NAME = "<clinit>";
+    public static final Class OBJECT_CLASS = Object.class;
+    public static final Class[] OBJECT_CLASS_ARRAY = { Object.class };
+    public static final Class[] EMPTY_CLASS_ARRAY = {};
+    public static final Class OBJECT_ARRAY_CLASS = Object[].class;
+    public static final Class[] OBJECT_ARRAY_CLASS_ARRAY = { Object[].class };
+    public static final Class[] STRING_CLASS_ARRAY = { String.class };
+    public static final Type[] EMPTY_TYPE_ARRAY = {};
 }

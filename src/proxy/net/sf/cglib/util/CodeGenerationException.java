@@ -52,34 +52,18 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxy;
 
-import org.apache.bcel.classfile.*;
-import org.apache.bcel.generic.*;
-/**
- * private utility
- * @author  baliuka
- */
- interface ClassFileConstants extends org.apache.bcel.Constants{
+package net.sf.cglib.util;
 
-    static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
-    static final ObjectType BOOLEAN_OBJECT =
-    new ObjectType(Boolean.class.getName());
-    static final ObjectType INTEGER_OBJECT =
-    new ObjectType(Integer.class.getName());
-    static final ObjectType CHARACTER_OBJECT =
-    new ObjectType(Character.class.getName());
-    static final ObjectType BYTE_OBJECT = new ObjectType(Byte.class.getName());
-    static final ObjectType SHORT_OBJECT = new ObjectType(Short.class.getName());
-    static final ObjectType LONG_OBJECT = new ObjectType(Long.class.getName());
-    static final ObjectType DOUBLE_OBJECT = new ObjectType(Double.class.getName());
-    static final ObjectType FLOAT_OBJECT = new ObjectType(Float.class.getName());
-    static final ObjectType METHOD_OBJECT =
-    new ObjectType(java.lang.reflect.Method.class.getName());
-    static final ObjectType CLASS_OBJECT = new ObjectType(Class.class.getName());
-    static final ObjectType NUMBER_OBJECT = new ObjectType(Number.class.getName());
-    static final String CONSTRUCTOR_NAME = "<init>";
-    static final String SOURCE_FILE = "<generated>";
-    static final String FIND_CLASS = "CGLIB$findClass";
-     
+public class CodeGenerationException extends Exception {
+    private Throwable cause;
+
+    public CodeGenerationException(Throwable cause) {
+        super(cause.getMessage());
+        this.cause = cause;
+    }
+
+    public Throwable getCause() {
+        return cause;
+    }
 }
