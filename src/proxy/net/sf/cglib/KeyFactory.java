@@ -88,9 +88,13 @@ import java.util.*;
  *       }
  *   }
  * </pre>
+ * <p>
+ * <b>Note:</b>
+ * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
+ * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.4 2002/12/03 07:54:46 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.5 2002/12/04 00:41:13 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -103,23 +107,17 @@ abstract public class KeyFactory {
     protected int hashMultiplier;
     protected int hash;
 
-    protected KeyFactory() { }
+    protected KeyFactory() {
+    }
 
     public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
-        // TODO: caching?
         if (loader == null) {
             loader = defaultLoader;
         }
-        try {
-            Class clazz = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
-                                                  keyInterface,
-                                                  loader).define();
-            return (KeyFactory)clazz.getConstructor(new Class[]{}).newInstance(new Object[]{});
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
+        Class result = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
+                                               keyInterface,
+                                               loader).define();
+        return (KeyFactory)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);
     }
     
     private static String getNextName(Package pkg) {
