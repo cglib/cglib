@@ -60,6 +60,7 @@ import net.sf.cglib.CodeGenTestCase;
 import net.sf.cglib.TestGenerator;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 
 public class TestMemberSwitch extends CodeGenTestCase {
     private static int index = 0;
@@ -107,12 +108,12 @@ public class TestMemberSwitch extends CodeGenTestCase {
         public void generateClass(ClassVisitor v) throws Exception {
             final List clist = Arrays.asList(constructors);
             final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
-            Virt.null_constructor(e);
+            Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
+            Ops.null_constructor(e);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
-            e.begin_method(method);
+            Ops.begin_method(e, method);
             e.load_arg(0);
-            Virt.constructor_switch(e, constructors, new Virt.ObjectSwitchCallback() {
+            Ops.constructor_switch(e, constructors, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         e.push(clist.indexOf(key));
                         e.goTo(end);
@@ -122,7 +123,6 @@ public class TestMemberSwitch extends CodeGenTestCase {
                     }
                 });
             e.return_value();
-            e.end_method();
             e.end_class();
         }
     }

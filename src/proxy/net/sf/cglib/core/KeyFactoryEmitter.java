@@ -56,9 +56,11 @@ package net.sf.cglib.core;
 
 import java.lang.reflect.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.3 2003/09/17 20:44:27 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.4 2003/09/20 09:01:26 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -81,6 +83,7 @@ class KeyFactoryEmitter extends Emitter {
         938313161, 1288102441, 1768288259  };
 
     public KeyFactoryEmitter(ClassVisitor v, String className, Class keyInterface) throws Exception {
+        super(v);
         Method newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
@@ -88,29 +91,28 @@ class KeyFactoryEmitter extends Emitter {
         
         Class[] parameterTypes = newInstance.getParameterTypes();
         
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC,
-                    className,
-                    KeyFactory.class,
-                    new Class[]{ keyInterface },
-                    Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
-        Virt.factory_method(this, newInstance);
+        Ops.begin_class(this,
+                        Modifier.PUBLIC,
+                        className,
+                        KeyFactory.class,
+                        new Class[]{ keyInterface },
+                        Constants.SOURCE_FILE);
+        Ops.null_constructor(this);
+        Ops.factory_method(this, new Signature(newInstance));
         generateConstructor(parameterTypes);
         generateEquals(parameterTypes);
-        // generateGetArgs(parameterTypes);
         end_class();
     }
 
     // TODO: this doesn't exactly follow Effective Java recommendations
     // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
     private void generateConstructor(Class[] parameterTypes) throws NoSuchFieldException {
-        begin_constructor(parameterTypes);
+        begin_constructor(Constants.ACC_PUBLIC, Signature.getTypes(parameterTypes), null);
         load_this();
         super_invoke_constructor();
         load_this();
         for (int i = 0; i < parameterTypes.length; i++) {
-            declare_field(Modifier.PRIVATE | Modifier.FINAL, parameterTypes[i], getFieldName(i));
+            declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL, getFieldName(i), Type.getType(parameterTypes[i]), null);
             dup();
             load_arg(i);
             putfield(getFieldName(i));
@@ -119,13 +121,12 @@ class KeyFactoryEmitter extends Emitter {
         loadAndStoreConstant("hashConstant");
         for (int i = 0; i < parameterTypes.length; i++) {
             load_arg(i);
-            hash_code(parameterTypes[i]);
+            hash_code(Type.getType(parameterTypes[i]));
         }
         swap();
         pop();
-        super_putfield("hash");
+        super_putfield("hash", Type.INT_TYPE);
         return_value();
-        end_method();
     }
 
     private void loadAndStoreConstant(String fieldName) throws NoSuchFieldException {
@@ -133,32 +134,32 @@ class KeyFactoryEmitter extends Emitter {
         load_this();
         swap();
         dup_x1();
-        super_putfield(fieldName);
+        super_putfield(fieldName, Type.INT_TYPE);
     }
 
-    private void hash_code(Class clazz) {
-        if (clazz.isArray()) {
-            hash_array(clazz);
+    private void hash_code(Type type) {
+        if (isArray(type)) {
+            hash_array(type);
         } else {
-            if (clazz.isPrimitive()) {
-                hash_primitive(clazz);
+            if (isPrimitive(type)) {
+                hash_primitive(type);
             } else {
                 hash_object();
             }
-            add(Integer.TYPE);
+            math(OP_ADD, Type.INT_TYPE);
             swap();
             dup_x1();
-            mul(Integer.TYPE);
+            math(OP_MUL, Type.INT_TYPE);
         }
     }
 
-    private void hash_array(Class clazz) {
+    private void hash_array(Type type) {
         Label isNull = make_label();
         Label end = make_label();
         dup();
         ifnull(isNull);
-        Virt.process_array(this, clazz, new Virt.ProcessArrayCallback() {
-            public void processElement(Class type) {
+        Ops.process_array(this, type, new ProcessArrayCallback() {
+            public void processElement(Type type) {
                 hash_code(type);
             }
         });
@@ -174,7 +175,7 @@ class KeyFactoryEmitter extends Emitter {
         Label end = make_label();
         dup();
         ifnull(isNull);
-        invoke(MethodConstants.HASH_CODE);
+        invoke_virtual(Types.OBJECT, Signatures.HASH_CODE);
         goTo(end);
         mark(isNull);
         pop();
@@ -182,21 +183,23 @@ class KeyFactoryEmitter extends Emitter {
         mark(end);
     }
 
-    private void hash_primitive(Class clazz) {
-        if (clazz.equals(Boolean.TYPE)) {
+    private void hash_primitive(Type type) {
+        switch (type.getSort()) {
+        case Type.BOOLEAN:
             // f ? 0 : 1
             push(1);
-            xor(Integer.TYPE);
-        } else if (clazz.equals(Double.TYPE)) {
+            math(OP_XOR, Type.INT_TYPE);
+            break;
+        case Type.DOUBLE:
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            invoke(MethodConstants.DOUBLE_TO_LONG_BITS);
+            invoke_static(Types.DOUBLE, Signatures.DOUBLE_TO_LONG_BITS);
             hash_long();
-        } else if (clazz.equals(Float.TYPE)) {
+        case Type.FLOAT:
             // Float.floatToIntBits(f)
-            invoke(MethodConstants.FLOAT_TO_INT_BITS);
-        } else if (clazz.equals(Long.TYPE)) {
+            invoke_static(Types.FLOAT, Signatures.FLOAT_TO_INT_BITS);
+        case Type.LONG:
             hash_long();
-        } else { // byte, char, short, int
+        default:
             // (int)f
         }
     }
@@ -204,9 +207,9 @@ class KeyFactoryEmitter extends Emitter {
     private void hash_long() {
         // (int)(f ^ (f >>> 32))
         push(32);
-        ushr(Long.TYPE);
-        xor(Long.TYPE);
-        cast_numeric(Long.TYPE, Integer.TYPE);
+        math(OP_USHR, Type.LONG_TYPE);
+        math(OP_XOR, Type.LONG_TYPE);
+        cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
     }
 
     // generates pseudo random prime number
@@ -220,7 +223,7 @@ class KeyFactoryEmitter extends Emitter {
 
     private void generateEquals(Class[] parameterTypes) {
         Label fail = make_label();
-        begin_method(MethodConstants.EQUALS);
+        begin_method(Constants.ACC_PUBLIC, Signatures.EQUALS, null);
         load_arg(0);
         instance_of_this();
         ifeq(fail);
@@ -230,29 +233,12 @@ class KeyFactoryEmitter extends Emitter {
             load_arg(0);
             checkcast_this();
             getfield(getFieldName(i));
-            Virt.not_equals(this, parameterTypes[i], fail);
+            Ops.not_equals(this, Type.getType(parameterTypes[i]), fail);
         }
         push(1);
         return_value();
         mark(fail);
         push(0);
         return_value();
-        end_method();
     }
-
-//     private void generateGetArgs(Class[] parameterTypes) {
-//         begin_method(GET_ARGS);
-//         push(parameterTypes.length);
-//         newarray();
-//         for (int i = 0; i < parameterTypes.length; i++) {
-//             dup();
-//             push(i);
-//             load_this();
-//             getfield(getFieldName(i));
-//             box(parameterTypes[i]);
-//             aastore();
-//         }
-//         return_value();
-//         end_method();
-//     }
 }

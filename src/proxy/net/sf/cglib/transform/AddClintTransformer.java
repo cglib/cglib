@@ -4,7 +4,6 @@ package net.sf.cglib.transform;
 import java.lang.reflect.*;
 
 import org.objectweb.asm.*;
-import org.objectweb.asm.Label;
 
 /**
  *

@@ -94,11 +94,9 @@ import org.objectweb.asm.ClassVisitor;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.3 2003/09/15 18:41:32 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.4 2003/09/20 09:01:26 herbyderby Exp $
  */
 abstract public class KeyFactory {
-    // private static final FactoryCache cache = new FactoryCache(KeyFactory.class);
-
     protected int hashConstant;
     protected int hashMultiplier;
     protected int hash;
@@ -115,12 +113,6 @@ abstract public class KeyFactory {
     public int hashCode() {
         return hash;
     }
-
-//     /**
-//      * Returns the list of objects that were used to create the key.
-//      * Primitive objects are wrapped.
-//      */
-//     abstract public Object[] getArgs();
 
     public int getHashConstant() {
         return hashConstant;

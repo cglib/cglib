@@ -61,9 +61,9 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.5 2003/09/19 23:31:04 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.6 2003/09/20 09:01:27 herbyderby Exp $
  */
-class MixinEmitter extends Emitter2 {
+class MixinEmitter extends Emitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.Mixin newInstance(Object[])");

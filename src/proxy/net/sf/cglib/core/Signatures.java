@@ -56,4 +56,9 @@ public interface Signatures {
       Signature.parse("void <init>(String[])");
     public static final Signature CSTRUCT_THROWABLE =
       Signature.parse("void <init>(Throwable)");
+
+    public static final Signature DOUBLE_TO_LONG_BITS =
+      Signature.parse("long doubleToLongBits(double)");
+    public static final Signature FLOAT_TO_INT_BITS =
+      Signature.parse("int floatToIntBits(float)");
 }

@@ -8,7 +8,6 @@ import java.util.*;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.Constants;
-import org.objectweb.asm.Label;
 
 /**
  *

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.1 2003/09/15 19:10:02 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.2 2003/09/20 09:01:25 herbyderby Exp $
  */
 public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public interface MyKey {
@@ -102,7 +102,6 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
         Object key1 = f.newInstance(new char[]{ 'a', 'b' });
         Object key2 = f.newInstance(new char[]{ 'a', '_' });
         assertTrue(!key1.equals(key2));
-        // assertTrue(((char[])((Object[])((KeyFactory)key2).getArgs())[0])[1] == '_');
     }
 
     public void testBooleanArray() throws Exception {

@@ -1,7 +1,7 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.Constants;
-import net.sf.cglib.core.Emitter2;
+import net.sf.cglib.core.Emitter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
@@ -19,8 +19,8 @@ public class ExampleTransformer extends EmittingTransformer {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
     
-    protected Emitter2 getEmitter(ClassVisitor cv) {
-        return new Emitter2(cv) {
+    protected Emitter getEmitter(ClassVisitor cv) {
+        return new Emitter(cv) {
             public void end_class() {
                 for (int i = 0; i < newPropertyNames.length; i++) {
                     String name = newPropertyNames[i];

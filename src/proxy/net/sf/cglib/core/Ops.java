@@ -1,8 +1,10 @@
 package net.sf.cglib.core;
 
-import java.math.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.lang.reflect.*;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class Ops {
@@ -14,12 +16,12 @@ public class Ops {
     private Ops() {
     }
     
-    public static void load_class_this(Emitter2 e) {
+    public static void load_class_this(Emitter e) {
         load_class_helper(e, e.getClassType());
     }
     
-    public static void load_class(Emitter2 e, Type type) {
-        if (Emitter2.isPrimitive(type)) {
+    public static void load_class(Emitter e, Type type) {
+        if (Emitter.isPrimitive(type)) {
             if (type == Type.VOID_TYPE) {
                 throw new IllegalArgumentException("cannot load void type");
             }
@@ -29,15 +31,15 @@ public class Ops {
         }
     }
 
-    public static void load_method(Emitter2 e, Method method) {
+    public static void load_method(Emitter e, Method method) {
         load_class(e, Type.getType(method.getDeclaringClass()));
         e.push(method.getName());
         push_object(e, method.getParameterTypes());
         e.invoke_virtual(Types.CLASS, Signatures.GET_DECLARED_METHOD);
     }
 
-    private static void load_class_helper(final Emitter2 e, Type type) {
-        e.register(FIND_CLASS, new Emitter2.FinalizeCallback() {
+    private static void load_class_helper(final Emitter e, Type type) {
+        e.register(FIND_CLASS, new Emitter.FinalizeCallback() {
             public void process() {
                 generateFindClass(e);
             }
@@ -47,14 +49,14 @@ public class Ops {
     }
 
     private static String emulateClassGetName(Type type) {
-        if (Emitter2.isPrimitive(type) || Emitter2.isArray(type)) {
+        if (Emitter.isPrimitive(type) || Emitter.isArray(type)) {
             return type.getDescriptor().replace('/', '.');
         } else {
             return type.getClassName();
         }
     }
 
-    private static void generateFindClass(Emitter2 e) {
+    private static void generateFindClass(Emitter e) {
         /* generates:
            static private Class findClass(String name) throws Exception {
                try {
@@ -65,7 +67,7 @@ public class Ops {
            }
          */
         e.begin_method(Constants.PRIVATE_FINAL_STATIC, FIND_CLASS, null);
-        Block2 block = e.begin_block();
+        Block block = e.begin_block();
         e.load_arg(0);
         e.invoke_static(Types.CLASS, Signatures.FOR_NAME);
         e.return_value();
@@ -84,7 +86,7 @@ public class Ops {
      * current method. Primitive values are inserted as their boxed
      * (Object) equivalents.
      */
-    public static void create_arg_array(Emitter2 e) {
+    public static void create_arg_array(Emitter e) {
         /* generates:
            Object[] args = new Object[]{ arg1, new Integer(arg2) };
          */
@@ -100,7 +102,7 @@ public class Ops {
         }
     }
     
-    public static void push(Emitter2 e, Object[] array) {
+    public static void push(Emitter e, Object[] array) {
         e.push(array.length);
         e.newarray(Type.getType(array.getClass().getComponentType()));
         for (int i = 0; i < array.length; i++) {
@@ -111,7 +113,7 @@ public class Ops {
         }
     }
     
-    public static void push_object(Emitter2 e, Object obj) {
+    public static void push_object(Emitter e, Object obj) {
         if (obj == null) {
             e.aconst_null();
         } else {
@@ -140,7 +142,7 @@ public class Ops {
         }
     }
 
-    public static void push(Emitter2 e, boolean value) {
+    public static void push(Emitter e, boolean value) {
         e.push(value ? 1 : 0);
     }
 
@@ -148,7 +150,7 @@ public class Ops {
      * If the object is a Number, Boolean, or Character, pushes the equivalent primitive
      * value onto the stack. Otherwise, calls push_object(obj).
      */
-    public static void push_unboxed(Emitter2 e, Object obj)
+    public static void push_unboxed(Emitter e, Object obj)
     {
         if (obj instanceof Boolean) {
             e.push(((Boolean)obj).booleanValue() ? 1 : 0);
@@ -172,8 +174,8 @@ public class Ops {
     /**
      * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
      */
-    public static void zero_or_null(Emitter2 e, Type type) {
-        if (Emitter2.isPrimitive(type)) {
+    public static void zero_or_null(Emitter e, Type type) {
+        if (Emitter.isPrimitive(type)) {
             switch (type.getSort()) {
             case Type.DOUBLE:
                 e.push(0d);
@@ -197,7 +199,7 @@ public class Ops {
     /**
      * Toggles the integer on the top of the stack from 1 to 0 or vice versa
      */
-    public static void not(Emitter2 e) {
+    public static void not(Emitter e) {
         e.push(1);
         e.math(e.OP_XOR, Type.INT_TYPE);
     }
@@ -206,11 +208,11 @@ public class Ops {
      * Unboxes the object on the top of the stack. If the object is null, the
      * unboxed primitive value becomes zero.
      */
-    public static void unbox_or_zero(Emitter2 e, Type type) {
-        if (Emitter2.isPrimitive(type)) {
+    public static void unbox_or_zero(Emitter e, Type type) {
+        if (Emitter.isPrimitive(type)) {
             if (type != Type.VOID_TYPE) {
-                org.objectweb.asm.Label nonNull = e.make_label();
-                org.objectweb.asm.Label end = e.make_label();
+                Label nonNull = e.make_label();
+                Label end = e.make_label();
                 e.dup();
                 e.ifnonnull(nonNull);
                 e.pop();
@@ -255,8 +257,8 @@ public class Ops {
       * If the class is Void, a null is pushed onto the stack instead.
       * @param type the class indicating the current type of the top stack value
       */
-     public static void box(Emitter2 e, Type type) {
-         if (Emitter2.isPrimitive(type)) {
+     public static void box(Emitter e, Type type) {
+         if (Emitter.isPrimitive(type)) {
              if (type == Type.VOID_TYPE) {
                  e.aconst_null();
              } else {
@@ -284,7 +286,7 @@ public class Ops {
      * @param type the class indicating the desired type of the top stack value
      * @return true if the value was unboxed
      */
-    public static void unbox(Emitter2 e, Type type) {
+    public static void unbox(Emitter e, Type type) {
         Type t = Types.NUMBER;
         Signature sig = null;
         switch (type.getSort()) {
@@ -321,7 +323,7 @@ public class Ops {
         }
     }
 
-    public static void null_constructor(Emitter2 e) {
+    public static void null_constructor(Emitter e) {
         e.begin_constructor(Constants.ACC_PUBLIC, Types.EMPTY, null);
         e.load_this();
         e.super_invoke_constructor();
@@ -335,12 +337,12 @@ public class Ops {
      * @param type the type of the array (type.isArray() must be true)
      * @param callback the callback triggered for each element
      */
-    public static void process_array(Emitter2 e, Type type, ProcessArrayCallback callback) {
-        Type componentType = Emitter2.getComponentType(type);
-        Local2 array = e.make_local();
-        Local2 loopvar = e.make_local(Type.INT_TYPE);
-        org.objectweb.asm.Label loopbody = e.make_label();
-        org.objectweb.asm.Label checkloop = e.make_label();
+    public static void process_array(Emitter e, Type type, ProcessArrayCallback callback) {
+        Type componentType = Emitter.getComponentType(type);
+        Local array = e.make_local();
+        Local loopvar = e.make_local(Type.INT_TYPE);
+        Label loopbody = e.make_label();
+        Label checkloop = e.make_label();
         e.store_local(array);
         e.push(0);
         e.store_local(loopvar);
@@ -367,13 +369,13 @@ public class Ops {
      * @param type the type of the arrays (type.isArray() must be true)
      * @param callback the callback triggered for each pair of elements
      */
-    public static void process_arrays(Emitter2 e, Type type, ProcessArrayCallback callback) {
-        Type componentType = Emitter2.getComponentType(type);
-        Local2 array1 = e.make_local();
-        Local2 array2 = e.make_local();
-        Local2 loopvar = e.make_local(Type.INT_TYPE);
-        org.objectweb.asm.Label loopbody = e.make_label();
-        org.objectweb.asm.Label checkloop = e.make_label();
+    public static void process_arrays(Emitter e, Type type, ProcessArrayCallback callback) {
+        Type componentType = Emitter.getComponentType(type);
+        Local array1 = e.make_local();
+        Local array2 = e.make_local();
+        Local loopvar = e.make_local(Type.INT_TYPE);
+        Label loopbody = e.make_label();
+        Label checkloop = e.make_label();
         e.store_local(array1);
         e.store_local(array2);
         e.push(0);
@@ -404,7 +406,7 @@ public class Ops {
      * directly and by invoking the <code>equals</code> method for
      * Objects. Arrays are recursively processed in the same manner.
      */
-    public static void not_equals(final Emitter2 e, Type type, final org.objectweb.asm.Label notEquals) {
+    public static void not_equals(final Emitter e, Type type, final Label notEquals) {
         (new ProcessArrayCallback() {
             public void processElement(Type type) {
                 not_equals_helper(e, type, notEquals, this);
@@ -412,14 +414,14 @@ public class Ops {
         }).processElement(type);
     }
     
-    private static void not_equals_helper(Emitter2 e, Type type, org.objectweb.asm.Label notEquals, ProcessArrayCallback callback) {
-        if (Emitter2.isPrimitive(type)) {
+    private static void not_equals_helper(Emitter e, Type type, Label notEquals, ProcessArrayCallback callback) {
+        if (Emitter.isPrimitive(type)) {
             e.if_cmpne(type, notEquals);
         } else {
-            org.objectweb.asm.Label end = e.make_label();
+            Label end = e.make_label();
             nullcmp(e, notEquals, end);
-            if (Emitter2.isArray(type)) {
-                org.objectweb.asm.Label checkContents = e.make_label();
+            if (Emitter.isArray(type)) {
+                Label checkContents = e.make_label();
                 e.dup2();
                 e.arraylength();
                 e.swap();
@@ -437,7 +439,7 @@ public class Ops {
         }
     }
     
-    public static void throw_exception(Emitter2 e, Type type, String msg) {
+    public static void throw_exception(Emitter e, Type type, String msg) {
         e.new_instance(type);
         e.dup();
         e.push(msg);
@@ -453,11 +455,11 @@ public class Ops {
      * @param oneNull label to branch to if only one of the objects is null
      * @param bothNull label to branch to if both of the objects are null
      */
-    private static void nullcmp(Emitter2 e, org.objectweb.asm.Label oneNull, org.objectweb.asm.Label bothNull) {
+    private static void nullcmp(Emitter e, Label oneNull, Label bothNull) {
         e.dup2();
-        org.objectweb.asm.Label nonNull = e.make_label();
-        org.objectweb.asm.Label oneNullHelper = e.make_label();
-        org.objectweb.asm.Label end = e.make_label();
+        Label nonNull = e.make_label();
+        Label oneNullHelper = e.make_label();
+        Label end = e.make_label();
         e.ifnonnull(nonNull);
         e.ifnonnull(oneNullHelper);
         e.pop2();
@@ -474,7 +476,7 @@ public class Ops {
         e.mark(end);
     }
     
-    public static void factory_method(Emitter2 e, Signature sig) {
+    public static void factory_method(Emitter e, Signature sig) {
         e.begin_method(Constants.ACC_PUBLIC | Constants.ACC_FINAL, sig, null);
         e.new_instance_this();
         e.dup();
@@ -483,7 +485,7 @@ public class Ops {
         e.return_value();
     }
 
-    public static void string_switch(Emitter2 e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
+    public static void string_switch(Emitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {
         case SWITCH_STYLE_TRIE:
@@ -497,11 +499,11 @@ public class Ops {
         }
     }
 
-    private static void string_switch_trie(final Emitter2 e,
+    private static void string_switch_trie(final Emitter e,
                                            String[] strings,
                                            final ObjectSwitchCallback callback) throws Exception {
-        final org.objectweb.asm.Label def = e.make_label();
-        final org.objectweb.asm.Label end = e.make_label();
+        final Label def = e.make_label();
+        final Label end = e.make_label();
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
             public Object transform(Object value) {
                 return new Integer(((String)value).length());
@@ -510,7 +512,7 @@ public class Ops {
         e.dup();
         e.invoke_virtual(Types.STRING, Signatures.STRING_LENGTH);
         e.process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
-                public void processCase(int key, org.objectweb.asm.Label ignore_end) throws Exception {
+                public void processCase(int key, Label ignore_end) throws Exception {
                     List bucket = (List)buckets.get(new Integer(key));
                     stringSwitchHelper(e, bucket, callback, def, end, 0);
                 }
@@ -524,11 +526,11 @@ public class Ops {
         e.mark(end);
     }
 
-    private static void stringSwitchHelper(final Emitter2 e,
+    private static void stringSwitchHelper(final Emitter e,
                                            List strings,
                                            final ObjectSwitchCallback callback,
-                                           final org.objectweb.asm.Label def,
-                                           final org.objectweb.asm.Label end,
+                                           final Label def,
+                                           final Label end,
                                            final int index) throws Exception {
         final int len = ((String)strings.get(0)).length();
         final Map buckets = CollectionUtils.bucket(strings, new Transformer() {
@@ -540,7 +542,7 @@ public class Ops {
         e.push(index);
         e.invoke_virtual(Types.STRING, Signatures.STRING_CHAR_AT);
         e.process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
-                public void processCase(int key, org.objectweb.asm.Label ignore_end) throws Exception {
+                public void processCase(int key, Label ignore_end) throws Exception {
                     List bucket = (List)buckets.get(new Integer(key));
                     if (index + 1 == len) {
                         e.pop();
@@ -565,7 +567,7 @@ public class Ops {
         return keys;
     }
 
-    private static void string_switch_hash(final Emitter2 e,
+    private static void string_switch_hash(final Emitter e,
                                            final String[] strings,
                                            final ObjectSwitchCallback callback) throws Exception {
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
@@ -573,14 +575,14 @@ public class Ops {
                 return new Integer(value.hashCode());
             }
         });
-        final org.objectweb.asm.Label def = e.make_label();
-        final org.objectweb.asm.Label end = e.make_label();
+        final Label def = e.make_label();
+        final Label end = e.make_label();
         e.dup();
         e.invoke_virtual(Types.OBJECT, Signatures.HASH_CODE);
         e.process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
-            public void processCase(int key, org.objectweb.asm.Label ignore_end) throws Exception {
+            public void processCase(int key, Label ignore_end) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
-                org.objectweb.asm.Label next = null;
+                Label next = null;
                 for (Iterator it = bucket.iterator(); it.hasNext();) {
                     String string = (String)it.next();
                     if (next != null) {
@@ -613,7 +615,7 @@ public class Ops {
         Class[] getParameterTypes(Object member);
     }
 
-    public static void method_switch(Emitter2 e,
+    public static void method_switch(Emitter e,
                                      Method[] methods,
                                      ObjectSwitchCallback callback) throws Exception {
         member_switch_helper(e, Arrays.asList(methods), callback, true, new ParameterTyper() {
@@ -623,7 +625,7 @@ public class Ops {
         });
     }
 
-    public static void constructor_switch(Emitter2 e,
+    public static void constructor_switch(Emitter e,
                                           Constructor[] cstructs,
                                           ObjectSwitchCallback callback) throws Exception {
         member_switch_helper(e, Arrays.asList(cstructs), callback, false, new ParameterTyper() {
@@ -633,7 +635,7 @@ public class Ops {
         });
     }
 
-    private static void member_switch_helper(final Emitter2 e,
+    private static void member_switch_helper(final Emitter e,
                                              List members,
                                              final ObjectSwitchCallback callback,
                                              boolean useName,
@@ -648,8 +650,8 @@ public class Ops {
                 return types;
             }
         };
-        final org.objectweb.asm.Label def = e.make_label();
-        final org.objectweb.asm.Label end = e.make_label();
+        final Label def = e.make_label();
+        final Label end = e.make_label();
         if (useName) {
             e.swap();
             final Map buckets = CollectionUtils.bucket(members, new Transformer() {
@@ -659,7 +661,7 @@ public class Ops {
             });
             String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
             string_switch_hash(e, names, new ObjectSwitchCallback() {
-                public void processCase(Object key, org.objectweb.asm.Label dontUseEnd) throws Exception {
+                public void processCase(Object key, Label dontUseEnd) throws Exception {
                     member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
                 }
                 public void processDefault() throws Exception {
@@ -675,12 +677,12 @@ public class Ops {
         e.mark(end);
     }
 
-    private static void member_helper_size(final Emitter2 e,
+    private static void member_helper_size(final Emitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,
                                            final ParameterTyper typer,
-                                           final org.objectweb.asm.Label def,
-                                           final org.objectweb.asm.Label end) throws Exception {
+                                           final Label def,
+                                           final Label end) throws Exception {
         final Map buckets = CollectionUtils.bucket(members, new Transformer() {
             public Object transform(Object value) {
                 return new Integer(typer.getParameterTypes(value).length);
@@ -689,7 +691,7 @@ public class Ops {
         e.dup();
         e.arraylength();
         e.process_switch(getSwitchKeys(buckets), new ProcessSwitchCallback() {
-            public void processCase(int key, org.objectweb.asm.Label dontUseEnd) throws Exception {
+            public void processCase(int key, Label dontUseEnd) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
                 Class[] types = typer.getParameterTypes(bucket.get(0));
                 member_helper_type(e, bucket, callback, typer, def, end, new BitSet(types.length));
@@ -700,12 +702,12 @@ public class Ops {
         });
     }
 
-    private static void member_helper_type(final Emitter2 e,
+    private static void member_helper_type(final Emitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,
                                            final ParameterTyper typer,
-                                           final org.objectweb.asm.Label def,
-                                           final org.objectweb.asm.Label end,
+                                           final Label def,
+                                           final Label end,
                                            final BitSet checked) throws Exception {
         if (members.size() == 1) {
             // need to check classes that have not already been checked via switches
@@ -754,7 +756,7 @@ public class Ops {
                 final Map fbuckets = buckets;
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
                 string_switch_hash(e, names, new ObjectSwitchCallback() {
-                    public void processCase(Object key, org.objectweb.asm.Label dontUseEnd) throws Exception {
+                    public void processCase(Object key, Label dontUseEnd) throws Exception {
                         member_helper_type(e, (List)fbuckets.get(key), callback, typer, def, end, checked);
                     }
                     public void processDefault() throws Exception {
@@ -767,7 +769,7 @@ public class Ops {
 
     /////////////// REFLECTEMITTER OPS MOVED HERE, GRADUALLY REMOVE AS POSSIBLE ///////////////////////////
 
-    public static void begin_class(Emitter2 e,
+    public static void begin_class(Emitter e,
                                    int access,
                                    String className,
                                    Class superclass,
@@ -775,18 +777,18 @@ public class Ops {
                                    String sourceFile) {
         e.begin_class(access,
                       getType(className),
-                      Type.getType(superclass),
+                      (superclass != null) ? Type.getType(superclass) : null,
                       Signature.getTypes(interfaces),
                       sourceFile);
     }
 
-    public static void begin_constructor(Emitter2 e, Constructor constructor) {
+    public static void begin_constructor(Emitter e, Constructor constructor) {
         e.begin_constructor(Constants.ACC_PUBLIC, // constructor.getModifiers(),
                             Signature.getTypes(constructor.getParameterTypes()),
                             Signature.getTypes(constructor.getExceptionTypes()));
     }
 
-    public static void begin_method(Emitter2 e,
+    public static void begin_method(Emitter e,
                                     int access,
                                     String name,
                                     Class returnType,
@@ -799,27 +801,27 @@ public class Ops {
                        Signature.getTypes(exceptionTypes));
     }
 
-    public static void begin_method(Emitter2 e, Method method) {
+    public static void begin_method(Emitter e, Method method) {
         begin_method(e, method, getDefaultModifiers(method.getModifiers()));
     }
 
-    public static void begin_method(Emitter2 e, Method method, int modifiers) {
+    public static void begin_method(Emitter e, Method method, int modifiers) {
         e.begin_method(modifiers,
                        new Signature(method),
                        Signature.getTypes(method.getExceptionTypes()));
     }
 
-    public static void getfield(Emitter2 e,Field field) {
+    public static void getfield(Emitter e,Field field) {
         int opcode = Modifier.isStatic(field.getModifiers()) ? Constants.GETSTATIC : Constants.GETFIELD;
         fieldHelper(e, opcode, field);
     }
     
-    public static void putfield(Emitter2 e, Field field) {
+    public static void putfield(Emitter e, Field field) {
         int opcode = Modifier.isStatic(field.getModifiers()) ? Constants.PUTSTATIC : Constants.PUTFIELD;
         fieldHelper(e, opcode, field);
     }
 
-    private static void fieldHelper(Emitter2 e, int opcode, Field field) {
+    private static void fieldHelper(Emitter e, int opcode, Field field) {
         // TODO: remove need for direct access to emit_field?
         e.emit_field(opcode,
                      Type.getType(field.getDeclaringClass()),
@@ -827,7 +829,7 @@ public class Ops {
                      Type.getType(field.getType()));
     }
 
-    public static void invoke(Emitter2 e, Method method) {
+    public static void invoke(Emitter e, Method method) {
         int opcode;
         if (method.getDeclaringClass().isInterface()) {
             opcode = Constants.INVOKEINTERFACE;
@@ -844,12 +846,12 @@ public class Ops {
                       Signature.getTypes(method.getParameterTypes()));
     }
 
-    public static void invoke(Emitter2 e, Constructor constructor) {
+    public static void invoke(Emitter e, Constructor constructor) {
         e.invoke_constructor(Type.getType(constructor.getDeclaringClass()),
                              Signature.getTypes(constructor.getParameterTypes()));
     }
 
-    public static void super_invoke(Emitter2 e, Method method) {
+    public static void super_invoke(Emitter e, Method method) {
         // TODO: remove need for direct access to emit_invoke?
         e.emit_invoke(Constants.INVOKESPECIAL,
                       e.getSuperType(),
@@ -858,7 +860,7 @@ public class Ops {
                       Signature.getTypes(method.getParameterTypes()));
     }
 
-    public static void super_invoke(Emitter2 e, Constructor constructor) {
+    public static void super_invoke(Emitter e, Constructor constructor) {
         e.super_invoke_constructor(Signature.getTypes(constructor.getParameterTypes()));
     }
     

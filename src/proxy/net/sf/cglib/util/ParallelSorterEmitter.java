@@ -59,7 +59,7 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
-class ParallelSorterEmitter extends Emitter2 {
+class ParallelSorterEmitter extends Emitter {
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
     private static final Signature SWAP =
@@ -103,8 +103,8 @@ class ParallelSorterEmitter extends Emitter2 {
         begin_method(Constants.ACC_PUBLIC, SWAP, null);
         for (int i = 0; i < arrays.length; i++) {
             Type type = Type.getType(arrays[i].getClass());
-            Type component = Emitter2.getComponentType(type);
-            Local2 T = make_local(type);
+            Type component = Emitter.getComponentType(type);
+            Local T = make_local(type);
 
             load_this();
             getfield(getFieldName(i));

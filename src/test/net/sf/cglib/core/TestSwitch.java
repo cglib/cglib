@@ -60,6 +60,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import junit.framework.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 
 public class TestSwitch extends CodeGenTestCase {
     private static int index = 0;
@@ -98,12 +99,12 @@ public class TestSwitch extends CodeGenTestCase {
 
         public void generateClass(ClassVisitor v) throws Exception {
             final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Alphabet.class }, Constants.SOURCE_FILE);
-            Virt.null_constructor(e);
+            Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Alphabet.class }, Constants.SOURCE_FILE);
+            Ops.null_constructor(e);
             Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
-            e.begin_method(method);
+            Ops.begin_method(e, method);
             e.load_arg(0);
-            e.process_switch(keys, new Emitter.ProcessSwitchCallback() {
+            e.process_switch(keys, new ProcessSwitchCallback() {
                     public void processCase(int index, Label end) {
                         e.push(values[index - 1]);
                         e.goTo(end);
@@ -113,7 +114,6 @@ public class TestSwitch extends CodeGenTestCase {
                     }
                 });
             e.return_value();
-            e.end_method();
             e.end_class();
         }
     }

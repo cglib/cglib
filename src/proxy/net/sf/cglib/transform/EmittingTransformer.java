@@ -1,14 +1,14 @@
 package net.sf.cglib.transform;
 
-import net.sf.cglib.core.Emitter2;
+import net.sf.cglib.core.Emitter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
 
 abstract public class EmittingTransformer extends ClassTransformer {
-    protected Emitter2 e;
+    protected Emitter e;
     
-    abstract protected Emitter2 getEmitter(ClassVisitor cv);
+    abstract protected Emitter getEmitter(ClassVisitor cv);
 
     public void setTarget(ClassVisitor cv) {
         super.setTarget(cv);

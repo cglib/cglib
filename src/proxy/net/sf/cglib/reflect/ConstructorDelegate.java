@@ -56,10 +56,11 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.5 2003/09/17 20:44:27 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.6 2003/09/20 09:01:26 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -121,19 +122,19 @@ abstract public class ConstructorDelegate {
             }
 
             Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC,
-                          getClassName(),
-                          ConstructorDelegate.class,
-                          new Class[]{ iface },
-                          Constants.SOURCE_FILE);
-            Virt.null_constructor(e);
-            e.begin_method(newInstance);
-            e.new_instance(constructor.getDeclaringClass());
+            Ops.begin_class(e,
+                            Modifier.PUBLIC,
+                            getClassName(),
+                            ConstructorDelegate.class,
+                            new Class[]{ iface },
+                            Constants.SOURCE_FILE);
+            Ops.null_constructor(e);
+            Ops.begin_method(e, newInstance);
+            e.new_instance(Type.getType(constructor.getDeclaringClass()));
             e.dup();
             e.load_args();
-            e.invoke(constructor);
+            Ops.invoke(e, constructor);
             e.return_value();
-            e.end_method();
             e.end_class();
         }
 

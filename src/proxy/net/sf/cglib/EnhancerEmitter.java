@@ -58,9 +58,10 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-class EnhancerEmitter extends Emitter2 {
+class EnhancerEmitter extends Emitter {
     private static final Signature SET_THREAD_CALLBACKS =
       Signature.parse("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
@@ -184,7 +185,7 @@ class EnhancerEmitter extends Emitter2 {
         load_this();
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
-                public void processCase(int key, org.objectweb.asm.Label end) throws Exception {
+                public void processCase(int key, Label end) throws Exception {
                     getfield(getCallbackField(key));
                     goTo(end);
                 }
@@ -201,7 +202,7 @@ class EnhancerEmitter extends Emitter2 {
         load_arg(1);
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
-            public void processCase(int key, org.objectweb.asm.Label end) throws Exception {
+            public void processCase(int key, Label end) throws Exception {
                 checkcast(CallbackUtils.getType2(key));
                 putfield(getCallbackField(key));
                 goTo(end);
@@ -259,7 +260,7 @@ class EnhancerEmitter extends Emitter2 {
         return_value();
         
         // Factory.newInstance(Class[], Object[], Callbacks)
-        org.objectweb.asm.Label skipSetCallbacks = make_label();
+        Label skipSetCallbacks = make_label();
         Ops.begin_method(this, MULTIARG_NEW_INSTANCE);
         load_arg(2);
         invoke_static_this(SET_THREAD_CALLBACKS);
@@ -267,7 +268,7 @@ class EnhancerEmitter extends Emitter2 {
         dup();
         load_arg(0);
         Ops.constructor_switch(this, (Constructor[])constructors.toArray(new Constructor[0]), new ObjectSwitchCallback() {
-            public void processCase(Object key, org.objectweb.asm.Label end) throws Exception {
+            public void processCase(Object key, Label end) throws Exception {
                 Constructor constructor = (Constructor)key;
                 Type types[] = Signature.getTypes(constructor.getParameterTypes());
                 for (int i = 0; i < types.length; i++) {
@@ -385,7 +386,7 @@ class EnhancerEmitter extends Emitter2 {
         begin_method(Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL,
                      SET_THREAD_CALLBACKS,
                      null);
-        org.objectweb.asm.Label end = make_label();
+        Label end = make_label();
         load_arg(0);
         ifnull(end);
         for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
@@ -407,7 +408,7 @@ class EnhancerEmitter extends Emitter2 {
         load_this();
         getfield(getCallbackField(type));
         dup();
-        org.objectweb.asm.Label end = make_label();
+        Label end = make_label();
         ifnonnull(end);
         load_this();
         getfield(CONSTRUCTED_FIELD);

@@ -57,9 +57,10 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
     
-class FastClassEmitter extends Emitter2 {
+class FastClassEmitter extends Emitter {
     private static final Signature METHOD_GET_INDEX =
       Signature.parse("int getIndex(String, Class[])");
     private static final Signature SIGNATURE_GET_INDEX =
@@ -102,7 +103,7 @@ class FastClassEmitter extends Emitter2 {
                            (String[])signatures.toArray(new String[0]),
                            Ops.SWITCH_STYLE_HASH,
                            new ObjectSwitchCallback() {
-            public void processCase(Object key, org.objectweb.asm.Label end) {
+            public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf
                 push(signatures.indexOf(key));
                 return_value();
@@ -142,7 +143,7 @@ class FastClassEmitter extends Emitter2 {
 
     private void invokeSwitchHelper(final Object[] members, final int arg) throws Exception {
         process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
-            public void processCase(int key, org.objectweb.asm.Label end) {
+            public void processCase(int key, Label end) {
                 Member member = (Member)members[key];
                 Class[] types = ReflectUtils.getParameterTypes(member);
                 for (int i = 0; i < types.length; i++) {
@@ -175,7 +176,7 @@ class FastClassEmitter extends Emitter2 {
             }
         }
             
-        public void processCase(Object key, org.objectweb.asm.Label end) {
+        public void processCase(Object key, Label end) {
             push(((Integer)indexes.get(key)).intValue());
             return_value();
         }
