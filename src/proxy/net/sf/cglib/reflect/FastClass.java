@@ -51,49 +51,67 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.reflect;
 
-import net.sf.cglib.beans.*;
-import net.sf.cglib.algorithm.*;
-import junit.framework.*;
+import net.sf.cglib.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.24 2003/09/08 20:37:46 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+abstract public class FastClass
+{
+    private static final FactoryCache CACHE = new FactoryCache(FastClass.class);
+
+    protected FastClass() {
     }
 
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-        suite.addTest(TestMemberSwitch.suite());
-        suite.addTest(TestFastClass.suite());
-        return suite;
+    public static FastClass create(Class type) {
+        return create(type, null);
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public static FastClass create(final Class type, ClassLoader loader) {
+        if (loader == null) {
+            loader = type.getClassLoader();
+        }
+        return (FastClass)CACHE.get(loader, type, new FactoryCache.AbstractCallback() {
+            public BasicCodeGenerator newGenerator() {
+                return new FastClassGenerator(type);
+            }
+        });
     }
+
+    // TODO: add String getName()
+    // TODO: add Class getJavaClass()
+
+    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) {
+        return invoke(getIndex(name, parameterTypes), obj, args);
+    }
+
+    public Object newInstance() {
+        return newInstance(getIndex(Constants.TYPES_EMPTY), null);
+    }
+
+    public Object newInstance(Class[] parameterTypes, Object[] args) {
+        return newInstance(getIndex(parameterTypes), args);
+    }
+
+    public FastMethod getMethod(String name, Class[] parameterTypes) {
+        return new FastMethod(this, name, parameterTypes);
+    }
+
+    public FastConstructor getConstructor(Class[] parameterTypes) {
+        return new FastConstructor(this, parameterTypes);
+    }
+    
+    public FastMethod getMethod(Method method) {
+        return getMethod(method.getName(), method.getParameterTypes());
+    }
+
+    public FastConstructor getConstructor(Constructor constructor) {
+        return getConstructor(constructor.getParameterTypes());
+    }
+
+    abstract int getIndex(String name, Class[] parameterTypes);
+    abstract int getIndex(Class[] parameterTypes);
+    abstract Object invoke(int index, Object obj, Object[] args);
+    abstract Object newInstance(int index, Object[] args);
 }
-
