@@ -51,8 +51,8 @@
   
     <dependencies>
       <dependency>
-      <id>bcel</id>
-      <version>5.0</version>
+      <id>kasm</id>
+      <version></version>
     </dependency>
 
     <dependency>
