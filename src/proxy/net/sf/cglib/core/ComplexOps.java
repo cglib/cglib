@@ -206,7 +206,10 @@ public class ComplexOps {
                 string_switch_trie(e, strings, callback);
                 break;
             case Constants.SWITCH_STYLE_HASH:
-                string_switch_hash(e, strings, callback);
+                string_switch_hash(e, strings, callback, false);
+                break;
+            case Constants.SWITCH_STYLE_HASHONLY:
+                string_switch_hash(e, strings, callback, true);
                 break;
             default:
                 throw new IllegalArgumentException("unknown switch style " + switchStyle);
@@ -290,7 +293,8 @@ public class ComplexOps {
 
     private static void string_switch_hash(final CodeEmitter e,
                                            final String[] strings,
-                                           final ObjectSwitchCallback callback) throws Exception {
+                                           final ObjectSwitchCallback callback,
+                                           final boolean skipEquals) throws Exception {
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
             public Object transform(Object value) {
                 return new Integer(value.hashCode());
@@ -304,23 +308,27 @@ public class ComplexOps {
             public void processCase(int key, Label ignore_end) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
                 Label next = null;
-                for (Iterator it = bucket.iterator(); it.hasNext();) {
-                    String string = (String)it.next();
-                    if (next != null) {
-                        e.mark(next);
+                if (skipEquals && bucket.size() == 1) {
+                    callback.processCase((String)bucket.get(0), end);
+                } else {
+                    for (Iterator it = bucket.iterator(); it.hasNext();) {
+                        String string = (String)it.next();
+                        if (next != null) {
+                            e.mark(next);
+                        }
+                        if (it.hasNext()) {
+                            e.dup();
+                        }
+                        e.push(string);
+                        e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
+                        if (it.hasNext()) {
+                            e.if_jump(e.EQ, next = e.make_label());
+                            e.pop();
+                        } else {
+                            e.if_jump(e.EQ, def);
+                        }
+                        callback.processCase(string, end);
                     }
-                    if (it.hasNext()) {
-                        e.dup();
-                    }
-                    e.push(string);
-                    e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
-                    if (it.hasNext()) {
-                        e.if_jump(e.EQ, next = e.make_label());
-                        e.pop();
-                    } else {
-                        e.if_jump(e.EQ, def);
-                    }
-                    callback.processCase(string, end);
                 }
             }
             public void processDefault() {

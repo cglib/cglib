@@ -57,9 +57,8 @@ import java.lang.reflect.Method;
 
 /**
  * java.lang.reflect.InvocationHandler replacement (unavailable under JDK 1.2).
- *
- *@author     Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
- *@version    $Id: InvocationHandler.java,v 1.2 2003/08/27 16:51:53 herbyderby Exp $
+ * @author Neeme Praks <a href="mailto:neeme@apache.org">neeme@apache.org</a>
+ * @version $Id: InvocationHandler.java,v 1.3 2003/10/17 01:49:59 herbyderby Exp $
  */
 public interface InvocationHandler
 extends Callback

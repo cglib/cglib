@@ -53,6 +53,9 @@
  */
 package net.sf.cglib;
 
+/**
+ * All callback interfaces used by {@link Enhancer} extend this interface.
+ */
 public interface Callback
 {
 }

@@ -57,7 +57,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.16 2003/10/08 23:29:49 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.17 2003/10/17 01:49:59 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
@@ -98,4 +98,5 @@ public interface Constants extends org.objectweb.asm.Constants {
 
     public static final int SWITCH_STYLE_TRIE = 0;
     public static final int SWITCH_STYLE_HASH = 1;
+    public static final int SWITCH_STYLE_HASHONLY = 2;
 }

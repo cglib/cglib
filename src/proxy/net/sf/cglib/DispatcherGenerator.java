@@ -64,7 +64,8 @@ import org.objectweb.asm.Type;
 class DispatcherGenerator implements CallbackGenerator {
     public static final DispatcherGenerator INSTANCE = new DispatcherGenerator();
 
-    private static final Type DISPATCHER = Type.getType(Dispatcher.class);
+    private static final Type DISPATCHER =
+      TypeUtils.parseType("net.sf.cglib.Dispatcher");
     private static final Signature LOAD_OBJECT =
       TypeUtils.parseSignature("Object loadObject(String)");
 

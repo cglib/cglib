@@ -97,7 +97,7 @@ class CallbackUtils {
 
     static int determineType(Callback callback) {
         int best = Callbacks.NO_OP;
-        for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
+        for (int i = Callbacks.MAX_VALUE; i >= 0; i--) {
             Class type = getClass(i);
             if (type != null && type.isAssignableFrom(callback.getClass())) {
                 if (best != Callbacks.NO_OP) {
