@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.41 2004/04/07 07:00:57 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.42 2004/04/14 16:46:19 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -250,6 +250,35 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("SystemClassLoader",
         source.getClass().getClassLoader()
         == ClassLoader.getSystemClassLoader()  );
+        
+    }
+    
+    public void testClassLoaderReference()throws Throwable{
+    
+         ClassLoader loader = new ClassLoader(this.getClass().getClassLoader()){};
+        
+          enhance( ClassLoader.class , null, TEST_INTERCEPTOR, loader);
+         
+         java.lang.ref.Reference ref = new java.lang.ref.WeakReference(loader);
+        
+         loader = null;
+         
+         for(int i = 0; i < 512; i++  ){
+             
+            System.gc();
+            
+           if(ref.get() == null ){
+               System.out.println("derefenced clasloader on " + i + " iteration");
+               return;
+               
+            }
+            
+           byte[] garbage =  new byte[ (i + 1)*1004 ];
+         
+         }
+         
+         fail("Memory Leak in cache");
+         
         
     }
     

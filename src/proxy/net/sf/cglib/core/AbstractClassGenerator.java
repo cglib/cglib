@@ -184,7 +184,7 @@ implements ClassGenerator
                     cache2.put(NAME_KEY, new HashSet());
                     source.cache.put(loader, cache2);
                 } else if (useCache) {
-                    WeakReference ref = (WeakReference)cache2.get(key);
+                    Reference ref = (Reference)cache2.get(key);
                     instance = ( ref == null ) ? null : ref.get(); 
                 }
                 if (instance == null) {
@@ -194,7 +194,7 @@ implements ClassGenerator
                     getClassNameCache(loader).add(className);
                     instance = firstInstance(ReflectUtils.defineClass(className, b, loader));
                     if (useCache) {
-                        cache2.put(key, new WeakReference(instance));
+                        cache2.put(key, new SoftReference(instance));
                     }
                     return instance;
                 }
