@@ -63,7 +63,7 @@ import net.sf.cglib.reflect.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.27 2003/09/14 17:44:22 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.28 2003/09/25 18:30:16 herbyderby Exp $
  */
 public class MethodProxy {
     private String m1;
@@ -73,19 +73,29 @@ public class MethodProxy {
     private int i1;
     private int i2;
 
-    // TODO: get rid of create, call constructor directly
-    public static MethodProxy create(Class c1, String m1, Class c2, String m2) {
-        return new MethodProxy(c1, m1, c2, m2);
+    /**
+     * For internal use by Enhancer only; see the FastMethod class in the reflect package
+     * for similar functionality.
+     */
+    public static MethodProxy create(ClassLoader loader, Class c1, String m1, Class c2, String m2) {
+        return new MethodProxy(loader, c1, m1, c2, m2);
     }
-
-    private MethodProxy(Class c1, String m1, Class c2, String m2) {
+    
+    private MethodProxy(ClassLoader loader ,Class c1, String m1, Class c2, String m2) {
         this.m1 = m1;
         this.m2 = m2;
-        this.f1 = FastClass.create(c1);
-        this.f2 = FastClass.create(c2);
+        f1 = helper(loader, c1);
+        f2 = helper(loader, c2);
         i1 = f1.getIndex(m1);
         i2 = f2.getIndex(m2);
         // TODO: handle protected method exception here instead of inside invoke
+    }
+
+    private FastClass helper(ClassLoader loader, Class type) {
+        FastClass.Generator g = new FastClass.Generator();
+        g.setType(type);
+        g.setClassLoader(loader);
+        return g.create();
     }
 
     /**

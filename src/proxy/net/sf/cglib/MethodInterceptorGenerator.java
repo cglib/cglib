@@ -74,8 +74,10 @@ implements CallbackGenerator
       TypeUtils.parseType("net.sf.cglib.MethodInterceptor");
     private static final Signature GET_DECLARING_CLASS =
       TypeUtils.parseSignature("Class getDeclaringClass()");
+    private static final Signature GET_CLASS_LOADER =
+      TypeUtils.parseSignature("ClassLoader getClassLoader()");
     private static final Signature MAKE_PROXY =
-      TypeUtils.parseSignature("net.sf.cglib.MethodProxy create(Class, String, Class, String)");
+      TypeUtils.parseSignature("net.sf.cglib.MethodProxy create(ClassLoader ,Class, String, Class, String)");
     private static final Signature INTERCEPT =
       TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.MethodProxy)");
 
@@ -144,18 +146,24 @@ implements CallbackGenerator
     public void generateStatic(Emitter e, Context context) {
         /* generates:
            static {
-             Class [] args;
              Class cls = findClass("java.lang.Object");
-             args = new Class[0];
-             METHOD_1 = cls.getDeclaredMethod("toString", args);
+             METHOD_1 = cls.getDeclaredMethod("toString", new Class[0]);
 
              Class thisClass = findClass("NameOfThisClass");
-             CGLIB$ACCESS_0 = MethodProxy.create(cls, "toString()Ljava.lang.String;",
+             CGLIB$ACCESS_0 = MethodProxy.create(thisClass.getClassLoader(),
+                                                 cls, "toString()Ljava.lang.String;",
                                                  thisClass, "CGLIB$ACCESS_0()Ljava.lang.String;");
            }
         */
 
+        Local thisclass = e.make_local();
+        ComplexOps.load_class_this(e);
+        e.dup();
+        e.store_local(thisclass);
+        e.invoke_virtual(Constants.TYPE_CLASS, GET_CLASS_LOADER);
+        
         for (Iterator it = context.getMethods(); it.hasNext();) {
+            e.dup();
             Method method = (Method)it.next();
             ReflectOps.load_method(e, method);
             e.dup();
@@ -165,7 +173,8 @@ implements CallbackGenerator
             Signature sig = ReflectUtils.getSignature(method);
             e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
             e.push(method.getName() + sig.getDescriptor());
-            ComplexOps.load_class_this(e);
+
+            e.load_local(thisclass);
             e.push(accessName + sig.getDescriptor());
             e.invoke_static(METHOD_PROXY, MAKE_PROXY);
             e.putfield(accessName);
