@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.4 2002/11/30 12:44:19 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib";
@@ -131,8 +131,8 @@ public class Enhancer implements ClassFileConstants {
      
       public static Factory override(Class clazz, MethodInterceptor interceptor ){
      
-         return (Factory)enhanceHelper(false, null , cls, null , interceptor,
-                               cls.getClassLoader(), null );
+         return (Factory)enhanceHelper(false, null , clazz, null , interceptor,
+                               clazz.getClassLoader(), null );
      }
     
      
