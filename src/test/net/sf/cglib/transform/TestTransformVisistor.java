@@ -64,9 +64,16 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.5 2003/09/13 11:20:41 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.6 2003/09/13 19:00:40 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
+    
+    static Class init ;
+    
+    public static void clinit(Class cls){
+      init = cls;
+    }
+    
     
     ReadWriteFieldFilter acceptAll = new ReadWriteFieldFilter(){
         public boolean acceptRead(String clas, String name){
@@ -86,6 +93,7 @@ public class TestTransformVisistor extends TestCase {
         String name;
         
         TransforClassLoader(byte data[],String name){
+            super(TransforClassLoader.class.getClassLoader());
             this.data = data;
             this.name = name;
         }
@@ -133,6 +141,7 @@ public class TestTransformVisistor extends TestCase {
                       PersistenceCapableImpl.class
                     );
        
+       assertEquals(init,t.getClass());
        Callback clb = new Callback();
        t.setReadWriteFieldCallback( clb );
        Object value = "TEST";
@@ -157,7 +166,8 @@ public class TestTransformVisistor extends TestCase {
         try{
             
             TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
-            tv.setDelegate(iface, impl);
+            tv.setClassInit(this.getClass().getMethod("clinit",new Class[]{Class.class}));
+            tv.setDelegate(new Class[]{iface}, impl);
             data = tv.transform();
            // print(data);
             

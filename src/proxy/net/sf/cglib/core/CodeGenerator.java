@@ -219,8 +219,11 @@ abstract public class CodeGenerator
             File file = new File(new File(debugLocation), className + ".class");
             // System.err.println("CGLIB writing " + file);
             OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-            out.write(b);
-            out.close();
+            try{
+             out.write(b);
+            }finally{
+             out.close();
+            }
         }
         
         m.setAccessible(true);
