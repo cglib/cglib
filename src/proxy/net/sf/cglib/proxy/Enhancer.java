@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.13 2002/09/27 14:39:34 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.14 2002/09/27 15:50:06 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -981,10 +981,51 @@ public class Enhancer implements org.apache.bcel.Constants {
         if (!abstractM) {
             mg.addExceptionHandler(ehStart, ehEnd, ehHandled, Type.THROWABLE);
         }
+        ehHandled = il.append( new  ASTORE( ++loaded ) );
+        ehEnd     = ehHandled;
+        ehStart   = il.getStart();
+        il.append( new  ALOAD(loaded) );
+        il.append( new  ATHROW() );
+        
+        mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(RuntimeException.class.getName()) );
+        
+        ehHandled =  il.append( new  ASTORE( ++loaded ) );
+        il.append( new  ALOAD(loaded) );
+        il.append( new  ATHROW() );
+        
+        mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(Error.class.getName()) );
+        
+        Class exeptions[] = method.getExceptionTypes();
+        
+        for( int i = 0; i < exeptions.length; i++  ){
+            
+            ehHandled =  il.append( new  ASTORE( ++loaded ) );
+            il.append( new  ALOAD(loaded) );
+            il.append( new  ATHROW() );
+            
+            mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(exeptions[i].getName()) );
+            
+            
+        }
+        
+        ehHandled = il.append(  new  ASTORE( ++loaded ) );
+        il.append(  new  NEW( cp.addClass("java.lang.reflect.UndeclaredThrowableException") ) );
+        il.append(  new  DUP() );
+        il.append(  new  ALOAD(loaded ) );
+        il.append(  new INVOKESPECIAL(
+        cp.addMethodref("java.lang.reflect.UndeclaredThrowableException",
+        "<init>","(Ljava/lang/Throwable;)V") ) );
+        il.append( new ATHROW() );
+        
+        mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(Exception.class.getName()) );
+        
+        
+        
         
         mg.setMaxStack();
         mg.setMaxLocals();
         Method result = getMethod(mg);
+        
         
         return result;
     }

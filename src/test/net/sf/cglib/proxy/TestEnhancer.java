@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.11 2002/09/27 14:39:36 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.12 2002/09/27 15:50:06 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -84,7 +84,7 @@ public class TestEnhancer extends TestCase {
         super(testName);
     }
     
-
+    
     
     public static Test suite() {
         return new TestSuite(TestEnhancer.class);
@@ -114,39 +114,39 @@ public class TestEnhancer extends TestCase {
         
     }
     
-   
-   public void testMethods()throws Throwable{
-       
-       MethodInterceptor interceptor =
+    
+    public void testMethods()throws Throwable{
+        
+        MethodInterceptor interceptor =
         new NoOpInterceptor(){
             
             public Object afterReturn(  Object obj, Method method,
             Object args[],
             boolean invokedSuper, Object retValFromSuper,
             java.lang.Throwable e )throws java.lang.Throwable{
-                 
-                int mod =  method.getModifiers(); 
-               
+                
+                int mod =  method.getModifiers();
+                
                 if( Modifier.isProtected( mod ) ){
-                 invokedProtectedMethod = true;
+                    invokedProtectedMethod = true;
                 }
-               
+                
                 if( Modifier.isAbstract(mod) ){
-                   invokedAbstractMethod = true;
+                    invokedAbstractMethod = true;
                 }
                 
                 
                 if( ! ( Modifier.isProtected( mod ) || Modifier.isPublic( mod ) )){
-                   invokedPackageMethod = true;
-                } 
-        
+                    invokedPackageMethod = true;
+                }
+                
                 return retValFromSuper;//return the same as supper
             }
             
         };
         
         
-   Source source =  (Source)Enhancer.enhance(
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null,interceptor );
         
@@ -154,174 +154,181 @@ public class TestEnhancer extends TestCase {
         assertTrue("protected", invokedProtectedMethod );
         assertTrue("package", invokedPackageMethod );
         assertTrue("abstract", invokedAbstractMethod );
-   }
- 
-  public void testEnhanced()throws Throwable{
+    }
     
-       Source source =  (Source)Enhancer.enhance(
+    public void testEnhanced()throws Throwable{
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, NOOP_INTERCEPTOR );
-   
-       
-       TestCase.assertTrue("enhance", Source.class != source.getClass() );
-  
-  } 
+        
+        
+        TestCase.assertTrue("enhance", Source.class != source.getClass() );
+        
+    }
     
-  public void testTypes()throws Throwable{
-  
-     Source source =  (Source)Enhancer.enhance(
+    public void testTypes()throws Throwable{
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, NOOP_INTERCEPTOR );
-   
-     
-      
-     TestCase.assertTrue("intType",   1   == source.intType(1));
-     TestCase.assertTrue("longType",  1L  == source.longType(1L));
-     TestCase.assertTrue("floatType", 1.1f  == source.floatType(1.1f));
-     TestCase.assertTrue("doubleType",1.1 == source.doubleType(1.1));
-     TestCase.assertEquals("objectType","1", source.objectType("1") );
-     
+        
+        
+        
+        TestCase.assertTrue("intType",   1   == source.intType(1));
+        TestCase.assertTrue("longType",  1L  == source.longType(1L));
+        TestCase.assertTrue("floatType", 1.1f  == source.floatType(1.1f));
+        TestCase.assertTrue("doubleType",1.1 == source.doubleType(1.1));
+        TestCase.assertEquals("objectType","1", source.objectType("1") );
+        
+        
+        
+    }
     
-   
-   }
-   
-   
-  public void testModifiers()throws Throwable{
-  
-    Source source =  (Source)Enhancer.enhance(
+    
+    public void testModifiers()throws Throwable{
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, NOOP_INTERCEPTOR );
-   
-     Class enhancedClass = source.getClass();   
-     
-     assertTrue("isProtected" , Modifier.isProtected( enhancedClass.getDeclaredMethod("protectedMethod", EMPTY_ARG ).getModifiers() ));
-     int mod =  enhancedClass.getDeclaredMethod("packageMethod", EMPTY_ARG ).getModifiers() ;
-     assertTrue("isPackage" , !( Modifier.isProtected(mod)|| Modifier.isPublic(mod) ) ); 
-     
-     //not sure about this (do we need it for performace ?)
-     assertTrue("isFinal" ,  Modifier.isFinal( mod ) );  
-     
-     mod =  enhancedClass.getDeclaredMethod("synchronizedMethod", EMPTY_ARG ).getModifiers() ;  
-     assertTrue("isSynchronized" ,  !Modifier.isSynchronized( mod ) );  
-      
-  
-  }
-  
-   public void testObject()throws Throwable{
-       Object source =  Enhancer.enhance(
+        
+        Class enhancedClass = source.getClass();
+        
+        assertTrue("isProtected" , Modifier.isProtected( enhancedClass.getDeclaredMethod("protectedMethod", EMPTY_ARG ).getModifiers() ));
+        int mod =  enhancedClass.getDeclaredMethod("packageMethod", EMPTY_ARG ).getModifiers() ;
+        assertTrue("isPackage" , !( Modifier.isProtected(mod)|| Modifier.isPublic(mod) ) );
+        
+        //not sure about this (do we need it for performace ?)
+        assertTrue("isFinal" ,  Modifier.isFinal( mod ) );
+        
+        mod =  enhancedClass.getDeclaredMethod("synchronizedMethod", EMPTY_ARG ).getModifiers() ;
+        assertTrue("isSynchronized" ,  !Modifier.isSynchronized( mod ) );
+        
+        
+    }
+    
+    public void testObject()throws Throwable{
+        Object source =  Enhancer.enhance(
         null,
         null, NOOP_INTERCEPTOR );
-   
-        assertTrue("parent is object", 
-                 source.getClass().getSuperclass() == Object.class  );
-   
-   }
-   
-   public void testSystemClassLoader()throws Throwable{
-       Object source =  Enhancer.enhance(
+        
+        assertTrue("parent is object",
+        source.getClass().getSuperclass() == Object.class  );
+        
+    }
+    
+    public void testSystemClassLoader()throws Throwable{
+        Object source =  Enhancer.enhance(
         null,
         null, NOOP_INTERCEPTOR , ClassLoader.getSystemClassLoader());
         source.toString();
-        assertTrue("SystemClassLoader", 
-                 source.getClass().getClassLoader() 
-                 == ClassLoader.getSystemClassLoader()  );
-   
-   }
-   
-   
-   public void testCustomClassLoader()throws Throwable{
-  
-       ClassLoader custom = new ClassLoader(){};
-       
-       Object source =  Enhancer.enhance(
+        assertTrue("SystemClassLoader",
+        source.getClass().getClassLoader()
+        == ClassLoader.getSystemClassLoader()  );
+        
+    }
+    
+    
+    public void testCustomClassLoader()throws Throwable{
+        
+        ClassLoader custom = new ClassLoader(){};
+        
+        Object source =  Enhancer.enhance(
         null,
         null, NOOP_INTERCEPTOR, custom);
         source.toString();
-        assertTrue("Custom classLoader", 
-                 source.getClass().getClassLoader() 
-                 == custom  );
-   
-  
-   }
-
- public void testCheckedException()throws Throwable{
- 
-  Source source =  (Source)Enhancer.enhance(
+        assertTrue("Custom classLoader",
+        source.getClass().getClassLoader()
+        == custom  );
+        
+        
+    }
+    
+    public void testCheckedException()throws Throwable{
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, NOOP_INTERCEPTOR );
-   
-   try{
-   
-       source.throwChecked();
-       fail("lost exeption");
-       
-   }catch( Source.CheckedException1 e1  ){
-   
-   }
- 
- }
-
- public void testInvalidException()throws Throwable{
- 
-     MethodInterceptor interceptor =
+        
+        try{
+            
+            source.throwChecked();
+            fail("lost exeption");
+            
+        }catch( Source.CheckedException e  ){
+            
+        }
+        
+    }
+    
+    public void testUndeclaredException()throws Throwable{
+        
+        MethodInterceptor interceptor =
         new NoOpInterceptor(){
             
             public Object afterReturn(  Object obj, Method method,
             Object args[],
             boolean invokedSuper, Object retValFromSuper,
             java.lang.Throwable e )throws java.lang.Throwable{
-                throw new Source.CheckedException2();
-          }
-     };     
-     
-     Source source =  (Source)Enhancer.enhance(
+                throw new Source.UndeclaredException();
+            }
+        };
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, interceptor );
-  
-   try{
-   
-       source.throwChecked();
-      
-   }catch( Exception cnse  ){
-   
-        // not very usual for java progammer, 
-       // is it OK or we need to rethrow some runtime exception ?  
-     if( !( cnse instanceof Source.CheckedException2 ) ){
-          fail("invalid exeption");
-     }
+        
+        try{
+            
+            source.throwChecked();
+            fail("must throw exeption");
+            
+        }catch( Exception cnse  ){
+            
+            if( !( cnse instanceof java.lang.reflect.UndeclaredThrowableException ) ){
+                
+                fail("invalid exeption");
+            }
+            
+            if( !( ((java.lang.reflect.UndeclaredThrowableException)cnse).getUndeclaredThrowable()
+            instanceof Source.UndeclaredException ) ){
+                
+                fail("invalid exeption");
+            }
+            
+            
+        }
+        
+        
+    }
     
-   }
-     
-     
- }
- 
-  public void testSerializable()throws Throwable{
- 
-      String testValue = "test";
-      
-      Source source =  (Source)Enhancer.enhance(
+    public void testSerializable()throws Throwable{
+        
+        String testValue = "test";
+        
+        Source source =  (Source)Enhancer.enhance(
         Source.class,
         null, new NoOpInterceptor(testValue) );
-      
-      
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      ObjectOutputStream    out  = new ObjectOutputStream( bout );
- 
-      out.writeObject( source );
-      
-      ObjectInputStream in = new ObjectInputStream( 
-                                    new ByteArrayInputStream(bout.toByteArray()) );
-      
-      Object ser = in.readObject();
-      
-      assertTrue("type",  ser instanceof Source );
-      assertTrue("interceptor", 
-                   Enhancer.getMethodInterceptor(ser) instanceof NoOpInterceptor );
-      
-      NoOpInterceptor interceptor = (NoOpInterceptor)Enhancer.getMethodInterceptor(ser);
-      
-      assertEquals("testValue", testValue, interceptor.getValue()  );
-  }
- 
- 
+        
+        
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectOutputStream    out  = new ObjectOutputStream( bout );
+        
+        out.writeObject( source );
+        
+        ObjectInputStream in = new ObjectInputStream(
+        new ByteArrayInputStream(bout.toByteArray()) );
+        
+        Object ser = in.readObject();
+        
+        assertTrue("type",  ser instanceof Source );
+        assertTrue("interceptor",
+        Enhancer.getMethodInterceptor(ser) instanceof NoOpInterceptor );
+        
+        NoOpInterceptor interceptor = (NoOpInterceptor)Enhancer.getMethodInterceptor(ser);
+        
+        assertEquals("testValue", testValue, interceptor.getValue()  );
+    }
+    
+    
 }
