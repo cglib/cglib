@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.11 2002/09/25 19:12:50 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.12 2002/09/26 18:57:13 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -233,8 +233,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 class_name = CLASS_PREFIX + class_name;
             }
             class_name += index++;
-            java.util.HashMap methods = new java.util.HashMap();
-            JavaClass clazz = enhance(cls, class_name, interfaces, methods);
+            JavaClass clazz = enhance(cls, class_name, interfaces );
             byte b[] = clazz.getBytes();
             java.lang.reflect.Method m =
             ClassLoader.class.getDeclaredMethod(
@@ -248,12 +247,6 @@ public class Enhancer implements org.apache.bcel.Constants {
             loader,
             new Object[] { clazz.getClassName(), b, new Integer(0), new Integer(b.length)});
             m.setAccessible(flag);
-            //TODO : <cinit>
-            for (java.util.Iterator i = methods.keySet().iterator(); i.hasNext();) {
-                String name = (String) i.next();
-                result.getField(name).set(null, methods.get(name));
-            }
-            
             map.put(key, result);
         }
         
@@ -337,7 +330,7 @@ public class Enhancer implements org.apache.bcel.Constants {
             
             cg.addMethod(getMethod(writeReplace));
             
-            generateFindClass(cg, cp );  
+            
             
     }
     
@@ -369,9 +362,9 @@ public class Enhancer implements org.apache.bcel.Constants {
     private static JavaClass enhance(
     Class parentClass,
     String class_name,
-    Class interfaces[],
-    java.util.HashMap methodTable) throws Throwable {
-        
+    Class interfaces[]
+    ) throws Throwable {
+        java.util.HashMap methodTable = new java.util.HashMap();
         ClassGen cg = getClassGen(class_name, parentClass, interfaces);
         ConstantPoolGen cp = cg.getConstantPool(); // cg creates constant pool
         addHandlerField(cg);
@@ -413,6 +406,8 @@ public class Enhancer implements org.apache.bcel.Constants {
             cg.addMethod(generateMethod(method, fieldName, cg,  after, invokeSuper));
             methodTable.put(fieldName, method);
         }
+        
+        generateClInit(cg, cp, methodTable);
         
         JavaClass jcl = cg.getJavaClass();
         return jcl;
@@ -465,10 +460,9 @@ public class Enhancer implements org.apache.bcel.Constants {
     }
     
     private static void addMethodField(String fieldName, ClassGen cg) {
-        //TODO: ACC_PRIVATE
         ConstantPoolGen cp = cg.getConstantPool();
         FieldGen fg =
-        new FieldGen(ACC_PUBLIC | ACC_STATIC, METHOD_OBJECT, fieldName, cp);
+        new FieldGen( ACC_FINAL | ACC_STATIC, METHOD_OBJECT, fieldName, cp );
         cg.addField(fg.getField());
     }
     
@@ -860,7 +854,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         Class [] exeptions = mtd.getExceptionTypes();
         
         for( int i = 0 ; i< exeptions.length; i++ ){
-          mg.addException( exeptions[i].getName() );
+            mg.addException( exeptions[i].getName() );
         }
         
         return mg;
@@ -995,20 +989,129 @@ public class Enhancer implements org.apache.bcel.Constants {
         return result;
     }
     
-    private static void generateCinit(ClassGen cg, ConstantPoolGen cp){
-    
-        InstructionList  il = new InstructionList();
-        MethodGen cinit = new MethodGen(
-        ACC_PRIVATE | ACC_STATIC , // access flags
-        Type.VOID, // return type
-        new Type[] { }, null, // arg names
-        "<cinit>", cg.getClassName(), il, cp );
-        cg.addMethod( getMethod( cinit ) );
-    
-    
+    private static void loadClass(InstructionList  il, ClassGen cg, ConstantPoolGen cp,Class cls ){
+        
+        Instruction instruction = null;
+        String cln = "Ljava/lang/Class;";
+        String t   = "TYPE";
+        
+        if(cls == int.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref(Integer.class.getName(), t, cln ));
+            
+        }
+        if(cls == byte.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref(Byte.class.getName(), t, cln ));
+            
+        }
+        
+        if(cls == char.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref(Character.class.getName(), t, cln ));
+            
+        }
+        if( cls == short.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref(Short.class.getName(), t, cln ));
+            
+        }
+        
+        if( cls == boolean.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref( Boolean.class.getName(), t, cln) );
+            
+        }
+        if( cls == long.class){
+            
+            instruction = new GETSTATIC( cp.addFieldref( Long.class.getName(), t, cln) );
+            
+        }
+        
+        if( cls == float.class ){
+            
+            instruction = new GETSTATIC( cp.addFieldref( Float.class.getName(), t, cln) );
+            
+        }
+        
+        if( cls == double.class ){
+            
+            instruction = new GETSTATIC( cp.addFieldref( Double.class.getName(), t, cln ));
+            
+        }
+        
+        
+        if( instruction != null ){
+            
+            il.append(instruction);
+            
+        }else{
+            
+            il.append( new LDC( cp.addString( cls.getName()) ) );
+            il.append( new INVOKESTATIC( cp.addMethodref( cg.getClassName(),
+            "findClass","(Ljava/lang/String;)Ljava/lang/Class;")
+            )
+            ) ;
+        }
+        
     }
     
-    private static void generateFindClass( ClassGen cg, ConstantPoolGen cp ){
+    private static void generateClInit(ClassGen cg, ConstantPoolGen cp,  java.util.HashMap  methods){
+        
+        InstructionList  il = new InstructionList();
+        MethodGen cinit = new MethodGen(
+        ACC_STATIC , // access flags
+        Type.VOID, // return type
+        new Type[] { }, null, // arg names
+        "<clinit>", cg.getClassName(), il, cp );
+        
+        il.append( new  LDC( cp.addString(cg.getClassName()) ));
+        il.append( new  INVOKESTATIC(
+        cp.addMethodref(   generateFindClass(cg, cp )  ) )
+        );
+        il.append( new  ASTORE(1) );
+        
+        for( java.util.Iterator i = methods.keySet().iterator(); i.hasNext(); ){
+            String fieldName      = (String)i.next();
+            java.lang.reflect.Method method =
+            (java.lang.reflect.Method)methods.get(fieldName);
+            Class[] args = method.getParameterTypes();
+            
+            il.append( new ICONST( args.length )  );
+            il.append( new ANEWARRAY( cp.addClass( CLASS_OBJECT ) ) );
+            
+            for( int j = 0; j < args.length; j++   ){
+                
+                il.append( new DUP() );
+                il.append( new ICONST(j) );
+                loadClass( il, cg,  cp, args[j] );
+                il.append(  new AASTORE() );
+                
+            }
+            
+            il.append( new ASTORE(0) );
+            il.append( new ALOAD(1) );
+            il.append( new LDC( cp.addString(method.getName() ) ) );
+            il.append( new ALOAD(0) );
+            il.append( new INVOKEVIRTUAL(
+            cp.addMethodref("java.lang.Class","getDeclaredMethod",
+            "(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;")
+            )
+            );
+            
+            il.append( new PUTSTATIC(
+            cp.addFieldref( cg.getClassName(), fieldName,
+            "Ljava/lang/reflect/Method;" ) )
+            );
+        }
+        
+        il.append( new  RETURN() );
+        cg.addMethod( getMethod( cinit ) );
+        
+    }
+    
+    
+    private static MethodGen generateFindClass( ClassGen cg, ConstantPoolGen cp ){
         
         InstructionList  il = new InstructionList();
         MethodGen findClass = new MethodGen( ACC_PRIVATE | ACC_STATIC , // access flags
@@ -1045,7 +1148,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         
         cg.addMethod( getMethod( findClass ) );
-        
+        return findClass;
     }
     
     public static class InternalReplace implements java.io.Serializable{

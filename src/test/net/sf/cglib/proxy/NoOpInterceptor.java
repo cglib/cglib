@@ -63,7 +63,7 @@ import junit.framework.TestSuite;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: NoOpInterceptor.java,v 1.4 2002/09/25 19:12:50 baliuka Exp $
+ *@version    $Id: NoOpInterceptor.java,v 1.5 2002/09/26 18:57:13 baliuka Exp $
  */
  public class NoOpInterceptor implements MethodInterceptor , java.io.Serializable{
  
@@ -92,7 +92,7 @@ import junit.framework.TestSuite;
      * @return value to return from generated method
      */
     public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
-        
+       
         if(e != null )
             throw e.fillInStackTrace();
         
