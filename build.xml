@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.17 2003/06/01 00:00:38 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.18 2003/06/08 20:38:50 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="rc-1.0"/>
+    <property name="component.version" value="1.0"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -90,7 +90,7 @@
     <mkdir dir="docs/api"/>
     <javadoc author="true" 
              bottom="Copyright (c) 2001 - Apache Software Foundation" 
-             destdir="docs/api" 
+             destdir="docs" 
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
              packagenames="net.sf.cglib.*" 
              access="public"
@@ -106,23 +106,26 @@
     <mkdir dir="${build.home}/src"/>
     
 
-    <copy file="LICENSE" todir="${dist.home}"/>
+    <copy file="LICENSE" todir="${build.home}/classes"/>
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
-      <exclude name="**/BeanGenerator*" />
+      <exclude name="samples/**" />
     </jar> 
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-bcel-${component.version}.jar" >
       <zipfileset src="lib/bcel.jar"/>
       <include name="**/*"/>
-      <exclude name="**/BeanGenerator*" />
+      <exclude name="samples/**" />  
     </jar> 
+
+      <copy file="lib/asm-copyright.txt" todir="${build.home}/classes"/>  
+      <copy file="lib/asm-license.txt" todir="${build.home}/classes"/>   
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-asm-${component.version}.jar" >
       <zipfileset src="lib/asm.jar"/>
       <include name="**/*"/>
-      <exclude name="**/BeanGenerator*" />
+      <exclude name="samples/**" />  
     </jar> 
   </target>
 

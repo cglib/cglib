@@ -1,1 +1,10 @@
+
+CGLIB is distributed in binary and source form
+
+cglib-asm-1.0.jar   binary distribution with ASM classes
+cglib-bcel-1.0.jar  binary distribution  with BCEL classes
+cglib-docs-1.0.jar  html   format  API documentation
+cglib-1.0.jar       binary distribution, cglib classes only
+cglib-src-1.0.jar   source distribution with all runtime dependancies
+
 use Apache Ant to build cglib http://jakarta.apache.org/ant
