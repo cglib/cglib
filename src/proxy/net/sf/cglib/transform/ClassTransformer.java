@@ -45,7 +45,7 @@ abstract public class ClassTransformer implements ClassVisitor, Cloneable {
     }
 
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        return new CodeAdapter(cv.visitMethod(access, name, desc, exceptions));
+        return cv.visitMethod(access, name, desc, exceptions);
     }
 
     public void visitEnd() {
