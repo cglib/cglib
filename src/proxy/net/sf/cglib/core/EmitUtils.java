@@ -593,12 +593,12 @@ public class EmitUtils {
         final ArrayDelimiters d = (delims != null) ? delims : DEFAULT_DELIMITERS;
         ProcessArrayCallback callback =new ProcessArrayCallback() {
             public void processElement(Type type) {
-                append_string_helper(e, type, delims, customizer, this);
-                e.push(delims.inside);
+                append_string_helper(e, type, d, customizer, this);
+                e.push(d.inside);
                 e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
             }
         };
-        append_string_helper(e, type, delims, customizer, callback);
+        append_string_helper(e, type, d, customizer, callback);
     }
 
     private static void append_string_helper(CodeEmitter e,
