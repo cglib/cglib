@@ -60,18 +60,25 @@ import java.io.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.3 2003/02/02 02:27:10 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.4 2003/02/02 03:51:28 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
     public void testSorts() throws Throwable {
         Object[] data1 = getTestData();
-        Object[] idx1 = getIndexes(data1.length);
         Object[] data2 = copy(data1);
+        Object[] data3 = copy(data1);
+        Object[] idx1 = getIndexes(data1.length);
         Object[] idx2 = copy(idx1);
-        ParallelSorter.create(new Object[]{ data1, idx1 }).quickSort(0);
-        ParallelSorter.create(new Object[]{ data2, idx2 }).mergeSort(0);
+        Object[] idx3 = copy(idx1);
+        ParallelSorter p1 = ParallelSorter.create(new Object[]{ data1, idx1 });
+        ParallelSorter p2 = ParallelSorter.create(new Object[]{ data2, idx2 });
+        p1.quickSort(0);
+        p2.mergeSort(0);
         compare(data1, data2);
         compare(idx1, idx2);
+        p1.quickSort(1);
+        compare(idx1, idx3);
+        compare(data1, data3);
     }
 
     private void compare(Object[] data1, Object[] data2) {
@@ -94,8 +101,10 @@ public class TestParallelSorter extends CodeGenTestCase {
         BufferedReader r = new BufferedReader(new InputStreamReader(in));
         List list = new ArrayList();
         String line;
+        int c = 0;
         while ((line = r.readLine()) != null) {
             list.add(line);
+            if (c++ == 20) break;
         }
         return list.toArray();
     }
