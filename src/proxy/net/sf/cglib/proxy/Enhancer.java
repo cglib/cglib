@@ -87,7 +87,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.7 2002/09/23 17:24:52 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.8 2002/09/23 17:39:40 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -328,7 +328,8 @@ public class Enhancer implements org.apache.bcel.Constants {
     Class parentClass,
     Class[] interfaces) {
         ClassGen gen =
-        new ClassGen(class_name, parentClass.getName(), SOURCE_FILE, ACC_PUBLIC, null);
+        new ClassGen(class_name, parentClass.getName(), SOURCE_FILE,
+                       ACC_PUBLIC | ACC_FINAL , null );
         if (interfaces != null) {
             for (int i = 0; i < interfaces.length; i++) {
                 gen.addInterface(interfaces[i].getName());
@@ -827,24 +828,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         il,
         cp);
     }
-    
-    private static MethodGen toMethodGen(
-    java.lang.reflect.Constructor mtd,
-    String className,
-    InstructionList il,
-    ConstantPoolGen cp) {
-        
-        return new MethodGen(
-        ACC_PUBLIC,
-        Type.VOID,
-        toType(mtd.getParameterTypes()),
-        null,
-        CONSTRUCTOR_NAME,
-        className,
-        il,
-        cp);
-    }
-    
+   
     private static Method generateMethod(
     java.lang.reflect.Method method,
     String fieldName,
@@ -992,7 +976,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         }
     }
     
-    public static boolean equals(
+    private static boolean equals(
     java.lang.reflect.Method m1,
     java.lang.reflect.Method m2) {
         
