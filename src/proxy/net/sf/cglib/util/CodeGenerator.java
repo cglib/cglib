@@ -75,11 +75,13 @@ import org.apache.bcel.generic.*;
  */
 public abstract class CodeGenerator implements ClassFileConstants {
 	
-	protected ClassGen cg;
-	protected InstructionList il = new InstructionList();
-	protected ConstantPoolGen cp;
+	protected final ClassGen cg;
+	protected final InstructionList il = new InstructionList();
+	protected final ConstantPoolGen cp;
 	protected MethodGen mg;
-    protected ClassLoader loader;
+    protected final ClassLoader loader;
+    protected final String className;
+    protected final String parentClassName;
 	
 	private Class returnType;
 	private Map  branches;  
@@ -89,15 +91,13 @@ public abstract class CodeGenerator implements ClassFileConstants {
     private Map fields;
     private int pos;
 	
-	protected CodeGenerator( String className, String parentClassName, ClassLoader loader ){
-	  
-	  this.loader = loader;
+
+	protected CodeGenerator( String className, String parentClassName, ClassLoader loader  ){
+	  this.className = className;   
+	  this.parentClassName = parentClassName;
+      this.loader = loader;
 	  cg = new ClassGen(className,parentClassName,SOURCE_FILE,ACC_PUBLIC,null); 
 	  cp = cg.getConstantPool();
-	}
-
-	protected CodeGenerator(){
-	
 	}
 	/**
 	 * 
@@ -152,10 +152,31 @@ public abstract class CodeGenerator implements ClassFileConstants {
         fields.put(name, new Integer(fieldref));
     }
         
+
     protected void begin_method(java.lang.reflect.Method method){
       returnType = method.getReturnType();	
       mg = ClassFileUtils.toMethodGen(method,cg.getClassName(),il, cp );    	
     }
+
+    
+    protected void begin_method( int modifiers,Class returnType,
+                                   String name, Class args[], 
+                                   Class exeptions[]  ){
+      this.returnType = returnType;	
+      mg = new MethodGen(modifiers,
+            ClassFileUtils.toType( returnType ), // return type
+            ClassFileUtils.toType( args ), null, // arg names
+            name, cg.getClassName(), il, cp);
+      for(int i=0; i< exeptions.length; i++ ){      
+         mg.addException(exeptions[i].getName());      
+      }
+      
+    
+    
+    }
+    
+    
+
 
     protected void begin_constructor(java.lang.reflect.Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
@@ -166,7 +187,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
         returnType = Void.TYPE;	
         mg = new MethodGen(ACC_PUBLIC, Type.VOID, types, null,
                            CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
+
     }
+
+    
 
     protected	void end_method(){
 
@@ -313,15 +337,15 @@ public abstract class CodeGenerator implements ClassFileConstants {
       append(new ASTORE(index) );
     
     }
- protected boolean wrapp(Class type){   
+ protected void box(Class type){   
   Instruction wrapper = 
    ClassFileUtils.newWrapper( ClassFileUtils.toType(type), cp );   
    
    if( wrapper != null ){
      append( wrapper );
-     return true;
+     dup();
    }else{
-     return false;
+    throw new IllegalArgumentException(type.getName() + " is not primityve" );
    }
   
  } 
@@ -338,7 +362,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
     
   } 
  
-   protected  void load_this(){
+  protected  void load_this(){
    
     append( new ALOAD(0) );	
   	
@@ -432,6 +456,23 @@ public abstract class CodeGenerator implements ClassFileConstants {
         return ref.intValue();
     }
   
+
+   protected   void getfield(Class type, String name){
+       append( new GETFIELD( cp.addFieldref( cg.getClassName(),
+            name, Utility.getSignature(type.getName())  ) ) );
+          
+   
+   }
+   protected  void putfield(Class type,String name){
+      append( new PUTFIELD( 
+                   cp.addFieldref(cg.getClassName(),
+                   name, 
+                  Utility.getSignature(type.getName()) ) )  
+           );
+          
+   
+   } 
+
     protected void getfield(String name) {
         append(new GETFIELD(getFieldref(name)));
     }
@@ -439,6 +480,14 @@ public abstract class CodeGenerator implements ClassFileConstants {
     protected void putfield(String name) {
         append(new PUTFIELD(getFieldref(name)));
     } 
+
+  
+  protected void declare_field(Class type,String name){
+        FieldGen fg =
+        new FieldGen(ACC_PRIVATE, ClassFileUtils.toType(type) , name, cp);
+        cg.addField(fg.getField());
+   
+   }
   
   //super class
   
@@ -446,14 +495,28 @@ public abstract class CodeGenerator implements ClassFileConstants {
     //TODO:
    
    }
-   protected    void super_putfield(String name){
+   protected    void super_putfield(Class type,String name){
     //TODO:
    
    } 
   
   
    // --------------- Invoke method ----------------
+   
   
+  
+
+   protected void invoke_static( Method method ){
+   
+     append( new INVOKESTATIC( cp.addMethodref(
+           method.getDeclaringClass().getName(),method.getName(),
+           Type.getMethodSignature(Type.VOID, new Type[]{} ) 
+         )
+        )
+       );
+   }               
+   
+
    protected void invoke(Method method) {
        Class clazz = method.getDeclaringClass();
        if (method.getDeclaringClass().isInterface()) {
@@ -461,6 +524,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
        } else {
            invoke_virtual(method);
        }
+
    }
   
    protected   void super_invoke(Method method){
@@ -468,7 +532,21 @@ public abstract class CodeGenerator implements ClassFileConstants {
    
    }
    
+
+   protected void super_invoke_constructor(){
+   
+   append( new INVOKESPECIAL( cp.addMethodref(
+           cg.getSuperclassName(),CONSTRUCTOR_NAME,
+           Type.getMethodSignature(Type.VOID, new Type[]{} ) 
+            )
+        )
+       );
+   
+   
+   }
+   
    protected void invoke_null_constructor(Class type){
+
    
    append( new INVOKESPECIAL( cp.addMethodref(
            type.getName(),CONSTRUCTOR_NAME,
@@ -478,6 +556,18 @@ public abstract class CodeGenerator implements ClassFileConstants {
        );
    
    }
+   
+   protected void invoke_costructor(Class [] argTypes){
+   
+   append( new INVOKESPECIAL( cp.addMethodref(
+           className,CONSTRUCTOR_NAME,
+           Type.getMethodSignature(Type.VOID,ClassFileUtils.toType(argTypes))  ) 
+            )
+        
+       );
+   
+   }
+   
 
     private void invoke_interface(Method method) {
         int ref =
@@ -524,6 +614,11 @@ public abstract class CodeGenerator implements ClassFileConstants {
    protected void new_instance( Class type ){ 
   	append( new NEW( cp.addClass(type.getName() ) ) ); 
    }
+   
+   protected void new_instance( String typeName ){ 
+  	append( new NEW( cp.addClass( typeName ) ) ); 
+   }
+ 
  
    protected void  init( Class type ){
     append(ClassFileUtils.initWrapper( ClassFileUtils.toType( type ), cp )); 
@@ -540,7 +635,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
    protected   void checkcast(Class type){ 
   	append( new CHECKCAST(cp.addClass( type.getName() )) ); 
    }
-   protected   void cast(Class type){ 
+   protected   void unbox(Class type){ 
        Type returnType = ClassFileUtils.toType(type);
        ClassFileUtils.castObject(cp, il, returnType);
   

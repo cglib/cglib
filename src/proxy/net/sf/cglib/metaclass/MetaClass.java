@@ -269,17 +269,16 @@ public abstract class MetaClass  {
             load_alocal(3);
             push(i);
             
-            boolean wrapped = false;
-            if( wrapp(getters[i].getReturnType()) ){
-              dup();
-              wrapped = true;
+           
+            if( getters[i].getReturnType().isPrimitive() ){
+                 box(getters[i].getReturnType());
             }
             
             load_alocal(2);
             invoke(getters[i]);
             
-            if( wrapped ){
-             init(getters[i].getReturnType());
+            if( getters[i].getReturnType().isPrimitive() ){
+              init(getters[i].getReturnType());
             }
             aastore();
             }//write only
@@ -309,8 +308,10 @@ public abstract class MetaClass  {
                 load_alocal(3);
                 load_arg(2);
                 aload(i); // arg2[i]
-                cast(setters[i].getParameterTypes()[0]); 
+
+                unbox(setters[i].getParameterTypes()[0]); 
                 invoke( setters[i] );
+
                 
                }//read only
            }  
