@@ -113,8 +113,9 @@ abstract public class BeanMap implements Map {
             return ((BeanMap)instance).newInstance(bean);
         }
     }
-    
+
     abstract protected BeanMap newInstance(Object bean);
+    abstract public Class getPropertyType(String name);
 
     protected Object bean;
 

@@ -73,6 +73,8 @@ class BeanMapEmitter extends ClassEmitter {
       TypeUtils.parseSignature("java.util.Set keySet()");
     private static final Signature NEW_INSTANCE =
       TypeUtils.parseSignature("net.sf.cglib.beans.BeanMap newInstance(Object)");
+    private static final Signature GET_PROPERTY_TYPE =
+      TypeUtils.parseSignature("Class getPropertyType(String)");
     private static final Type BEAN_MAP =
       TypeUtils.parseType("net.sf.cglib.beans.BeanMap");
     private static final Type FIXED_KEY_SET =
@@ -90,7 +92,13 @@ class BeanMapEmitter extends ClassEmitter {
         Map setters = makePropertyMap(ReflectUtils.getBeanSetters(type));
         generateGet(type, switchStyle, getters);
         generatePut(type, switchStyle, setters);
-        generateKeySet(getters, setters);
+
+        Map allProps = new HashMap();
+        allProps.putAll(getters);
+        allProps.putAll(setters);
+        String[] allNames = getNames(allProps);
+        generateKeySet(allNames);
+        generateGetPropertyType(switchStyle, allProps, allNames);
         end_class();
     }
 
@@ -115,7 +123,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
         
-    private void generateGet(final Class type, final int switchStyle, final Map getters) {
+    private void generateGet(Class type, int switchStyle, final Map getters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
@@ -137,7 +145,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void generatePut(final Class type, final int switchStyle, final Map setters) {
+    private void generatePut(Class type, int switchStyle, final Map setters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
@@ -169,18 +177,14 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
             
-    private void generateKeySet(Map getters, Map setters) {
+    private void generateKeySet(String[] allNames) {
         // static initializer
         declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null);
-
-        Set allNames = new HashSet();
-        allNames.addAll(getters.keySet());
-        allNames.addAll(setters.keySet());
 
         CodeEmitter e = begin_static();
         e.new_instance(FIXED_KEY_SET);
         e.dup();
-        ComplexOps.push_array(e, allNames.toArray(new String[allNames.size()]));
+        ComplexOps.push_array(e, allNames);
         e.invoke_constructor(FIXED_KEY_SET, CSTRUCT_STRING_ARRAY);
         e.putfield("keys");
         e.return_value();
@@ -191,6 +195,23 @@ class BeanMapEmitter extends ClassEmitter {
         e.load_this();
         e.getfield("keys");
         e.return_value();
+        e.end_method();
+    }
+
+    private void generateGetPropertyType(int switchStyle, final Map allProps, String[] allNames) {
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_TYPE, null);
+        e.load_arg(0);
+        ComplexOps.string_switch(e, allNames, switchStyle, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                PropertyDescriptor pd = (PropertyDescriptor)allProps.get(key);
+                ComplexOps.load_class(e, Type.getType(pd.getPropertyType()));
+                e.return_value();
+            }
+            public void processDefault() {
+                e.aconst_null();
+                e.return_value();
+            }
+        });
         e.end_method();
     }
 }
