@@ -75,19 +75,19 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
         return cg.getJavaClass().getBytes();
     }
 
-    public void ifeq(String label) { append(new IFEQ(null), label); }
-    public void ifne(String label) { append(new IFNE(null), label); }
-    public void iflt(String label) { append(new IFLT(null), label); }
-    public void ifge(String label) { append(new IFGE(null), label); }
-    public void ifgt(String label) { append(new IFGT(null), label); }
-    public void ifle(String label) { append(new IFLE(null), label); }
-    public void goTo(String label) { append(new GOTO(null), label); }
-    public void ifnull(String label) { append(new IFNULL(null), label); }
-    public void ifnonnull(String label) { append(new IFNONNULL(null), label); }
-    public void if_icmplt(String label) { append(new IF_ICMPLT(null), label); }
-    public void if_icmpne(String label) { append(new IF_ICMPNE(null), label); }
-    public void if_icmpeq(String label) { append(new IF_ICMPEQ(null), label); }
-    public void nop(String label) { append(label, new NOP()); }
+    public void ifeq(Object label) { append(new IFEQ(null), label); }
+    public void ifne(Object label) { append(new IFNE(null), label); }
+    public void iflt(Object label) { append(new IFLT(null), label); }
+    public void ifge(Object label) { append(new IFGE(null), label); }
+    public void ifgt(Object label) { append(new IFGT(null), label); }
+    public void ifle(Object label) { append(new IFLE(null), label); }
+    public void goTo(Object label) { append(new GOTO(null), label); }
+    public void ifnull(Object label) { append(new IFNULL(null), label); }
+    public void ifnonnull(Object label) { append(new IFNONNULL(null), label); }
+    public void if_icmplt(Object label) { append(new IF_ICMPLT(null), label); }
+    public void if_icmpne(Object label) { append(new IF_ICMPNE(null), label); }
+    public void if_icmpeq(Object label) { append(new IF_ICMPEQ(null), label); }
+    public void nop(Object label) { append(label, new NOP()); }
     public void imul() { append(new IMUL()); }
     public void iadd() { append(new IADD()); }
     public void lushr() { append(new LUSHR()); }
@@ -269,7 +269,7 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
         il.append(intruction);
     }
 
-    private void append(String label, Instruction instruction) {
+    private void append(Object label, Instruction instruction) {
         if (label != null) {
             if (null != labels.put(label, il.append(instruction))) {
                 throw new IllegalStateException("duplicated label " + label);
@@ -279,7 +279,7 @@ public class BCELBackend extends CodeGeneratorBackend implements org.apache.bcel
         }
     }
 
-    private void append(BranchInstruction instruction, String label) {
+    private void append(BranchInstruction instruction, Object label) {
         List list = (List)branches.get(label);
         if (list == null) {
             branches.put(label, list = new LinkedList());

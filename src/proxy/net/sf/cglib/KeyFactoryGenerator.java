@@ -57,7 +57,7 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.12 2003/01/25 00:44:01 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.13 2003/01/31 01:15:13 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
@@ -158,8 +158,8 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void hash_array(Class clazz) {
-        String isNull = anon_label();
-        String end = anon_label();
+        Object isNull = make_label();
+        Object end = make_label();
         dup();
         ifnull(isNull);
         process_array(clazz, hashCallback);
@@ -171,8 +171,8 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     private void hash_object() {
         // (f == null) ? 0 : f.hashCode();
-        String isNull = anon_label();
-        String end = anon_label();
+        Object isNull = make_label();
+        Object end = make_label();
         dup();
         ifnull(isNull);
         invoke(MethodConstants.HASH_CODE);

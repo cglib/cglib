@@ -57,9 +57,9 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.5 2003/01/25 00:44:01 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.6 2003/01/31 01:15:12 herbyderby Exp $
  */
-abstract /* package */ class ReflectUtils {
+abstract class ReflectUtils {
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = MethodConstants.class.getClassLoader();
