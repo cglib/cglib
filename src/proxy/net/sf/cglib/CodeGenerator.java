@@ -1350,7 +1350,7 @@ public abstract class CodeGenerator implements Constants {
                 nop(checkContents);
                 process_arrays(clazz, callback);
             } else {
-                invoke(equalsMethod);
+                invoke(EQUALS_METHOD);
                 ifeq(notEquals);
             }
             nop(end);
