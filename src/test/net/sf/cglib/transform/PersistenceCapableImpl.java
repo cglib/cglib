@@ -15,9 +15,11 @@ public class PersistenceCapableImpl implements PersistenceCapable {
     
     public PersistenceCapableImpl(Object _this) {
         this.pc = _this;
+        
     }
     
    public void setPersistenceManager( Object manager){
+        
       persistenceManager = manager;
     }
     

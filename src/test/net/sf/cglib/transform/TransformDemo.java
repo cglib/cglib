@@ -41,17 +41,20 @@ public class TransformDemo {
     public static void main( String args [] )throws Exception{
     
         
-        TransformClassVisitor transformation = new TransformClassVisitor( new Filter() );
+        TransformClassVisitor t1 = new TransformClassVisitor( new Filter() );
         
         
+        AddClintTransformer t2 = new   AddClintTransformer(
+             TransformDemo.class.getMethod("register",new Class[]{Class.class}) 
+        );                                   
         
-        transformation.setDelegate( 
-                                    new Class[]{PersistenceCapable.class},
-                                    PersistenceCapableImpl.class
-                           );
         
-        transformation.setClassInit(TransformDemo.class.getMethod("register",new Class[]{Class.class}) );
+         AddDelegateTransformer t3 = new AddDelegateTransformer(
+                          new Class[]{PersistenceCapable.class},
+                          PersistenceCapableImpl.class
+                    );    
         
+        TransformerChain transformation = new TransformerChain( new ClassTransformer[]{t1,t2,t3} );
         
         TransformingLoader loader = new TransformingLoader(
           TransformDemo.class.getClassLoader(),
@@ -72,8 +75,6 @@ public class TransformDemo {
         
         
         loader.loadClass(TransformDemo.class.getName()).getMethod("start",new Class[]{}).invoke(null,null);
-        
-        
     
     }
     
