@@ -91,6 +91,7 @@ public class ClassEmitter extends ClassAdapter {
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
         this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;
         fieldInfo = new HashMap();
+        
         cv.visit(access,
                  this.classType.getInternalName(),
                  this.superType.getInternalName(),
@@ -133,12 +134,14 @@ public class ClassEmitter extends ClassAdapter {
         }
         fieldInfo.put(name, new FieldInfo(TypeUtils.isStatic(access), type));
         cv.visitField(access, name, type.getDescriptor(), value);
+        
     }
 
     FieldInfo getFieldInfo(String name) {
         FieldInfo field = (FieldInfo)fieldInfo.get(name);
         if (field == null) {
-            throw new IllegalArgumentException("Field " + name + " is not declared");
+            
+            throw new IllegalArgumentException("Field " + name + " is not declared in " + classType.getClassName());
         }
         return field;
     }

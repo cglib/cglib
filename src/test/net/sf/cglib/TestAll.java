@@ -63,14 +63,14 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.44 2003/10/05 03:57:20 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.45 2003/10/05 16:05:30 baliuka Exp $
  */
 public class TestAll extends TestCase {
     public TestAll(String testName) {
         super(testName);
     }
 
-    public static Test suite() {
+    public static Test suite() throws Exception{
        
         // System.setSecurityManager( new java.rmi.RMISecurityManager());
         
@@ -108,6 +108,10 @@ public class TestAll extends TestCase {
 
         // transform
         suite.addTest(TestTransformingLoader.suite());
+        
+        suite.addTest(TestAddClassInit.suite());
+        
+        suite.addTest(TestProvideFields.suite());
 
         // performance
         // suite.addTest(TestReflectPerf.suite());
