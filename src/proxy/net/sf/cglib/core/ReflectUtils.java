@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.11 2003/09/22 02:03:32 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.12 2003/09/29 16:24:48 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -67,7 +67,18 @@ public class ReflectUtils {
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
-    
+    private static final RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
+      new RuntimePermission("defineCGLIBClassInJavaPackage");
+    private static final Method DEFINE_CLASS;
+
+    static {
+        try {
+            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ byte[].class, int.class, int.class });
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
     private static final String[] CGLIB_PACKAGES = {
         "java.lang",
     };
@@ -348,5 +359,17 @@ public class ReflectUtils {
             throw new IllegalArgumentException("expecting exactly 1 method in " + iface);
         }
         return methods[0];
+    }
+
+    public static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
+        SecurityManager sm = System.getSecurityManager();
+        if (className != null && className.startsWith("java.") && sm != null) {
+            sm.checkPermission(DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION);
+        }
+        // deprecated method in jdk to define classes, used because it
+        // does not throw SecurityException if class name starts with "java."
+        Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
+        DEFINE_CLASS.setAccessible(true);
+        return (Class)DEFINE_CLASS.invoke(loader, args);
     }
 }
