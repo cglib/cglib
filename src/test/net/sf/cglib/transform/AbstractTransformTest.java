@@ -1,7 +1,7 @@
 /*
  *
  *
- * $Id: AbstractTransformTest.java,v 1.3 2003/10/06 17:02:38 baliuka Exp $
+ * $Id: AbstractTransformTest.java,v 1.4 2003/10/08 23:29:48 herbyderby Exp $
  */
 
 package net.sf.cglib.transform;
@@ -25,7 +25,7 @@ abstract public class AbstractTransformTest  extends TestCase{
        super(s);
     }
     
-    protected abstract TransformingLoader.ClassTransformerFactory getTransformer()throws Exception;
+    protected abstract ClassTransformerFactory getTransformer()throws Exception;
     
      public Class transform()throws Exception{
        

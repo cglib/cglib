@@ -33,9 +33,9 @@ public class TestProvideFields extends AbstractTransformTest{
         
     }
     
-    protected TransformingLoader.ClassTransformerFactory getTransformer() throws Exception {
+    protected ClassTransformerFactory getTransformer() throws Exception {
        
-        return new TransformingLoader.ClassTransformerFactory (){
+        return new ClassTransformerFactory (){
         
            public ClassTransformer newInstance(){
        

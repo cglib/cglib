@@ -28,9 +28,9 @@ public class TestInterceptFields extends AbstractTransformTest implements  Inter
         
     }
     
-    protected TransformingLoader.ClassTransformerFactory getTransformer() throws Exception {
+    protected ClassTransformerFactory getTransformer() throws Exception {
         
-        return new TransformingLoader.ClassTransformerFactory(){
+        return new ClassTransformerFactory(){
             
             public ClassTransformer newInstance(){
                 

@@ -62,7 +62,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.9 2003/10/05 16:05:30 baliuka Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.10 2003/10/08 23:29:48 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -135,7 +135,7 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         ClassLoader parent = TestTransformingLoader.class.getClassLoader();
         TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER,
         
-           new TransformingLoader.ClassTransformerFactory(){
+           new ClassTransformerFactory(){
                   public ClassTransformer  newInstance(){
                      return t;
                   }

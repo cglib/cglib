@@ -7,8 +7,13 @@ import org.objectweb.asm.Type;
 public class ExampleTask extends AbstractTransformTask {
     private List properties = new ArrayList();
     private String fieldSuffix = "";
+    private ClassTransformer transformer;
 
     protected ClassTransformer getClassTransformer() {
+        return transformer;
+    }
+    
+    public void init() {
         ClassTransformer t1 = new AccessFieldTransformer(new AccessFieldTransformer.Callback() {
             public String getPropertyName(Type owner, String fieldName) {
                 return fieldName + fieldSuffix;
@@ -23,7 +28,7 @@ public class ExampleTask extends AbstractTransformTask {
             types[i] = TypeUtils.parseType(p.type);
         }
         ClassTransformer t2 = new AddPropertyTransformer(names, types);
-        return new TransformerChain(new ClassTransformer[]{ t1, t2 });
+        transformer = new TransformerChain(new ClassTransformer[]{ t1, t2 });
     }
 
     public boolean accept(String name) {
