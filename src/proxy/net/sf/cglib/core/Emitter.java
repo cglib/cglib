@@ -131,10 +131,6 @@ public class Emitter {
         return returnType;
     }
     
-//     public Type[] getArgumentTypes() {
-//         return (Type[])argumentTypes.clone();
-//     }
-
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
         this.superType = (superType != null) ? superType : Constants.TYPE_OBJECT;

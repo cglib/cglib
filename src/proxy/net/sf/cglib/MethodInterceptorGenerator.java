@@ -64,8 +64,12 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
+    private static final Signature GET_DECLARING_CLASS =
+      Signature.parse("Class getDeclaringClass()");
     private static final Type ABSTRACT_METHOD_ERROR =
       Signature.parseType("AbstractMethodError");
+    private static final Type METHOD =
+      Signature.parseType("java.lang.reflect.Method");
     private static final Method MAKE_PROXY =
       ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
     private static final Method AROUND_ADVICE =
@@ -155,7 +159,7 @@ implements CallbackGenerator
 
             String accessName = getAccessName(context, method);
             String desc = ReflectUtils.getMethodDescriptor(method);
-            ReflectOps.invoke(e, MethodConstants.GET_DECLARING_CLASS);
+            e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
             e.push(method.getName() + desc);
             Ops.load_class_this(e);
             e.push(accessName + desc);
