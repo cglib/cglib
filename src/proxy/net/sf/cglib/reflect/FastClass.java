@@ -85,6 +85,7 @@ abstract public class FastClass
         }
         
         public FastClass create() {
+            setNamePrefix(type.getName());
             return (FastClass)super.create(type);
         }
 
@@ -93,7 +94,6 @@ abstract public class FastClass
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            setNamePrefix(type.getName());
             new FastClassEmitter(v, getClassName(), type);
         }
 

@@ -60,7 +60,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.7 2003/09/21 01:49:49 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.8 2003/09/29 22:56:27 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
@@ -91,15 +91,30 @@ class KeyFactoryEmitter extends Emitter {
         264202273,  362693231,  497900099, 683510293,
         938313161, 1288102441, 1768288259  };
 
-    public KeyFactoryEmitter(ClassVisitor v, String className, Class keyInterface) throws Exception {
+    private String className;
+    private Class keyInterface;
+    private Type[] parameterTypes;
+    private Customizer customizer;
+    private Method newInstance;
+
+    public KeyFactoryEmitter(ClassVisitor v,
+                             String className,
+                             Class keyInterface,
+                             Customizer customizer) throws Exception {
         super(v);
-        Method newInstance = ReflectUtils.findNewInstance(keyInterface);
+        this.className = className;
+        this.keyInterface = keyInterface;
+        this.customizer = customizer;
+
+        newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
-        
-        Class[] parameterTypes = newInstance.getParameterTypes();
-        
+
+        parameterTypes = TypeUtils.getTypes(newInstance.getParameterTypes());
+    }
+    
+    public void emit() {
         begin_class(Constants.ACC_PUBLIC,
                     className,
                     KEY_FACTORY,
@@ -107,30 +122,34 @@ class KeyFactoryEmitter extends Emitter {
                     Constants.SOURCE_FILE);
         null_constructor();
         factory_method(ReflectUtils.getSignature(newInstance));
-        generateConstructor(parameterTypes);
-        generateEquals(parameterTypes);
+        generateConstructor();
+        generateEquals();
         end_class();
     }
 
     // TODO: this doesn't exactly follow Effective Java recommendations
     // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
-    private void generateConstructor(Class[] parameterTypes) throws NoSuchFieldException {
-        Type[] types = TypeUtils.getTypes(parameterTypes);
-        begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(types), null);
+    private void generateConstructor() {
+        begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(parameterTypes), null);
         load_this();
         super_invoke_constructor();
         load_this();
-        for (int i = 0; i < types.length; i++) {
-            declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL, getFieldName(i), types[i], null);
+        int seed = 0;
+        for (int i = 0; i < parameterTypes.length; i++) {
+            seed += parameterTypes[i].hashCode();
+            declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
+                          getFieldName(i),
+                          parameterTypes[i],
+                          null);
             dup();
             load_arg(i);
             putfield(getFieldName(i));
         }
-        loadAndStoreConstant("hashMultiplier");
-        loadAndStoreConstant("hashConstant");
-        for (int i = 0; i < types.length; i++) {
+        loadAndStoreConstant("hashMultiplier", seed);
+        loadAndStoreConstant("hashConstant", seed * 13);
+        for (int i = 0; i < parameterTypes.length; i++) {
             load_arg(i);
-            hash_code(types[i]);
+            hash_code(parameterTypes[i]);
         }
         swap();
         pop();
@@ -138,8 +157,8 @@ class KeyFactoryEmitter extends Emitter {
         return_value();
     }
 
-    private void loadAndStoreConstant(String fieldName) throws NoSuchFieldException {
-        push(pickHashConstant());
+    private void loadAndStoreConstant(String fieldName, int seed) {
+        push(PRIMES[(int)(seed % PRIMES.length)]);
         load_this();
         swap();
         dup_x1();
@@ -153,7 +172,7 @@ class KeyFactoryEmitter extends Emitter {
             if (TypeUtils.isPrimitive(type)) {
                 hash_primitive(type);
             } else {
-                hash_object();
+                hash_object(type);
             }
             math(ADD, Type.INT_TYPE);
             swap();
@@ -178,12 +197,15 @@ class KeyFactoryEmitter extends Emitter {
         mark(end);
     }
 
-    private void hash_object() {
+    private void hash_object(Type type) {
         // (f == null) ? 0 : f.hashCode();
         Label isNull = make_label();
         Label end = make_label();
         dup();
         ifnull(isNull);
+        if (customizer != null) {
+            customizer.customize(this, type);
+        }
         invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
         goTo(end);
         mark(isNull);
@@ -221,16 +243,11 @@ class KeyFactoryEmitter extends Emitter {
         cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
     }
 
-    // generates pseudo random prime number
-    private int pickHashConstant() {
-      return  PRIMES[ (int)(PRIMES.length*Math.random()) ];
-    }
-
     private String getFieldName(int arg) {
         return "FIELD_" + arg;
     }
 
-    private void generateEquals(Class[] parameterTypes) {
+    private void generateEquals() {
         Label fail = make_label();
         begin_method(Constants.ACC_PUBLIC, EQUALS, null);
         load_arg(0);
@@ -242,12 +259,86 @@ class KeyFactoryEmitter extends Emitter {
             load_arg(0);
             checkcast_this();
             getfield(getFieldName(i));
-            ComplexOps.not_equals(this, Type.getType(parameterTypes[i]), fail);
+            not_equals(parameterTypes[i], fail);
         }
         push(1);
         return_value();
         mark(fail);
         push(0);
         return_value();
+    }
+
+    /**
+     * Branches to the specified label if the top two items on the stack
+     * are not equal. The items must both be of the specified
+     * class. Equality is determined by comparing primitive values
+     * directly and by invoking the <code>equals</code> method for
+     * Objects. Arrays are recursively processed in the same manner.
+     */
+    private void not_equals(Type type, final Label notEquals) {
+        (new ProcessArrayCallback() {
+            public void processElement(Type type) {
+                not_equals_helper(type, notEquals, this);
+            }
+        }).processElement(type);
+    }
+    
+    private void not_equals_helper(Type type, Label notEquals, ProcessArrayCallback callback) {
+        if (TypeUtils.isPrimitive(type)) {
+            if_cmp(type, NE, notEquals);
+        } else {
+            Label end = make_label();
+            nullcmp(notEquals, end);
+            if (TypeUtils.isArray(type)) {
+                Label checkContents = make_label();
+                dup2();
+                arraylength();
+                swap();
+                arraylength();
+                if_icmp(EQ, checkContents);
+                pop2();
+                goTo(notEquals);
+                mark(checkContents);
+                ComplexOps.process_arrays(this, type, callback);
+            } else {
+                if (customizer != null) {
+                    customizer.customize(this, type);
+                    swap();
+                    customizer.customize(this, type);
+                }
+                invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
+                if_jump(EQ, notEquals);
+            }
+            mark(end);
+        }
+    }
+
+    ///// TODO: get rid of this
+    /**
+     * If both objects on the top of the stack are non-null, does nothing.
+     * If one is null, or both are null, both are popped off and execution
+     * branches to the respective label.
+     * @param oneNull label to branch to if only one of the objects is null
+     * @param bothNull label to branch to if both of the objects are null
+     */
+    private void nullcmp(Label oneNull, Label bothNull) {
+        dup2();
+        Label nonNull = make_label();
+        Label oneNullHelper = make_label();
+        Label end = make_label();
+        ifnonnull(nonNull);
+        ifnonnull(oneNullHelper);
+        pop2();
+        goTo(bothNull);
+        
+        mark(nonNull);
+        ifnull(oneNullHelper);
+        goTo(end);
+        
+        mark(oneNullHelper);
+        pop2();
+        goTo(oneNull);
+        
+        mark(end);
     }
 }

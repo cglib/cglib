@@ -140,11 +140,11 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.12 2003/09/22 01:02:10 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.13 2003/09/29 22:56:27 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
-      (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class);
+      (MethodDelegateKey)KeyFactory.create(MethodDelegateKey.class, KeyFactory.CLASS_BY_NAME);
 
     protected Object target;
     protected String eqMethod;
@@ -222,6 +222,7 @@ abstract public class MethodDelegate {
         }
 
         public MethodDelegate create() {
+            setNamePrefix(targetClass.getName());
             Object key = KEY_FACTORY.newInstance(targetClass, methodName, iface);
             return (MethodDelegate)super.create(key);
         }
@@ -235,8 +236,6 @@ abstract public class MethodDelegate {
         }
 
         public void generateClass(ClassVisitor v) throws NoSuchFieldException {
-            setNamePrefix(targetClass.getName());
-            
             Method proxy, method;
             try {
                 proxy = ReflectUtils.findInterfaceMethod(iface);

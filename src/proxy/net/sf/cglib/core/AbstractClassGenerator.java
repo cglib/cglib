@@ -64,13 +64,13 @@ abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
-        public String getClassName(String prefix, String source, int counter) {
+        public String getClassName(String prefix, String source, Object key) {
             StringBuffer sb = new StringBuffer();
             sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
             sb.append("$$");
             sb.append(source.substring(source.lastIndexOf('.') + 1));
             sb.append("ByCGLIB$$");
-            sb.append(counter);
+            sb.append(Integer.toHexString(key.hashCode()));
             return sb.toString();
         }
     };
@@ -79,18 +79,15 @@ implements ClassGenerator
     private Source source;
     private ClassLoader classLoader;
     private String namePrefix;
-    private int counter;
+    private Object key;
 
     protected static class Source {
         String name;
-        Map cache;
-        int counter = 1;
+        Map cache = new WeakHashMap();
 
+        // TODO: get rid of useCache
         public Source(String name, boolean useCache) {
             this.name = name;
-            if (useCache) {
-                cache = new WeakHashMap();
-            }
         }
     }
 
@@ -104,7 +101,7 @@ implements ClassGenerator
 
     protected String getClassName() {
         NamingPolicy np = (namingPolicy != null) ? namingPolicy : DEFAULT_NAMING_POLICY;
-        return np.getClassName(namePrefix, source.name, counter);
+        return np.getClassName(namePrefix, source.name, key);
     }
 
     public void setClassLoader(ClassLoader classLoader) {
@@ -136,27 +133,35 @@ implements ClassGenerator
         try {
             Object instance = null;
             synchronized (source) {
-                counter = source.counter++;
                 ClassLoader loader = getClassLoader();
-                Map cache2 = null;
-                if (source.cache != null) {
-                    cache2 = (Map)source.cache.get(loader);
-                    if (cache2 != null) {
-                        instance = cache2.get(key);
-                    } else {
-                        source.cache.put(loader, cache2 = new HashMap());
-                    }
+                Map cache2 = (Map)source.cache.get(loader);
+                if (cache2 != null) {
+                    instance = cache2.get(key);
+                } else {
+                    source.cache.put(loader, cache2 = new HashMap());
                 }
                 if (instance == null) {
-                    DebuggingClassWriter w = new DebuggingClassWriter(true);
-                    generateClass(w);
-                    byte[] b = w.toByteArray();
-                    Class gen = ReflectUtils.defineClass(getClassName(), b, loader);
-                    instance = firstInstance(gen);
-
-                    if (cache2 != null) {
-                        cache2.put(key, instance);
+                    this.key = key;
+                    String className = getClassName();
+                    Class gen = null;
+                    try {
+                        gen = loader.loadClass(className);
+                        if (gen.getClassLoader() != loader) {
+                            gen = null;
+                        }
+                    } catch (ClassNotFoundException e) {
                     }
+                    if (gen == null) {
+                        DebuggingClassWriter w = new DebuggingClassWriter(true);
+                        generateClass(w);
+                        byte[] b = w.toByteArray();
+                        if (!className.equals(w.getClassName())) {
+                            throw new IllegalStateException("Class name " + className +
+                                                            " does not match generated name: " + w.getClassName());
+                        }
+                        gen = ReflectUtils.defineClass(className, b, loader);
+                    }
+                    cache2.put(key, instance = firstInstance(gen));
                     return instance;
                 }
             }

@@ -62,7 +62,7 @@ public class Enhancer extends AbstractClassGenerator
 {
     private static final Source SOURCE = new Source(Enhancer.class.getName(), true);
     private static final EnhancerKey KEY_FACTORY =
-      (EnhancerKey)KeyFactory.create(EnhancerKey.class);
+      (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.CLASS_BY_NAME);
 
     interface EnhancerKey {
         public Object newInstance(Class type, Class[] interfaces, CallbackFilter filter, boolean classOnly);
@@ -118,6 +118,11 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private Object createHelper() {
+        if (superclass != null) {
+            setNamePrefix(superclass.getName());
+        } else if (interfaces != null) {
+            setNamePrefix(interfaces[0].getName());
+        }
         Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, classOnly);
         return super.create(key);
     }
@@ -133,11 +138,6 @@ public class Enhancer extends AbstractClassGenerator
     }
     
     public void generateClass(ClassVisitor v) throws Exception {
-        if (superclass != null) {
-            setNamePrefix(superclass.getName());
-        } else if (interfaces != null) {
-            setNamePrefix(interfaces[0].getName());
-        }
         new EnhancerEmitter(v, getClassName(), superclass, interfaces, filter);
     }
 

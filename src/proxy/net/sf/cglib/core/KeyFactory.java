@@ -56,6 +56,8 @@ package net.sf.cglib.core;
 
 import java.lang.reflect.Constructor;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Type;
 
 /**
  * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
@@ -94,19 +96,35 @@ import org.objectweb.asm.ClassVisitor;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.5 2003/09/22 01:02:11 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.6 2003/09/29 22:56:27 herbyderby Exp $
  */
 abstract public class KeyFactory {
     protected int hashConstant;
     protected int hashMultiplier;
     protected int hash;
 
+    private static final Signature GET_NAME =
+      TypeUtils.parseSignature("String getName()");
+
+    public static final Customizer CLASS_BY_NAME = new Customizer() {
+        public void customize(Emitter e, Type type) {
+            if (type.equals(Constants.TYPE_CLASS)) {
+                e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
+            }
+        }
+    };
+
     protected KeyFactory() {
     }
 
     public static KeyFactory create(Class keyInterface) {
+        return create(keyInterface, null);
+    }
+
+    public static KeyFactory create(Class keyInterface, Customizer customizer) {
         Generator gen = new Generator();
         gen.setInterface(keyInterface);
+        gen.setCustomizer(customizer);
         return gen.create();
     }
 
@@ -114,18 +132,11 @@ abstract public class KeyFactory {
         return hash;
     }
 
-    public int getHashConstant() {
-        return hashConstant;
-    }
-
-    public int getHashMultiplier() {
-        return hashMultiplier;
-    }
-
     public static class Generator extends AbstractClassGenerator
     {
         private static final Source SOURCE = new Source(KeyFactory.class.getName(), true);
         private Class keyInterface;
+        private Customizer customizer;
 
         public Generator() {
             super(SOURCE);
@@ -135,17 +146,21 @@ abstract public class KeyFactory {
             return keyInterface.getClassLoader();
         }
 
+        public void setCustomizer(Customizer customizer) {
+            this.customizer = customizer;
+        }
+
         public void setInterface(Class keyInterface) {
             this.keyInterface = keyInterface;
         }
 
         public KeyFactory create() {
+            setNamePrefix(keyInterface.getName());
             return (KeyFactory)super.create(keyInterface);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            setNamePrefix(keyInterface.getName());
-            new KeyFactoryEmitter(v, getClassName(), keyInterface);
+            new KeyFactoryEmitter(v, getClassName(), keyInterface, customizer).emit();
         }
 
         protected Object firstInstance(Class type) {

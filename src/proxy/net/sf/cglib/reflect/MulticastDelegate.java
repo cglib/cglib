@@ -126,11 +126,11 @@ abstract public class MulticastDelegate implements Cloneable {
         }
 
         public MulticastDelegate create() {
+            setNamePrefix(MulticastDelegate.class.getName());
             return (MulticastDelegate)super.create(iface);
         }
 
         public void generateClass(ClassVisitor v) throws NoSuchFieldException {
-            setNamePrefix(MulticastDelegate.class.getName());
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
             final Emitter e = new Emitter(v);
