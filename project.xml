@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+
+<project>
+
+ <!--extend>template:sourceforge</extend -->
+
+  <pomVersion>3</pomVersion>
+  <name>cglib</name>
+  <id>cglib</id>
+  <currentVersion>1.0.0-dev</currentVersion>
+  <inceptionYear>2002</inceptionYear>
+  <package>net.sf.cglib</package>
+
+  <shortDescription>Code Generation Library</shortDescription> 
+
+  <organization>
+    <name>cglib</name> 
+    <url>http://sourceforge.net/projects/cglib/</url> 
+    <logo>http://sourceforge.net/sflogo.php?group_id=56933</logo> 
+  </organization>
+
+
+  <issueTrackingUrl>http://sourceforge.net/tracker/?group_id=56933</issueTrackingUrl>
+  <siteAddress>cglib.sf.net</siteAddress>
+  <siteDirectory>/home/groups/c/cg/cglib/htdocs/</siteDirectory>
+  <distributionDirectory>/home/groups/c/cg/cglib/htdocs/</distributionDirectory>
+
+
+
+ <mailingLists>
+    <mailingList>
+      <name>cglib developer list</name>
+      <subscribe>http://lists.sourceforge.net/lists/listinfo/cglib-devel</subscribe>
+      <unsubscribe>http://lists.sourceforge.net/lists/listinfo/cglib-devel</unsubscribe>
+      <archive>http://sourceforge.net/mail/?group_id=56933</archive>
+    </mailingList>
+
+  </mailingLists>
+
+
+  
+    <dependencies>
+      <dependency>
+      <id>bcel</id>
+      <version>5.0</version>
+    </dependency>
+
+    <dependency>
+      <id>junit</id>
+      <version>3.7</version>
+    </dependency>
+    
+  </dependencies>
+  
+  <build>
+
+
+
+    
+    <sourceDirectory>src/proxy</sourceDirectory>
+ 
+    <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
+    
+    <!-- maven b5 onwards -->
+    <unitTest>
+      <includes>
+        <include>**/Test*.java</include>
+      </includes>
+    </unitTest>
+    
+    <integrationUnitTestSourceDirectory/>
+    <integrationUnitTestPatterns/>
+    
+    <!-- J A R  R E S O U R C E S -->
+    <!-- Resources that are packaged up inside the JAR file -->
+ <!--
+    <resources>
+      <includes>
+        <include>**/*.properties</include>
+      </includes>
+    </resources>
+
+    <jarResources>
+      <jarResource>**/*.properties</jarResource>
+    </jarResources>
+    <jars></jars>
+ --> 
+
+
+
+</build>
+
+
+
+<!--
+  <developers>
+
+    <developer>
+      <name></name>
+      <id></id>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role>Administrator</role>
+        <role>Release Manager</role>
+        <role>Developer</role>
+       /roles>
+    </developer>
+
+  </developers>
+-->
+
+<!--
+  <contributors>
+    <contributor>
+      <name></name>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role></role>
+      </roles>
+    </contributor>
+  
+  </contributors>
+-->
+
+
+ 
+
+</project>
