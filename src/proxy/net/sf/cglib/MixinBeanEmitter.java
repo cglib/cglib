@@ -54,72 +54,23 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.util.*;
-import net.sf.cglib.core.*;
+import net.sf.cglib.core.ReflectUtils;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.11 2003/09/22 02:03:32 herbyderby Exp $
+ * @version $Id: MixinBeanEmitter.java,v 1.1 2003/09/22 02:03:33 herbyderby Exp $
  */
-class MixinEmitter extends Emitter {
-    private static final String FIELD_NAME = "CGLIB$DELEGATES";
-    private static final Signature CSTRUCT_OBJECT_ARRAY =
-      TypeUtils.parseConstructor("Object[]");
-    private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.Mixin newInstance(Object[])");
-    private static final Type MIXIN =
-      TypeUtils.parseType("net.sf.cglib.Mixin");
-
-    public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
-        super(v);
-
-        begin_class(Constants.ACC_PUBLIC,
-                    className,
-                    MIXIN,
-                    TypeUtils.getTypes(getInterfaces(classes)),
-                    Constants.SOURCE_FILE);
-        null_constructor();
-        factory_method(NEW_INSTANCE);
-
-        declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Constants.TYPE_OBJECT_ARRAY, null);
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        putfield(FIELD_NAME);
-        return_value();
-
-        Set unique = new HashSet();
-        for (int i = 0; i < classes.length; i++) {
-            Method[] methods = getMethods(classes[i]);
-            for (int j = 0; j < methods.length; j++) {
-                if (unique.add(MethodWrapper.create(methods[j]))) {
-                    Method method = methods[j];
-                    begin_method(Constants.ACC_PUBLIC,
-                                 ReflectUtils.getSignature(method),
-                                 ReflectUtils.getExceptionTypes(method));
-                    load_this();
-                    getfield(FIELD_NAME);
-                    aaload((route != null) ? route[i] : i);
-                    checkcast(Type.getType(method.getDeclaringClass()));
-                    load_args();
-                    ReflectOps.invoke(this, method);
-                    return_value();
-                }
-            }
-        }
-
-        end_class();
+class MixinBeanEmitter extends MixinEmitter {
+    public MixinBeanEmitter(ClassVisitor v, String className, Class[] classes) {
+        super(v, className, classes, null);
     }
 
     protected Class[] getInterfaces(Class[] classes) {
-        return classes;
+        return null;
     }
 
     protected Method[] getMethods(Class type) {
-        return type.getMethods();
+        return ReflectUtils.getPropertyMethods(ReflectUtils.getBeanProperties(type), true, true);
     }
 }

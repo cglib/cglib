@@ -60,7 +60,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestMixin.java,v 1.4 2003/09/15 18:41:30 herbyderby Exp $
+ * @version $Id: TestMixin.java,v 1.5 2003/09/22 02:03:21 herbyderby Exp $
  */
 public class TestMixin extends CodeGenTestCase {
     public void testSimple() throws Exception {
@@ -95,7 +95,6 @@ public class TestMixin extends CodeGenTestCase {
         assertTrue(((DI3)obj).extra().equals("D3"));
     }
 
-    /*
     public void testBeans() throws Exception {
         Object obj = Mixin.createBean(new Object[]{ new DBean1(), new DBean2() });
         Set getters = getGetters(obj.getClass());
@@ -103,7 +102,6 @@ public class TestMixin extends CodeGenTestCase {
         assertTrue(getters.contains("name"));
         assertTrue(getters.contains("age"));
     }
-    */
 
     private static Set getGetters(Class beanClass) throws Exception {
         Set getters = new HashSet();

@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.9 2003/09/22 01:02:12 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.10 2003/09/22 02:03:33 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -73,7 +73,7 @@ abstract public class Mixin {
     private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
 
     interface MixinKey {
-        public Object newInstance(Class[] interfaces, int[] route);
+        public Object newInstance(Class[] classes, int[] route);
     }
 
     abstract public Mixin newInstance(Object[] delegates);
@@ -86,29 +86,25 @@ abstract public class Mixin {
 
     public static Mixin create(Class[] interfaces, Object[] delegates) {
         Generator gen = new Generator();
-        gen.setInterfaces(interfaces);
+        gen.setClasses(interfaces);
         gen.setDelegates(delegates);
         return gen.create();
     }
 
-//     public static Mixin createBean(final Object[] beans, ClassLoader loader) {
-//         Object key = new ClassesKey(beans);
-//         return (Mixin)CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-//             public BasicCodeGenerator newGenerator() {
-//                 return new MixinBeanGenerator(ReflectUtils.getClasses(beans));
-//             }
-//             public Object newInstance(Object factory, boolean isNew) {
-//                 return ((Mixin)factory).newInstance(beans);
-//             }
-//         });
-//     }
+    public static Mixin createBean(Object[] beans) {
+        Generator gen = new Generator();
+        gen.setAsBeans(true);
+        gen.setDelegates(beans);
+        return gen.create();
+    }
     
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(Mixin.class.getName(), true);
 
-        private Class[] interfaces;
+        private Class[] classes;
         private Object[] delegates;
         private int[] route;
+        private boolean asBeans;
 
         public Generator() {
             super(SOURCE);
@@ -118,8 +114,12 @@ abstract public class Mixin {
             return delegates[0].getClass().getClassLoader(); // is this right?
         }
 
-        public void setInterfaces(Class[] interfaces) {
-            this.interfaces = interfaces;
+        public void setAsBeans(boolean asBeans) {
+            this.asBeans = asBeans;
+        }
+
+        public void setClasses(Class[] classes) {
+            this.classes = classes;
         }
 
         public void setDelegates(Object[] delegates) {
@@ -131,18 +131,26 @@ abstract public class Mixin {
         }
 
         public Mixin create() {
-            if (interfaces == null) {
-                Route r = route(delegates);
-                interfaces = r.interfaces;
-                route = r.route;
+            if (classes == null) {
+                if (asBeans) {
+                    classes = ReflectUtils.getClasses(delegates);
+                    route = null;
+                } else {
+                    Route r = route(delegates);
+                    classes = r.classes;
+                    route = r.route;
+                }
             }
-            Object key = KEY_FACTORY.newInstance(interfaces, route);
-            return (Mixin)super.create(key);
+            return (Mixin)super.create(KEY_FACTORY.newInstance(classes, route));
         }
 
         public void generateClass(ClassVisitor v) {
-            setNamePrefix(interfaces[findPackageProtected(interfaces)].getName());
-            new MixinEmitter(v, getClassName(), interfaces, route);
+            setNamePrefix(classes[findPackageProtected(classes)].getName());
+            if (asBeans) {
+                new MixinBeanEmitter(v, getClassName(), classes);
+            } else {
+                new MixinEmitter(v, getClassName(), classes, route);
+            }
         }
 
         protected Object firstInstance(Class type) {
@@ -154,17 +162,17 @@ abstract public class Mixin {
         }
     }
 
-    private static int findPackageProtected(Class[] interfaces) {
-        for (int i = 0; i < interfaces.length; i++) {
-            if (!Modifier.isPublic(interfaces[i].getModifiers())) {
+    private static int findPackageProtected(Class[] classes) {
+        for (int i = 0; i < classes.length; i++) {
+            if (!Modifier.isPublic(classes[i].getModifiers())) {
                 return i;
             }
         }
         return 0;
     }
 
-    public static Class[] getInterfaces(Object[] delegates) {
-        return (Class[])route(delegates).interfaces.clone();
+    public static Class[] getClasses(Object[] delegates) {
+        return (Class[])route(delegates).classes.clone();
     }
 
     public static int[] getRoute(Object[] delegates) {
@@ -182,7 +190,7 @@ abstract public class Mixin {
 
     private static class Route
     {
-        private Class[] interfaces;
+        private Class[] classes;
         private int[] route;
 
         Route(Object[] delegates) {
@@ -199,12 +207,12 @@ abstract public class Mixin {
                     }
                 }
             }
-            interfaces = new Class[map.size()];
+            classes = new Class[map.size()];
             route = new int[map.size()];
             int index = 0;
             for (Iterator it = map.keySet().iterator(); it.hasNext();) {
                 Class key = (Class)it.next();
-                interfaces[index] = key;
+                classes[index] = key;
                 route[index] = ((Integer)map.get(key)).intValue();
                 index++;
             }
