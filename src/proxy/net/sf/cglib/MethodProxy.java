@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.18 2003/05/14 19:25:01 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.19 2003/05/14 19:26:59 herbyderby Exp $
  */
 abstract public class MethodProxy {
     
@@ -130,7 +130,7 @@ abstract public class MethodProxy {
         }
     }
 
-   static class Generator extends CodeGenerator {
+    static class Generator extends CodeGenerator {
         private Method method;
         private Method superMethod;
         
@@ -140,28 +140,28 @@ abstract public class MethodProxy {
             this.superMethod = superMethod;
         }
 
-     public void generate() {
-         generateNullConstructor();  
-         generate(MethodProxy.INVOKE,method);
-         generate(MethodProxy.INVOKE_SUPER,superMethod);
-       }
-       private void generate(Method proxyMethod, Method method) {
-            
+        public void generate() {
+            generateNullConstructor();  
+            generate(MethodProxy.INVOKE,method);
+            generate(MethodProxy.INVOKE_SUPER,superMethod);
+        }
+
+        private void generate(Method proxyMethod, Method method) {
             begin_method(proxyMethod);
-            if( Modifier.isProtected( method.getModifiers() ) ){
-              throw_exception(IllegalAccessException.class, "not public method: " + method );
-            }else{
-            load_arg(0);
-            checkcast(method.getDeclaringClass());
-            Class[] types = method.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
-                load_arg(1);
-                push(i);
-                aaload();
-                unbox(types[i]);
-            }
-            this.invoke(method);
-            box(method.getReturnType());
+            if (Modifier.isProtected(method.getModifiers())) {
+                throw_exception(IllegalAccessException.class, "protected method: " + method);
+            } else {
+                load_arg(0);
+                checkcast(method.getDeclaringClass());
+                Class[] types = method.getParameterTypes();
+                for (int i = 0; i < types.length; i++) {
+                    load_arg(1);
+                    push(i);
+                    aaload();
+                    unbox(types[i]);
+                }
+                this.invoke(method);
+                box(method.getReturnType());
             }
             return_value();
             end_method();
