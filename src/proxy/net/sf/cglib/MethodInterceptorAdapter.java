@@ -53,33 +53,19 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
+import java.lang.reflect.Method;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+public class MethodInterceptorAdapter implements MethodInterceptor {
+
+    public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable {
+        return true;
     }
-
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public Object afterReturn(Object obj, Method method, Object[] args,
+                              boolean invokedSuper, Object retValFromSuper,
+                              Throwable e) throws Throwable {
+        if (e != null)
+            throw e;
+        return retValFromSuper;
     }
 }
-

@@ -55,31 +55,49 @@ package net.sf.cglib;
 
 import junit.framework.*;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestDelegator extends TestCase {    
+    public void testSimple() throws Exception {
+        Object obj = Delegator.makeDelegator(new Class[]{ DI1.class, DI2.class },
+                                             new Object[]{ new D1(), new D2() },
+                                             null);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D2"));
+    }
+
+    public void testDetermineInterfaces() throws Exception {
+        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D2() }, null);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D2"));
+    }
+ 
+    public void testOverride() throws Exception {
+        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D4() }, null);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D4"));
+    }
+
+    public void testNonOverride() throws Exception {
+        Object obj = Delegator.makeDelegator(new Object[]{ new D4(), new D1() }, null);
+        assertTrue(((DI1)obj).herby().equals("D4"));
+        assertTrue(((DI2)obj).derby().equals("D4"));
+    }
+
+    public void testSubclass() throws Exception {
+        Object obj = Delegator.makeDelegator(new Object[]{ new D3(), new D1() }, null);
+        assertTrue(((DI1)obj).herby().equals("D1"));
+        assertTrue(((DI2)obj).derby().equals("D2"));
+        assertTrue(((DI3)obj).extra().equals("D3"));
+    }
+
+    public TestDelegator(java.lang.String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
+    
+    public static void main(java.lang.String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestDelegator.class);
     }
 }
-
