@@ -79,6 +79,8 @@ implements ClassGenerator
     private String namePrefix;
     private Object key;
     private boolean useCache = true;
+    private String className;
+    protected boolean attemptLoad;
 
     protected static class Source {
         String name;
@@ -97,7 +99,9 @@ implements ClassGenerator
     }
 
     final protected String getClassName() {
-        return getClassName(getClassLoader());
+        if (className == null)
+            className = getClassName(getClassLoader());
+        return className;
     }
 
     private String getClassName(ClassLoader loader) {
@@ -145,6 +149,15 @@ implements ClassGenerator
     }
 
     /**
+     * If set, CGLIB will attempt to load classes from the specified
+     * <code>ClassLoader</code> before generating them. Because generated
+     * class names are not guaranteed to be unique, the default is <code>false</code>.
+     */
+    public void setAttemptLoad(boolean attemptLoad) {
+        this.attemptLoad = attemptLoad;
+    }
+
+    /**
      * Set the strategy to use to create the bytecode from this generator.
      * By default an instance of {@see DefaultGeneratorStrategy} is used.
      */
@@ -189,10 +202,21 @@ implements ClassGenerator
                 }
                 if (instance == null) {
                     this.key = key;
-                    byte[] b = strategy.generate(this);
-                    String className = ClassNameReader.getClassName(new ClassReader(b));
-                    getClassNameCache(loader).add(className);
-                    instance = firstInstance(ReflectUtils.defineClass(className, b, loader));
+                    Class gen = null;
+                    if (attemptLoad) {
+                        try {
+                            gen = loader.loadClass(getClassName());
+                        } catch (ClassNotFoundException e) {
+                            // ignore
+                        }
+                    }
+                    if (gen == null) {
+                        byte[] b = strategy.generate(this);
+                        String className = ClassNameReader.getClassName(new ClassReader(b));
+                        getClassNameCache(loader).add(className);
+                        gen = ReflectUtils.defineClass(className, b, loader);
+                    }
+                    instance = firstInstance(gen);
                     if (useCache) {
                         cache2.put(key, new SoftReference(instance));
                     }

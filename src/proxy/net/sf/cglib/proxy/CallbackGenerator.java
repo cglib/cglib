@@ -63,6 +63,7 @@ interface CallbackGenerator
 
     interface Context
     {
+        boolean getAttemptLoad();
         Iterator getMethods();
         int getOriginalModifiers(MethodInfo method);
         int getIndex(MethodInfo method);
