@@ -367,6 +367,19 @@ public class Enhancer extends AbstractClassGenerator
         }
     }
 
+    /**
+     * Call this method to register the {@link Callback} array to use before
+     * creating a new instance of the generated class via reflection. If you are using
+     * an instance of <code>Enhancer</code> or the {@link Factory} interface to create
+     * new instances, this method is unnecessary. Its primary use is for when you want to
+     * cache and reuse a generated class yourself, and the generated class does
+     * <i>not</i> implement the {@link Factory} interface.
+     * @see #setUseFactory
+     */
+    public static void registerCallbacks(Class generatedClass, Callback[] callbacks) {
+        EnhancerEmitter.setThreadCallbacks(generatedClass, callbacks);
+    }
+
     private Object createUsingReflection(Class type) {
         EnhancerEmitter.setThreadCallbacks(type, callbacks);
         if (argumentTypes != null) {
