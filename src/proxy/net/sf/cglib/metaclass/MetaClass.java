@@ -263,12 +263,9 @@ public abstract class MetaClass  {
         push(getters.length);
         newarray();
 
-        // store_local("values");
-
         for( int i = 0; i < getters.length; i++  ){
             if( getters[i] != null ){    
                 dup();
-                // load_local("values");
                 push(i);
                 load_local("bean");
                 invoke(getters[i]);
@@ -276,7 +273,6 @@ public abstract class MetaClass  {
                 aastore();
             }//write only
         }
-        // load_local("values");
         return_value();
 
         end_method();   
