@@ -98,7 +98,6 @@ implements CallbackGenerator
                 // ignore protected methods
             } else {
                 cg.begin_method(method, context.getModifiers(method));
-                Block handler = cg.begin_block();
                 cg.load_this();
                 cg.dup();
                 cg.invoke_virtual_this(LOAD_PRIVATE, Object.class, null);
@@ -106,8 +105,6 @@ implements CallbackGenerator
                 cg.load_args();
                 cg.invoke(method);
                 cg.return_value();
-                cg.end_block();
-                Virt.handle_undeclared(cg, method.getExceptionTypes(), handler);
                 cg.end_method();
             }
         }

@@ -13,10 +13,7 @@ public class Virt
     public static final int SWITCH_STYLE_HASH = 1;
     
     private static final Map primitiveMethods = new HashMap();
-
     private static final Class[] TYPES_STRING = { String.class };
-    private static final Class[] TYPES_THROWABLE = { Throwable.class };
-
     private static final String FIND_CLASS = "CGLIB$findClass";
 
     static {
@@ -583,43 +580,6 @@ public class Virt
         cg.mark(def);
         callback.processDefault();
         cg.mark(end);
-    }
-
-    public static void handle_undeclared(Emitter cg, Class[] exceptionTypes, Block handler) {
-        /* generates:
-           } catch (RuntimeException e) {
-               throw e;
-           } catch (Error e) {
-               throw e;
-           } catch (<DeclaredException> e) {
-               throw e;
-           } catch (Throwable e) {
-               throw new UndeclaredThrowableException(e);
-           }
-        */
-        Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
-        if (!(exceptionSet.contains(Exception.class) ||
-              exceptionSet.contains(Throwable.class))) {
-            if (!exceptionSet.contains(RuntimeException.class)) {
-                cg.catch_exception(handler, RuntimeException.class);
-                cg.athrow();
-            }
-            if (!exceptionSet.contains(Error.class)) {
-                cg.catch_exception(handler, Error.class);
-                cg.athrow();
-            }
-            for (int i = 0; i < exceptionTypes.length; i++) {
-                cg.catch_exception(handler, exceptionTypes[i]);
-                cg.athrow();
-            }
-            // e -> eo -> oeo -> ooe -> o
-            cg.catch_exception(handler, Throwable.class);
-            cg.new_instance(UndeclaredThrowableException.class);
-            cg.dup_x1();
-            cg.swap();
-            cg.invoke_constructor(UndeclaredThrowableException.class, TYPES_THROWABLE);
-            cg.athrow();
-        }
     }
 
     private interface ParameterTyper {
