@@ -54,33 +54,36 @@
 package net.sf.cglib;
 
 import junit.framework.*;
+import java.lang.reflect.*;
+import java.util.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.9 2002/12/06 17:47:57 herbyderby Exp $
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: TestJdkCompatibleProxy.java,v 1.1 2002/12/06 17:47:49 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestJdkCompatibleProxy extends CodeGenTestCase {
+    public void testBeanMap() throws Exception {
+        HashMap identity = new HashMap();
+        Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });
+        person.setName("Chris");
+        assertTrue("Chris".equals(person.getName()));
+        assertTrue("Chris".equals(identity.get("Name")));
+    }
+
+    interface Person {
+        public String getName();
+        public void setName(String name);
+    }
+
+    public TestJdkCompatibleProxy(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestJdkCompatibleProxy.suite());
-           
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestJdkCompatibleProxy.class);
     }
 }
-
