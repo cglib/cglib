@@ -244,8 +244,11 @@ class EnhancerGenerator extends CodeGenerator {
             Constructor constructor = (Constructor)i.next();
             begin_constructor(constructor);
             load_this();
+            dup();
             load_args();
             super_invoke(constructor);
+            push(1);
+            putfield(CONSTRUCTED_FIELD);
             return_value();
             end_method();
         }
@@ -274,11 +277,8 @@ class EnhancerGenerator extends CodeGenerator {
         dup();
         invoke_constructor_this();
         dup();
-        dup();
         load_arg(0);
         putfield(INTERCEPTOR_FIELD);
-        push(1);
-        putfield(CONSTRUCTED_FIELD);
         return_value();
         end_method();
     }
@@ -289,6 +289,9 @@ class EnhancerGenerator extends CodeGenerator {
         
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         begin_method(MULTIARG_NEW_INSTANCE);
+        load_arg(2);
+        invoke_static_this(SET_CURRENT_INTERCEPTOR, Void.TYPE, new Class[]{ MethodInterceptor.class });
+        
         getfield(CONSTRUCTOR_PROXY_MAP);
         load_arg(0);// Class[] types
         invoke(NEW_CLASS_KEY);//key
@@ -304,8 +307,10 @@ class EnhancerGenerator extends CodeGenerator {
         dup();
         load_arg(2);
         putfield(INTERCEPTOR_FIELD);
+
         mark(skipSetInterceptor);
         return_value();
+
         mark(fail);
         throw_exception(IllegalArgumentException.class, "Constructor not found ");
         end_method();
