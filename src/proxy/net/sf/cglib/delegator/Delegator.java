@@ -68,7 +68,7 @@ public class Delegator
 implements ClassFileConstants
 {
     private static final Class OBJECT_CLASS = Object.class;
-    private static final String CLASS_NAME = "net.sf.cglib.proxy.Delegator$$CreatedByCGLIB$$";
+    private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
     private static final String PARENT_CLASS = "java.lang.Object";
     private static final String PARENT_SIGNATURE = Type.getMethodSignature(Type.VOID, null);
     private static final Type[] EMPTY_TYPE_ARRAY = {};
@@ -89,7 +89,7 @@ implements ClassFileConstants
     // not much overhead associated with going through the cache, anyway.
     private interface Factory
     {
-        public Object newInstance(Object[] delegates);
+        public Object cglib_newInstance(Object[] delegates);
     }
 
     /**
@@ -163,41 +163,30 @@ implements ClassFileConstants
     synchronized private static Object makeDelegatorHelper(ArrayKey key, Class[] interfaces, Object[] delegates)
     throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
     {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader(); // TODO
         Object factory = (Factory)factories.get(key);
         if (factory == null) {
-            Class clazz = makeDelegatorClass(interfaces);
+            Class clazz = makeDelegatorClass(interfaces, loader);
             factory = clazz.getConstructor(ARG_CLASS_ARRAY).newInstance(new Object[]{ delegates });
             factories.put(key, factory);
             return factory;
         } else {
-            return ((Factory)factory).newInstance(delegates);
+            return ((Factory)factory).cglib_newInstance(delegates);
         }
     }
 
-    private static Class makeDelegatorClass(Class[] interfaces)
-    throws NoSuchMethodException    
+    private static Class makeDelegatorClass(Class[] interfaces, ClassLoader loader)
+    throws NoSuchMethodException
     {
-        ClassGen cg = getClassGen(interfaces);
-        int fieldref = addField(cg);
-        int cstructref = addConstructor(cg, fieldref);
-        ConstantPoolGen cp = cg.getConstantPool();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class iface = interfaces[i];
-            int ifaceref = cp.addClass(iface.getName());
-            if (!iface.isInterface())
-                throw new IllegalArgumentException(iface + " is not an interface");
-            Method[] methods = iface.getMethods();
-            for (int j = 0; j < methods.length; j++) {
-                addProxy(cg, methods[j], ifaceref, fieldref, i);
-            }
-        }
-        addFactory(cg, cstructref);
-        return ClassFileUtils.defineClass(Thread.currentThread().getContextClassLoader(),
+        ClassGen cg = makeClassGen(interfaces);
+        return ClassFileUtils.defineClass(loader,
                                           cg.getClassName(),
                                           cg.getJavaClass().getBytes());
     }
 
-    private static ClassGen getClassGen(Class[] interfaces)
+    // package protected for testing purposes
+    static ClassGen makeClassGen(Class[] interfaces)
+    throws NoSuchMethodException    
     {
         ClassGen cg = new ClassGen(CLASS_NAME + index++,
                                    PARENT_CLASS,
@@ -208,7 +197,36 @@ implements ClassFileConstants
             cg.addInterface(interfaces[i].getName());
         }
         cg.addInterface(Factory.class.getName());
+        int fieldref = addField(cg);
+        int cstructref = addConstructor(cg, fieldref);
+        ConstantPoolGen cp = cg.getConstantPool();
+        Set sigset = new HashSet();
+        for (int i = 0; i < interfaces.length; i++) {
+            Class iface = interfaces[i];
+            int ifaceref = cp.addClass(iface.getName());
+            if (!iface.isInterface())
+                throw new IllegalArgumentException(iface + " is not an interface");
+            Method[] methods = iface.getMethods();
+            for (int j = 0; j < methods.length; j++) {
+                Method method = methods[j];
+                Object sigkey = getSignatureKey(method);
+                if (!sigset.contains(sigkey)) {
+                    sigset.add(sigkey);
+                    addProxy(cg, method, ifaceref, fieldref, i);
+                }
+            }
+        }
+        addFactory(cg, cstructref);
         return cg;
+    }
+
+    private static Object getSignatureKey(Method method)
+    {
+        Class[] types = method.getParameterTypes();
+        Object[] key = new Object[types.length + 1];
+        key[0] = method.getName();
+        System.arraycopy(types, 0, key, 1, types.length);
+        return new ArrayKey(key);
     }
 
     private static int addField(ClassGen cg)
@@ -249,7 +267,7 @@ implements ClassFileConstants
         Type[] args = mg.getArgumentTypes();
         il.append(new ALOAD(0));
         il.append(new GETFIELD(fieldref));
-        pushEfficientInt(il, cp, arrayref);
+        il.append(ClassFileUtils.getIntConst(arrayref, cp));
         il.append(new AALOAD());
         il.append(new CHECKCAST(ifaceref));
         int pos = 1;
@@ -267,7 +285,7 @@ implements ClassFileConstants
     {
         InstructionList il = new InstructionList();
         ConstantPoolGen cp = cg.getConstantPool();
-        Method m = Factory.class.getMethod("newInstance", ARG_CLASS_ARRAY);
+        Method m = Factory.class.getMethod("cglib_newInstance", ARG_CLASS_ARRAY);
         MethodGen newInstance = ClassFileUtils.toMethodGen(m, cg.getClassName(), il, cp);
         il.append(new NEW(cp.addClass(cg.getClassName())));
         il.append(new DUP());
@@ -275,21 +293,6 @@ implements ClassFileConstants
         il.append(new INVOKESPECIAL(cstructref));
         il.append(new ARETURN());
         cg.addMethod(ClassFileUtils.getMethod(newInstance));
-    }
-
-    private static void pushEfficientInt(InstructionList il, ConstantPoolGen cp, int value)
-    {
-        if (value < -1) {
-            il.append(new LDC(cp.addInteger(value)));
-        } else if (value <= 5) {
-            il.append(new ICONST(value));
-        } else if (value <= Byte.MAX_VALUE) {
-            il.append(new BIPUSH((byte)value));
-        } else if (value <= Short.MAX_VALUE) {
-            il.append(new SIPUSH((short)value));
-        } else {
-            il.append(new LDC(cp.addInteger(value)));
-        }
     }
 
     private static class ArrayKey
