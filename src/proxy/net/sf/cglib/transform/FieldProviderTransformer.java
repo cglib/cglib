@@ -59,7 +59,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
 
             public void declare_field(int access, String name, Type type, Object value) {
                 super.declare_field(access, name, type, value);
-                if( (access & Constants.ACC_STATIC) == 0 ){
+                if( !TypeUtils.isStatic(access) ){
                     fields.put(name, type);
                 }
             }
