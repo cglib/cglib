@@ -1,7 +1,9 @@
+.classpath
+.project
 .log
 .class
 .bat
 .nbattrs
 .java~
 .bak
-
+maven.log*
