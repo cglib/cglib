@@ -98,18 +98,18 @@ public class FieldProviderTransformer extends EmittingTransformer {
                     super.declare_field(
                                          Constants.ACC_PRIVATE|Constants.ACC_STATIC,
                                          FIELD_NAMES, 
-                                         Type.getType( String[].class ), null 
+                                         Constants.TYPE_STRING_ARRAY, null 
                                );
                     super.declare_field(
                                          Constants.ACC_PRIVATE|Constants.ACC_STATIC,
                                          FIELD_TYPES, 
-                                         Type.getType( Class[].class ), null 
+                                         Constants.TYPE_CLASS_ARRAY, null 
                                );
               
                     
                     begin_method(Constants.ACC_STATIC,INIT_FIELD_PROVIDER,null);
                     push(names.length);
-                    newarray(Type.getType(String.class));
+                    newarray(Constants.TYPE_STRING);
                     dup();
                     
                     for(int i = 0; i < names.length; i++ ){ 
@@ -119,10 +119,10 @@ public class FieldProviderTransformer extends EmittingTransformer {
                        aastore();
                     }
                     
-                    putstatic(getClassType(),FIELD_NAMES, Type.getType( String[].class )); 
+                    putstatic(getClassType(),FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
                     
                     push(names.length);
-                    newarray(Type.getType(Class.class));
+                    newarray(Constants.TYPE_CLASS);
                     dup();
                     
                     for(int i = 0; i < names.length; i++ ){ 
@@ -133,15 +133,15 @@ public class FieldProviderTransformer extends EmittingTransformer {
                        aastore();
                     }
                     
-                    putstatic(getClassType(),FIELD_TYPES, Type.getType( Class[].class )); 
+                    putstatic(getClassType(),FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
                     return_value();
                     
                     begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
-                    getstatic(getClassType(), FIELD_NAMES, Type.getType(String[].class) );
+                    getstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
                     return_value();
                     
                     begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
-                    getstatic(getClassType(), FIELD_TYPES, Type.getType(Class[].class) );
+                    getstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
                     return_value();
                     
                     
