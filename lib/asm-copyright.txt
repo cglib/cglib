@@ -1,1 +1,0 @@
-Copyright (C) 2000 INRIA, France TelecomCopyright (C) 2002 France Telecom
