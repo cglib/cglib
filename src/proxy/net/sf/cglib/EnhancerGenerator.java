@@ -305,14 +305,6 @@ import java.util.*;
         end_method();
     }
 
-    private void throwWrongType(Method method) {
-        begin_method(method);
-        throw_exception(UnsupportedOperationException.class,
-                        "Using a delegating enhanced class as non-delegating, or the reverse");
-        return_value();
-        end_method();
-    }
-
     private void generateWriteReplace() {
         begin_method(Modifier.PRIVATE,
                      Object.class, 
