@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.13 2002/09/27 15:54:34 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.14 2002/09/28 16:32:35 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -208,6 +208,7 @@ public class TestEnhancer extends TestCase {
     }
     
     public void testObject()throws Throwable{
+        
         Object source =  Enhancer.enhance(
         null,
         null, NOOP_INTERCEPTOR );
@@ -218,6 +219,7 @@ public class TestEnhancer extends TestCase {
     }
     
     public void testSystemClassLoader()throws Throwable{
+        
         Object source =  Enhancer.enhance(
         null,
         null, NOOP_INTERCEPTOR , ClassLoader.getSystemClassLoader());

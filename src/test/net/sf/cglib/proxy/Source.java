@@ -53,6 +53,28 @@ public abstract class Source implements java.io.Serializable{
     public float floatType(float val){
       return val;
     }
+    
+    public boolean booleanType(boolean val){
+      return val;
+    }
+    
+    public short shortType(short val){
+      return val;
+    }
+    
+    public char charType(char val){
+      return val;
+    }
+    
+    public byte byteType(byte val){
+      return val;
+    }
+    
+    public int [] arrayType(int val[]){
+      return val;
+    }
+    
+    
     public Object objectType(Object val){
       return val;
     }

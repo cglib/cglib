@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.14 2002/09/27 15:50:06 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.15 2002/09/28 16:32:35 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -888,6 +888,12 @@ public class Enhancer implements org.apache.bcel.Constants {
         InstructionHandle start = il.getStart();
         
         //GENERATE ARG ARRAY
+        
+        //generates:
+        /*
+          Object args[]= new Object[]{ arg1, new Integer(arg2)  };
+         
+         */
         int loaded = createArgArray(il, factory, cp, mg.getArgumentTypes());
         int argArray = loaded;
         il.append(new ASTORE(argArray));
@@ -976,11 +982,37 @@ public class Enhancer implements org.apache.bcel.Constants {
         il.append(new INVOKEINTERFACE(after, 7));
         
         //GENERATE RETURN VALUE
+        
+        //generates :
+        /*
+          if( result == null ){
+         
+            return 0;
+         
+          } else {
+         
+            return ((Number)result).intValue();
+         
+         }
+         
+         */
+        
         InstructionHandle exitMethod =
         generateReturnValue(il, factory, cp, mg.getReturnType(), ++loaded);
         if (!abstractM) {
             mg.addExceptionHandler(ehStart, ehEnd, ehHandled, Type.THROWABLE);
         }
+        
+       //Exception handlers:
+        /*
+         
+           }catch( RuntimeException re  ){
+     
+            throw re;
+         }
+         
+         */
+        
         ehHandled = il.append( new  ASTORE( ++loaded ) );
         ehEnd     = ehHandled;
         ehStart   = il.getStart();
@@ -989,6 +1021,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(RuntimeException.class.getName()) );
         
+        //Error :
         ehHandled =  il.append( new  ASTORE( ++loaded ) );
         il.append( new  ALOAD(loaded) );
         il.append( new  ATHROW() );
@@ -998,6 +1031,17 @@ public class Enhancer implements org.apache.bcel.Constants {
         Class exeptions[] = method.getExceptionTypes();
         
         for( int i = 0; i < exeptions.length; i++  ){
+        
+           // generates : 
+           /*
+         
+           }catch( DeclaredException re  ){
+     
+            throw re;
+         }
+         
+         */
+         
             
             ehHandled =  il.append( new  ASTORE( ++loaded ) );
             il.append( new  ALOAD(loaded) );
@@ -1008,6 +1052,15 @@ public class Enhancer implements org.apache.bcel.Constants {
             
         }
         
+      //generates :
+        
+      /* }catch( Exception e){
+     
+         
+         throw new java.lang.reflect.UndeclaredThrowableException(e);
+     
+     }*/  
+        
         ehHandled = il.append(  new  ASTORE( ++loaded ) );
         il.append(  new  NEW( cp.addClass("java.lang.reflect.UndeclaredThrowableException") ) );
         il.append(  new  DUP() );
@@ -1017,7 +1070,7 @@ public class Enhancer implements org.apache.bcel.Constants {
         "<init>","(Ljava/lang/Throwable;)V") ) );
         il.append( new ATHROW() );
         
-        mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(Exception.class.getName()) );
+        mg.addExceptionHandler(ehStart, ehEnd, ehHandled, new ObjectType(Throwable.class.getName()) );
         
         
         
@@ -1098,6 +1151,18 @@ public class Enhancer implements org.apache.bcel.Constants {
     }
     
     private static void generateClInit(ClassGen cg, ConstantPoolGen cp,  java.util.HashMap  methods){
+     
+      //generates :
+      /*
+      static{   
+         
+      Class [] args;
+      Class cls = findClass("java.lang.Object");
+      args = new Class[0];
+      METHOD_1 = cls.getDeclaredMethod("toString", args );  
+         ................
+       }
+    */
         
         InstructionList  il = new InstructionList();
         MethodGen cinit = new MethodGen(
@@ -1157,6 +1222,24 @@ public class Enhancer implements org.apache.bcel.Constants {
     
     
     private static MethodGen generateFindClass( ClassGen cg, ConstantPoolGen cp ){
+   
+   // generates:    
+     /*
+   static private Class findClass(String name ) throws Exception{
+      try{
+      
+          return Class.forName(name);
+      
+     }catch( java.lang.ClassNotFoundException cne ){
+      
+          throw new java.lang.NoClassDefFoundError( cne.getMessage() );
+          
+     }
+       
+      
+   }
+    */
+        
         
         InstructionList  il = new InstructionList();
         MethodGen findClass = new MethodGen( ACC_PRIVATE | ACC_STATIC , // access flags
