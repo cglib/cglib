@@ -90,8 +90,10 @@ import java.util.*;
 
     private Map fieldInfo = new HashMap();
     private String className;
+    private Map classFields = new HashMap();
+    private boolean useClassFields = false;
 
-    private CodeGeneratorBackend backend;
+    protected CodeGeneratorBackend backend;
     private boolean debug = false;
     
     protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
@@ -230,6 +232,11 @@ import java.util.*;
                      method.getParameterTypes(), method.getExceptionTypes());
     }
     
+    protected void begin_method(Method method, int modifiers, Class[] exceptionTypes) {
+        begin_method(modifiers, method.getReturnType(), method.getName(),
+                     method.getParameterTypes(), exceptionTypes);
+    }
+
     protected void begin_constructor(Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
     }
@@ -280,13 +287,32 @@ import java.util.*;
     }
 
     /**
+     * Allocates and fills an Class[] array with the types of arguments to the
+     * current method. Primitive types are inserted as their wrapper classes.
+     */
+    protected void create_arg_type_array() {
+        /* generates:
+           Class[] arg_types = new Class[]{ arg1.class, Integer.class };
+        */
+        push(parameterTypes.length);
+        newarray(Class.class);
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class type = parameterTypes[i];
+            dup();
+            push(i);
+            load_class(type);
+            aastore();
+        }
+    }
+
+    /**
      * Allocates and fills an Object[] array with the arguments to the
      * current method. Primitive values are inserted as their boxed
      * (Object) equivalents.
      */
     protected void create_arg_array() {
         /* generates:
-           Object args[] = new Object[]{ arg1, new Integer(arg2) };
+           Object[] args = new Object[]{ arg1, new Integer(arg2) };
         */
         push(parameterTypes.length);
         newarray();
@@ -508,7 +534,41 @@ import java.util.*;
                 throw new CodeGenerationException(e);
             }
         } else {
-            load_class_helper(clazz.getName());
+            if (useClassFields) {
+                getStaticClassField(clazz);
+                dup();
+                String ok = anon_label();
+                ifnonnull(ok);
+                pop();
+                // if class field is null, then init that field
+                // try
+                Object try_catch = begin_handler();
+                load_class_helper(clazz.getName());
+                // save the Class object to static field
+                dup();
+                putStaticClassField(clazz);
+                goTo(ok);
+                end_handler();
+
+                //handle ClassNotFoundException, throw new NoClassDefFoundError
+                handle_exception(try_catch, ClassNotFoundException.class);
+                new_instance(NoClassDefFoundError.class);
+                dup_x1();
+                swap();
+                Method getMessage;
+                try {
+                    getMessage = Throwable.class.getMethod("getMessage", Constants.TYPES_EMPTY);
+                } catch (NoSuchMethodException e) {
+                    throw new Error(e);
+                }
+                invoke(getMessage);
+                invoke_constructor(NoClassDefFoundError.class, new Class[] { String.class });
+                athrow();
+                //new NoClassDefFoundError throwed
+                nop(ok);
+            } else {
+                load_class_helper(clazz.getName());
+            }
         }
     }
 
@@ -858,6 +918,14 @@ import java.util.*;
         }
     }
 
+    protected Class getPrimitiveWrapperClass(Class primitiveType) {
+        return (Class) primitiveToWrapper.get(primitiveType);
+    }
+
+    protected Method getPrimitiveMethod(Class primitiveType) {
+        return (Method) primitiveMethods.get(primitiveType);
+    }
+
     /**
      * If the argument is a primitive class, replaces the primitive value
      * on the top of the stack with the wrapped (Object) equivalent. For
@@ -1130,6 +1198,63 @@ import java.util.*;
         nop(end);
     }
 
+    private void putClassField(Class key, int index) {
+        String classFieldName = "class$" + index;
+        classFields.put(key, classFieldName);
+    }
+
+    /**
+     * One private field for holding the invocation handler.
+     * And one private and static field for each reference to a Class type (e.g. String.class).
+     */
+    protected void generateStaticClassFields(Class[] interfaces) {
+        useClassFields = true;
+        int index = 0;
+        putClassField(Object.class, index++);
+        for (int i = 0; i < interfaces.length; i++) {
+            putClassField(interfaces[i], index++);
+            Method[] methods = interfaces[i].getMethods();
+            for (int j = 0; j < methods.length; j++) {
+                Method method = methods[j];
+                Class[] argumentTypes = method.getParameterTypes();
+                for (int k = 0; k < argumentTypes.length; k++) {
+                    Class type = argumentTypes[k];
+                    if (!type.isPrimitive() && !type.equals(Void.TYPE) && !classFields.containsKey(type)) {
+                        putClassField(type, index++);
+                    }
+                }
+            }
+        }
+        for (Iterator iter = classFields.keySet().iterator(); iter.hasNext();) {
+            Class clazz = (Class) iter.next();
+            declare_field(Modifier.PRIVATE | Modifier.STATIC, Class.class, (String) classFields.get(clazz));
+        }
+    }
+
+    protected void getStaticClassField(Class clazz) {
+        String classFieldName = (String) classFields.get(clazz);
+        backend.getstatic(className, classFieldName, Class.class);
+    }
+
+    protected void putStaticClassField(Class clazz) {
+        String classFieldName = (String) classFields.get(clazz);
+        backend.putstatic(className, classFieldName, Class.class);
+    }
+
+    protected void generateReThrow(Object try_catch, Class handledException) {
+        handle_exception(try_catch, handledException);
+        athrow();
+    }
+
+    protected void generateNestedThrow(Object try_catch, Class handledException, Class thrownException) {
+        handle_exception(try_catch, handledException);
+        new_instance(thrownException);
+        dup_x1();
+        swap();
+        invoke_constructor(thrownException, Constants.TYPES_THROWABLE);
+        athrow();
+    }
+
     protected void generateFactoryMethod(Method method) {
         begin_method(method);
         new_instance_this();
@@ -1139,4 +1264,9 @@ import java.util.*;
         return_value();
         end_method();
     }
+
+    protected String getMethodSignature(Class returnType, Class[] parameterTypes) {
+        return backend.getMethodSignature(returnType, parameterTypes);
+    }
+
 }
