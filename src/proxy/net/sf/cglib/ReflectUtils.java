@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.8 2003/02/03 22:50:39 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.9 2003/02/03 22:52:34 herbyderby Exp $
  */
 abstract class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -214,6 +214,7 @@ abstract class ReflectUtils {
         return newInstance;
     }
 
+    // getPackage returns null on JDK 1.2
     public static String getPackageName(Class clazz) {
         String name = clazz.getName();
         int idx = name.lastIndexOf('.');
