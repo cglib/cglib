@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.22 2002/10/29 08:10:52 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.23 2002/10/31 15:54:52 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -158,8 +158,23 @@ public class Enhancer implements ClassFileConstants {
         cls,
         interfaces,
         ih,
-        null);
+        null,
+        null );
     }
+     public synchronized static Object enhance(
+    Class cls,
+    Class interfaces[],
+    MethodInterceptor ih,
+    ClassLoader loader )
+    throws Throwable {
+        return enhance(
+        cls,
+        interfaces,
+        ih,
+        loader,
+        null );
+   
+     } 
     /** enhances public not final class,
      * source class must have public or protected no args constructor.
      * Code is generated for protected and public not final methods,
@@ -169,6 +184,12 @@ public class Enhancer implements ClassFileConstants {
      * @param interfaces interfaces to implement, can be null
      * @param ih valid interceptor implementation
      * @param loader classloater for enhanced class, uses "current" if null
+     * @param wreplace  static method to implement writeReplace, must have
+     * single Object type parameter(to replace) and return object, 
+     * default implementation is used if
+     * parameter is null : static public Object InternalReplace.writeReplace( 
+     *                                                       Object enhanced )
+     *                 throws ObjectStreamException;
      * @throws Throwable on error
      * @return instanse of enhanced  class
      */
@@ -176,7 +197,8 @@ public class Enhancer implements ClassFileConstants {
     Class cls,
     Class interfaces[],
     MethodInterceptor ih,
-    ClassLoader loader)
+    ClassLoader loader,
+    java.lang.reflect.Method wreplace )
     throws Throwable {
         
         if( ih == null ){
@@ -200,6 +222,8 @@ public class Enhancer implements ClassFileConstants {
                 .append(interfaces[i].getName() + ";");
             }
         }
+        keyBuff.append( wreplace );
+        
         String key = keyBuff.toString();
         
         java.util.Map map = (java.util.Map) cache.get(loader);
@@ -212,6 +236,22 @@ public class Enhancer implements ClassFileConstants {
         
         
         if ( result == null ) {
+            
+            if (
+                  wreplace != null && 
+                  
+                ( 
+                  !java.lang.reflect.Modifier.
+                     isStatic( wreplace.getModifiers() )    ||
+                   wreplace.getReturnType() != Object.class || 
+                   wreplace.getParameterTypes().length != 1 ||
+                   wreplace.getParameterTypes()[0] != Object.class
+                ) 
+                
+                ){
+                    
+                  throw new IllegalArgumentException( wreplace.toString() );
+               }
             
             try{
                 
@@ -251,7 +291,7 @@ public class Enhancer implements ClassFileConstants {
                 class_name = CLASS_PREFIX + class_name;
             }
             class_name += index++;
-            JavaClass clazz = enhance(cls, class_name, interfaces );
+            JavaClass clazz = enhance(cls, class_name, interfaces, wreplace );
             result = ClassFileUtils.defineClass(loader, class_name, clazz.getBytes());
             map.put(key, result);
         }
@@ -270,7 +310,8 @@ public class Enhancer implements ClassFileConstants {
     }
     
     
-    private static void addConstructor(ClassGen cg) throws Throwable {
+    private static void addConstructor(ClassGen cg, 
+                       java.lang.reflect.Method wreplace ) throws Throwable {
         
         
         //single arg constructor
@@ -336,9 +377,19 @@ public class Enhancer implements ClassFileConstants {
             new Type[] {}, null, // arg names
             "writeReplace", cg.getClassName(), il, cp);
             
+            int wreplaceIndex ;
+            if( wreplace == null ){
+               wreplaceIndex = addWriteReplace(cp);
+            }else{
+               //signature : "(Ljava/lang/Object;)Ljava/lang/Object;");
+               wreplaceIndex = cp.addMethodref( 
+                 wreplace.getDeclaringClass().getName(),wreplace.getName(),  
+                   "(Ljava/lang/Object;)Ljava/lang/Object;"
+                 );
+            }
             
             il.append(new ALOAD(0));
-            il.append(new INVOKESTATIC( addWriteReplace(cp) ) );
+            il.append(new INVOKESTATIC( wreplaceIndex ) );
             il.append(new ARETURN());
             
             cg.addMethod(ClassFileUtils.getMethod(writeReplace));
@@ -374,14 +425,15 @@ public class Enhancer implements ClassFileConstants {
     private static JavaClass enhance(
     Class parentClass,
     String class_name,
-    Class interfaces[]
+    Class interfaces[],
+    java.lang.reflect.Method wreplace
     ) throws Throwable {
         
         java.util.HashMap methodTable = new java.util.HashMap();
         ClassGen cg = getClassGen(class_name, parentClass, interfaces);
         ConstantPoolGen cp = cg.getConstantPool(); // cg creates constant pool
         addHandlerField(cg);
-        addConstructor(cg);
+        addConstructor(cg, wreplace );
         int after = addAfterRef(cp);
         int invokeSuper = addInvokeSupperRef(cp);
         java.util.Set methodSet = new java.util.HashSet();

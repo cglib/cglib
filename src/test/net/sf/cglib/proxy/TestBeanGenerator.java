@@ -80,8 +80,8 @@ public class TestBeanGenerator extends TestCase {
         return suite;
     }
     
+/*    
     
-    /** Test of addMethod method, of class net.sf.cglib.proxy.BeanGenerator. */
     public void testAddMethod() throws Exception{
        
         final String sinus = "sin";
@@ -99,7 +99,7 @@ public class TestBeanGenerator extends TestCase {
     }
     
     
-    /** Test of addProperty method, of class net.sf.cglib.proxy.BeanGenerator. */
+    
     public void testAddProperty()throws Exception {
       
       final String name = "test";
@@ -135,5 +135,5 @@ public class TestBeanGenerator extends TestCase {
         
     }
     
-    
+*/
 }
