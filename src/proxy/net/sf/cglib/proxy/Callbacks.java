@@ -104,5 +104,5 @@ public interface Callbacks
      * @param type the callback type
      * @return the callback implementation
      */
-    Callback get(int type);
+    Callback getCallback(int type);
 }

@@ -60,9 +60,9 @@ package net.sf.cglib.proxy;
  * interface or using reflection. In addition, to intercept methods called during
  * object construction you <b>must</b> use these methods.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.8 2003/10/29 03:45:39 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.9 2003/10/29 17:30:38 herbyderby Exp $
  */
-public interface Factory {
+public interface Factory extends Callbacks {
     /**
      * Creates new instance of the same type, using the no-arg constructor.
      * The class of this object must have been created using a single Callback type (or none).
@@ -90,13 +90,6 @@ public interface Factory {
      */
     Factory newInstance(Class[] types, Object[] args, Callbacks callbacks);
     
-    /**
-     * Returns the current callback in use for the given type;
-     * @param type the callback type
-     * @see Callbacks
-     */
-    Callback getCallback(int type);
-
     /**
      * Set the callback for this object for the given type.
      * @param type the callback type to replace

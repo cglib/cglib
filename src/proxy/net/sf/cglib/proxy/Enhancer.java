@@ -167,7 +167,7 @@ public class Enhancer extends AbstractClassGenerator
      */
     public void setCallback(final Callback callback) {
         setCallbacks(new Callbacks() {
-            public Callback get(int type) {
+            public Callback getCallback(int type) {
                 return callback;
             }
         });

@@ -61,11 +61,11 @@ implements Callbacks
 {
     private Callback[] callbacks = new Callback[Callbacks.MAX_VALUE + 1];
 
-    public Callback get(int type) {
+    public Callback getCallback(int type) {
         return callbacks[type];
     }
 
-    public void set(int type, Callback callback) {
+    public void setCallback(int type, Callback callback) {
         if (callback == null) {
             throw new IllegalArgumentException("Callback cannot be null");
         }
