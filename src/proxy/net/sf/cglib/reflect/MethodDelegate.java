@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.20 2003/11/06 05:10:52 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.21 2004/04/07 07:00:57 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -242,7 +242,9 @@ abstract public class MethodDelegate {
                 throw new IllegalArgumentException("incompatible return types");
             }
 
-            boolean isStatic = Modifier.isStatic(method.getModifiers());
+            MethodInfo methodInfo = ReflectUtils.getMethodInfo(method);
+
+            boolean isStatic = TypeUtils.isStatic(methodInfo.getModifiers());
             if ((target == null) ^ isStatic) {
                 throw new IllegalArgumentException("Static method " + (isStatic ? "not " : "") + "expected");
             }
@@ -258,16 +260,13 @@ abstract public class MethodDelegate {
             EmitUtils.null_constructor(ce);
 
             // generate proxied method
-            Method proxied = iface.getDeclaredMethods()[0];
-            e = ce.begin_method(Constants.ACC_PUBLIC,
-                                ReflectUtils.getSignature(proxied),
-                                ReflectUtils.getExceptionTypes(proxied),
-                                null);
+            MethodInfo proxied = ReflectUtils.getMethodInfo(iface.getDeclaredMethods()[0]);
+            e = EmitUtils.begin_method(ce, proxied, Constants.ACC_PUBLIC);
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
-            e.checkcast(Type.getType(method.getDeclaringClass()));
+            e.checkcast(methodInfo.getClassInfo().getType());
             e.load_args();
-            e.invoke(method);
+            e.invoke(methodInfo);
             e.return_value();
             e.end_method();
 
@@ -286,8 +285,7 @@ abstract public class MethodDelegate {
 
             // static initializer
             e = ce.begin_static();
-            Signature sig = ReflectUtils.getSignature(method);
-            e.push(sig.getName() + sig.getDescriptor());
+            e.push(methodInfo.getSignature().toString());
             e.putfield("eqMethod");
             e.return_value();
             e.end_method();

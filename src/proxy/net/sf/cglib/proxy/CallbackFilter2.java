@@ -53,53 +53,22 @@
  */
 package net.sf.cglib.proxy;
 
-import org.objectweb.asm.Type;
+import net.sf.cglib.core.MethodInfo;
 
-class CallbackUtils {
-    private CallbackUtils() { }
-
-    static Class determineType(Callback callback) {
-        Class test = typeHelper(callback, null, NoOp.class);
-        test = typeHelper(callback, test, MethodInterceptor.class);
-        test = typeHelper(callback, test, InvocationHandler.class);
-        test = typeHelper(callback, test, LazyLoader.class);
-        test = typeHelper(callback, test, Dispatcher.class);
-        test = typeHelper(callback, test, FixedValue.class);
-        if (test == null) {
-            throw new IllegalStateException("Unknown callback " + callback.getClass());
+public interface CallbackFilter2 {
+    static final CallbackFilter2 ALL_ZERO = new CallbackFilter2() {
+        public int accept(MethodInfo method) {
+            return 0;
         }
-        return test;
-    }
-
-    private static Class typeHelper(Callback callback, Class cur, Class callbackType) {
-        if (callback == null) {
-            throw new IllegalStateException("Callback is null");
+        public int hashCode() {
+            return 999;
         }
-        if (callbackType.isAssignableFrom(callback.getClass())) {
-            if (cur != null) {
-                throw new IllegalStateException("Callback implements both " + cur + " and " + callbackType + "; use setCallbackTypes to distinguish");
-            }
-            return callbackType;
-        } else {
-            return cur;
-        }
-    }
-
-    static CallbackGenerator getGenerator(Class type) {
-        if (type.equals(NoOp.class)) {
-           return NoOpGenerator.INSTANCE;
-        } else if (type.equals(MethodInterceptor.class)) {
-            return MethodInterceptorGenerator.INSTANCE;
-        } else if (type.equals(InvocationHandler.class)) {
-            return InvocationHandlerGenerator.INSTANCE;
-        } else if (type.equals(LazyLoader.class)) {
-            return LazyLoaderGenerator.INSTANCE;
-        } else if (type.equals(Dispatcher.class)) {
-            return DispatcherGenerator.INSTANCE;
-        } else if (type.equals(FixedValue.class)) {
-            return FixedValueGenerator.INSTANCE;
-        } else {
-            throw new IllegalStateException("Unknown callback " + type);
-        }
-    }
+    };
+    
+    /**
+     * Map a method to a callback.
+     * @param methodInfo the intercepted method
+     * @return the index into the array of callbacks (as specified by {@link Enhancer#setCallbacks}) to use for the method, 
+     */
+    int accept(MethodInfo methodInfo);
 }

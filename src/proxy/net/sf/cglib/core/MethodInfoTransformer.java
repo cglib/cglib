@@ -51,30 +51,25 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxy;
+package net.sf.cglib.core;
 
-import java.util.*;
-import net.sf.cglib.core.*;
-import org.objectweb.asm.Type;
+import java.lang.reflect.*;
 
-class FixedValueGenerator implements CallbackGenerator {
-    public static final FixedValueGenerator INSTANCE = new FixedValueGenerator();
-    private static final Type FIXED_VALUE =
-      TypeUtils.parseType("net.sf.cglib.proxy.FixedValue");
-    private static final Signature LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject()");
+public class MethodInfoTransformer implements Transformer
+{
+    private static final MethodInfoTransformer INSTANCE = new MethodInfoTransformer();
 
-    public void generate(ClassEmitter ce, final Context context) {
-        for (Iterator it = context.getMethods(); it.hasNext();) {
-            MethodInfo method = (MethodInfo)it.next();
-            CodeEmitter e = EmitUtils.begin_method(ce, method);
-            context.emitCallback(e, context.getIndex(method));
-            e.invoke_interface(FIXED_VALUE, LOAD_OBJECT);
-            e.unbox_or_zero(e.getReturnType());
-            e.return_value();
-            e.end_method();
+    public static MethodInfoTransformer getInstance() {
+        return INSTANCE;
+    }
+    
+    public Object transform(Object value) {
+        if (value instanceof Method) {
+            return ReflectUtils.getMethodInfo((Method)value);
+        } else if (value instanceof Constructor) {
+            return ReflectUtils.getMethodInfo((Constructor)value);
+        } else {
+            throw new IllegalArgumentException("cannot get method info for " + value);
         }
     }
-
-    public void generateStatic(CodeEmitter e, Context context) { }
 }

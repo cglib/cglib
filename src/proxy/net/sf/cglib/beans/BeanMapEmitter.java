@@ -144,8 +144,9 @@ class BeanMapEmitter extends ClassEmitter {
         EmitUtils.string_switch(e, getNames(getters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
-                e.invoke(pd.getReadMethod());
-                e.box(Type.getType(pd.getReadMethod().getReturnType()));
+                MethodInfo method = ReflectUtils.getMethodInfo(pd.getReadMethod());
+                e.invoke(method);
+                e.box(method.getSignature().getReturnType());
                 e.return_value();
             }
             public void processDefault() {
@@ -168,14 +169,16 @@ class BeanMapEmitter extends ClassEmitter {
                 if (pd.getReadMethod() == null) {
                     e.aconst_null();
                 } else {
+                    MethodInfo read = ReflectUtils.getMethodInfo(pd.getReadMethod());
                     e.dup();
-                    e.invoke(pd.getReadMethod());
-                    e.box(Type.getType(pd.getReadMethod().getReturnType()));
+                    e.invoke(read);
+                    e.box(read.getSignature().getReturnType());
                 }
                 e.swap(); // move old value behind bean
                 e.load_arg(2); // new value
-                e.unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
-                e.invoke(pd.getWriteMethod());
+                MethodInfo write = ReflectUtils.getMethodInfo(pd.getWriteMethod());
+                e.unbox(write.getSignature().getArgumentTypes()[0]);
+                e.invoke(write);
                 e.return_value();
             }
             public void processDefault() {

@@ -54,7 +54,6 @@
 package net.sf.cglib.core;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.util.*;
 import org.objectweb.asm.*;
 
@@ -862,16 +861,18 @@ public class CodeEmitter extends RemappingCodeVisitor {
         }
     }
 
-    public void invoke(Method method) {
-        Class declaring = method.getDeclaringClass();
-        Type owner = Type.getType(declaring);
-        Signature sig = ReflectUtils.getSignature(method);
-        if (declaring.isInterface()) {
-            invoke_interface(owner, sig);
+    public void invoke(MethodInfo method) {
+        ClassInfo classInfo = method.getClassInfo();
+        Type type = classInfo.getType();
+        Signature sig = method.getSignature();
+        if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
+            invoke_constructor(type, sig);
+        } else if (TypeUtils.isInterface(classInfo.getModifiers())) {
+            invoke_interface(type, sig);
         } else if (TypeUtils.isStatic(method.getModifiers())) {
-            invoke_static(owner, sig);
+            invoke_static(type, sig);
         } else {
-            invoke_virtual(owner, sig);
+            invoke_virtual(type, sig);
         }
     }
 

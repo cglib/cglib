@@ -1,7 +1,7 @@
 /*
  *
  *
- * $Id: AbstractTransformTest.java,v 1.5 2003/12/06 19:46:50 herbyderby Exp $
+ * $Id: AbstractTransformTest.java,v 1.6 2004/04/07 07:00:57 herbyderby Exp $
  */
 
 package net.sf.cglib.transform;
@@ -43,8 +43,12 @@ abstract public class AbstractTransformTest  extends TestCase{
          getTransformer()
         );
         
-        
+       try {
         return loader.loadClass(getClass().getName());
+       } catch (Exception e) {
+           e.printStackTrace(System.err);
+           throw e;
+       }
         
        
     

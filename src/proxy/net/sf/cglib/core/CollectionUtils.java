@@ -58,7 +58,7 @@ import java.lang.reflect.Array;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: CollectionUtils.java,v 1.4 2003/10/03 23:09:29 herbyderby Exp $
+ * @version $Id: CollectionUtils.java,v 1.5 2004/04/07 07:01:00 herbyderby Exp $
  */
 public class CollectionUtils {
     private CollectionUtils() { }
@@ -84,12 +84,6 @@ public class CollectionUtils {
         }
     }
 
-    public static Object[] filter(Object[] a, Predicate p) {
-        List c = new ArrayList(Arrays.asList(a));
-        filter(c, p);
-        return c.toArray((Object[])Array.newInstance(a.getClass().getComponentType(), c.size()));
-    }
-
     public static Collection filter(Collection c, Predicate p) {
         Iterator it = c.iterator();
         while (it.hasNext()) {
@@ -100,7 +94,7 @@ public class CollectionUtils {
         return c;
     }
 
-    public static List transform(List c, Transformer t) {
+    public static List transform(Collection c, Transformer t) {
         List result = new ArrayList(c.size());
         for (Iterator it = c.iterator(); it.hasNext();) {
             result.add(t.transform(it.next()));

@@ -130,22 +130,18 @@ public class ImmutableBean
             Method[] setters = ReflectUtils.getPropertyMethods(descriptors, false, true);
 
             for (int i = 0; i < getters.length; i++) {
-                e = ce.begin_method(Constants.ACC_PUBLIC,
-                                    ReflectUtils.getSignature(getters[i]),
-                                    TypeUtils.getTypes(getters[i].getExceptionTypes()),
-                                    null);
+                MethodInfo getter = ReflectUtils.getMethodInfo(getters[i]);
+                e = EmitUtils.begin_method(ce, getter, Constants.ACC_PUBLIC);
                 e.load_this();
                 e.getfield(FIELD_NAME);
-                e.invoke(getters[i]);
+                e.invoke(getter);
                 e.return_value();
                 e.end_method();
             }
 
             for (int i = 0; i < setters.length; i++) {
-                e = ce.begin_method(Constants.ACC_PUBLIC,
-                                    ReflectUtils.getSignature(setters[i]),
-                                    null,
-                                    null);
+                MethodInfo setter = ReflectUtils.getMethodInfo(setters[i]);
+                e = EmitUtils.begin_method(ce, setter, Constants.ACC_PUBLIC);
                 e.throw_exception(ILLEGAL_STATE_EXCEPTION, "Bean is immutable");
                 e.end_method();
             }

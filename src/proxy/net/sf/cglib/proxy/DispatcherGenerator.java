@@ -53,8 +53,6 @@
  */
 package net.sf.cglib.proxy;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Type;
@@ -69,17 +67,14 @@ class DispatcherGenerator implements CallbackGenerator {
 
     public void generate(ClassEmitter ce, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
-            Method method = (Method)it.next();
-            if (Modifier.isProtected(method.getModifiers())) {
+            MethodInfo method = (MethodInfo)it.next();
+            if (TypeUtils.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                CodeEmitter e = ce.begin_method(context.getModifiers(method),
-                                                ReflectUtils.getSignature(method),
-                                                ReflectUtils.getExceptionTypes(method),
-                                                null);
+                CodeEmitter e = EmitUtils.begin_method(ce, method);
                 context.emitCallback(e, context.getIndex(method));
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
-                e.checkcast(Type.getType(method.getDeclaringClass()));
+                e.checkcast(method.getClassInfo().getType());
                 e.load_args();
                 e.invoke(method);
                 e.return_value();

@@ -24,8 +24,20 @@ public class TypeUtils {
         CollectionUtils.reverse(transforms, rtransforms);
     }
 
+    public static boolean isFinal(int access) {
+        return (Constants.ACC_FINAL & access) != 0;
+    }
+
     public static boolean isStatic(int access) {
         return (Constants.ACC_STATIC & access) != 0;
+    }
+
+    public static boolean isProtected(int access) {
+        return (Constants.ACC_PROTECTED & access) != 0;
+    }
+
+    public static boolean isPublic(int access) {
+        return (Constants.ACC_PUBLIC & access) != 0;
     }
 
     public static boolean isAbstract(int access) {
@@ -40,14 +52,20 @@ public class TypeUtils {
         return (Constants.ACC_PRIVATE & access) != 0;
     }
     
-
+    public static boolean isSynthetic(int access) {
+        return (Constants.ACC_SYNTHETIC & access) != 0;
+    }
+    
     // getPackage returns null on JDK 1.2
     public static String getPackageName(Type type) {
-        String name = getClassName(type);
-        int idx = name.lastIndexOf('.');
-        return (idx < 0) ? "" : name.substring(0, idx);
+        return getPackageName(getClassName(type));
     }
 
+    public static String getPackageName(String className) {
+        int idx = className.lastIndexOf('.');
+        return (idx < 0) ? "" : className.substring(0, idx);
+    }
+    
     public static String upperFirst(String s) {
         if (s == null || s.length() == 0) {
             return s;
@@ -276,6 +294,10 @@ public class TypeUtils {
         }
     }
 
+    public static boolean isConstructor(MethodInfo method) {
+        return method.getSignature().getName().equals(Constants.CONSTRUCTOR_NAME);
+    }
+
     public static Type[] getTypes(Class[] classes) {
         if (classes == null) {
             return null;
@@ -353,5 +375,24 @@ public class TypeUtils {
         default:
             return -1; // error
         }
+    }
+
+    public static String escapeType(String s) {
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0, len = s.length(); i < len; i++) {
+            char c = s.charAt(i);
+            switch (c) {
+            case '$': sb.append("$24"); break;
+            case '.': sb.append("$2E"); break;
+            case '[': sb.append("$5B"); break;
+            case ';': sb.append("$3B"); break;
+            case '(': sb.append("$28"); break;
+            case ')': sb.append("$29"); break;
+            case '/': sb.append("$2F"); break;
+            default:
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

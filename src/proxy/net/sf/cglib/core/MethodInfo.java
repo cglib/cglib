@@ -51,30 +51,61 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.proxy;
+package net.sf.cglib.core;
 
-import java.util.*;
-import net.sf.cglib.core.*;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
-class FixedValueGenerator implements CallbackGenerator {
-    public static final FixedValueGenerator INSTANCE = new FixedValueGenerator();
-    private static final Type FIXED_VALUE =
-      TypeUtils.parseType("net.sf.cglib.proxy.FixedValue");
-    private static final Signature LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject()");
+public class MethodInfo {
+    private ClassInfo classInfo;
+    private int modifiers;
+    private Signature sig;
+    private Type[] exceptions;
+    private Attribute attrs;
 
-    public void generate(ClassEmitter ce, final Context context) {
-        for (Iterator it = context.getMethods(); it.hasNext();) {
-            MethodInfo method = (MethodInfo)it.next();
-            CodeEmitter e = EmitUtils.begin_method(ce, method);
-            context.emitCallback(e, context.getIndex(method));
-            e.invoke_interface(FIXED_VALUE, LOAD_OBJECT);
-            e.unbox_or_zero(e.getReturnType());
-            e.return_value();
-            e.end_method();
-        }
+    public MethodInfo(ClassInfo classInfo, int modifiers, Signature sig, Type[] exceptions, Attribute attrs) {
+        // TODO: null checking
+        this.classInfo = classInfo;
+        this.modifiers = modifiers;
+        this.sig = sig;
+        this.exceptions = exceptions;
+        this.attrs = attrs;
     }
 
-    public void generateStatic(CodeEmitter e, Context context) { }
+    public ClassInfo getClassInfo() {
+        return classInfo;
+    }
+    
+    public int getModifiers() {
+        return modifiers;
+    }
+
+    public Signature getSignature() {
+        return sig;
+    }
+
+    public Type[] getExceptionTypes() {
+        return exceptions;
+    }
+
+    public Attribute getAttribute() {
+        return attrs;
+    }
+
+    public boolean equals(Object o) {
+        if (o == null)
+            return false;
+        if (!(o instanceof MethodInfo))
+            return false;
+        return getSignature().equals(((MethodInfo)o).getSignature());
+    }
+
+    public int hashCode() {
+        return getSignature().hashCode();
+    }
+
+    public String toString() {
+        // TODO: include modifiers, exceptions
+        return sig.toString();
+    }
 }

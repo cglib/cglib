@@ -1,34 +1,34 @@
 package net.sf.cglib.transform.impl;
 
-import net.sf.cglib.transform.*;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import net.sf.cglib.core.*;
+import net.sf.cglib.transform.*;
+import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class AddStaticInitTransformer extends ClassEmitterTransformer {
-    private Method classInit;
+    private MethodInfo info;
 
     public AddStaticInitTransformer(Method classInit) {
-        if (!Modifier.isStatic(classInit.getModifiers())) {
+        info = ReflectUtils.getMethodInfo(classInit);
+        if (!TypeUtils.isStatic(info.getModifiers())) {
             throw new IllegalArgumentException(classInit + " is not static");
         }
-        Class[] types = classInit.getParameterTypes();
+        Type[] types = info.getSignature().getArgumentTypes();
         if (types.length != 1 ||
-            !types[0].equals(Class.class) ||
-            !classInit.getReturnType().equals(Void.TYPE)) {
+            !types[0].equals(Constants.TYPE_CLASS) ||
+            !info.getSignature().getReturnType().equals(Type.VOID_TYPE)) {
             throw new IllegalArgumentException(classInit + " illegal signature");
         }
-        this.classInit = classInit;
     }
 
     protected void init() {
         if (!TypeUtils.isInterface(getAccess())) {
             CodeEmitter e = getStaticHook();
             EmitUtils.load_class_this(e);
-            e.invoke(classInit);
+            e.invoke(info);
         }
     }
 }

@@ -62,18 +62,6 @@ import java.lang.reflect.Method;
  * change for the life of the class.
  */
 public interface CallbackFilter {
-    static final CallbackFilter ALL_ZERO = new CallbackFilter() {
-        public int accept(Method method) {
-            return 0;
-        }
-        public String toString() {
-            return "ALL_ZERO";
-        }
-        public int hashCode() {
-            return 999;
-        }
-    };
-    
     /**
      * Map a method to a callback.
      * @param method the intercepted method

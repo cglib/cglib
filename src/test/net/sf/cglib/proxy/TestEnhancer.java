@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.40 2004/03/28 04:12:14 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.41 2004/04/07 07:00:57 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -408,6 +408,7 @@ public class TestEnhancer extends CodeGenTestCase {
         ((ConflictB)foo).foo();
     }
 
+    // TODO: make this work again
      public void testArgInit() throws Throwable{
 
          Enhancer e = new Enhancer();
@@ -671,8 +672,7 @@ public class TestEnhancer extends CodeGenTestCase {
          assertEquals("fizzy", newArgInit(clazz, "test").toString());
          assertEquals("fizzy", newArgInit(clazz, "test").toString());
 
-         Enhancer.registerCallbacks(clazz, null);
+         Enhancer.registerCallbacks(clazz, new Callback[]{ null });
          assertEquals("test", newArgInit(clazz, "test").toString());
-         
     }
 }
