@@ -51,9 +51,8 @@ abstract public class EmittingTransformer extends ClassTransformer {
     // TODO: handle visitInnerClass?
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        e.begin_method(access,
-                       new Signature(name, desc),
-                       fromInternalNames(exceptions));
-        return e.getCodeVisitor();
+        return e.begin_method(access,
+                              new Signature(name, desc),
+                              fromInternalNames(exceptions));
     }
 }

@@ -6,6 +6,7 @@ import net.sf.cglib.core.*;
 import net.sf.cglib.core.Signature;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeVisitor;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
@@ -37,13 +38,14 @@ public class AddStaticInitTransformer extends EmittingTransformer {
                 generated = false; // transformers can be cloned, need to reset
             }
                 
-            public void begin_method(int access, Signature sig, Type[] exceptions) {
-                super.begin_method(access, sig, exceptions);
+            public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
+                CodeVisitor v = super.begin_method(access, sig, exceptions);
                 if (sig.getName().equals(Constants.STATIC_NAME)) {
                     generated = true;
                     ComplexOps.load_class_this(this);
                     ReflectOps.invoke(this, classInit);
                 }
+                return v;
             }
 
             public void end_class() {

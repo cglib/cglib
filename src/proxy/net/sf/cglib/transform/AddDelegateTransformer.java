@@ -45,7 +45,7 @@ public class AddDelegateTransformer extends ClassTransformer {
             }
             
             
-            getTarget().visit(
+            super.visit(
             access,
             name,
             superName,
@@ -53,7 +53,7 @@ public class AddDelegateTransformer extends ClassTransformer {
             sourceFile
             );
             
-       getTarget().visitField(
+       super.visitField(
         Modifier.PRIVATE|Modifier.TRANSIENT,
         Signature.DELEGATE,
         Type.getDescriptor(Object.class) ,
@@ -81,7 +81,7 @@ public class AddDelegateTransformer extends ClassTransformer {
             throw  new IllegalArgumentException( "invalid  delegate signature  " + delegate);
         }
         
-        CodeVisitor cv =  getTarget().visitMethod( Modifier.PUBLIC,
+        CodeVisitor cv =  super.visitMethod( Modifier.PUBLIC,
         m.getName(),
         Type.getMethodDescriptor(m),
         (String[])exeptions.toArray(new String[]{}) );
@@ -123,7 +123,7 @@ public class AddDelegateTransformer extends ClassTransformer {
     }
     
      public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        CodeVisitor cv = getTarget().visitMethod(access, name, desc, exceptions  );
+        CodeVisitor cv = super.visitMethod(access, name, desc, exceptions  );
         if(name.equals("<init>")){
            return new TransformInit(cv);
         }else{

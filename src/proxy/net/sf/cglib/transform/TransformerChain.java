@@ -25,10 +25,6 @@ public class TransformerChain extends ClassTransformer {
         chain[chain.length - 1].setTarget(v);
     }
 
-    public ClassVisitor getTarget() {
-        return chain[chain.length - 1].getTarget();
-    }
-
     public Object clone() {
         TransformerChain t = (TransformerChain)super.clone();
         t.chain = cloneAndLink(chain);

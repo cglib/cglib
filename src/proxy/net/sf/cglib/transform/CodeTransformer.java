@@ -14,10 +14,6 @@ abstract public class CodeTransformer extends CodeAdapter implements Cloneable {
         cv = target;
     }
 
-    public CodeVisitor getTarget() {
-        return cv;
-    }
-
     public ClassTransformer asClassTransformer() {
         return new ClassTransformer() {
             public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
