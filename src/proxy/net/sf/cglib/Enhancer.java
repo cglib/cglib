@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.34 2003/02/03 17:47:18 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.35 2003/02/03 22:45:12 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -93,7 +93,7 @@ public class Enhancer {
    
      interface EnhancerKey {
         public Object newInstance( Class cls, Class[] interfaces, 
-                                   Method wreplace,Object filter);
+                                   Method wreplace, MethodFilter filter);
     }
     
     private Enhancer() {}

@@ -80,19 +80,17 @@ class VisibilityFilter implements MethodFilter {
         return (null == pkg) ? (other == null) : pkg.equals(other);
     }
     
-    public int hashCode(){
-      return (null == pkg) ? 0 : pkg.hashCode(); 
+    public int hashCode() {
+        return (null == pkg) ? 0 : pkg.hashCode(); 
     }
     
     public boolean equals(Object obj){
-    
-       if( obj != null && ( obj instanceof VisibilityFilter ) ){
-       
-           return  ((VisibilityFilter)obj).pkg == pkg;
-        
-       }else return false;
-        
-    } 
-    
+        VisibilityFilter other = (VisibilityFilter)obj;
+        if (pkg == null) {
+            return other.pkg == null;
+        } else {
+            return pkg.equals(other.pkg);
+        }
+    }
 }
 
