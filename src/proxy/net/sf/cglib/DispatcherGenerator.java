@@ -76,7 +76,6 @@ class DispatcherGenerator implements CallbackGenerator {
                                ReflectUtils.getSignature(method),
                                ReflectUtils.getExceptionTypes(method));
                 context.emitCallback();
-                e.checkcast(DISPATCHER);
                 e.push(method.getDeclaringClass().getName());
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
