@@ -708,21 +708,3 @@ class ClassFileUtils implements ClassFileConstants {
     
 }
 
-class MethodWrapper {
-    java.lang.reflect.Method method;
-    MethodWrapper(java.lang.reflect.Method method) {
-        if (method == null) {
-            throw new NullPointerException();
-        }
-        this.method = method;
-    }
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof MethodWrapper)) {
-            return false;
-        }
-        return ClassFileUtils.equals(method, ((MethodWrapper) obj).method );
-    }
-    public int hashCode() {
-        return method.getName().hashCode();
-    }
-}

@@ -78,11 +78,13 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
     private Class beanInfo;
     private Class result;
     
-    private final static byte [] B_INFO;
+    private  static byte [] B_INFO;
     
     static{
 
+        java.io.ByteArrayOutputStream out = new  java.io.ByteArrayOutputStream();
         
+        try{
            java.io.InputStream is = BeanGenerator.class.getClassLoader().
                 getResourceAsStream(
                 Info.class.getName().replace('.','/') + ".class"
@@ -90,8 +92,6 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                 if( is == null ){
                     throw new NoClassDefFoundError(Info.class.getName());
                 }
-                
-                java.io.ByteArrayOutputStream out = new  java.io.ByteArrayOutputStream();
                 
                 try{
                     byte buffer[] = new byte[ 0xFF ]; 
@@ -108,7 +108,9 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                     
                     throw new NoClassDefFoundError( ioe.getMessage() );
                 }
+        }finally{    
                 B_INFO  = out.toByteArray();
+        }       
             
     
     }

@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.15 2002/10/29 08:10:54 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.16 2002/10/31 15:54:53 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -294,7 +294,10 @@ public class TestEnhancer extends TestCase {
         
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        null, new NoOpInterceptor(testValue) );
+        new Class []{} , new NoOpInterceptor(testValue),
+        this.getClass().getClassLoader(),
+         Enhancer.InternalReplace.class.getMethod("writeReplace",new Class[]{Object.class})
+        );
         
         
         ByteArrayOutputStream bout = new ByteArrayOutputStream();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.7 2002/09/28 16:32:35 baliuka Exp $ -->
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.8 2002/10/31 15:54:49 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,7 +13,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="rc1"/>
+    <property name="component.version" value="rc2"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="samples.build.home" value="build/samples"/>
@@ -111,6 +111,7 @@
 
     <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-${component.version}.jar" >
       <include name="**/*"/>
+      <exclude name="**/BeanGenerator*" />
     </jar> 
     <jar basedir="./" jarfile="${dist.home}/${component.name}-src-${component.version}.jar" >
       <include name="build.xml"/>
