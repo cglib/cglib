@@ -1,6 +1,6 @@
 package net.sf.cglib;
 
-class DBean3 {
+public class DBean3 {
     private int age;
     
     public void setAge(int age) {

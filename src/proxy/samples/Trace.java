@@ -39,7 +39,8 @@ public class Trace implements MethodInterceptor {
         }
        list.add(value + "1");
        list.add(value + "2");
-       list.toString(); 
+       list.toString();
+       list.equals(list); 
        list.set( 0, null ); 
        list.toString();
        list.add(list);
