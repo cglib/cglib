@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.29 2003/09/18 00:27:39 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.30 2003/09/18 17:23:30 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -243,6 +243,7 @@
           <pathelement path="${test.build.home}/classes"/>
           <pathelement path="${classpath}"/>
           <pathelement path="${java.class.path}"/>
+          <pathelement path="${source.test}"/>
           <pathelement path="${samples.build.home}/classes" />      
           <fileset dir="./lib">
 		<include name="*.*"/>

@@ -79,7 +79,7 @@ class EnhancerEmitter extends Emitter
     private static final Method CALLBACKS_GET =
       ReflectUtils.findMethod("Callbacks.get(int)");
     
-    private final BitSet usedCallbacks = new BitSet();
+    private final TinyBitSet usedCallbacks = new TinyBitSet();
 
     public EnhancerEmitter(ClassVisitor v,
                            String className,

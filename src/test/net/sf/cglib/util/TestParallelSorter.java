@@ -61,7 +61,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.1 2003/09/15 19:31:09 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.2 2003/09/18 17:23:29 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
     public void testSorts() throws Throwable {
@@ -105,7 +105,7 @@ public class TestParallelSorter extends CodeGenTestCase {
     }
 
     private Object[] getTestData() throws IOException {
-        InputStream in = getClass().getResource("words.txt").openStream();
+        InputStream in = getClass().getResourceAsStream("words.txt");
         BufferedReader r = new BufferedReader(new InputStreamReader(in));
         List list = new ArrayList();
         String line;

@@ -51,69 +51,55 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
+import net.sf.cglib.CodeGenTestCase;
 import junit.framework.*;
-import net.sf.cglib.beans.*;
-import net.sf.cglib.core.*;
-import net.sf.cglib.reflect.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.transform.*;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.37 2003/09/18 17:23:30 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestTinyBitSet extends TestCase {
+    public void testGetSetClear() {
+        TinyBitSet b = new TinyBitSet();
+        assertTrue(!b.get(5));
+        b.set(5);
+        assertTrue(b.get(5));
+        b.clear(5);
+        assertTrue(!b.get(5));
+    }
+    
+    public void testLength() {
+        TinyBitSet b = new TinyBitSet();
+        b.set(10);
+        assertTrue(b.length() == 11);
+        b.set(15);
+        assertTrue(b.length() == 16);
+        b.set(14);
+        assertTrue(b.length() == 16);
+    }
+
+    public void testCardinality() {
+        TinyBitSet b = new TinyBitSet();
+        assertTrue(b.cardinality() == 0);
+        b.set(1);
+        assertTrue(b.cardinality() == 1);
+        b.set(4);
+        assertTrue(b.cardinality() == 2);
+        b.set(10);
+        assertTrue(b.cardinality() == 3);
+        b.set(10);
+        assertTrue(b.cardinality() == 3);
+        b.clear(10);
+        assertTrue(b.cardinality() == 2);
+    }
+
+    public TestTinyBitSet(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-
-        // root
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-        suite.addTest(TestMixin.suite());
-
-        // beans
-        suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestBeanMap.suite());
-
-        // reflect
-        suite.addTest(TestDelegates.suite());
-        suite.addTest(TestFastClass.suite());
-
-        // core
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
-        suite.addTest(TestTransformVisistor.suite());
-        suite.addTest(TestTinyBitSet.suite());
-        
-        // util
-        suite.addTest(TestParallelSorter.suite());
-
-        // transform
-        suite.addTest(TestTransformingLoader.suite());
-
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[])throws Exception {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-       
+    
+    public static Test suite() {
+        return new TestSuite(TestTinyBitSet.class);
     }
 }
-
