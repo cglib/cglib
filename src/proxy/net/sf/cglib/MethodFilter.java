@@ -55,13 +55,8 @@ package net.sf.cglib;
 /**
  *
  *@author  baliuka
- *@version $Id: MethodFilter.java,v 1.4 2003/01/19 11:30:11 baliuka Exp $
+ *@version $Id: MethodFilter.java,v 1.5 2003/02/03 22:45:12 herbyderby Exp $
 */
 public interface MethodFilter {
- 
     public boolean accept( java.lang.reflect.Member method );
-    
-    public boolean equals(Object obj);
-    
-    public int hashCode();
 }
