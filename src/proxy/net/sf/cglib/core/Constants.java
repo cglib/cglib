@@ -57,28 +57,27 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.6 2003/09/20 21:20:57 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.7 2003/09/21 01:49:49 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
 
-    public static final Type[] TYPES_EMPTY = {};
     public static final Class[] EMPTY_CLASS_ARRAY = {};
 
-    public static final Type TYPE_OBJECT_ARRAY = Signature.parseType("Object[]");
-    public static final Type TYPE_OBJECT = Signature.parseType("Object");
-    public static final Type TYPE_CLASS = Signature.parseType("Class");
-    public static final Type TYPE_CHARACTER = Signature.parseType("Character");
-    public static final Type TYPE_BOOLEAN = Signature.parseType("Boolean");
-    public static final Type TYPE_DOUBLE = Signature.parseType("Double");
-    public static final Type TYPE_FLOAT = Signature.parseType("Float");
-    public static final Type TYPE_LONG = Signature.parseType("Long");
-    public static final Type TYPE_INTEGER = Signature.parseType("Integer");
-    public static final Type TYPE_SHORT = Signature.parseType("Short");
-    public static final Type TYPE_BYTE = Signature.parseType("Byte");
-    public static final Type TYPE_NUMBER = Signature.parseType("Number");
-    public static final Type TYPE_STRING = Signature.parseType("String");
-    public static final Type TYPE_THROWABLE = Signature.parseType("Throwable");
+    public static final Type TYPE_OBJECT_ARRAY = TypeUtils.parseType("Object[]");
+    public static final Type TYPE_OBJECT = TypeUtils.parseType("Object");
+    public static final Type TYPE_CLASS = TypeUtils.parseType("Class");
+    public static final Type TYPE_CHARACTER = TypeUtils.parseType("Character");
+    public static final Type TYPE_BOOLEAN = TypeUtils.parseType("Boolean");
+    public static final Type TYPE_DOUBLE = TypeUtils.parseType("Double");
+    public static final Type TYPE_FLOAT = TypeUtils.parseType("Float");
+    public static final Type TYPE_LONG = TypeUtils.parseType("Long");
+    public static final Type TYPE_INTEGER = TypeUtils.parseType("Integer");
+    public static final Type TYPE_SHORT = TypeUtils.parseType("Short");
+    public static final Type TYPE_BYTE = TypeUtils.parseType("Byte");
+    public static final Type TYPE_NUMBER = TypeUtils.parseType("Number");
+    public static final Type TYPE_STRING = TypeUtils.parseType("String");
+    public static final Type TYPE_THROWABLE = TypeUtils.parseType("Throwable");
 
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String SOURCE_FILE = "<generated>";

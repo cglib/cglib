@@ -63,17 +63,17 @@ import org.objectweb.asm.Type;
     
 class BulkBeanEmitter extends Emitter {
     private static final Signature GET_PROPERTY_VALUES =
-      Signature.parse("void getPropertyValues(Object, Object[])");
+      TypeUtils.parseSignature("void getPropertyValues(Object, Object[])");
     private static final Signature SET_PROPERTY_VALUES =
-      Signature.parse("void setPropertyValues(Object, Object[])");
+      TypeUtils.parseSignature("void setPropertyValues(Object, Object[])");
+    private static final Signature CSTRUCT_EXCEPTION =
+      TypeUtils.parseConstructor("Throwable, int");
     private static final Type BULK_BEAN =
-      Signature.parseType("net.sf.cglib.beans.BulkBean");
+      TypeUtils.parseType("net.sf.cglib.beans.BulkBean");
     private static final Type BULK_BEAN_EXCEPTION =
-      Signature.parseType("net.sf.cglib.beans.BulkBeanException");
+      TypeUtils.parseType("net.sf.cglib.beans.BulkBeanException");
     private static final Type CLASS_CAST_EXCEPTION =
-      Signature.parseType("ClassCastException");
-    private static final Type[] EXCEPTION_TYPES =
-      Signature.parseTypes("Throwable, int");
+      TypeUtils.parseType("ClassCastException");
         
     public BulkBeanEmitter(ClassVisitor v,
                            String className,
@@ -144,7 +144,7 @@ class BulkBeanEmitter extends Emitter {
         dup_x1();
         swap();
         load_local(index);
-        invoke_constructor(BULK_BEAN_EXCEPTION, EXCEPTION_TYPES);
+        invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
         athrow();
     }
     

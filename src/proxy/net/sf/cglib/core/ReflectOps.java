@@ -9,31 +9,31 @@ import org.objectweb.asm.Type;
 
 public class ReflectOps {
     private static final Signature GET_DECLARED_METHOD =
-      Signature.parse("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
+      TypeUtils.parseSignature("java.lang.reflect.Method getDeclaredMethod(String, Class[])");
     private static final Signature GET_NAME =
-      Signature.parse("String getName()");
+      TypeUtils.parseSignature("String getName()");
     private static final Signature EQUALS =
-      Signature.parse("boolean equals(Object)");
+      TypeUtils.parseSignature("boolean equals(Object)");
     private static final Type BIG_INTEGER =
-      Signature.parseType("java.math.BigInteger");
+      TypeUtils.parseType("java.math.BigInteger");
     private static final Type BIG_DECIMAL =
-      Signature.parseType("java.math.BigDecimal");
+      TypeUtils.parseType("java.math.BigDecimal");
     
 
     private ReflectOps() {
     }
 
     public static void load_method(Emitter e, Method method) {
-        Ops.load_class(e, Type.getType(method.getDeclaringClass()));
+        ComplexOps.load_class(e, Type.getType(method.getDeclaringClass()));
         e.push(method.getName());
         push_object(e, method.getParameterTypes());
         e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
     }
 
     public static void begin_constructor(Emitter e, Constructor constructor) {
-        e.begin_constructor(Constants.ACC_PUBLIC, // constructor.getModifiers(),
-                            TypeUtils.getTypes(constructor.getParameterTypes()),
-                            TypeUtils.getTypes(constructor.getExceptionTypes()));
+        e.begin_method(Constants.ACC_PUBLIC, // constructor.getModifiers(),
+                       ReflectUtils.getSignature(constructor),
+                       TypeUtils.getTypes(constructor.getExceptionTypes()));
     }
 
     public static void begin_method(Emitter e,
@@ -43,9 +43,9 @@ public class ReflectOps {
                                     Class[] parameterTypes,
                                     Class[] exceptionTypes) {
         e.begin_method(access,
-                       name,
-                       Type.getType(returnType),
-                       TypeUtils.getTypes(parameterTypes),
+                       new Signature(name, 
+                                     Type.getType(returnType),
+                                     TypeUtils.getTypes(parameterTypes)),
                        TypeUtils.getTypes(exceptionTypes));
     }
 
@@ -70,7 +70,6 @@ public class ReflectOps {
     }
 
     private static void fieldHelper(Emitter e, int opcode, Field field) {
-        // TODO: remove need for direct access to emit_field?
         e.emit_field(opcode,
                      Type.getType(field.getDeclaringClass()),
                      field.getName(),
@@ -78,38 +77,28 @@ public class ReflectOps {
     }
 
     public static void invoke(Emitter e, Method method) {
-        int opcode;
+        Type owner = Type.getType(method.getDeclaringClass());
+        Signature sig = ReflectUtils.getSignature(method);
         if (method.getDeclaringClass().isInterface()) {
-            opcode = Constants.INVOKEINTERFACE;
+            e.invoke_interface(owner, sig);
         } else if (Modifier.isStatic(method.getModifiers())) {
-            opcode = Constants.INVOKESTATIC;
+            e.invoke_static(owner, sig);
         } else {
-            opcode = Constants.INVOKEVIRTUAL;
+            e.invoke_virtual(owner, sig);
         }
-        // TODO: remove need for direct access to emit_invoke?
-        e.emit_invoke(opcode,
-                      Type.getType(method.getDeclaringClass()),
-                      method.getName(),
-                      Type.getType(method.getReturnType()),
-                      TypeUtils.getTypes(method.getParameterTypes()));
     }
 
     public static void invoke(Emitter e, Constructor constructor) {
         e.invoke_constructor(Type.getType(constructor.getDeclaringClass()),
-                             TypeUtils.getTypes(constructor.getParameterTypes()));
+                             ReflectUtils.getSignature(constructor));
     }
 
-    public static void super_invoke(Emitter e, Method method) {
-        // TODO: remove need for direct access to emit_invoke?
-        e.emit_invoke(Constants.INVOKESPECIAL,
-                      e.getSuperType(),
-                      method.getName(),
-                      Type.getType(method.getReturnType()),
-                      TypeUtils.getTypes(method.getParameterTypes()));
-    }
+     public static void super_invoke(Emitter e, Method method) {
+         e.super_invoke(ReflectUtils.getSignature(method));
+     }
 
     public static void super_invoke(Emitter e, Constructor constructor) {
-        e.super_invoke_constructor(TypeUtils.getTypes(constructor.getParameterTypes()));
+        e.super_invoke_constructor(ReflectUtils.getSignature(constructor));
     }
     
     public static int getDefaultModifiers(int modifiers) {
@@ -169,7 +158,7 @@ public class ReflectOps {
                 }
             });
             String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-            Ops.string_switch_hash(e, names, new ObjectSwitchCallback() {
+            ComplexOps.string_switch_hash(e, names, new ObjectSwitchCallback() {
                 public void processCase(Object key, Label dontUseEnd) throws Exception {
                     member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
                 }
@@ -199,7 +188,7 @@ public class ReflectOps {
         });
         e.dup();
         e.arraylength();
-        e.process_switch(Ops.getSwitchKeys(buckets), new ProcessSwitchCallback() {
+        e.process_switch(ComplexOps.getSwitchKeys(buckets), new ProcessSwitchCallback() {
             public void processCase(int key, Label dontUseEnd) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
                 Class[] types = typer.getParameterTypes(bucket.get(0));
@@ -229,7 +218,7 @@ public class ReflectOps {
                     e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
                     e.push(types[i].getName());
                     e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
-                    e.ifeq(def);
+                    e.if_jump(e.EQ, def);
                 }
             }
             e.pop();
@@ -264,7 +253,7 @@ public class ReflectOps {
 
                 final Map fbuckets = buckets;
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-                Ops.string_switch_hash(e, names, new ObjectSwitchCallback() {
+                ComplexOps.string_switch_hash(e, names, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label dontUseEnd) throws Exception {
                         member_helper_type(e, (List)fbuckets.get(key), callback, typer, def, end, checked);
                     }
@@ -297,7 +286,7 @@ public class ReflectOps {
             } else if (obj instanceof String) {
                 e.push((String)obj);
             } else if (obj instanceof Class) {
-                Ops.load_class(e, Type.getType((Class)obj));
+                ComplexOps.load_class(e, Type.getType((Class)obj));
             } else if (obj instanceof BigInteger) {
                 e.new_instance(BIG_INTEGER);
                 e.dup();

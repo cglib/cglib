@@ -1,6 +1,7 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
@@ -51,9 +52,7 @@ abstract public class EmittingTransformer extends ClassTransformer {
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
         e.begin_method(access,
-                       name,
-                       Type.getReturnType(desc),
-                       Type.getArgumentTypes(desc),
+                       new Signature(name, desc),
                        fromInternalNames(exceptions));
         return e.getCodeVisitor();
     }

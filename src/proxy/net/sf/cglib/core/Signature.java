@@ -53,11 +53,9 @@
  */
 package net.sf.cglib.core;
 
-import java.util.*;
 import org.objectweb.asm.Type;
 
 public class Signature {
-    private static final Map transforms = new HashMap(8);
     private String name;
     private String desc;
 
@@ -68,83 +66,6 @@ public class Signature {
 
     public Signature(String name, Type returnType, Type[] argumentTypes) {
         this(name, Type.getMethodDescriptor(returnType, argumentTypes));
-    }
-
-    static {
-        transforms.put("void", "V");
-        transforms.put("byte", "B");
-        transforms.put("char", "C");
-        transforms.put("double", "D");
-        transforms.put("float", "F");
-        transforms.put("int", "I");
-        transforms.put("long", "J");
-        transforms.put("short", "S");
-        transforms.put("boolean", "Z");
-    }
-
-    public static Signature parse(String s) {
-        int space = s.indexOf(' ');
-        int lparen = s.indexOf('(', space);
-        int rparen = s.indexOf(')', lparen);
-        String returnType = s.substring(0, space);
-        String methodName = s.substring(space + 1, lparen);
-        StringBuffer sb = new StringBuffer();
-        int mark = lparen + 1;
-        sb.append('(');
-        for (Iterator it = parseTypes(s, lparen + 1, rparen).iterator(); it.hasNext();) {
-            sb.append(it.next());
-        }
-        sb.append(')');
-        sb.append(map(returnType));
-        return new Signature(methodName, sb.toString());
-    }
-
-    public static Type parseType(String s) {
-        return Type.getType(map(s));
-    }
-
-    public static Type[] parseTypes(String s) {
-        List names = parseTypes(s, 0, s.length());
-        Type[] types = new Type[names.size()];
-        for (int i = 0; i < types.length; i++) {
-            types[i] = Type.getType((String)names.get(i));
-        }
-        return types;
-    }
-
-    private static List parseTypes(String s, int mark, int end) {
-        List types = new ArrayList(5);
-        for (;;) {
-            int next = s.indexOf(',', mark);
-            if (next < 0) {
-                break;
-            }
-            types.add(map(s.substring(mark, next).trim()));
-            mark = next + 1;
-        }
-        types.add(map(s.substring(mark, end).trim()));
-        return types;
-    }
-
-    private static String map(String type) {
-        if (type.equals("")) {
-            return type;
-        }
-        String t = (String)transforms.get(type);
-        if (t != null) {
-            return t;
-        } else if (type.indexOf('.') < 0) {
-            return map("java.lang." + type);
-        } else {
-            StringBuffer sb = new StringBuffer();
-            int index = 0;
-            while ((index = type.indexOf("[]", index) + 1) > 0) {
-                sb.append('[');
-            }
-            type = type.substring(0, type.length() - sb.length() * 2);
-            sb.append('L').append(type.replace('.', '/')).append(';');
-            return sb.toString();
-        }
     }
 
     public String getName() {

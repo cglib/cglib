@@ -67,19 +67,19 @@ public class TestMemberSwitch extends CodeGenTestCase {
     private static int index = 0;
 
     private static final Constructor C0 =
-      ReflectUtils.findConstructor("MemberSwitchBean()");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean()");
     private static final Constructor C1 =
-      ReflectUtils.findConstructor("MemberSwitchBean(double)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(double)");
     private static final Constructor C2 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(int)");
     private static final Constructor C3 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String, String)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(int, String, String)");
     private static final Constructor C4 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String, double)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(int, String, double)");
     private static final Constructor C5 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, short, long)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(int, short, long)");
     private static final Constructor C6 =
-      ReflectUtils.findConstructor("MemberSwitchBean(int, String)");
+      ReflectUtils.findConstructor("net.sf.cglib.reflect.MemberSwitchBean(int, String)");
 
     public static interface Indexed {
         int getIndex(Class[] types);

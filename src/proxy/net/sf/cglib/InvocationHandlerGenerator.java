@@ -11,19 +11,19 @@ implements CallbackGenerator
     public static final InvocationHandlerGenerator INSTANCE = new InvocationHandlerGenerator();
 
     private static final Type INVOCATION_HANDLER =
-      Signature.parseType("net.sf.cglib.InvocationHandler");
+      TypeUtils.parseType("net.sf.cglib.InvocationHandler");
     private static final Type UNDECLARED_THROWABLE_EXCEPTION =
-      Signature.parseType("net.sf.cglib.UndeclaredThrowableException");
+      TypeUtils.parseType("net.sf.cglib.UndeclaredThrowableException");
     private static final Type ERROR =
-      Signature.parseType("Error");
+      TypeUtils.parseType("Error");
     private static final Type RUNTIME_EXCEPTION =
-      Signature.parseType("RuntimeException");
+      TypeUtils.parseType("RuntimeException");
     private static final Type METHOD =
-      Signature.parseType("java.lang.reflect.Method");
-    private static final Signature CSTRUCT_THROWABLE =
-      Signature.parse("void <init>(Throwable)");
+      TypeUtils.parseType("java.lang.reflect.Method");
     private static final Signature INVOKE =
-      Signature.parse("Object invoke(Object, java.lang.reflect.Method, Object[])");
+      TypeUtils.parseSignature("Object invoke(Object, java.lang.reflect.Method, Object[])");
+    private static final Signature CSTRUCT_THROWABLE =
+      TypeUtils.parseConstructor("Throwable");
 
     private String getFieldName(Context context, Method method) {
         return "CGLIB$$METHOD_" + context.getUniqueName(method);

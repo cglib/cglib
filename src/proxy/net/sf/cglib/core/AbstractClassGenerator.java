@@ -62,8 +62,17 @@ import org.objectweb.asm.ClassWriter;
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
-    private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
+    private static final RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
       new RuntimePermission("defineCGLIBClassInJavaPackage");
+    private static final Method DEFINE_CLASS;
+
+    static {
+        try {
+            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ byte[].class, int.class, int.class });
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
 
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
         public String getClassName(String prefix, Class source, int counter) {
@@ -87,8 +96,6 @@ implements ClassGenerator
         Class type;
         Map cache;
         int counter = 1;
-        final Method defineClass =
-          ReflectUtils.findMethod("ClassLoader.defineClass(byte[], int, int)");
 
         public Source(Class type, boolean useCache) {
             this.type = type;
@@ -155,7 +162,7 @@ implements ClassGenerator
                     DebuggingClassWriter w = new DebuggingClassWriter(true);
                     generateClass(transform(w));
                     byte[] b = w.toByteArray();
-                    Class gen = defineClass(source.defineClass, getClassName(), b, loader);
+                    Class gen = defineClass(DEFINE_CLASS, getClassName(), b, loader);
                     instance = firstInstance(gen);
 
                     if (cache2 != null) {
