@@ -17,6 +17,7 @@ package net.sf.cglib.core;
 
 import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassReader;
+import java.util.*;
 
 // TODO: optimize (ClassReader buffers entire class before accept)
 public class ClassNameReader {
@@ -27,7 +28,13 @@ public class ClassNameReader {
     private static class EarlyExitException extends RuntimeException { }
     
     public static String getClassName(ClassReader r) {
-        final String[] array = new String[1];
+    
+        return getClassInfo(r)[0];
+      
+    }
+    
+    public static String[] getClassInfo(ClassReader r) {
+        final List array = new ArrayList();
         try {
             r.accept(new ClassAdapter(null) {
                 public void visit(int access,
@@ -35,11 +42,17 @@ public class ClassNameReader {
                                   String superName,
                                   String[] interfaces,
                                   String sourceFile) {
-                    array[0] = name.replace('/', '.');
+                    array.add( name.replace('/', '.') );
+                    array.add( superName.replace('/', '.') );
+                    for(int i = 0; i < interfaces.length; i++  ){
+                       array.add( interfaces[i].replace('/', '.') );
+                    }
+                    
                     throw EARLY_EXIT;
                 }
             }, true);
         } catch (EarlyExitException e) { }
-        return array[0];
+        
+        return (String[])array.toArray( new String[]{} );
     }
 }

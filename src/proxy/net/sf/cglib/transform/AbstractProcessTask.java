@@ -39,8 +39,10 @@ abstract public class AbstractProcessTask extends Task {
             String[] srcFiles = ds.getIncludedFiles();
             File dir = fs.getDir(p);
             for (int j = 0; j < srcFiles.length; j++) {
-                File src = new File(dir, srcFiles[j]);
-                fileMap.put(src.getAbsolutePath(), src);
+                if( srcFiles[j].endsWith(".class") ){
+                 File src = new File(dir, srcFiles[j]);
+                 fileMap.put(src.getAbsolutePath(), src);
+                }//asumes it is not a class file
             }
         }
         return fileMap.values();

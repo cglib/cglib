@@ -25,7 +25,7 @@ public class ExampleTask extends AbstractTransformTask {
     private String fieldSuffix = "";
     private ClassTransformer transformer;
 
-    protected ClassTransformer getClassTransformer(String name) {
+    protected ClassTransformer getClassTransformer(String name[]) {
         return transformer;
     }
     
