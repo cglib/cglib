@@ -56,5 +56,5 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 public interface CallbackFilter {
-    int accept(Method member);
+    int accept(Method method);
 }
