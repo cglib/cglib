@@ -205,7 +205,7 @@ import java.util.*;
                 ( null != filter && !filter.accept(method))   ){
                 continue;
             }   
-            String fieldName = getFieldName(method, i);
+            String fieldName = getFieldName(i);
             String accessName = getAccessName(method, i);
             declare_field(privateFinalStatic, Method.class, fieldName);
             declare_field(privateFinalStatic, MethodProxy.class, accessName);
@@ -221,7 +221,7 @@ import java.util.*;
         }
     }
 
-    private String getFieldName(Method method, int index) {
+    private String getFieldName(int index) {
         return "METHOD_" + index;
     }
     
@@ -429,7 +429,7 @@ import java.util.*;
         begin_static();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
-            String fieldName = getFieldName(method, i);
+            String fieldName = getFieldName(i);
 
             Class[] args = method.getParameterTypes();
             push(method.getDeclaringClass().getName());
