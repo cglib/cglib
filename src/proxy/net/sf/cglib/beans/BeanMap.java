@@ -103,12 +103,12 @@ abstract public class BeanMap implements Map {
         }
         
         protected ClassLoader getDefaultClassLoader() {
-            return bean.getClass().getClassLoader();
+            return beanClass.getClassLoader();
         }
 
         public BeanMap create() {
-            setNamePrefix(BeanMap.class.getName());
-            return (BeanMap)super.create(beanClass);
+            setNamePrefix(beanClass.getName());
+            return (BeanMap)super.create(beanClass.getName());
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
@@ -241,5 +241,25 @@ abstract public class BeanMap implements Map {
             values.add(get(it.next()));
         }
         return Collections.unmodifiableCollection(values);
+    }
+
+    /*
+     * @see java.util.AbstractMap#toString
+     */
+    public String toString()
+    {
+        StringBuffer sb = new StringBuffer();
+        sb.append('{');
+        for (Iterator it = keySet().iterator(); it.hasNext();) {
+            Object key = it.next();
+            sb.append(key);
+            sb.append('=');
+            sb.append(get(key));
+            if (it.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }
