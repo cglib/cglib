@@ -58,13 +58,12 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.5 2002/12/04 00:41:13 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.6 2002/12/04 00:56:37 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method HASH_CODE;
     private static final Method FLOAT_TO_INT_BITS;
     private static final Method DOUBLE_TO_LONG_BITS;
-    private static final Class TYPE_KEY_FACTORY = KeyFactory.class;
     
     static {
         try {
