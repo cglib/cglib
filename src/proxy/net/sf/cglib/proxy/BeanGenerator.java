@@ -97,11 +97,11 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                         out.write( is.read() );
                     }
                 }catch(java.io.IOException ioe){
-                    ioe.printStackTrace();
+                    
                     throw new NoClassDefFoundError( ioe.getMessage() );
                 }
                 B_INFO  = out.toByteArray();
-             
+            
     
     }
     
@@ -145,9 +145,8 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
             for( int i = 0; i< m.length; i++ ){
               methodDescriptors[i] = m[i].toMethodDescriptor();
             }
-          //inrospector ignores Ecxeptions
-            System.out.println("OK");
-        }
+            //TODO: events
+          }
         
         
         
@@ -225,7 +224,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
                     return beanInfo;
                 }
                 
-                beanInfo =  defineClass( BEAN_INFO_CLASS_NAME, B_INFO,0,B_INFO.length);
+                beanInfo =  defineClass( Info.class.getName(), B_INFO,0,B_INFO.length);
                 
                 
                 return  beanInfo;
@@ -279,6 +278,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         char propName[] = name.toCharArray();
         propName[0] = Character.toUpperCase( propName[0] );
         
+        //TODO: custom names
         MethodGen getter = new MethodGen( ACC_PUBLIC ,  propType , new Type[0],
         null, type == Boolean.TYPE ? "is" : "get" + new String(propName),
         cg.getClassName(), il,  cp);
@@ -361,7 +361,7 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         return this;
     }
     
-    public BeanGenerator addMethod( java.lang.reflect.Method method ){
+    public BeanGenerator addMethod( java.lang.reflect.Method method, Map attributes ){
         
         validate();
         
@@ -372,7 +372,12 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
             throw new IllegalArgumentException( method.toString() );
         }
         
-        methods.add( new BeanGenerator.BeanMethod(method) );
+        BeanGenerator.BeanMethod bm = new BeanGenerator.BeanMethod(method);
+        if(attributes != null){
+          bm.getAttributes().putAll(attributes);
+        } 
+        methods.add( bm );
+        
         return this;
     }
     
@@ -382,23 +387,36 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         validate();
         for( java.util.Iterator i = props.entrySet().iterator(); i.hasNext();  ){
             Map.Entry entry = (Map.Entry)i.next();
-            addProperty((String)entry.getKey(),(Class)entry.getValue());
+            addProperty((String)entry.getKey(),(Class)entry.getValue(),null);
         }
+        
         return this;
     }
+    
+    protected Map getAttributes( FeatureDescriptor d ){
+            Map attributes = new HashMap();
+            Enumeration names = d.attributeNames();
+            while( names.hasMoreElements() ){
+              String name = (String)names.nextElement() ;  
+              attributes.put( name, d.getValue( name ) );
+            }
+            return attributes;
+        }
+       
     
     public BeanGenerator addProperties( java.beans.PropertyDescriptor[] descriptors ){
         
         for( int i = 0; i < descriptors.length; i++  ){
             addProperty(descriptors[i].getName(),
-            descriptors[i].getPropertyType());
+            descriptors[i].getPropertyType(),getAttributes(descriptors[i]));
         }
+        
         return this;
     }
     
     
     
-    public BeanGenerator addProperty( String name, Class type ){
+    public BeanGenerator addProperty( String name, Class type, Map attributes ){
         
         validate();
         
@@ -407,7 +425,12 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         }
         
         names.add( name );
-        properties.add( new BeanProperty( name, type) );
+        BeanProperty bp = new BeanProperty( name, type);
+        if( attributes != null ){
+             bp.getAttributes().putAll( attributes );
+        }
+        properties.add( bp );
+        
         return this;
     }
     
@@ -424,16 +447,8 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         public Map getAttributes(){
           return attributes;
         }
-        protected void addAttributes( FeatureDescriptor d ){
         
-            Enumeration names = d.attributeNames();
-            while( names.hasMoreElements() ){
-              String name = (String)names.nextElement() ;  
-              attributes.put( name, d.getValue( name ) );
-            }
-            
-        }
-        protected void copyAttributes(FeatureDescriptor d){
+         protected void copyAttributes(FeatureDescriptor d){
             for( Iterator i = attributes.entrySet().iterator(); i.hasNext() ; ){
                Map.Entry entry = (Map.Entry)i.next(); 
                d.setValue((String)entry.getKey(), entry.getValue() );
@@ -500,13 +515,16 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
        
         private java.lang.reflect.Method method;
         MethodDescriptor descriptor;
+        
         BeanMethod(java.lang.reflect.Method method ){
             super(method.getName());
             this.method = method;
         }
+        
         public java.lang.reflect.Method  getMethod(){
             return method;
         }
+        
         public MethodDescriptor toMethodDescriptor(){
             if(descriptor == null ){
              try{
@@ -525,43 +543,5 @@ public final class BeanGenerator extends ClassLoader implements ClassFileConstan
         }
     }
     
-    // TODO: tests
-   
-    public static void main(String args[])throws Exception{
-        
-        for(int j = 0; j< 1 ;j++){
-            
-            Class cls = new BeanGenerator( ).
-            addProperty( "property", int.class ).
-            addMethod( BeanGenerator.class.getMethod("main",
-            new Class[]{ String[].class }) ).
-            copyMethods( java.lang.Math.class ).
-            generate();
-            
-            
-            
-            java.beans.BeanInfo info = java.beans.Introspector.getBeanInfo(cls);
-            
-            
-            
-            Object obj = cls.newInstance();
-            Object methods[] = cls.getMethods();
-            PropertyDescriptor[] d = info.getPropertyDescriptors();
-            
-            for( int i = 0 ; i< d.length; i++  ){
-             System.out.println(d[i].getName());
-            }
-            
-            
-            for( int i = 0; i< methods.length; i++ ){
-                
-               ;;;
-               
-            }
-            
-            
-        }
-        
-    }
     
 }
