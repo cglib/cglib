@@ -71,7 +71,7 @@ import net.sf.cglib.util.CodeGenerationException;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.12 2003/09/09 18:18:20 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.13 2003/09/11 17:40:49 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     protected Proxy(InvocationHandler h) {
@@ -90,10 +90,11 @@ public class Proxy implements Serializable {
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhanceClass(ProxyImpl.class,
-                                     interfaces,
-                                     new SimpleFilter(Callbacks.JDK_PROXY),
-                                     loader);
+        Enhancer e = new Enhancer();
+        e.setSuperclass(ProxyImpl.class);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(new SimpleFilter(Callbacks.JDK_PROXY));
+        return e.createClass();
     }
 
     public static boolean isProxyClass(Class cl) {

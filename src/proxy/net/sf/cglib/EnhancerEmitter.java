@@ -56,13 +56,13 @@ package net.sf.cglib;
 import java.io.ObjectStreamException;
 import java.lang.reflect.*;
 import java.util.*;
-import net.sf.cglib.util.*;
+import net.sf.cglib.core.*;
 
-class EnhancerGenerator
-extends CodeGenerator
+class EnhancerEmitter
+extends Emitter
 {
+    /* package */ static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
-    private static final String SET_THREAD_CALLBACKS = "CGLIB$SET_THREAD_CALLBACKS";
 
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Factory.newInstance(Callbacks)");
@@ -79,27 +79,19 @@ extends CodeGenerator
     private static final Method CALLBACKS_GET =
       ReflectUtils.findMethod("Callbacks.get(int)");
     
-    private final Class[] interfaces;
     private final CallbackFilter filter;
-    private final Callbacks initialCallbacks;
     private final BitSet usedCallbacks = new BitSet();
 
-    public EnhancerGenerator(Class type,
-                             Class[] interfaces,
-                             CallbackFilter filter,
-                             Callbacks callbacks) {
-        setSuperclass(type);
-        this.interfaces = interfaces;
+    public EnhancerEmitter(String className, Class superclass, Class[] interfaces, CallbackFilter filter) {
+        setClassName(className);
+        setSuperclass(superclass);
+        addInterfaces(interfaces);
         this.filter = filter;
-        initialCallbacks = callbacks;
-
-        if (interfaces != null) {
-            addInterfaces(interfaces);
-        }
+        
         addInterface(Factory.class);
     }
 
-    protected void generate() throws Exception {
+    public byte[] getBytes() throws Exception {
         Class type = getSuperclass();
 
         List constructors = new ArrayList(Arrays.asList(type.getDeclaredConstructors()));
@@ -108,27 +100,23 @@ extends CodeGenerator
             throw new IllegalArgumentException("No visible constructors in " + type);
         }
 
-        ensureLoadable(type);
-        ensureLoadable(interfaces);
-        
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
         // its superinterfaces.
         List methods = new ArrayList();
         ReflectUtils.addAllMethods(getSuperclass(), methods);
 
-        Set forcePublic = Collections.EMPTY_SET;
-        if (interfaces != null) {
-            List interfaceMethods = new ArrayList();
-            for (int i = 0; i < interfaces.length; i++) {
+        Class[] interfaces = getInterfaces();
+        List interfaceMethods = new ArrayList();
+        for (int i = 0; i < interfaces.length; i++) {
+            if (interfaces[i] != Factory.class) {
                 ReflectUtils.addAllMethods(interfaces[i], interfaceMethods);
             }
-            forcePublic = MethodWrapper.createSet(interfaceMethods);
-            methods.addAll(interfaceMethods);
         }
+        Set forcePublic = MethodWrapper.createSet(interfaceMethods);
+        methods.addAll(interfaceMethods);
         CollectionUtils.filter(methods, new VisibilityPredicate(getSuperclass(), true));
         CollectionUtils.filter(methods, new DuplicatesPredicate());
-        // removeDuplicates(methods);
         removeFinal(methods);
 
         int len = Callbacks.MAX_VALUE + 1;
@@ -155,14 +143,10 @@ extends CodeGenerator
         generateStatic(generators, contexts);
         generateFactory(constructors);
         generateSetThreadCallbacks();
+
+        return super.getBytes();
     }
 
-    protected void postDefine(Class type) throws Exception {
-        Method setter = type.getDeclaredMethod(SET_THREAD_CALLBACKS,
-                                               new Class[]{ Callbacks.class });
-        setter.invoke(null, new Object[]{ initialCallbacks });
-    }
-    
     private void generateConstructors(List constructors) throws NoSuchMethodException {
         for (Iterator i = constructors.iterator(); i.hasNext();) {
             Constructor constructor = (Constructor)i.next();
@@ -204,15 +188,15 @@ extends CodeGenerator
         load_arg(1);
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
-                public void processCase(int key, Label end) throws Exception {
-                    checkcast(CallbackUtils.getType(key));
-                    putfield(getCallbackField(key));
-                    goTo(end);
-                }
-                public void processDefault() {
-                    pop2(); // stack height
-                }
-            });
+            public void processCase(int key, Label end) throws Exception {
+                checkcast(CallbackUtils.getType(key));
+                putfield(getCallbackField(key));
+                goTo(end);
+            }
+            public void processDefault() {
+                pop2(); // stack height
+            }
+        });
         return_value();
         end_method();
         
@@ -257,7 +241,7 @@ extends CodeGenerator
             dup();
             invoke_constructor_this();
         } else {
-            throw_exception(IllegalStateException.class, "More than one callback object required");
+            Virt.throw_exception(this, IllegalStateException.class, "More than one callback object required");
         }
         return_value();
         end_method();
@@ -270,7 +254,7 @@ extends CodeGenerator
         new_instance_this();
         dup();
         load_arg(0);
-        constructor_switch((Constructor[])constructors.toArray(new Constructor[0]), new ObjectSwitchCallback() {
+        Virt.constructor_switch(this, (Constructor[])constructors.toArray(new Constructor[0]), new Virt.ObjectSwitchCallback() {
             public void processCase(Object key, Label end) throws Exception {
                 Constructor constructor = (Constructor)key;
                 Class types[] = constructor.getParameterTypes();
@@ -278,13 +262,13 @@ extends CodeGenerator
                     load_arg(1);
                     push(i);
                     aaload();
-                    unbox(types[i]);
+                    Virt.unbox(EnhancerEmitter.this, types[i]);
                 }
                 invoke_constructor_this(types);
                 goTo(end);
             }
             public void processDefault() {
-                throw_exception(IllegalArgumentException.class, "Constructor not found");
+                Virt.throw_exception(EnhancerEmitter.this, IllegalArgumentException.class, "Constructor not found");
             }
         });
         load_arg(2);
@@ -333,7 +317,7 @@ extends CodeGenerator
 
     private void throwIllegalState(Method method) {
         begin_method(method);
-        throw_exception(IllegalStateException.class, "MethodInterceptor does not apply to this object");
+        Virt.throw_exception(this, IllegalStateException.class, "MethodInterceptor does not apply to this object");
         return_value();
         end_method();
     }

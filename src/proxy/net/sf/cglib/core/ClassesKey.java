@@ -51,34 +51,29 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
+public class ClassesKey
+{
+    private Object[] array;
+    private int hashCode;
 
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
+    public ClassesKey(Object[] array) {
+        this.array = array;
+        hashCode = 31;
+        for (int i = 0; i < array.length; i++) {
+            Object value = array[0];
+            hashCode = hashCode * 37 + ((value == null) ? 0 : value.getClass().hashCode());
+        }
     }
 
-    public TestLazyLoader(String testName) {
-        super(testName);
+    public boolean equals(Object o) {
+        return o != null
+            && (o instanceof ClassesKey)
+            && CollectionUtils.arrayEquals(array, ((ClassesKey)o).array);
     }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
+
+    public int hashCode() {
+        return hashCode;
     }
 }

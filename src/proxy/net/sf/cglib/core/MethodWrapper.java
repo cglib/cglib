@@ -51,70 +51,34 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.delegates;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
-import net.sf.cglib.*;
-import net.sf.cglib.util.*;
+import java.lang.reflect.Method;
+import java.util.*;
+import net.sf.cglib.KeyFactory; // TODO
 
-/**
- * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.1 2003/09/09 16:15:10 herbyderby Exp $
- */
-public abstract class ConstructorDelegate {
-    private static final FactoryCache CACHE = new FactoryCache(ConstructorDelegate.class);
-    private static final ConstructorKey KEY_FACTORY =
-      (ConstructorKey)KeyFactory.create(ConstructorKey.class, null);
-    
-    interface ConstructorKey {
-        public Object newInstance(Class declaring, Class iface);
-    }
+public class MethodWrapper {
+    private static final MethodWrapperKey KEY_FACTORY =
+      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 
-    protected ConstructorDelegate() {
-    }
-   
-    public static Object create(Class declaring, Class iface) {
-        return create(declaring, iface, declaring.getClassLoader());
+    interface MethodWrapperKey {
+        public Object newInstance(String name, Class[] parameterTypes, Class returnType);
     }
     
-    public static Object create(final Class declaring, final Class iface, ClassLoader loader) {
-        Object key = KEY_FACTORY.newInstance(declaring, iface);
-        return CACHE.get(loader, key, new FactoryCache.AbstractCallback() {
-            public BasicCodeGenerator newGenerator() {
-                return new Generator(declaring, iface);
-            }
-        });
+    private MethodWrapper() {
     }
 
-    private static class Generator extends CodeGenerator {
-        private Constructor constructor;
-        private Method newInstance;
+    public static Object create(Method method) {
+        return KEY_FACTORY.newInstance(method.getName(),
+                                       method.getParameterTypes(),
+                                       method.getReturnType());
+    }
 
-        public Generator(Class declaring, Class iface) {
-            try {
-                newInstance = ReflectUtils.findNewInstance(iface);
-                if (!newInstance.getReturnType().isAssignableFrom(declaring)) {
-                    throw new IllegalArgumentException("incompatible return type");
-                }
-                constructor = declaring.getDeclaredConstructor(newInstance.getParameterTypes());
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("interface does not match any known constructor");
-            }
-            setSuperclass(ConstructorDelegate.class);
-            setNamePrefix(declaring.getName());
-            addInterface(newInstance.getDeclaringClass());
+    public static Set createSet(Collection methods) {
+        Set set = new HashSet();
+        for (Iterator it = methods.iterator(); it.hasNext();) {
+            set.add(create((Method)it.next()));
         }
-
-        protected void generate() {
-            null_constructor();
-
-            begin_method(newInstance);
-            new_instance(constructor.getDeclaringClass());
-            dup();
-            load_args();
-            invoke(constructor);
-            return_value();
-            end_method();
-        }
+        return set;
     }
 }

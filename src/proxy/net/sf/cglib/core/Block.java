@@ -51,34 +51,32 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
-
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
-    }
-
-    public TestLazyLoader(String testName) {
-        super(testName);
-    }
+public class Block
+{
+    private Block parent;
+    private Label start;
+    private Label end;
     
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+    public Block(Block parent, Label start) {
+        this.parent = parent;
+        this.start = start;
     }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
+
+    public Block getParent() {
+        return parent;
+    }
+
+    public Label getStart() {
+        return start;
+    }
+
+    public Label getEnd() {
+        return end;
+    }
+
+    public void setEnd(Label end) {
+        this.end = end;
     }
 }

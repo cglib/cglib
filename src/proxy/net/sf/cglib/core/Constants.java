@@ -51,34 +51,20 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import java.lang.reflect.*;
-import java.util.*;
-import junit.framework.*;
-import net.sf.cglib.util.*;
+import java.lang.reflect.Modifier;
 
-public class TestLazyLoader extends CodeGenTestCase {
-    public void testLazyLoader() {
-        LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
-        Object obj = Helpers.enhance(Object.class, loader);
-        assertTrue("foo".equals(obj.toString()));
-    }
+/**
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
+ * @version $Id: Constants.java,v 1.1 2003/09/11 17:40:48 herbyderby Exp $
+ */
+public class Constants {
+    private Constants() { }
 
-    public TestLazyLoader(String testName) {
-        super(testName);
-    }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestLazyLoader.class);
-    }
+    public static final Class[] TYPES_EMPTY = {};
+    public static final String CONSTRUCTOR_NAME = "<init>";
+    public static final String SOURCE_FILE = "<generated>";
+    public static final String STATIC_NAME = "<clinit>";
+    public static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
 }

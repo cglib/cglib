@@ -53,12 +53,12 @@
  */
 package net.sf.cglib;
 
-import net.sf.cglib.delegates.*;
+import net.sf.cglib.reflect.*;
 import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestDelegates.java,v 1.1 2003/09/10 20:15:27 herbyderby Exp $
+ * @version $Id: TestDelegates.java,v 1.2 2003/09/11 17:40:48 herbyderby Exp $
  */
 public class TestDelegates extends CodeGenTestCase {
 

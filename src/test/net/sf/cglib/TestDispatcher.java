@@ -60,7 +60,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestDispatcher.java,v 1.1 2003/09/04 18:53:45 herbyderby Exp $
+ * @version $Id: TestDispatcher.java,v 1.2 2003/09/11 17:40:48 herbyderby Exp $
  */
 public class TestDispatcher extends CodeGenTestCase {
     public void testSimple() throws Exception {
@@ -73,7 +73,7 @@ public class TestDispatcher extends CodeGenTestCase {
                 return map.get(className);
             }
         };
-        Object obj = Enhancer.enhance(Object.class,
+        Object obj = Helpers.enhance(Object.class,
                                       new Class[]{ DI1.class, DI2.class },
                                       callback);
         assertTrue(((DI1)obj).herby().equals("D1"));

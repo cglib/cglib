@@ -56,14 +56,17 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 import java.util.Iterator;
 import java.util.List;
-import net.sf.cglib.util.Block;
-import net.sf.cglib.util.CodeGenerator;
-import net.sf.cglib.util.CodeGenerationException;
+import net.sf.cglib.core.Block;
+import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.CodeGenerationException;
+// import net.sf.cglib.util.Block;
+// import net.sf.cglib.util.CodeGenerator;
+// import net.sf.cglib.util.CodeGenerationException;
 
 interface CallbackGenerator
 {
-    void generate(CodeGenerator cg, Context context) throws Exception;
-    void generateStatic(CodeGenerator cg, Context context) throws Exception;
+    void generate(Emitter cg, Context context) throws Exception;
+    void generateStatic(Emitter cg, Context context) throws Exception;
 
     interface Context
     {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.26 2003/09/09 18:19:11 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.27 2003/09/11 17:40:49 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -37,7 +37,7 @@
       <pathelement location="${asm.jar}"/>
     
       <fileset dir="./lib">
-		<include name="*.*"/>
+		<include name="*.jar"/>
        </fileset>
     </path>
   
@@ -92,7 +92,7 @@
              bottom="Copyright (c) 2001 - Apache Software Foundation" 
              destdir="docs" 
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
-             packagenames="net.sf.cglib,net.sf.cglib.beans,net.sf.cglib.delegates,net.sf.cglib.reflect" 
+             packagenames="net.sf.cglib.*"
              access="public"
              sourcepath="${source.home}" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
