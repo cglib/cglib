@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.20 2004/02/11 18:32:35 baliuka Exp $
+ * @version $Id: ReflectUtils.java,v 1.21 2004/03/20 15:51:21 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -276,7 +276,9 @@ public class ReflectUtils {
         
         public static Constructor getConstructor(Class type, Class[] parameterTypes) {
             try {
-                return type.getConstructor(parameterTypes);
+               Constructor constructor = type.getDeclaredConstructor(parameterTypes);
+               constructor.setAccessible(true);
+                return constructor;
             } catch (NoSuchMethodException e) {
                 throw new CodeGenerationException(e);
             }
