@@ -193,7 +193,6 @@ class EnhancerEmitter extends ClassEmitter {
         final int[] keys = getCallbackKeys();
 
         // Factory.getCallback(int)
-        
         new CodeEmitter(begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null)) {{
             load_this();
             load_arg(0);

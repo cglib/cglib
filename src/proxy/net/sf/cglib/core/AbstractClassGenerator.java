@@ -83,6 +83,7 @@ implements ClassGenerator
     private ClassLoader classLoader;
     private String namePrefix;
     private Object key;
+    private Transformer transformer;
 
     protected static class Source {
         String name;
@@ -111,6 +112,10 @@ implements ClassGenerator
 
     public void setNamingPolicy(NamingPolicy namingPolicy) {
         this.namingPolicy = namingPolicy;
+    }
+
+    public void setTransformer(Transformer transformer) {
+        this.transformer = transformer;
     }
 
     // TODO: pluggable policy?
@@ -169,7 +174,11 @@ implements ClassGenerator
                                 super.visitEnd();
                             }
                         };
-                        generateClass(w);
+                        ClassGenerator cg = this;
+                        if (transformer != null) {
+                            cg = (ClassGenerator)transformer.transform(this);
+                        }
+                        cg.generateClass(w);
                         byte[] b = w.toByteArray();
                         if (!className.equals(w.getClassName())) {
                             throw new IllegalStateException("Class name " + className +
