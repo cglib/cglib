@@ -69,7 +69,7 @@ public abstract class MetaClass  {
 
     private static final Map cache = new Hashtable();
     private static final MetaClassKey keyFactory =
-      (MetaClassKey)KeyFactory.makeFactory(MetaClassKey.class, null);
+      (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
     private static final ClassLoader defaultLoader = MetaClass.class.getClassLoader();
     
     protected Class target;

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.6 2002/12/04 00:41:12 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.7 2002/12/29 21:38:51 herbyderby Exp $
  */
 public class TestKeyFactory extends CodeGenTestCase {
     public interface MyKey {
@@ -82,13 +82,13 @@ public class TestKeyFactory extends CodeGenTestCase {
     }
 
     public void testSimple() throws Exception {
-        MyKey mykey = (MyKey)KeyFactory.makeFactory(MyKey.class, null);
+        MyKey mykey = (MyKey)KeyFactory.create(MyKey.class, null);
         assertTrue(mykey.newInstance(5, new int[]{ 6, 7 }, false).hashCode() ==
                    mykey.newInstance(5, new int[]{ 6, 7 }, false).hashCode());
     }
 
     public void testNested() throws Exception {
-        MyKey2 mykey2 = (MyKey2)KeyFactory.makeFactory(MyKey2.class, null);
+        MyKey2 mykey2 = (MyKey2)KeyFactory.create(MyKey2.class, null);
         Object instance = mykey2.newInstance(new int[][]{ { 1, 2 }, { 3, 4 } });
         int code1 = instance.hashCode();
         int result = ((KeyFactory)instance).getHashConstant();
@@ -98,21 +98,21 @@ public class TestKeyFactory extends CodeGenTestCase {
     }
 
     public void testCharArray() throws Exception {
-        CharArrayKey f = (CharArrayKey)KeyFactory.makeFactory(CharArrayKey.class, null);
+        CharArrayKey f = (CharArrayKey)KeyFactory.create(CharArrayKey.class, null);
         Object key1 = f.newInstance(new char[]{ 'a', 'b' });
         Object key2 = f.newInstance(new char[]{ 'a', '_' });
         assertTrue(!key1.equals(key2));
     }
 
     public void testBooleanArray() throws Exception {
-        BooleanArrayKey f = (BooleanArrayKey)KeyFactory.makeFactory(BooleanArrayKey.class, null);
+        BooleanArrayKey f = (BooleanArrayKey)KeyFactory.create(BooleanArrayKey.class, null);
         Object key1 = f.newInstance(new boolean[]{ true, false, true });
         Object key2 = f.newInstance(new boolean[]{ true, false, true });
         assertTrue(key1.equals(key2));
     }
 
     public void testMethodKey() throws Exception {
-        MethodKey factory = (MethodKey)KeyFactory.makeFactory(MethodKey.class, null);
+        MethodKey factory = (MethodKey)KeyFactory.create(MethodKey.class, null);
         Set methodSet = new HashSet();
         methodSet.add(factory.newInstance(Number.class, new Class[]{ int.class }));
         assertTrue(methodSet.contains(factory.newInstance(Number.class, new Class[]{ int.class })));
@@ -120,7 +120,7 @@ public class TestKeyFactory extends CodeGenTestCase {
     }
 
     public void testEqualOtherClass() throws Exception {
-        MyKey mykey = (MyKey)KeyFactory.makeFactory(MyKey.class, null);
+        MyKey mykey = (MyKey)KeyFactory.create(MyKey.class, null);
         assertTrue(!mykey.newInstance(5, new int[]{ 6, 7 }, false).equals(new Object()));
     }
     

@@ -5,7 +5,7 @@ public class KeySample {
         public Object newInstance(int a, char[] b, String d);
     }
     public static void main(String[] args) {
-        MyFactory f = (MyFactory)KeyFactory.makeFactory(MyFactory.class, null);
+        MyFactory f = (MyFactory)KeyFactory.create(MyFactory.class, null);
         Object key1 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
         Object key2 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
         Object key3 = f.newInstance(20, new char[]{ 'a', '_' }, "hello");

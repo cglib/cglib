@@ -61,7 +61,7 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.11 2002/12/22 00:21:17 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.12 2002/12/29 21:37:41 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -71,7 +71,7 @@ public class Delegator {
     private static final Map infoCache = new HashMap();
     private static final ClassNameFactory nameFactory = new ClassNameFactory("CreatedByCGLIB");
     private static final DelegatorKey keyFactory =
-      (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
+      (DelegatorKey)KeyFactory.create(DelegatorKey.class, null);
 
     // should be package-protected but causes problems on jdk1.2
     public interface DelegatorKey {
@@ -101,7 +101,7 @@ public class Delegator {
      * loaded this class.
      * @return the dynamically created object
      */
-    public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader) {
+    public static Object create(Class[] interfaces, Object[] delegates, ClassLoader loader) {
         return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader, false);
     }
     
@@ -119,7 +119,7 @@ public class Delegator {
      * @return the dynamically created object
      * @see #getInterfaceMap(Object[])
      */
-    public static Object makeDelegator(Object[] delegates, ClassLoader loader) {
+    public static Object create(Object[] delegates, ClassLoader loader) {
         Info info = getInfo(delegates);
         Object[] remapped = new Object[info.interfaces.length];
         for (int i = 0; i < remapped.length; i++) {
@@ -156,7 +156,7 @@ public class Delegator {
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
      * @return the dynamically created bean
      */
-    public static Object makeSuperBean(Object[] beans, ClassLoader loader) {
+    public static Object createBean(Object[] beans, ClassLoader loader) {
         Class[] classes = getClasses(beans);
         Object key = keyFactory.newInstance(classes);
         return makeDelegatorHelper(key, classes, beans, loader, true);
@@ -192,7 +192,7 @@ public class Delegator {
             if (factory == null) {
                 String className = nameFactory.getNextName(TYPE);
                 Class result = new DelegatorGenerator(className, classes, loader, bean).define();
-                factory = (Factory)FactoryCache.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
+                factory = (Factory)ReflectUtils.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
                 cache.put(loader, key, factory);
             }
         }

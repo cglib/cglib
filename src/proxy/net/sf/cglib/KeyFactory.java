@@ -79,7 +79,7 @@ import java.util.*;
  *           public Object newInstance(int a, char[] b, String c);
  *       }
  *       public static void main(String[] args) {
- *           MyFactory f = (MyFactory)KeyFactory.makeFactory(MyFactory.class, null);
+ *           MyFactory f = (MyFactory)KeyFactory.create(MyFactory.class, null);
  *           Object key1 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
  *           Object key2 = f.newInstance(20, new char[]{ 'a', 'b' }, "hello");
  *           Object key3 = f.newInstance(20, new char[]{ 'a', '_' }, "hello");
@@ -94,7 +94,7 @@ import java.util.*;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.8 2002/12/22 00:21:17 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.9 2002/12/29 21:37:30 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -109,13 +109,13 @@ abstract public class KeyFactory {
     protected KeyFactory() {
     }
 
-    public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
+    public static KeyFactory create(Class keyInterface, ClassLoader loader) {
         if (loader == null) {
             loader = defaultLoader;
         }
         String className = nameFactory.getNextName(keyInterface);
         Class result = new KeyFactoryGenerator(className, keyInterface, loader).define();
-        return (KeyFactory)FactoryCache.newInstance(result, Constants.TYPES_EMPTY, null);
+        return (KeyFactory)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
     }
     
     public int hashCode() {
