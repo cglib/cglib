@@ -79,5 +79,20 @@ import java.lang.reflect.Modifier;
         Package other = member.getDeclaringClass().getPackage();
         return (null == pkg) ? (other == null) : pkg.equals(other);
     }
+    
+    public int hashCode(){
+      return (null == pkg) ? 0 : pkg.hashCode(); 
+    }
+    
+    public boolean equals(Object obj){
+    
+       if( obj != null && ( obj instanceof VisibilityFilter ) ){
+       
+           return  ((VisibilityFilter)obj).pkg == pkg;
+        
+       }else return false;
+        
+    } 
+    
 }
 

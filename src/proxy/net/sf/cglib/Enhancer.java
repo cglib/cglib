@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.17 2003/01/18 16:29:31 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.18 2003/01/19 11:30:11 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -239,7 +239,7 @@ public class Enhancer {
         synchronized (cache) {
             result = (Class)cache.get(loader, classKey);
             if (result == null) {
-                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
+                
                 String className = nameFactory.getNextName(cls);
                 result = new EnhancerGenerator(className, cls, interfaces,
                                                      ih, loader, null, 

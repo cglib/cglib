@@ -55,10 +55,13 @@ package net.sf.cglib;
 /**
  *
  *@author  baliuka
- *@version $Id: MethodFilter.java,v 1.3 2003/01/12 17:29:17 baliuka Exp $
+ *@version $Id: MethodFilter.java,v 1.4 2003/01/19 11:30:11 baliuka Exp $
 */
 public interface MethodFilter {
  
     public boolean accept( java.lang.reflect.Member method );
     
+    public boolean equals(Object obj);
+    
+    public int hashCode();
 }

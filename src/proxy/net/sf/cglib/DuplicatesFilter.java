@@ -58,6 +58,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /* package */ class DuplicatesFilter implements MethodFilter {
+    
+
     private Map map = new HashMap();
     
     public DuplicatesFilter() {
@@ -82,5 +84,6 @@ import java.util.*;
                                                m1.toString() + "\n" + m2.toString());
         }
     }
+    
 }
 

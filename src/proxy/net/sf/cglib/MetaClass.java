@@ -144,11 +144,6 @@ public abstract class MetaClass  {
                                  Method getters_out[], Method setters_out[] ){
 
 
-     if(target.getName().startsWith("java") ){
-       
-       throw new IllegalArgumentException("classes from java packge not supported");
-       
-     } 
     
     int length = types.length;
     
@@ -274,12 +269,11 @@ public abstract class MetaClass  {
                       	           );
                       	           
            begin_constructor( constructor );
-	        load_this();
-	        load_args();
-	        super_invoke_constructor(constructor);
+	    load_this();
+	    load_args();
+	    super_invoke_constructor(constructor);
             return_value();
-
-        end_constructor();
+           end_constructor();
         
         //------------- newInstance -------------------------
         
