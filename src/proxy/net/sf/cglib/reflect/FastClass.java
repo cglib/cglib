@@ -153,4 +153,6 @@ abstract public class FastClass
     abstract public int getIndex(Class[] parameterTypes);
     abstract public Object invoke(int index, Object obj, Object[] args) throws Throwable;
     abstract public Object newInstance(int index, Object[] args) throws Throwable;
+
+    abstract public int getIndex(String methodSignature);
 }

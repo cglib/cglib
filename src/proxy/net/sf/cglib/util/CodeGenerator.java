@@ -531,7 +531,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
     private void string_switch_trie(String[] strings, final ObjectSwitchCallback callback) throws Exception {
         final Label def = make_label();
         final Label end = make_label();
-        final Map buckets = bucket(Arrays.asList(strings), new Transformer() {
+        final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
             public Object transform(Object value) {
                 return new Integer(((String)value).length());
             }
@@ -559,7 +559,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                                     final Label end,
                                     final int index) throws Exception {
         final int len = ((String)strings.get(0)).length();
-        final Map buckets = bucket(strings, new Transformer() {
+        final Map buckets = CollectionUtils.bucket(strings, new Transformer() {
             public Object transform(Object value) {
                 return new Integer(((String)value).charAt(index));
             }
@@ -583,24 +583,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             });
     }        
 
-    private interface Transformer {
-        Object transform(Object value);
-    }
-    
-    private static Map bucket(List values, Transformer t) {
-        Map buckets = new HashMap();
-        for (Iterator it = values.iterator(); it.hasNext();) {
-            Object value = (Object)it.next();
-            Object key = t.transform(value);
-            List bucket = (List)buckets.get(key);
-            if (bucket == null) {
-                buckets.put(key, bucket = new LinkedList());
-            }
-            bucket.add(value);
-        }
-        return buckets;
-    }
-    
     private static int[] getSwitchKeys(Map buckets) {
         int[] keys = new int[buckets.size()];
         int index = 0;
@@ -613,7 +595,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
 
     private void string_switch_hash(final String[] strings,
                                     final ObjectSwitchCallback callback) throws Exception {
-        final Map buckets = bucket(Arrays.asList(strings), new Transformer() {
+        final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
             public Object transform(Object value) {
                 return new Integer(value.hashCode());
             }
@@ -736,7 +718,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         final Label end = make_label();
         if (useName) {
             swap();
-            final Map buckets = bucket(members, new Transformer() {
+            final Map buckets = CollectionUtils.bucket(members, new Transformer() {
                 public Object transform(Object value) {
                     return ((Member)value).getName();
                 }
@@ -747,7 +729,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     member_helper_size((List)buckets.get(key), callback, cached, def, end);
                 }
                 public void processDefault() throws Exception {
-                    // pop deferred
                     goTo(def);
                 }
             });
@@ -765,7 +746,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                                     final ParameterTyper typer,
                                     final Label def,
                                     final Label end) throws Exception {
-        final Map buckets = bucket(members, new Transformer() {
+        final Map buckets = CollectionUtils.bucket(members, new Transformer() {
             public Object transform(Object value) {
                 return new Integer(typer.getParameterTypes(value).length);
             }
@@ -779,7 +760,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 member_helper_type(bucket, callback, typer, def, end, new BitSet(types.length));
             }
             public void processDefault() throws Exception {
-                // pop deferred
                 goTo(def);
             }
         });
@@ -803,7 +783,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                     push(types[i].getName());
                     invoke(MethodConstants.EQUALS);
                     ifeq(def);
-                    // pop deferred
                 }
             }
             pop();
@@ -815,7 +794,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             int index = -1;
             for (int i = 0; i < example.length; i++) {
                 final int j = i;
-                Map test = bucket(members, new Transformer() {
+                Map test = CollectionUtils.bucket(members, new Transformer() {
                     public Object transform(Object value) {
                         return typer.getParameterTypes(value)[j].getName();
                     }
@@ -827,26 +806,25 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             }
             if (buckets == null) {
                 // must have two methods with same name, types, and different return types
-                throw new RuntimeException("assertion failed index=" + index + " m1=" + members.get(0));
+                goTo(def);
+            } else {
+                checked.set(index);
+
+                dup();
+                aaload(index);
+                invoke(MethodConstants.CLASS_GET_NAME);
+
+                final Map fbuckets = buckets;
+                String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+                string_switch_hash(names, new ObjectSwitchCallback() {
+                    public void processCase(Object key, Label dontUseEnd) throws Exception {
+                        member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
+                    }
+                    public void processDefault() throws Exception {
+                        goTo(def);
+                    }
+                });
             }
-            checked.set(index);
-
-            dup();
-            aaload(index);
-            invoke(MethodConstants.CLASS_GET_NAME);
-
-            final Map fbuckets = buckets;
-            String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-            string_switch_hash(names, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label dontUseEnd) throws Exception {
-                    // recurse
-                    member_helper_type((List)fbuckets.get(key), callback, typer, def, end, checked);
-                }
-                public void processDefault() throws Exception {
-                    // pop deferred
-                    goTo(def);
-                }
-            });
         }
     }
 }

@@ -55,7 +55,7 @@ package net.sf.cglib.reflect;
 
 import java.lang.reflect.Method;
 
-public class FastMethod extends FastMember implements Invocable
+public class FastMethod extends FastMember
 {
     FastMethod(FastClass fc, Method method) {
         super(fc, method, helper(fc, method));

@@ -87,6 +87,60 @@ public class TestFastClass extends CodeGenTestCase {
         Method m2 = MemberSwitchBean.class.getDeclaredMethod("pkg", null);
         assertTrue(fc.getMethod(m2).invoke(bean, null).equals(new Integer(9)));
     }
+
+    /*
+    public void testPerformance() throws Throwable {
+        int iterations = 500000;
+        System.out.println();
+        System.out.println("iteration count: " + iterations);
+
+        String test = "abcabcabc";
+        Object[] args;
+
+        Class[] types = new Class[]{ String.class, Integer.TYPE };
+        Method indexOf = String.class.getDeclaredMethod("indexOf", types);
+        Reflect proxy = Reflect.create(indexOf,indexOf);
+        args = new Object[]{ "ab", new Integer(1) };
+
+        IndexOf fast = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);
+        
+        int result;
+        long t1  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            args = new Object[]{ "ab", new Integer(1) };
+            result = ((Integer)indexOf.invoke(test, args)).intValue();
+        }
+        long t2  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            result = ((Integer)indexOf.invoke(test, args)).intValue();
+        }
+        long t3  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            args = new Object[]{ "ab", new Integer(1) };
+            result = ((Integer)proxy.invokeSuper(test, args)).intValue();
+        }
+        long t4  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            result = ((Integer)proxy.invokeSuper(test, args)).intValue();
+        }
+        long t5  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            result = fast.indexOf("ab", 1);
+        }
+        long t6  = System.currentTimeMillis();
+        for (int i = 0; i < iterations; i++) {
+            result = test.indexOf("ab", 1);
+        }
+        long t7  = System.currentTimeMillis();
+
+        System.out.println("reflect+args = " + (t2 - t1) 
+                           + "\n" + "reflect      = " + (t3 - t2)
+                           + "\n" + "proxy+args   = " + (t4 - t3)
+                           + "\n" + "proxy        = " + (t5 - t4)
+                           + "\n" + "fast         = " + (t6 - t5)
+                           + "\n" + "raw          = " + (t7 - t6));
+    }
+    */
     
     public TestFastClass(String testName) {
         super(testName);

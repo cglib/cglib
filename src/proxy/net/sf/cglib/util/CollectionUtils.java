@@ -51,10 +51,81 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.reflect;
+package net.sf.cglib.util;
 
-public interface Invocable
-{
-    // TODO: change throws clause
-    Object invoke(Object obj, Object[] args) throws Throwable;
-}
+import java.util.*;
+import java.lang.reflect.Array;
+
+/**
+ * @author Chris Nokleberg
+ * @version $Id: CollectionUtils.java,v 1.1 2003/09/10 20:15:29 herbyderby Exp $
+ */
+public class CollectionUtils {
+    private CollectionUtils() { }
+
+    public static Map bucket(Collection c, Transformer t) {
+        Map buckets = new HashMap();
+        for (Iterator it = c.iterator(); it.hasNext();) {
+            Object value = (Object)it.next();
+            Object key = t.transform(value);
+            List bucket = (List)buckets.get(key);
+            if (bucket == null) {
+                buckets.put(key, bucket = new LinkedList());
+            }
+            bucket.add(value);
+        }
+        return buckets;
+    }
+
+    public static Object[] filter(Object[] a, Predicate p) {
+        List c = new ArrayList(Arrays.asList(a));
+        filter(c, p);
+        return c.toArray((Object[])Array.newInstance(a.getClass().getComponentType(), c.size()));
+    }
+
+    public static Collection filter(Collection c, Predicate p) {
+        Iterator it = c.iterator();
+        while (it.hasNext()) {
+            if (!p.evaluate(it.next())) {
+                it.remove();
+            }
+        }
+        return c;
+    }
+
+    public static List transform(List c, Transformer t) {
+        List result = new ArrayList(c.size());
+        for (Iterator it = c.iterator(); it.hasNext();) {
+            result.add(t.transform(it.next()));
+        }
+        return result;
+    }
+
+    public static boolean arrayEquals(Object[] a1, Object[] a2) {
+        if ((a1 == null) ^ (a2 == null)) {
+            return false;
+        }
+        if (a1.length != a2.length) {
+            return false;
+        }
+        for (int i = 0; i < a1.length; i++) {
+            Object o1 = a1[i];
+            Object o2 = a2[i];
+            if (o1 == null) {
+                if (o2 != null) {
+                    return false;
+                }
+            } else if (o2 == null) {
+                return false;
+            } else {
+                Class c1 = o1.getClass();
+                Class c2 = o2.getClass();
+                if (!c1.equals(c2)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}    
+    
