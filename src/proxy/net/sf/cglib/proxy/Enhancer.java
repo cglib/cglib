@@ -958,10 +958,8 @@ public class Enhancer extends AbstractClassGenerator
         e.dup();
         Label found_callback = e.make_label();
         e.ifnonnull(found_callback);
-
-        Label clear = e.make_label();
         e.pop();
-        e.goTo(clear);
+        e.goTo(end);
 
         e.mark(found_callback);
         e.checkcast(CALLBACK_ARRAY);
@@ -975,12 +973,6 @@ public class Enhancer extends AbstractClassGenerator
             e.checkcast(callbackTypes[i]);
             e.putfield(getCallbackField(i));
         }
-
-        // clear thread-locals
-        e.mark(clear);
-        e.getfield(THREAD_CALLBACKS_FIELD);
-        e.aconst_null();
-        e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
 
         e.mark(end);
         e.return_value();

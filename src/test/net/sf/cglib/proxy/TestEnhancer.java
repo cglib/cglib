@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.50 2004/12/23 04:55:25 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.51 2005/01/28 10:39:24 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -661,7 +661,7 @@ public class TestEnhancer extends CodeGenTestCase {
              }
          }});
          assertEquals("fizzy", newArgInit(clazz, "test").toString());
-         assertEquals("test", newArgInit(clazz, "test").toString());
+         assertEquals("fizzy", newArgInit(clazz, "test").toString());
 
          Enhancer.registerCallbacks(clazz, new Callback[]{ null });
          assertEquals("test", newArgInit(clazz, "test").toString());
