@@ -62,14 +62,12 @@ import java.util.*;
  */
 abstract class CodeGenerator {
     private static final Object lock = new Object();
-    private static final Class[] BACKEND_CONSTRUCTOR_ARGS = { String.class, Class.class };
     private static final String FIND_CLASS = "CGLIB$findClass";
     private static final Map primitiveMethods = new HashMap();
     private static final Map primitiveToWrapper = new HashMap();
     private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
       new RuntimePermission("defineCGLIBClassInJavaPackage");
-    private static Constructor backendConstructor;
     private static ClassNotFoundException deferredError;
     
     private final ClassLoader loader;
@@ -92,28 +90,6 @@ abstract class CodeGenerator {
 
     private CodeGeneratorBackend backend;
     private boolean debug = false;
-    
-    static {
-        try {
-            Class.forName("org.objectweb.asm.ClassWriter");
-            setBackend(ASMBackend.class);
-        } catch (ClassNotFoundException e) {
-            try {
-                Class.forName("org.apache.bcel.generic.ClassGen");
-                setBackend(BCELBackend.class);
-            } catch (ClassNotFoundException e2) {
-                // defer
-            }
-        }
-    }
-
-    public static void setBackend(Class backendClass) {
-        try {
-            backendConstructor = backendClass.getConstructor(BACKEND_CONSTRUCTOR_ARGS);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
 
     protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
         if (loader == null) {
@@ -123,11 +99,7 @@ abstract class CodeGenerator {
         this.className = className;
         this.superclass = superclass;
 
-        if (backendConstructor == null) {
-            throw new IllegalStateException("No backend found");
-        }
-        backend = (CodeGeneratorBackend)
-            ReflectUtils.newInstance(backendConstructor, new Object[]{ className, superclass });
+        backend = new ASMBackend(className, superclass);
     }
 
     protected void setInterface(boolean flag) {
