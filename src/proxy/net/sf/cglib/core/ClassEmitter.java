@@ -118,7 +118,7 @@ public class ClassEmitter extends ClassAdapter {
         cv.visitEnd();
         cv = null; // for safety
     }
-    
+
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
         return new CodeEmitter(this, access, sig, exceptions);
     }

@@ -617,7 +617,7 @@ public class CodeEmitter extends CodeAdapter {
         instance_of(ce.getClassType());
     }
 
-    public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
+    public void process_switch(int[] keys, ProcessSwitchCallback callback) {
         float density;
         if (keys.length == 0) {
             density = 0;
@@ -627,48 +627,57 @@ public class CodeEmitter extends CodeAdapter {
         process_switch(keys, callback, density >= 0.5f);
     }
 
-    public void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
+    public void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) {
         if (!isSorted(keys))
             throw new IllegalArgumentException("keys to switch must be sorted ascending");
         Label def = make_label();
         Label end = make_label();
 
-        if (keys.length > 0) {
-            int len = keys.length;
-            int min = keys[0];
-            int max = keys[len - 1];
-            int range = max - min + 1;
+        try {
+            if (keys.length > 0) {
+                int len = keys.length;
+                int min = keys[0];
+                int max = keys[len - 1];
+                int range = max - min + 1;
 
-            if (useTable) {
-                Label[] labels = new Label[range];
-                Arrays.fill(labels, def);
-                for (int i = 0; i < len; i++) {
-                    labels[keys[i] - min] = make_label();
-                }
-                cv.visitTableSwitchInsn(min, max, def, labels);
-                for (int i = 0; i < range; i++) {
-                    Label label = labels[i];
-                    if (label != def) {
-                        mark(label);
-                        callback.processCase(i + min, end);
+                if (useTable) {
+                    Label[] labels = new Label[range];
+                    Arrays.fill(labels, def);
+                    for (int i = 0; i < len; i++) {
+                        labels[keys[i] - min] = make_label();
+                    }
+                    cv.visitTableSwitchInsn(min, max, def, labels);
+                    for (int i = 0; i < range; i++) {
+                        Label label = labels[i];
+                        if (label != def) {
+                            mark(label);
+                            callback.processCase(i + min, end);
+                        }
+                    }
+                } else {
+                    Label[] labels = new Label[len];
+                    for (int i = 0; i < len; i++) {
+                        labels[i] = make_label();
+                    }
+                    cv.visitLookupSwitchInsn(def, keys, labels);
+                    for (int i = 0; i < len; i++) {
+                        mark(labels[i]);
+                        callback.processCase(keys[i], end);
                     }
                 }
-            } else {
-                Label[] labels = new Label[len];
-                for (int i = 0; i < len; i++) {
-                    labels[i] = make_label();
-                }
-                cv.visitLookupSwitchInsn(def, keys, labels);
-                for (int i = 0; i < len; i++) {
-                    mark(labels[i]);
-                    callback.processCase(keys[i], end);
-                }
             }
-        }
 
-        mark(def);
-        callback.processDefault();
-        mark(end);
+            mark(def);
+            callback.processDefault();
+            mark(end);
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        }
     }
 
     private static boolean isSorted(int[] keys) {

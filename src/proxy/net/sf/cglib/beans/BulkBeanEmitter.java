@@ -80,7 +80,7 @@ class BulkBeanEmitter extends ClassEmitter {
                            Class target,
                            String[] getterNames,
                            String[] setterNames,
-                           Class[] types) throws Exception {
+                           Class[] types) {
         super(v);
 
         Method[] getters = new Method[getterNames.length];

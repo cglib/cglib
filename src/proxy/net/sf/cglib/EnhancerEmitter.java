@@ -179,7 +179,7 @@ class EnhancerEmitter extends ClassEmitter {
         end_class();
     }
 
-    private void emitConstructors(Constructor[] constructors) throws NoSuchMethodException {
+    private void emitConstructors(Constructor[] constructors) {
         for (int i = 0; i < constructors.length; i++) {
             Signature sig = ReflectUtils.getSignature(constructors[i]);
             CodeEmitter e = begin_method(Constants.ACC_PUBLIC,
@@ -196,16 +196,16 @@ class EnhancerEmitter extends ClassEmitter {
         }
     }
     
-    private void emitGetCallback(int[] keys) throws Exception {
+    private void emitGetCallback(int[] keys) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null);
         e.load_this();
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
-            public void processCase(int key, Label end) throws Exception {
+            public void processCase(int key, Label end) {
                 e.getfield(getCallbackField(key));
                 e.goTo(end);
             }
-            public void processDefault() throws Exception {
+            public void processDefault() {
                 e.pop(); // stack height
                 e.aconst_null();
             }
@@ -214,14 +214,14 @@ class EnhancerEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void emitSetCallback(int[] keys) throws Exception {
+    private void emitSetCallback(int[] keys) {
         // Factory.setCallback(int, Callback)
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
-            public void processCase(int key, Label end) throws Exception {
+            public void processCase(int key, Label end) {
                 e.checkcast(CallbackUtils.getType(key));
                 e.putfield(getCallbackField(key));
                 e.goTo(end);
@@ -286,7 +286,7 @@ class EnhancerEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void emitNewInstanceMultiarg(Constructor[] constructors) throws Exception {
+    private void emitNewInstanceMultiarg(Constructor[] constructors) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null);
         Label skipSetCallbacks = e.make_label();
         e.load_arg(2);
@@ -295,7 +295,7 @@ class EnhancerEmitter extends ClassEmitter {
         e.dup();
         e.load_arg(0);
         ReflectOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
-            public void processCase(Object key, Label end) throws Exception {
+            public void processCase(Object key, Label end) {
                 Constructor constructor = (Constructor)key;
                 Type types[] = TypeUtils.getTypes(constructor.getParameterTypes());
                 for (int i = 0; i < types.length; i++) {
@@ -453,7 +453,7 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitStatic(CallbackGenerator[] generators,
-                                CallbackGenerator.Context[] contexts)  throws Exception {
+                            CallbackGenerator.Context[] contexts) throws Exception {
         CodeEmitter e = begin_static();
         for (int i = 0; i <= Callbacks.MAX_VALUE; i++) {
             if (usedCallbacks.get(i)) {

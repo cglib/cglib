@@ -78,7 +78,7 @@ class BeanMapEmitter extends ClassEmitter {
     private static final Type FIXED_KEY_SET =
       TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
 
-    public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
+    public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) {
         super(v);
 
         begin_class(Constants.ACC_PUBLIC, className, BEAN_MAP, null, Constants.SOURCE_FILE);
@@ -115,7 +115,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
         
-    private void generateGet(final Class type, final int switchStyle, final Map getters) throws Exception {
+    private void generateGet(final Class type, final int switchStyle, final Map getters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
@@ -137,7 +137,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private void generatePut(final Class type, final int switchStyle, final Map setters) throws Exception {
+    private void generatePut(final Class type, final int switchStyle, final Map setters) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);

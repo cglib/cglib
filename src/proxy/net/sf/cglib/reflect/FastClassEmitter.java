@@ -78,7 +78,7 @@ class FastClassEmitter extends ClassEmitter {
     private static final Type NO_SUCH_METHOD_ERROR =
       TypeUtils.parseType("NoSuchMethodError");
     
-    public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
+    public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
         begin_class(Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
@@ -131,7 +131,7 @@ class FastClassEmitter extends ClassEmitter {
         end_class();
     }
 
-    private void emitIndexBySignature(Method[] methods) throws Exception {
+    private void emitIndexBySignature(Method[] methods) {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
         final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
@@ -158,7 +158,7 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
     }
 
-    private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) throws Exception {
+    private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) {
         e.process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
                 Member member = (Member)members[key];
