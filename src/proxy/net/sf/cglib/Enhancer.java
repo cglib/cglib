@@ -78,17 +78,15 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.11 2002/12/21 08:37:28 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.12 2002/12/22 00:21:17 herbyderby Exp $
  */
 public class Enhancer {
-    private static final String CLASS_PREFIX = "net.sf.cglib";
-    private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
-    private static int index = 0;
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
+    private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
     // should be package-protected but causes problems on jdk1.2
     public interface EnhancerKey {
@@ -227,7 +225,8 @@ public class Enhancer {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
                 Class mi = FactoryCache.forName(INTERCEPTOR_NAME, loader);
-                Class result = new EnhancerGenerator(getNextName(cls), cls, interfaces,
+                String className = nameFactory.getNextName(cls);
+                Class result = new EnhancerGenerator(className, cls, interfaces,
                                                      ih, loader, wreplace, delegating, filter).define();
                 Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
                 factory = (Factory)FactoryCache.newInstance(result, types, new Object[delegating ? 2 : 1]);
@@ -239,15 +238,6 @@ public class Enhancer {
         } else {
             return factory.newInstance(ih);
         }
-    }
-
-    private static String getNextName(Class cls) {
-        String class_name = cls.getName() + CLASS_SUFFIX;
-        if (class_name.startsWith("java")) {
-            class_name = CLASS_PREFIX + class_name;
-        }
-        class_name += index++;
-        return class_name;
     }
 
     public static class InternalReplace implements Serializable {
