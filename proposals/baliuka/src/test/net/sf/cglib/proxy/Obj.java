@@ -93,7 +93,7 @@ public class Obj extends ObjS implements Serializable{
         src.set( ((Number)values[3]).intValue() );
         src.setS( (String)values[4] );
         src.setS( (String)values[5] );
-        src.setS( (String)values[600] );
+        src.setS( (String)values[6] );
    
   }   
     
