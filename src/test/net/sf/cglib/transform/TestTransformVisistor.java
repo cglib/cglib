@@ -62,7 +62,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.1 2003/09/11 16:35:05 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.2 2003/09/12 05:17:51 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
 
@@ -116,8 +116,6 @@ public class TestTransformVisistor extends TestCase {
    
     public void testFormat( )throws Exception{
         
-       java.io.InputStream is1 = this.getClass().getResourceAsStream( "/" + Template.class.getName().replace('.','/') + ".class");
-       
         formatTest(MA.class);  
        
     }
