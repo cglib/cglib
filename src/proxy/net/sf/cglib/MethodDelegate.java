@@ -137,7 +137,7 @@ import java.lang.reflect.Modifier;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.7 2003/02/03 17:47:20 baliuka Exp $
+ * @version $Id: MethodDelegate.java,v 1.8 2003/06/01 00:00:35 herbyderby Exp $
  */
 abstract public class MethodDelegate {
      static final Class TYPE = MethodDelegate.class;
@@ -251,8 +251,8 @@ abstract public class MethodDelegate {
         }
 
         protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
             declare_interface(iface);
+            declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
             generateNullConstructor();
 
             // generate proxied method

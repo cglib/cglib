@@ -59,7 +59,7 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.10 2003/05/28 03:56:45 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.11 2003/06/01 00:00:36 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -78,8 +78,6 @@ class DelegatorGenerator extends CodeGenerator {
     }
 
     protected void generate() throws NoSuchMethodException {
-        generateConstructor();
-        generateFactoryMethod(NEW_INSTANCE);
         declare_interface(Delegator.Factory.TYPE);
 
         Map methodMap = new HashMap();
@@ -108,6 +106,8 @@ class DelegatorGenerator extends CodeGenerator {
                 }
             }
         }
+        generateConstructor();
+        generateFactoryMethod(NEW_INSTANCE);
         for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
             generateProxy((List)it.next());
         }

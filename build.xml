@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.16 2003/02/03 22:35:27 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.17 2003/06/01 00:00:38 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -34,6 +34,7 @@
     <path id="compile.classpath">
       <pathelement location="${build.home}/classes"/>
       <pathelement location="${bcel.jar}"/>
+      <pathelement location="${asm.jar}"/>
     
       <fileset dir="./lib">
 		<include name="*.*"/>
@@ -44,7 +45,7 @@
 
     <!-- ========== Test Execution Defaults =================================== -->
     <property name="cp" value=""/>
-    <property name="classpath" value="${cp}:${junit.jar}:${bcel.jar}" />
+    <property name="classpath" value="${cp}:${junit.jar}:${bcel.jar}:${asm.jar}" />
     <property name="test.entry" value="net.sf.cglib.TestAll" />
     <property name="test.failonerror" value="true" />
     <property name="test.runner" value="junit.textui.TestRunner" />
@@ -112,8 +113,14 @@
       <exclude name="**/BeanGenerator*" />
     </jar> 
 
-    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-full-${component.version}.jar" >
+    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-bcel-${component.version}.jar" >
       <zipfileset src="lib/bcel.jar"/>
+      <include name="**/*"/>
+      <exclude name="**/BeanGenerator*" />
+    </jar> 
+
+    <jar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-asm-${component.version}.jar" >
+      <zipfileset src="lib/asm.jar"/>
       <include name="**/*"/>
       <exclude name="**/BeanGenerator*" />
     </jar> 

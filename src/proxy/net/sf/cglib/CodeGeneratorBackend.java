@@ -169,4 +169,6 @@ abstract class CodeGeneratorBackend {
     abstract public void ireturn();
     abstract public void areturn();
     abstract public void iinc(int index, int amount);
+
+    abstract public Object make_label();
 }

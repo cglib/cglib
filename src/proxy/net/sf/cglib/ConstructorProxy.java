@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.11 2003/02/03 22:32:01 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.12 2003/06/01 00:00:36 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
@@ -131,9 +131,6 @@ public abstract class ConstructorProxy {
         }
 
         protected void generate() {
-            generateNullConstructor();
-            generateNewInstance();
-
             if (newInstance != null) {
                 declare_interface(newInstance.getDeclaringClass());
                 begin_method(newInstance);
@@ -144,6 +141,8 @@ public abstract class ConstructorProxy {
                 return_value();
                 end_method();
             }
+            generateNullConstructor();
+            generateNewInstance();
         }
 
         private void generateNewInstance() {

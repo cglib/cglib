@@ -57,7 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.10 2003/05/13 06:17:51 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.11 2003/06/01 00:00:35 herbyderby Exp $
  */
 abstract class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -178,9 +178,15 @@ abstract class ReflectUtils {
 
     public static Object newInstance(Class clazz, Class[] parameterTypes, Object[] args) {
         try {
-            return clazz.getConstructor(parameterTypes).newInstance(args);
+            return newInstance(clazz.getConstructor(parameterTypes), args);
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
+        }
+    }
+
+    public static Object newInstance(Constructor cstruct, Object[] args) {
+        try {
+            return cstruct.newInstance(args);
         } catch (InstantiationException e) {
             throw new CodeGenerationException(e);
         } catch (IllegalAccessException e) {
@@ -189,7 +195,7 @@ abstract class ReflectUtils {
             throw new CodeGenerationException(e.getTargetException());
         }
     }
-
+    
     public static Class[] getClasses(Object[] objects) {
         Class[] classes = new Class[objects.length];
         for (int i = 0; i < objects.length; i++) {

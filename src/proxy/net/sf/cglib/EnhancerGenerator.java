@@ -161,9 +161,6 @@ import java.util.*;
             wreplace = INTERNAL_WRITE_REPLACE;
         }
         declare_interface(Factory.class);
-        declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
-        generateConstructors();
-        generateFactory();
 
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
@@ -190,6 +187,10 @@ import java.util.*;
         if (filter != null) {
             filterMembers(methods, filter);
         }
+
+        declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
+        generateConstructors();
+        generateFactory();
 
         boolean declaresWriteReplace = false;
        
