@@ -66,7 +66,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestJdkCompatibleProxy.java,v 1.4 2003/01/28 11:54:09 nemecec Exp $
+ * @version $Id: TestJdkCompatibleProxy.java,v 1.5 2003/01/28 20:19:34 herbyderby Exp $
  */
 public class TestJdkCompatibleProxy extends CodeGenTestCase {
 
@@ -121,6 +121,25 @@ public class TestJdkCompatibleProxy extends CodeGenTestCase {
                         !Proxy.isProxyClass(FakeProxy.class));
     }
 
+    private static class ReturnNullHandler implements InvocationHandler {
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            return null;
+        }
+    }
+
+    public void testReturnNull() throws Exception {
+        System.err.println("hello");
+        ProxySampleInterface_ReturnsBasic rb =
+            (ProxySampleInterface_ReturnsBasic)
+            Proxy.newProxyInstance(null,
+                                   new Class[]{ ProxySampleInterface_ReturnsBasic.class },
+                                   new ReturnNullHandler());
+        try {
+            rb.getKala(11);
+            fail("must throw an exception");
+        } catch (NullPointerException ignore) { }
+    }
+
     public void testWithSample() throws Exception {
         Class[] interfaces = new Class[] {ProxySampleInterface_ReturnsObject.class, ProxySampleInterface_ReturnsBasic.class};
         InvocationHandlerSample ih = new InvocationHandlerSample(new SampleImpl());
@@ -132,11 +151,13 @@ public class TestJdkCompatibleProxy extends CodeGenTestCase {
         System.out.println("calling getKala(\"mees\")");
         String r_ro = ro.getKala("mees");
         System.out.println("getKala(String) returned: " + r_ro);
+        assertTrue(r_ro.equals("kala mees"));
         ProxySampleInterface_ReturnsBasic rb = (ProxySampleInterface_ReturnsBasic) p;
         System.out.println();
         System.out.println("calling getKala(11)");
         int r_rb = rb.getKala(11);
         System.out.println("getKala(float) returned: " + r_rb);
+        assertTrue(r_rb == 111);
     }
 
     public TestJdkCompatibleProxy(String testName) {
