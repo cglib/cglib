@@ -89,14 +89,14 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.36 2002/11/23 00:32:50 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.37 2002/11/24 18:06:30 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
     private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
     private static int index = 0;
     private static Map factories = new HashMap();
-    private static Map cache = new WeakHashMap();
+    private static Map cache = Collections.synchronizedMap( new WeakHashMap() );
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
 
@@ -178,7 +178,8 @@ public class Enhancer implements ClassFileConstants {
         return enhanceHelper(true, obj, cls, interfaces, ih, loader, wreplace);
     }
 
-    private static Object enhanceHelper(boolean delegating,
+    
+    private synchronized static Object enhanceHelper(boolean delegating,
                                         Object obj,
                                         Class cls,
                                         Class[] interfaces,
@@ -211,10 +212,14 @@ public class Enhancer implements ClassFileConstants {
             cache.put(loader, map);
         }
 
-        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating);
-        
-        Class result = (Class) map.get(key);
+     Class result = null;   
+      
+      synchronized( cls ){
 
+      Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating);
+      result = (Class) map.get(key);
+
+          
         if ( result == null ) {
             String class_name = cls.getName() + CLASS_SUFFIX;
             if (class_name.startsWith("java")) {
@@ -224,7 +229,9 @@ public class Enhancer implements ClassFileConstants {
             result = new EnhancerGenerator(class_name, cls, interfaces, ih, loader, wreplace, delegating).define();
             map.put(key, result);
         }
-        
+      
+      } //synchronized
+      
         Factory factory = (Factory)factories.get(result);
         if (factory == null) {
             try {
