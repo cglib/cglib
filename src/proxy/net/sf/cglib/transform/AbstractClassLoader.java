@@ -12,7 +12,18 @@ import java.io.IOException;
 abstract public class AbstractClassLoader extends ClassLoader {
     private ClassFilter filter;
     private ClassLoader classPath;
-    private static java.security.ProtectionDomain DOMAIN = AbstractClassLoader.class.getProtectionDomain();
+    private static java.security.ProtectionDomain DOMAIN ;
+    
+    static{
+        
+        DOMAIN = (java.security.ProtectionDomain)
+        java.security.AccessController.doPrivileged(
+          new java.security.PrivilegedAction() {
+            public Object run() {
+               return AbstractClassLoader.class.getProtectionDomain();
+            }
+        }); 
+     }
     
     protected AbstractClassLoader(ClassLoader parent, ClassLoader classPath, ClassFilter filter) {
         super(parent);
