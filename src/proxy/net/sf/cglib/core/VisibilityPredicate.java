@@ -67,7 +67,7 @@ public class VisibilityPredicate implements Predicate {
 
     public boolean evaluate(Object arg) {
         int mod = ((Member)arg).getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
+        if (Modifier.isPrivate(mod)) {
             return false;
         } else if (Modifier.isPublic(mod)) {
             return true;

@@ -51,32 +51,14 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.reflect;
+package net.sf.cglib.core;
 
-public class MemberSwitchBean {
-    public int init = -1;
+import java.lang.reflect.*;
+
+public class RemoveStaticPredicate implements Predicate {
+    public static final RemoveStaticPredicate INSTANCE = new RemoveStaticPredicate();
     
-    public MemberSwitchBean() { init = 0; }
-    public MemberSwitchBean(double foo) { init = 1; }
-    public MemberSwitchBean(int foo) { init = 2; }
-    public MemberSwitchBean(int foo, String bar, String baz) { init = 3; }
-    public MemberSwitchBean(int foo, String bar, double baz) { init = 4; }
-    public MemberSwitchBean(int foo, short bar, long baz) { init = 5; }
-    public MemberSwitchBean(int foo, String bar) { init = 6; }
-
-    public int foo() { return 0; }
-    public int foo(double foo) { return 1; }
-    public int foo(int foo) { return 2; }
-    public int foo(int foo, String bar, String baz) { return 3; }
-    public int foo(int foo, String bar, double baz) { return 4; }
-    public int foo(int foo, short bar, long baz) { return 5; }
-    public int foo(int foo, String bar) { return 6; }
-
-    public int bar() { return 7; }
-    public int bar(double foo) { return 8; }
-
-    int pkg() { return 9; }
-
-    public static int staticMethod() { return 10; }
+    public boolean evaluate(Object arg) {
+        return !Modifier.isStatic(((Member)arg).getModifiers());
+    }
 }
-

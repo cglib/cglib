@@ -106,7 +106,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         assertTrue(bean.init == 0);
         assertTrue(fc.getName().equals("net.sf.cglib.reflect.MemberSwitchBean"));
         assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
-        assertTrue(fc.getMaxIndex() == 18);
+        assertTrue(fc.getMaxIndex() == 19);
 
         Constructor c1 = MemberSwitchBean.class.getConstructor(new Class[0]);
         FastConstructor fc1 = fc.getConstructor(c1);
@@ -121,7 +121,11 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         assertTrue(fc.getMethod(m2).invoke(bean, null).equals(new Integer(9)));
     }
 
-
+    public void testStatic() throws Throwable {
+        FastClass fc = FastClass.create(MemberSwitchBean.class);
+        // MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
+        assertTrue(fc.invoke("staticMethod", new Class[0], null, null).equals(new Integer(10)));
+    }
 
     private static abstract class ReallyBigClass {
         public ReallyBigClass() {

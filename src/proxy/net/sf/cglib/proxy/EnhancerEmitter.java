@@ -153,6 +153,7 @@ class EnhancerEmitter extends ClassEmitter {
         }
         Set forcePublic = MethodWrapper.createSet(interfaceMethods);
         methods.addAll(interfaceMethods);
+        CollectionUtils.filter(methods, RemoveStaticPredicate.INSTANCE);
         CollectionUtils.filter(methods, new VisibilityPredicate(superclass, true));
         CollectionUtils.filter(methods, new DuplicatesPredicate());
         removeFinal(methods);
