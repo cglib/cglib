@@ -61,7 +61,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.1 2003/10/29 03:45:39 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.2 2003/11/06 05:09:46 herbyderby Exp $
  */
 public class MethodProxy {
     private FastClass f1;
@@ -94,6 +94,14 @@ public class MethodProxy {
         this.i1 = i1;
         this.f2 = f2;
         this.i2 = i2;
+    }
+
+    public int getIndex() {
+        return i1;
+    }
+
+    public int getSuperIndex() {
+        return i2;
     }
 
     private static FastClass helper(ClassLoader loader, Class type) {
