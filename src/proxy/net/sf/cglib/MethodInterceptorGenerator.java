@@ -148,7 +148,6 @@ implements CallbackGenerator
            }
         */
 
-        Local m = cg.make_local();
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             Virt.load_method(cg, method);
