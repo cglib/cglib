@@ -51,12 +51,15 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
+import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.TestGenerator;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.util.*;
 import junit.framework.*;
+import org.objectweb.asm.ClassVisitor;
 
 public class TestStringSwitch extends CodeGenTestCase {
     private static int index = 0;
@@ -66,14 +69,13 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
 
     public void testSimple() {
-        simpleHelper(CodeGenerator.SWITCH_STYLE_HASH);
-        simpleHelper(CodeGenerator.SWITCH_STYLE_TRIE);
+        simpleHelper(Virt.SWITCH_STYLE_HASH);
+        simpleHelper(Virt.SWITCH_STYLE_TRIE);
     }
 
     private void simpleHelper(int switchStyle) {
         String[] keys = new String[]{ "foo", "bar", "baz", "quud", "quick", "quip" };
-        Class created = new Generator(keys, switchStyle).define();
-        Indexed test = (Indexed)ReflectUtils.newInstance(created);
+        Indexed test = (Indexed)new Generator(keys, switchStyle).create();
         assertTrue(test.getIndex("foo") == 'o');
         assertTrue(test.getIndex("bar") == 'r');
         assertTrue(test.getIndex("baz") == 'z');
@@ -93,44 +95,43 @@ public class TestStringSwitch extends CodeGenTestCase {
         String[] keys = new String[]{ "ABC", "AAb", "foo" };
         assertTrue("ABC".hashCode() == "AAb".hashCode());
         assertTrue("ABC".hashCode() != "foo".hashCode());
-        Class created = new Generator(keys, CodeGenerator.SWITCH_STYLE_HASH).define();
-        Indexed test = (Indexed)ReflectUtils.newInstance(created);
+        Indexed test = (Indexed)new Generator(keys, Virt.SWITCH_STYLE_HASH).create();
         assertTrue(test.getIndex("foo") == 'o');
         assertTrue(test.getIndex("ABC") == 'C');
         assertTrue(test.getIndex("AAb") == 'b');
     }
 
-    private static class Generator extends CodeGenerator {
+    private static class Generator extends TestGenerator {
+        private static final Source SOURCE = new Source(TestStringSwitch.class, false);
         private String[] keys;
         private int switchStyle;
 
         public Generator(String[] keys, int switchStyle) {
-            setNamePrefix("TestStringSwitch");
-            setNameSuffix(String.valueOf(index++));
-            setClassLoader(TestStringSwitch.class.getClassLoader());
+            super(SOURCE);
             this.keys = keys;
             this.switchStyle = switchStyle;
-            addInterface(Indexed.class);
         }
 
-        protected void generate() throws Exception {
-            null_constructor();
-
+        public void generateClass(ClassVisitor v) throws Exception {
+            final Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class });
+            Virt.null_constructor(e);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
-            begin_method(method);
-            load_arg(0);
-            string_switch(keys, switchStyle, new ObjectSwitchCallback() {
+            e.begin_method(method);
+            e.load_arg(0);
+            Virt.string_switch(e, keys, switchStyle, new Virt.ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         String string = (String)key;
-                        push((int)string.charAt(string.length() - 1));
-                        goTo(end);
+                        e.push((int)string.charAt(string.length() - 1));
+                        e.goTo(end);
                     }
                     public void processDefault() {
-                        push(0);
+                        e.push(0);
                     }
                 });
-            return_value();
-            end_method();
+            e.return_value();
+            e.end_method();
+            e.end_class();
         }
     }
 

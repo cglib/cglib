@@ -53,13 +53,15 @@
  */
 package net.sf.cglib.reflect;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
-import net.sf.cglib.util.*;
 import junit.framework.*;
+import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.TestGenerator;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
 
-public class TestMemberSwitch extends net.sf.cglib.CodeGenTestCase {
+public class TestMemberSwitch extends CodeGenTestCase {
     private static int index = 0;
 
     private static final Constructor C0 =
@@ -82,8 +84,7 @@ public class TestMemberSwitch extends net.sf.cglib.CodeGenTestCase {
     }
 
     public void testSimple() {
-        Class created = new Generator(new Constructor[]{ C0, C1, C2, C3, C4, C5, C6 }).define();
-        Indexed test = (Indexed)ReflectUtils.newInstance(created);
+        Indexed test = (Indexed)new Generator(new Constructor[]{ C0, C1, C2, C3, C4, C5, C6 }).create();
         assertTrue(test.getIndex(C0.getParameterTypes()) == 0);
         assertTrue(test.getIndex(C1.getParameterTypes()) == 1);
         assertTrue(test.getIndex(C2.getParameterTypes()) == 2);
@@ -94,36 +95,35 @@ public class TestMemberSwitch extends net.sf.cglib.CodeGenTestCase {
         assertTrue(test.getIndex(new Class[]{ Integer.TYPE, Integer.TYPE }) == -1);
     }
 
-    private static class Generator extends CodeGenerator {
+    private static class Generator extends TestGenerator {
+        private static final Source SOURCE = new Source(TestMemberSwitch.class, false);
         private Constructor[] constructors;
-        private List clist;
 
         public Generator(Constructor[] constructors) {
-            setNamePrefix("TestMemberSwitch");
-            setNameSuffix(String.valueOf(index++));
-            setClassLoader(TestMemberSwitch.class.getClassLoader());
+            super(SOURCE);
             this.constructors = constructors;
-            clist = Arrays.asList(constructors);
-            addInterface(Indexed.class);
         }
 
-        protected void generate() throws Exception {
-            null_constructor();
-
+        public void generateClass(ClassVisitor v) throws Exception {
+            final List clist = Arrays.asList(constructors);
+            final Emitter e = new Emitter(v);
+            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class });
+            Virt.null_constructor(e);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
-            begin_method(method);
-            load_arg(0);
-            constructor_switch(constructors, new ObjectSwitchCallback() {
+            e.begin_method(method);
+            e.load_arg(0);
+            Virt.constructor_switch(e, constructors, new Virt.ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
-                        push(clist.indexOf(key));
-                        goTo(end);
+                        e.push(clist.indexOf(key));
+                        e.goTo(end);
                     }
                     public void processDefault() {
-                        push(-1);
+                        e.push(-1);
                     }
                 });
-            return_value();
-            end_method();
+            e.return_value();
+            e.end_method();
+            e.end_class();
         }
     }
 

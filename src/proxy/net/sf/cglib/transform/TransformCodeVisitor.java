@@ -1,7 +1,7 @@
 package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
-import net.sf.cglib.util.Opcodes;
+import net.sf.cglib.core.Opcodes;
 /**
  *
  * @author  baliuka

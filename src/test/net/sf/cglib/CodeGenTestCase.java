@@ -54,11 +54,10 @@
 package net.sf.cglib;
 
 import junit.framework.*;
-import net.sf.cglib.util.BasicCodeGenerator;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.3 2003/09/08 17:42:23 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.4 2003/09/15 19:10:03 herbyderby Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
     public CodeGenTestCase(String testName) {
