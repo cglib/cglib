@@ -83,58 +83,56 @@ class ParallelSorterEmitter extends ClassEmitter {
         return "FIELD_" + index;
     }
 
-    private void generateConstructor(final Object[] arrays) throws NoSuchFieldException {
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null)) {{
-            load_this();
-            super_invoke_constructor();
-            load_this();
-            load_arg(0);
-            super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
-            for (int i = 0; i < arrays.length; i++) {
-                Type type = Type.getType(arrays[i].getClass());
-                declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null);
-                load_this();
-                load_arg(0);
-                push(i);
-                aaload();
-                checkcast(type);
-                putfield(getFieldName(i));
-            }
-            return_value();
-            end_method();
-        }};
+    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
+        e.load_this();
+        e.super_invoke_constructor();
+        e.load_this();
+        e.load_arg(0);
+        e.super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
+        for (int i = 0; i < arrays.length; i++) {
+            Type type = Type.getType(arrays[i].getClass());
+            declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null);
+            e.load_this();
+            e.load_arg(0);
+            e.push(i);
+            e.aaload();
+            e.checkcast(type);
+            e.putfield(getFieldName(i));
+        }
+        e.return_value();
+        e.end_method();
     }
 
     private void generateSwap(final Object[] arrays) {
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SWAP, null)) {{
-            for (int i = 0; i < arrays.length; i++) {
-                Type type = Type.getType(arrays[i].getClass());
-                Type component = TypeUtils.getComponentType(type);
-                Local T = make_local(type);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SWAP, null);
+        for (int i = 0; i < arrays.length; i++) {
+            Type type = Type.getType(arrays[i].getClass());
+            Type component = TypeUtils.getComponentType(type);
+            Local T = e.make_local(type);
 
-                load_this();
-                getfield(getFieldName(i));
-                store_local(T);
+            e.load_this();
+            e.getfield(getFieldName(i));
+            e.store_local(T);
 
-                load_local(T);
-                load_arg(0);
+            e.load_local(T);
+            e.load_arg(0);
 
-                load_local(T);
-                load_arg(1);
-                array_load(component);
+            e.load_local(T);
+            e.load_arg(1);
+            e.array_load(component);
                 
-                load_local(T);
-                load_arg(1);
+            e.load_local(T);
+            e.load_arg(1);
 
-                load_local(T);
-                load_arg(0);
-                array_load(component);
+            e.load_local(T);
+            e.load_arg(0);
+            e.array_load(component);
 
-                array_store(component);
-                array_store(component);
-            }
-            return_value();
-            end_method();
-        }};
+            e.array_store(component);
+            e.array_store(component);
+        }
+        e.return_value();
+        e.end_method();
     }
 }

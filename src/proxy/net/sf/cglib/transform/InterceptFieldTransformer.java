@@ -67,61 +67,63 @@ public class InterceptFieldTransformer extends EmittingTransformer {
         }
     }
 
-    private void addReadMethod(final String name, final Type type) {
-        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, readMethodSig(name, type.getDescriptor()), null)) {{
-            load_this();
-            getfield(name);
-            load_this();
-            getfield(CALLBACK_FIELD);
-            Label intercept = make_label();
-            ifnonnull(intercept);
-            return_value();
+    private void addReadMethod(String name, Type type) {
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
+                                           readMethodSig(name, type.getDescriptor()),
+                                           null);
+        e.load_this();
+        e.getfield(name);
+        e.load_this();
+        e.getfield(CALLBACK_FIELD);
+        Label intercept = e.make_label();
+        e.ifnonnull(intercept);
+        e.return_value();
 
-            mark(intercept);
-            Local result = make_local(type);
-            store_local(result);
-            load_this();
-            getfield(CALLBACK_FIELD);
-            load_this();
-            push(name);
-            load_local(result);
-            invoke_interface(CALLBACK, readCallbackSig(type));
-            if (!TypeUtils.isPrimitive(type)) {
-                checkcast(type);
-            }
-            return_value();
-            end_method();
-        }};
+        e.mark(intercept);
+        Local result = e.make_local(type);
+        e.store_local(result);
+        e.load_this();
+        e.getfield(CALLBACK_FIELD);
+        e.load_this();
+        e.push(name);
+        e.load_local(result);
+        e.invoke_interface(CALLBACK, readCallbackSig(type));
+        if (!TypeUtils.isPrimitive(type)) {
+            e.checkcast(type);
+        }
+        e.return_value();
+        e.end_method();
     }
 
-    private void addWriteMethod(final String name, final Type type) {
-        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, writeMethodSig(name, type.getDescriptor()), null)) {{
-            load_this();
-            dup();
-            getfield(CALLBACK_FIELD);
-            Label skip = make_label();
-            ifnull(skip);
+    private void addWriteMethod(String name, Type type) {
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
+                                           writeMethodSig(name, type.getDescriptor()),
+                                           null);
+        e.load_this();
+        e.dup();
+        e.getfield(CALLBACK_FIELD);
+        Label skip = e.make_label();
+        e.ifnull(skip);
 
-            load_this();
-            getfield(CALLBACK_FIELD);
-            load_this();
-            push(name);
-            load_this();
-            getfield(name);
-            load_arg(0);
-            invoke_interface(CALLBACK, writeCallbackSig(type));
-            if (!TypeUtils.isPrimitive(type)) {
-                checkcast(type);
-            }
-            Label go = make_label();
-            goTo(go);
-            mark(skip);
-            load_arg(0);
-            mark(go);
-            putfield(name);
-            return_value();
-            end_method();
-        }};
+        e.load_this();
+        e.getfield(CALLBACK_FIELD);
+        e.load_this();
+        e.push(name);
+        e.load_this();
+        e.getfield(name);
+        e.load_arg(0);
+        e.invoke_interface(CALLBACK, writeCallbackSig(type));
+        if (!TypeUtils.isPrimitive(type)) {
+            e.checkcast(type);
+        }
+        Label go = e.make_label();
+        e.goTo(go);
+        e.mark(skip);
+        e.load_arg(0);
+        e.mark(go);
+        e.putfield(name);
+        e.return_value();
+        e.end_method();
     }
                 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {

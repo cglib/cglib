@@ -143,42 +143,10 @@ abstract public class MulticastDelegate implements Cloneable {
             ComplexOps.null_constructor(ce);
 
             // generate proxied method
-            CodeEmitter e;
-            e = ce.begin_method(Constants.ACC_PUBLIC,
-                                ReflectUtils.getSignature(method),
-                                ReflectUtils.getExceptionTypes(method));
-            new CodeEmitter(e) {{
-                Type returnType = getReturnType();
-                final boolean returns = returnType != Type.VOID_TYPE;
-                Local result = null;
-                if (returns) {
-                    result = make_local(returnType);
-                    zero_or_null(returnType);
-                    store_local(result);
-                }
-                load_this();
-                super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
-                final Local result2 = result;
-                final CodeEmitter ce = this;
-                ComplexOps.process_array(this, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
-                    public void processElement(Type type) {
-                        checkcast(Type.getType(iface));
-                        load_args();
-                        invoke(method);
-                        if (returns) {
-                            store_local(result2);
-                        }
-                    }
-                });
-                if (returns) {
-                    load_local(result);
-                }
-                return_value();
-                end_method();
-            }};
+            emitProxy(ce, method);
 
             // newInstance
-            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.invoke_constructor_this();
@@ -195,6 +163,38 @@ abstract public class MulticastDelegate implements Cloneable {
             e.end_method();
 
             ce.end_class();
+        }
+
+        private void emitProxy(ClassEmitter ce, final Method method) {
+            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
+                                                  ReflectUtils.getSignature(method),
+                                                  ReflectUtils.getExceptionTypes(method));
+            Type returnType = e.getReturnType();
+            final boolean returns = returnType != Type.VOID_TYPE;
+            Local result = null;
+            if (returns) {
+                result = e.make_local(returnType);
+                e.zero_or_null(returnType);
+                e.store_local(result);
+            }
+            e.load_this();
+            e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
+            final Local result2 = result;
+            ComplexOps.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+                public void processElement(Type type) {
+                    e.checkcast(Type.getType(iface));
+                    e.load_args();
+                    e.invoke(method);
+                    if (returns) {
+                        e.store_local(result2);
+                    }
+                }
+            });
+            if (returns) {
+                e.load_local(result);
+            }
+            e.return_value();
+            e.end_method();
         }
 
         protected Object firstInstance(Class type) {

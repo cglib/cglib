@@ -96,33 +96,9 @@ class FastClassEmitter extends ClassEmitter {
         CollectionUtils.filter(methodList, new DuplicatesPredicate());
         final Method[] methods = (Method[])methodList.toArray(new Method[methodList.size()]);
         final Constructor[] constructors = (Constructor[])CollectionUtils.filter(type.getDeclaredConstructors(), vp);
-
+        
         // getIndex(String)
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null)) {{
-            final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
-                    public Object transform(Object obj) {
-                        Signature sig = ReflectUtils.getSignature((Method)obj);
-                        return sig.getName() + sig.getDescriptor();
-                    }
-                });
-            load_arg(0);
-            ObjectSwitchCallback callback = new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    // TODO: remove linear indexOf
-                    push(signatures.indexOf(key));
-                    return_value();
-                }
-                public void processDefault() {
-                    push(-1);
-                    return_value();
-                }
-            };
-            ComplexOps.string_switch(this,
-                                     (String[])signatures.toArray(new String[0]),
-                                     Constants.SWITCH_STYLE_HASH,
-                                     callback);
-            end_method();
-        }};
+        emitIndexBySignature(methods);
 
         // getIndex(String, Class[])
         e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
@@ -153,6 +129,33 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         end_class();
+    }
+
+    private void emitIndexBySignature(Method[] methods) throws Exception {
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
+        final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
+            public Object transform(Object obj) {
+                Signature sig = ReflectUtils.getSignature((Method)obj);
+                return sig.getName() + sig.getDescriptor();
+            }
+        });
+        e.load_arg(0);
+        ObjectSwitchCallback callback = new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                // TODO: remove linear indexOf
+                e.push(signatures.indexOf(key));
+                e.return_value();
+            }
+            public void processDefault() {
+                e.push(-1);
+                e.return_value();
+            }
+        };
+        ComplexOps.string_switch(e,
+                                 (String[])signatures.toArray(new String[0]),
+                                 Constants.SWITCH_STYLE_HASH,
+                                 callback);
+        e.end_method();
     }
 
     private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) throws Exception {
