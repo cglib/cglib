@@ -97,9 +97,7 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
-
     private boolean isProxy;
-    private boolean jdkCompatible;
 
     /* package */ EnhancerGenerator(String className, Class clazz, 
                                     Class[] interfaces,
@@ -112,8 +110,7 @@ import java.util.*;
         this.delegating = delegating;
         this.filter = filter;
 
-        jdkCompatible = hasSuperclass(clazz, "net.sf.cglib.ProxyJdk");
-        isProxy = jdkCompatible || hasSuperclass(clazz, "net.sf.cglib.Proxy");
+        isProxy = hasSuperclass(clazz, "net.sf.cglib.Proxy");
      
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
@@ -330,9 +327,12 @@ import java.util.*;
         load_arg(1);
         invoke(PROXY_NEW_INSTANCE);
         checkcast_this();
+        load_arg(2);
+        ifnull("skip_set_interceptor");
         dup();
         load_arg(2);
         putfield(INTERCEPTOR_FIELD);
+        nop("skip_set_interceptor");
         return_value();
         nop("fail");
         throw_exception(IllegalArgumentException.class, "Constructor not found ");
@@ -462,19 +462,11 @@ import java.util.*;
             }
             // e -> eo -> oeo -> ooe -> o
             handle_exception(handler, Throwable.class);
-            new_instance(getUndeclaredThrowableExceptionClassName());
+            new_instance(UndeclaredThrowableException.class);
             dup_x1();
             swap();
-            invoke_constructor(getUndeclaredThrowableExceptionClassName(), Constants.TYPES_THROWABLE);
+            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
             athrow();
-        }
-    }
-
-    protected String getUndeclaredThrowableExceptionClassName() {
-        if (jdkCompatible) {
-            return "java.lang.reflect.UndeclaredThrowableException";
-        } else {
-            return "net.sf.cglib.UndeclaredThrowableException";
         }
     }
 
