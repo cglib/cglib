@@ -55,14 +55,14 @@ package net.sf.cglib;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: AroundInterceptor.java,v 1.1 2002/11/27 21:29:53 herbyderby Exp $
+ * @version $Id: AroundInterceptor.java,v 1.2 2002/11/29 22:34:18 herbyderby Exp $
  */
 import java.lang.reflect.Method;
 
 public interface AroundInterceptor extends MethodInterceptor {
     /**
      * Generated code calls this method before invoking super
-     * @param obj this
+     * @param obj "this", the enhanced object
      * @param method intercepted Method
      * @param args argument array; primitive types are wrapped
      * @param proxy used to invoke super (non-intercepted method); may be called
