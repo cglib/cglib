@@ -57,10 +57,18 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.8 2003/01/23 11:19:02 nemecec Exp $
+ * @version $Id: TestMethodProxy.java,v 1.9 2003/01/25 00:43:59 herbyderby Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
+
+    public interface StringMaker {
+        Object newInstance(char[] buf, int offset, int count);
+    }
+
+    public void testTypeCheckedConstructor() throws Throwable {
+        StringMaker maker = (StringMaker)ConstructorProxy.create(StringMaker.class, String.class);
+        assertTrue("nil".equals(maker.newInstance("vanilla".toCharArray(), 2, 3)));
+    }
 
     public void testSimple() throws Throwable {
         Class[] types = new Class[]{ Integer.TYPE, Integer.TYPE };
@@ -249,4 +257,5 @@ public class TestMethodProxy extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestMethodProxy.class);
     }
+
 }

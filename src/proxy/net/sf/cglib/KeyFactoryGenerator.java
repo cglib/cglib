@@ -57,7 +57,7 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.11 2003/01/24 19:53:45 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.12 2003/01/25 00:44:01 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
@@ -94,22 +94,8 @@ class KeyFactoryGenerator extends CodeGenerator {
         this.keyInterface = keyInterface;
     }
 
-    protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-        if (!keyInterface.isInterface()) {
-            throw new IllegalArgumentException(keyInterface + " is not an interface");
-        }
-        Method[] methods = keyInterface.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++) {
-            if (methods[i].getName().equals("newInstance")) {
-                if (newInstance != null) {
-                    throw new IllegalArgumentException("Multiple newInstance methods");
-                }
-                newInstance = methods[i];
-            }
-        }
-        if (newInstance == null) {
-            throw new IllegalArgumentException("Missing newInstance method");
-        }
+    protected void generate() throws NoSuchFieldException {
+        newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
