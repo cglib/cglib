@@ -61,8 +61,6 @@ import java.util.*;
 /* package */ class EnhancerGenerator extends CodeGenerator {
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
-    private static final String ACCESS_PREFIX = "CGLIB$ACCESS_";
-    private static final String METHOD_FIELD_PREFIX = "METHOD_";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
     private static final Method AROUND_ADVICE;
@@ -193,9 +191,9 @@ import java.util.*;
         int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
-            String fieldName = METHOD_FIELD_PREFIX + i;
+            String fieldName = getFieldName(method, i);
+            String accessName = getAccessName(method, i);
             declare_field(privateFinalStatic, Method.class, fieldName);
-            String accessName = ACCESS_PREFIX + i;
             declare_field(privateFinalStatic, MethodProxy.class, accessName);
             generateAccessMethod(method, accessName);
             generateAroundMethod(method, fieldName, accessName);
@@ -205,6 +203,14 @@ import java.util.*;
         if (!declaresWriteReplace) {
             generateWriteReplace();
         }
+    }
+
+    private String getFieldName(Method method, int index) {
+        return "METHOD_" + index;
+    }
+    
+    private String getAccessName(Method method, int index) {
+        return "CGLIB$ACCESS_" + index + "_" + method.getName();
     }
 
     private void checkReturnTypesEqual(Method m1, Method m2) {
@@ -407,7 +413,7 @@ import java.util.*;
         begin_static();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
-            String fieldName = METHOD_FIELD_PREFIX + i;
+            String fieldName = getFieldName(method, i);
 
             Class[] args = method.getParameterTypes();
             push(method.getDeclaringClass().getName());
@@ -430,7 +436,7 @@ import java.util.*;
             invoke(getDeclaredMethod);
             putstatic(fieldName);
 
-            String accessName = ACCESS_PREFIX + i;
+            String accessName = getAccessName(method, i);
             push(getClassName());
             invoke_static_this(FIND_CLASS, Class.class, STRING_CLASS_ARRAY);
             push(accessName);
