@@ -60,10 +60,9 @@ abstract public class Callbacks
     public static final int NO_OP = 0;
     public static final int INTERCEPT = 1;
     public static final int JDK_PROXY = 2;
-    public static final int BEFORE_AFTER = 3;
-    public static final int LAZY_LOAD = 4;
-    public static final int DISPATCH = 5;
-    public static final int MAX_VALUE = 5; // should be set to current max index
+    public static final int LAZY_LOAD = 3;
+    public static final int DISPATCH = 4;
+    public static final int MAX_VALUE = 4; // should be set to current max index
     
     abstract public Callback get(int type);
 
@@ -72,9 +71,7 @@ abstract public class Callbacks
         case INTERCEPT:
             return MethodInterceptor.class;
         case JDK_PROXY:
-            return HandlerAdapter.class;
-        case BEFORE_AFTER:
-            return BeforeAfterInterceptor.class;
+            return InvocationHandler.class;
         case LAZY_LOAD:
             return LazyLoader.class;
         case DISPATCH:
@@ -92,8 +89,6 @@ abstract public class Callbacks
             return NoOpGenerator.INSTANCE;
         case JDK_PROXY:
             return InvocationHandlerGenerator.INSTANCE;
-        case BEFORE_AFTER:
-            return BeforeAfterGenerator.INSTANCE;
         case LAZY_LOAD:
             return LazyLoaderGenerator.INSTANCE;
         case DISPATCH:

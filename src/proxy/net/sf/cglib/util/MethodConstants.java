@@ -56,7 +56,7 @@ package net.sf.cglib.util;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: MethodConstants.java,v 1.3 2003/07/15 16:38:15 herbyderby Exp $
+ * @version $Id: MethodConstants.java,v 1.4 2003/09/05 22:59:20 herbyderby Exp $
  */
 public class MethodConstants {
     private MethodConstants() { }
@@ -105,4 +105,6 @@ public class MethodConstants {
       ReflectUtils.findMethod("ThreadLocal.get()");
     public static final Method THREADLOCAL_SET =
       ReflectUtils.findMethod("ThreadLocal.set(Object)");
+    public static final Method GET_PARAMETER_TYPES =
+      ReflectUtils.findMethod("Method.getParameterTypes()");
 }

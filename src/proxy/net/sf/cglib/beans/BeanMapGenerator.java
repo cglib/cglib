@@ -62,6 +62,7 @@ import net.sf.cglib.util.*;
 class BeanMapGenerator extends CodeGenerator {
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("BeanMap.newInstance(Object)");
+    private static final Class[] TYPES_OBJECT = { Object.class };
 
     private Class type;
     private int switchStyle;
@@ -97,10 +98,10 @@ class BeanMapGenerator extends CodeGenerator {
     }
 
     private void generateConstructor() {
-        begin_constructor(Constants.TYPES_OBJECT);
+        begin_constructor(TYPES_OBJECT);
         load_this();
         load_arg(0);
-        super_invoke_constructor(Constants.TYPES_OBJECT);
+        super_invoke_constructor(TYPES_OBJECT);
         return_value();
         end_method();
     }

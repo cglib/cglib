@@ -60,12 +60,13 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.14 2003/06/24 20:59:05 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.15 2003/09/05 22:59:21 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("Delegator$Factory.newInstance(Object[])");
+    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
 
     private Class[] classes;
     private int[] routing;
@@ -112,7 +113,7 @@ class DelegatorGenerator extends CodeGenerator {
 
     private void generateConstructor() {
         declare_field(Modifier.PRIVATE, Object[].class, FIELD_NAME);
-        begin_constructor(Constants.TYPES_OBJECT_ARRAY);
+        begin_constructor(TYPES_OBJECT_ARRAY);
         load_this();
         super_invoke_constructor();
         load_this();

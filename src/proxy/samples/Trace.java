@@ -6,7 +6,7 @@ import java.util.*;
  *
  * @author  baliuka
  */
-public class Trace implements BeforeAfterInterceptor {
+public class Trace implements MethodInterceptor {
     
     int ident = 1;
     static Trace callback = new Trace();
@@ -50,50 +50,10 @@ public class Trace implements BeforeAfterInterceptor {
        list.containsAll(list);
        list.lastIndexOf(value);
     }
-    
-    /** this method is invoked after execution
-     * @param obj this
-     * @param method Method
-     * @param args Arg array
-     * @param retValFromBefore value returned from beforeInvoke
-     * @param invokedSuper value returned from invoke super
-     * @param retValFromSuper value returner from super
-     * @param e Exception thrown by super
-     * @throws Throwable any exeption
-     * @return value to return from generated method
-     */
-    public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
-       
-        ident--;
-         if(e != null){
-           printIdent(ident);   
-           System.out.println("throw " + e );  
-           System.out.println();
-           throw e.fillInStackTrace();
-         }
-        printIdent(ident); 
-        System.out.print("return " );
-        if( obj == retValFromSuper)
-            System.out.println("this");
-        else System.out.println(retValFromSuper);
-        
-        if(ident == 1)
-             System.out.println();
-        
-        return retValFromSuper;
-    }
-    
-    /** Generated code calls this method before invoking super
-     * @param obj this
-     * @param method Method
-     * @param args Arg array
-     * @param retValFromBefore value returned from beforeInvoke
-     * @throws Throwable any exeption to stop execution
-     * @return true if need to invoke super
-     */
-    public boolean invokeSuper(Object obj, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
-        
-        
+
+
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
+                            MethodProxy proxy) throws Throwable {
         printIdent(ident);
         System.out.println( method );
         for( int i = 0; i < args.length; i++ ){
@@ -105,7 +65,29 @@ public class Trace implements BeforeAfterInterceptor {
               System.out.println(args[i]);
         }
         ident++;
-        return true;
+
+        Object retValFromSuper = null;
+        try {
+            retValFromSuper = proxy.invokeSuper(obj, args);
+            ident--;
+        } catch (Throwable t) {
+            ident--;
+            printIdent(ident);   
+            System.out.println("throw " + t );  
+            System.out.println();
+            throw t.fillInStackTrace();
+        }
+        
+        printIdent(ident); 
+        System.out.print("return " );
+        if( obj == retValFromSuper)
+            System.out.println("this");
+        else System.out.println(retValFromSuper);
+        
+        if(ident == 1)
+             System.out.println();
+        
+        return retValFromSuper;
     }
     
    void printIdent( int ident ){
