@@ -3,7 +3,7 @@ package net.sf.cglib.transform;
 
 /**
  *
- * @author  baluka
+ * @author  baliuka
  */
 public interface ReadWriteFieldCallback {
     

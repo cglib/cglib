@@ -23,10 +23,11 @@ public class TransformClassVisitor implements ClassVisitor{
     ReadWriteFieldFilter filter;
     ClassWriter cw     = new ClassWriter(true);
     Set interfaces     = new HashSet();
-    Class delegateIf   = null ;
+    Class delegateIf[]   = null ;
     Class delegateImpl = null ;
     Map fields         = new HashMap();
     Map types         = new HashMap();
+    boolean  generateClinit = false;       
     
     
     ClassReader cr;
@@ -35,6 +36,8 @@ public class TransformClassVisitor implements ClassVisitor{
     static String callbackDesc = Type.getType( ReadWriteFieldCallback.class ).getDescriptor();
     static String callbackName = ReadWriteFieldCallback.class.getName().replace('.','/');
     
+    /** Holds value of property classInit. */
+    private Method classInit;    
     
     /** Creates a new instance of TransformClassVisitor */
     public TransformClassVisitor(InputStream is, ReadWriteFieldFilter filter)throws java.io.IOException {
@@ -45,7 +48,7 @@ public class TransformClassVisitor implements ClassVisitor{
         
     }
     
-    public void setDelegate(Class delegateIf, Class delegateImpl ){
+    public void setDelegate(Class delegateIf[], Class delegateImpl ){
         try{
          delegateImpl.getConstructor( new Class[]{Object.class});
          this.delegateIf = delegateIf;
@@ -69,8 +72,9 @@ public class TransformClassVisitor implements ClassVisitor{
             interfaces.addAll(Arrays.asList(ifaces));
             
             if(delegateIf != null){
-                
-                interfaces.add(Signature.getInternalName(delegateIf));
+                for(int i = 0; i< delegateIf.length; i++){
+                   interfaces.add(Signature.getInternalName(delegateIf[i]));
+                }
                 
             }
             cw.visit(
@@ -174,6 +178,14 @@ public class TransformClassVisitor implements ClassVisitor{
            cv.visitMaxs(0, 0);          
         }
         
+    
+        if(generateClinit){
+          CodeVisitor cv = cw.visitMethod( Modifier.STATIC,
+          "<clinit>", "()V" , new String[]{} );
+            generateClassInit(cv);
+          cv.visitInsn(Opcodes.RETURN);  
+          cv.visitMaxs(0,0);
+        }
         
         cw.visitEnd();
     }
@@ -399,6 +411,28 @@ public class TransformClassVisitor implements ClassVisitor{
         
     }
     
+    private void generateClassInit(CodeVisitor cv){
+     if(generateClinit){
+         cv.visitLdcInsn(className.replace('/','.'));
+         cv.visitMethodInsn(
+             Opcodes.INVOKESTATIC,
+             Type.getInternalName(Class.class), 
+             "forName", 
+              "(Ljava/lang/String;)Ljava/lang/Class;"
+             );
+         cv.visitMethodInsn(
+             Opcodes.INVOKESTATIC,
+             Type.getInternalName(classInit.getDeclaringClass()), 
+             classInit.getName(), 
+              "(Ljava/lang/Class;)V"
+             );
+         
+         
+         
+         generateClinit = false;
+     }    
+       
+    }
     private void addDelegate(Method m)throws Exception{
         
         
@@ -442,14 +476,14 @@ public class TransformClassVisitor implements ClassVisitor{
     }
     
     private void implementDelegate()throws Exception{
-        
-        Method methods[] = delegateIf.getMethods();
-        for( int i = 0; i < methods.length; i++  ){
-            if( Modifier.isAbstract(methods[i].getModifiers()) ){
-                addDelegate(methods[i]);
+        for( int i = 0; i <  delegateIf.length; i++ ){
+        Method methods[] = delegateIf[i].getMethods();
+        for( int j = 0; j < methods.length; j++  ){
+            if( Modifier.isAbstract(methods[j].getModifiers()) ){
+                addDelegate(methods[j]);
             }
         }
-        
+        }
     }
     
     private void addCallbackField(){
@@ -522,10 +556,13 @@ public class TransformClassVisitor implements ClassVisitor{
     }
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        
+        CodeVisitor cv = cw.visitMethod(access, name, desc, exceptions  );
+        if(name.equals("<clinit>")){
+            generateClassInit(cv);
+        }
         return new TransformCodeVisitor( this, 
-                                        cw.visitMethod(access, name, desc, exceptions  ),
-                                        filter,
+                                         cv,
+                                         filter,
                                          name.equals( "<init>" ) ? delegateImpl : null
                                         );
     }
@@ -544,6 +581,32 @@ public class TransformClassVisitor implements ClassVisitor{
      */
     public void setClassName(java.lang.String className) {
         this.className = className;
+    }
+    
+    /** Getter for property classInit.
+     * @return Value of property classInit.
+     *
+     */
+    public Method getClassInit() {
+        return this.classInit;
+    }
+    
+    /** Setter for property classInit.
+     * @param classInit New value of property classInit.
+     *
+     */
+    public void setClassInit(Method classInit) {
+        if(!Modifier.isStatic( classInit.getModifiers())) {
+          throw new IllegalArgumentException( classInit + " is not static" );
+        }
+        if( classInit.getParameterTypes().length != 1 || 
+            classInit.getParameterTypes()[0] != Class.class ||
+            classInit.getReturnType() != Void.TYPE   ){
+            throw new IllegalArgumentException( classInit + " illegal signature" );
+        
+        }
+        generateClinit = true;
+        this.classInit = classInit;
     }
     
 }
