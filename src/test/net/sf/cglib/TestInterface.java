@@ -59,8 +59,8 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestInterface.java,v 1.1 2003/05/23 23:18:43 herbyderby Exp $
+ * @author Chris Nokleberg
+ * @version $Id: TestInterface.java,v 1.2 2003/05/23 23:20:55 herbyderby Exp $
  */
 public class TestInterface extends CodeGenTestCase {
     public void testStandalone() throws Exception {
