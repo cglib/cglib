@@ -60,12 +60,15 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.io.*;
 
 public class DebuggingClassWriter extends ClassWriter {
+    
+    public static final String DEBUG_LOCATION_PROPERTY = "cglib.debugLocation";
+    
     private static String debugLocation;
     private String className;
     private String superName;
 
     static {
-        debugLocation = System.getProperty("cglib.debugLocation");
+        debugLocation = System.getProperty(DEBUG_LOCATION_PROPERTY);
         if (debugLocation != null) {
             System.err.println("CGLIB debugging enabled, writing to '" + debugLocation + "'");
         }

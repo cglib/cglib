@@ -63,9 +63,13 @@ import net.sf.cglib.transform.*;
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.51 2003/10/19 11:40:11 baliuka Exp $
+ *@version    $Id: TestAll.java,v 1.52 2003/10/19 13:03:21 baliuka Exp $
  */
 public class TestAll extends TestCase {
+    
+    public static String DEFAULT_DEBUG_LOACATION = System.getProperty("user.home") + 
+          System.getProperty("file.separator") + "cglib-debug";
+    
     public TestAll(String testName) {
         super(testName);
     }
@@ -120,10 +124,9 @@ public class TestAll extends TestCase {
     }
 
     public static void main(String args[])throws Exception {
-        System.setProperty("cglib.debugLocation",
-          System.getProperty("user.home") + 
-          System.getProperty("file.separator") + "cglib-debug"
-          );
+        if(System.getProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY) ==  null){
+         System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,DEFAULT_DEBUG_LOACATION);
+        }
         String[] testCaseName = {TestAll.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
        
