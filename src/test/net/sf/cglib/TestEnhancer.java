@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.23 2003/01/26 10:49:46 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.24 2003/01/31 01:05:04 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -160,8 +160,10 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testEnhanceObject() throws Throwable {
         EA obj = new EA();
+        EA save = obj;
         obj.setName("herby");
         EA proxy = (EA)Enhancer.enhance(obj, null, null, TEST_INTERCEPTOR, null, null);
+        assertTrue(((Factory)proxy).getDelegate() == save);
         assertTrue(proxy.getName().equals("herby"));
     }
 

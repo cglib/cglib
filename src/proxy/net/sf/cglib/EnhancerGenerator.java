@@ -277,10 +277,11 @@ import java.util.*;
             throwWrongType(NORMAL_NEW_INSTANCE);
             throwWrongType(MULTIARG_NEW_INSTANCE);
             generateFactoryHelper(DELEGATE_NEW_INSTANCE);
-            generateSetDelegate();
+            generateGetSetDelegate();
         } else {
             throwWrongType(DELEGATE_NEW_INSTANCE);
             throwWrongType(SET_DELEGATE);
+            throwWrongType(GET_DELEGATE);
             generateFactoryHelper(NORMAL_NEW_INSTANCE);
             generateMultiArgFactory();
         }
@@ -304,7 +305,13 @@ import java.util.*;
 
     }
 
-    private void generateSetDelegate() {
+    private void generateGetSetDelegate() {
+        begin_method(GET_DELEGATE);
+        load_this();
+        getfield(DELEGATE_FIELD);
+        return_value();
+        end_method();
+
         begin_method(SET_DELEGATE);
         load_this();
         load_arg(0);
