@@ -76,6 +76,7 @@ import java.util.*;
     private boolean delegating;
     private MethodFilter filter;
     private Constructor cstruct;
+    private List constructorList;
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -99,6 +100,8 @@ import java.util.*;
         }
 
         try {
+            
+            
             try {
                 cstruct = clazz.getDeclaredConstructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
             } catch (NoSuchMethodException e) {
@@ -106,9 +109,23 @@ import java.util.*;
             }
 
             if (!VisibilityFilter.accept(cstruct, clazz.getPackage())) {
-                throw new IllegalArgumentException(clazz.getName());
+                 cstruct = null;
             }
 
+            Constructor[] constructors = clazz.getDeclaredConstructors();
+            
+            constructorList = new ArrayList(constructors.length);
+            for(int i = 0; i< constructors.length; i++  ){
+               if( VisibilityFilter.accept(constructors[i], clazz.getPackage()) ){
+                 constructorList.add(constructors[i]);    
+               }
+            }
+            
+            if( constructorList.size() == 0  ){
+                  throw new IllegalArgumentException(clazz.getName());
+            }
+            
+            
             if (wreplace != null) {
                 loader.loadClass(wreplace.getDeclaringClass().getName());
             }
@@ -139,7 +156,8 @@ import java.util.*;
             declare_field(Modifier.PRIVATE, getSuperclass(), DELEGATE_FIELD);
         }
 
-        generateConstructor();
+
+        generateConstructors();
         generateFactory();
 
         // Order is very important: must add superclass, then
@@ -187,6 +205,7 @@ import java.util.*;
             generateAroundMethod(method, fieldName, accessName,
                                  forcePublic.contains(MethodWrapper.create(method)));
         }
+       
         generateClInit(methods);
 
         if (!declaresWriteReplace) {
@@ -211,27 +230,51 @@ import java.util.*;
         return "CGLIB$ACCESS_" + index + "_" + method.getName();
     }
 
-    private void generateConstructor() throws NoSuchMethodException {
-        begin_constructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
-        load_this();
-        dup();
-        Class[] types = cstruct.getParameterTypes();
-        if (types.length > 0) {
-            load_args();
-        }
-        super_invoke_constructor(types);
-        load_arg(0);
-        putfield(INTERCEPTOR_FIELD);
-        if (delegating) {
+    private void generateConstructors() throws NoSuchMethodException {
+    
+        for( Iterator i = constructorList.iterator(); i.hasNext(); ){
+          Constructor constructor = (Constructor)i.next();
+          
+          Class[] types = constructor.getParameterTypes();
+          Class[] argTypes = new Class[
+                  types.length + 
+                  ( delegating ? 1 : 0 ) + 
+                  ( ( types.length == 0 || 
+                      types[types.length - 1] != MethodInterceptor.class)  ? 1 : 0 )
+           ];
+                      
+          System.arraycopy(types, 0, argTypes, 0, types.length );
+          
+          if(delegating){
+            argTypes[ argTypes.length - 1 ] = Object.class; 
+            argTypes[ argTypes.length - 2 ] = MethodInterceptor.class; 
+          }else{
+             argTypes[ argTypes.length - 1 ] = MethodInterceptor.class; 
+          }
+          
+          
+          begin_constructor(argTypes);
+           load_this();
+           dup();
+           load_args(0,types.length);
+           super_invoke_constructor(types);
+           load_arg(argTypes.length - ( delegating ? 2 : 1 ));
+           putfield(INTERCEPTOR_FIELD);
+         if (delegating) {
             load_this();
-            load_arg(1);
+            load_arg(argTypes.length - 1);
             checkcast(getSuperclass());
             putfield(DELEGATE_FIELD);
         }
-        return_value();
+         return_value();       
+        
         end_constructor();
+        
+      }
+        
     }
-
+    
+    
     private void generateFactory() throws NoSuchMethodException {
         generateFactoryHelper(NORMAL_ARGS, !delegating);
         generateFactoryHelper(DELEGATE_ARGS, delegating);
@@ -274,7 +317,9 @@ import java.util.*;
 
     private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
         begin_method(Factory.class.getMethod("newInstance", types));
-        if (enabled) {
+        if( cstruct == null ){
+          throwException(IllegalStateException.class, "can't find constructor" );
+        }else if (enabled) {
             new_instance_this();
             dup();
             load_args();

@@ -100,8 +100,9 @@ public abstract class CodeGenerator implements Constants {
 
     private Map fields = new HashMap();
     private Set staticFields = new HashSet();
-
-	protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
+    protected boolean debug = false;
+    
+    protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
         if (loader == null) {
             throw new IllegalArgumentException("ClassLoader is required");
         }
@@ -310,9 +311,10 @@ public abstract class CodeGenerator implements Constants {
     
     protected void end_method() {
         setTargets();
-        // TODO: PRINT DEBUG
-        // System.out.print(mg.getMethod());
-        // System.out.print(mg.getMethod().getCode());
+        if(debug){
+         System.out.println(mg.getMethod());
+         System.out.println(mg.getMethod().getCode());
+        } 
         mg.removeNOPs();
         mg.stripAttributes(true);
         mg.setMaxLocals();

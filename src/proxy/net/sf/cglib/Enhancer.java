@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.14 2002/12/29 21:38:02 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.15 2003/01/12 13:14:52 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -202,6 +202,7 @@ public class Enhancer {
     }
 
     
+   
     
     private static Object enhanceHelper(boolean delegating, Object obj,Class cls,
                                         Class[] interfaces, MethodInterceptor ih,
