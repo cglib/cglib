@@ -981,7 +981,7 @@ abstract public class BasicCodeGenerator {
         push(index);
         aaload();
     }
-    
+
     public void aaload() { backend.emit(Opcodes.AALOAD); }
     public void aastore() { backend.emit(Opcodes.AASTORE); }
     public void athrow() { backend.emit(Opcodes.ATHROW); }
