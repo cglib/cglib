@@ -97,27 +97,23 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
-    private boolean jdkCompatible = false;
-        
-    /* package */ EnhancerGenerator( String className, Class clazz, 
-                                     Class[] interfaces,
-                                     ClassLoader loader, 
-                                     Method wreplace, boolean delegating,
-                                     MethodFilter filter, boolean jdkCompatible) {
-        this(className, clazz, interfaces, loader, wreplace, delegating, filter);
-        this.jdkCompatible = jdkCompatible;
-    }
 
-    /* package */ EnhancerGenerator( String className, Class clazz, 
-                                     Class[] interfaces,
-                                     ClassLoader loader, 
-                                     Method wreplace, boolean delegating,
-                                     MethodFilter filter) {
+    private boolean isProxy;
+    private boolean jdkCompatible;
+
+    /* package */ EnhancerGenerator(String className, Class clazz, 
+                                    Class[] interfaces,
+                                    ClassLoader loader, 
+                                    Method wreplace, boolean delegating,
+                                    MethodFilter filter) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
         this.wreplace = wreplace;
         this.delegating = delegating;
-        this.filter = filter;  
+        this.filter = filter;
+
+        jdkCompatible = hasSuperclass(clazz, "net.sf.cglib.ProxyJdk");
+        isProxy = jdkCompatible || hasSuperclass(clazz, "net.sf.cglib.Proxy");
      
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
@@ -159,6 +155,16 @@ import java.util.*;
         } catch (ClassNotFoundException e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    private static boolean hasSuperclass(Class clazz, String superclassName) {
+        while (clazz != null) {
+            if (clazz.getName().equals(superclassName)) {
+                return true;
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return false;
     }
 
     protected void generate() throws NoSuchMethodException {
@@ -408,7 +414,7 @@ import java.util.*;
         create_arg_array();
         getfield(accessName);
         invoke(AROUND_ADVICE);
-        if (isProxy()) {
+        if (isProxy) {
             unbox(method.getReturnType());
         } else {
             unbox_or_zero(method.getReturnType());
@@ -424,17 +430,6 @@ import java.util.*;
         end_handler();
         generateHandleUndeclared(method, handler);
         end_method();
-    }
-
-    private boolean isProxy() {
-        Class clazz = getSuperclass();
-        while (clazz != null) {
-            if (clazz.getName().equals("net.sf.cglib.Proxy")) {
-                return true;
-            }
-            clazz = clazz.getSuperclass();
-        }
-        return false;
     }
 
     private void generateHandleUndeclared(Method method, Object handler) {
@@ -476,10 +471,11 @@ import java.util.*;
     }
 
     protected String getUndeclaredThrowableExceptionClassName() {
-        if (jdkCompatible)
+        if (jdkCompatible) {
             return "java.lang.reflect.UndeclaredThrowableException";
-        else
+        } else {
             return "net.sf.cglib.UndeclaredThrowableException";
+        }
     }
 
     private void generateClInit(List methodList) throws NoSuchMethodException {
