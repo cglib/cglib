@@ -74,7 +74,9 @@ public class A {
 
 	}
 
-
+   protected Object writeReplace() throws java.io.ObjectStreamException {
+     return null;
+   }
 
 }
 
