@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.36 2003/02/03 22:52:35 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.37 2003/03/06 19:05:59 baliuka Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -154,7 +154,6 @@ public class Enhancer {
      * parameter is null : static public Object InternalReplace.writeReplace( 
      *                                                       Object enhanced )
      *                 throws ObjectStreamException;
-     * @throws Throwable on error
      * @return instanse of enhanced  class
      */
     public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
@@ -287,7 +286,7 @@ public class Enhancer {
         }
     }
 
-    public static class ReadResolveException extends ObjectStreamException {
+     static class ReadResolveException extends ObjectStreamException {
         private Throwable cause;
 
         public ReadResolveException(Throwable cause) {

@@ -310,17 +310,17 @@ import java.util.*;
 
     private static void addDeclaredMethods(List methodList, Class clazz) {
         methodList.addAll(java.util.Arrays.asList(clazz.getDeclaredMethods()));
-        if (clazz.isInterface()) {
+      
+           Class superclass = clazz.getSuperclass();
+            if (superclass != null) {
+                addDeclaredMethods(methodList, superclass);
+            }
+
             Class[] interfaces = clazz.getInterfaces();
             for (int i = 0; i < interfaces.length; i++) {
                 addDeclaredMethods(methodList, interfaces[i]);
             }
-        } else {
-            Class superclass = clazz.getSuperclass();
-            if (superclass != null) {
-                addDeclaredMethods(methodList, superclass);
-            }
-        }
+      
     }
 
     private void generateAccessMethod(Method method, String accessName) {
