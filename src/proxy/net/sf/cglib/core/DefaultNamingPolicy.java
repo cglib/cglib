@@ -88,7 +88,7 @@ public class DefaultNamingPolicy implements NamingPolicy {
         String attempt = base;
         int index = 2;
         while (names.evaluate(attempt)) {
-            attempt = base + "-" + index++;
+            attempt = base + "_" + index++;
         }
        
         return attempt;
