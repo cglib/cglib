@@ -60,14 +60,14 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.3 2002/11/29 18:36:01 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.4 2002/11/29 23:24:00 herbyderby Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
         net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
     }
     
-    private static final MethodInterceptor NOOP_INTERCEPTOR = new NoOpInterceptor();
+    private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
     
     private static final Class [] EMPTY_ARG = new Class[]{};
     
@@ -97,11 +97,11 @@ public class TestEnhancer extends TestCase {
         
         java.util.Vector vector1 = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
-        new Class[]{java.util.List.class}, NOOP_INTERCEPTOR );
+        new Class[]{java.util.List.class}, TEST_INTERCEPTOR );
         
         java.util.Vector vector2  = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
-        new Class[]{java.util.List.class}, NOOP_INTERCEPTOR );
+        new Class[]{java.util.List.class}, TEST_INTERCEPTOR );
         
         
         
@@ -113,7 +113,7 @@ public class TestEnhancer extends TestCase {
     public void testMethods()throws Throwable{
         
         MethodInterceptor interceptor =
-        new NoOpInterceptor(){
+        new TestInterceptor(){
             
             public Object afterReturn(  Object obj, Method method,
             Object args[],
@@ -155,7 +155,7 @@ public class TestEnhancer extends TestCase {
         
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        null, NOOP_INTERCEPTOR );
+        null, TEST_INTERCEPTOR );
         
         
         TestCase.assertTrue("enhance", Source.class != source.getClass() );
@@ -165,12 +165,12 @@ public class TestEnhancer extends TestCase {
     public void testEnhanceObject() throws Throwable {
         EA obj = new EA();
         obj.setName("herby");
-        EA proxy = (EA)Enhancer.enhance(obj, null, null, NOOP_INTERCEPTOR, null, null);
+        EA proxy = (EA)Enhancer.enhance(obj, null, null, TEST_INTERCEPTOR, null, null);
         assertTrue(proxy.getName().equals("herby"));
     }
 
     public void testEnhanceObjectDelayed() throws Throwable {
-        EA proxy = (EA)Enhancer.enhance(null, EA.class, null, NOOP_INTERCEPTOR, null, null);
+        EA proxy = (EA)Enhancer.enhance(null, EA.class, null, TEST_INTERCEPTOR, null, null);
         EA obj = new EA();
         obj.setName("herby");
         ((Factory)proxy).setDelegate(obj);
@@ -181,7 +181,7 @@ public class TestEnhancer extends TestCase {
         
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        null, NOOP_INTERCEPTOR );
+        null, TEST_INTERCEPTOR );
         
         
         
@@ -200,7 +200,7 @@ public class TestEnhancer extends TestCase {
         
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        null, NOOP_INTERCEPTOR );
+        null, TEST_INTERCEPTOR );
         
         Class enhancedClass = source.getClass();
         
@@ -221,7 +221,7 @@ public class TestEnhancer extends TestCase {
         
         Object source =  Enhancer.enhance(
         null,
-        null, NOOP_INTERCEPTOR );
+        null, TEST_INTERCEPTOR );
         
         assertTrue("parent is object",
         source.getClass().getSuperclass() == Object.class  );
@@ -232,7 +232,7 @@ public class TestEnhancer extends TestCase {
         
         Object source =  Enhancer.enhance(
         null,
-        null, NOOP_INTERCEPTOR , ClassLoader.getSystemClassLoader());
+        null, TEST_INTERCEPTOR , ClassLoader.getSystemClassLoader());
         source.toString();
         assertTrue("SystemClassLoader",
         source.getClass().getClassLoader()
@@ -247,7 +247,7 @@ public class TestEnhancer extends TestCase {
         
         Object source =  Enhancer.enhance(
         null,
-        null, NOOP_INTERCEPTOR, custom);
+        null, TEST_INTERCEPTOR, custom);
         source.toString();
         assertTrue("Custom classLoader",
         source.getClass().getClassLoader()
@@ -260,7 +260,7 @@ public class TestEnhancer extends TestCase {
     
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        null, NOOP_INTERCEPTOR );
+        null, TEST_INTERCEPTOR );
         
         try{
             
@@ -276,7 +276,7 @@ public class TestEnhancer extends TestCase {
     public void testUndeclaredException()throws Throwable{
         
         MethodInterceptor interceptor =
-        new NoOpInterceptor(){
+        new TestInterceptor(){
             
             public Object afterReturn(  Object obj, Method method,
             Object args[],
@@ -295,23 +295,17 @@ public class TestEnhancer extends TestCase {
             source.throwChecked();
             fail("must throw an exception");
             
-        }catch( Exception cnse  ){
+        } catch(Throwable cnse) {
             
-            if( !( cnse instanceof UndeclaredThrowableException ) ){
-                
-                fail("invalid exception type");
+            if (!(cnse instanceof UndeclaredThrowableException)) {
+                fail("invalid exception type: " + cnse);
             }
-            
-            if( !( ((UndeclaredThrowableException)cnse).getUndeclaredThrowable()
-            instanceof Source.UndeclaredException ) ){
-                
-                fail("invalid exception type");
+
+            cnse = ((UndeclaredThrowableException)cnse).getUndeclaredThrowable();
+            if (!(cnse instanceof Source.UndeclaredException)) {
+                fail("invalid exception type: " + cnse);
             }
-            
-            
         }
-        
-        
     }
     
     public void testSerializable()throws Throwable{
@@ -320,7 +314,7 @@ public class TestEnhancer extends TestCase {
         
         Source source =  (Source)Enhancer.enhance(
         Source.class,
-        new Class []{} , new NoOpInterceptor(testValue),
+        new Class []{} , new TestInterceptor(testValue),
         this.getClass().getClassLoader(),
          Enhancer.InternalReplace.class.getMethod("writeReplace",new Class[]{Object.class})
         );
@@ -338,19 +332,19 @@ public class TestEnhancer extends TestCase {
         
         assertTrue("type",  ser instanceof Source );
         assertTrue("interceptor",
-        Enhancer.getMethodInterceptor(ser) instanceof NoOpInterceptor );
+        Enhancer.getMethodInterceptor(ser) instanceof TestInterceptor );
         
-        NoOpInterceptor interceptor = (NoOpInterceptor)Enhancer.getMethodInterceptor(ser);
+        TestInterceptor interceptor = (TestInterceptor)Enhancer.getMethodInterceptor(ser);
         
         assertEquals("testValue", testValue, interceptor.getValue()  );
     }
     
    public void testABC() throws Throwable{
-       Enhancer.enhance(EA.class, null, NOOP_INTERCEPTOR).toString();
-       Enhancer.enhance(EC1.class, null, NOOP_INTERCEPTOR).toString();
-       Enhancer.enhance(EB.class, null, NOOP_INTERCEPTOR).toString();
-       Enhancer.enhance(ED.class, null, NOOP_INTERCEPTOR).toString();
-       Enhancer.enhance(ClassLoader.class, null, NOOP_INTERCEPTOR).toString();
+       Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.enhance(EB.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.enhance(ED.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.enhance(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
    }
 
     public static class AroundDemo {

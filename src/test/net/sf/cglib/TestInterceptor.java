@@ -55,23 +55,23 @@ package net.sf.cglib;
 
 import junit.framework.*;
 import java.io.Serializable;
+import java.lang.reflect.*;
 
 /**
  *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- *@version $Id: NoOpInterceptor.java,v 1.2 2002/11/27 03:38:06 herbyderby Exp $
+ *@version $Id: TestInterceptor.java,v 1.1 2002/11/29 23:24:00 herbyderby Exp $
  */
-public class NoOpInterceptor extends BeforeAfterAdapter implements Serializable {
-    String value; 
+public class TestInterceptor extends BeforeAfterAdapter implements Serializable {
+    String value;
     
     public String getValue() {
         return value;
     }
      
-    public NoOpInterceptor(String ser) {
+    public TestInterceptor(String ser) {
         value = ser;
     }
    
-    /** Creates a new instance of NoOpInterceptor */
-    public NoOpInterceptor() {
+    public TestInterceptor() {
     }
 }
