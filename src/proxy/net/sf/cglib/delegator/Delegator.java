@@ -65,18 +65,11 @@ public class Delegator implements ClassFileConstants
 {
     private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
     private static int index = 0;
-    private static final DelegatorKey keyFactory;
+    private static final DelegatorKey keyFactory =
+      (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
 
     /* package */ interface DelegatorKey {
         public Object newInstance(Class[] classes);
-    }
-
-    static {
-        try {
-            keyFactory = (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
-        } catch (CodeGenerationException e) {
-            throw new ImpossibleError(e);
-        }
     }
 
     private static String getNextName() {
@@ -92,8 +85,7 @@ public class Delegator implements ClassFileConstants
     // was used, the required order of the delegates may be different from
     // what was originally specified, which would be confusion. There is
     // not much overhead associated with going through the cache, anyway.
-    interface Factory
-    {
+    interface Factory {
         public Object cglib_newInstance(Object[] delegates);
     }
 
@@ -109,9 +101,7 @@ public class Delegator implements ClassFileConstants
      * loaded this class.
      * @return the dynamically created object
      */
-    public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader)
-    throws CodeGenerationException
-    {
+    public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader) {
         return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader);
     }
     
@@ -129,9 +119,7 @@ public class Delegator implements ClassFileConstants
      * @return the dynamically created object
      * @see #getInterfaceMap(Object[])
      */
-    public static Object makeDelegator(Object[] delegates, ClassLoader loader)
-    throws CodeGenerationException
-    {
+    public static Object makeDelegator(Object[] delegates, ClassLoader loader) {
         Info info = getInfo(delegates);
         Object[] remapped = new Object[info.interfaces.length];
         for (int i = 0; i < remapped.length; i++) {
@@ -150,8 +138,7 @@ public class Delegator implements ClassFileConstants
      * @return the Map of interfaces -> delegates
      * @see #makeDelegator(Object[])
      */
-    public static Map getInterfaceMap(Object[] delegates)
-    {
+    public static Map getInterfaceMap(Object[] delegates) {
         Info info = getInfo(delegates);
         Map map = new HashMap();
         for (int i = 0; i < info.interfaces.length; i++) {
@@ -160,8 +147,7 @@ public class Delegator implements ClassFileConstants
         return map;
     }
 
-    synchronized private static Info getInfo(Object[] delegates)
-    {
+    synchronized private static Info getInfo(Object[] delegates) {
         // TODO: optimize object->class conversion?
         Class[] classes = new Class[delegates.length];
         for (int i = 0; i < delegates.length; i++) {
@@ -177,9 +163,7 @@ public class Delegator implements ClassFileConstants
     synchronized private static Object makeDelegatorHelper(Object key,
                                                            Class[] interfaces,
                                                            Object[] delegates,
-                                                           ClassLoader loader)
-    throws CodeGenerationException
-    {
+                                                           ClassLoader loader) {
         if (loader == null) {
             loader = Delegator.class.getClassLoader();
         }
@@ -204,14 +188,12 @@ public class Delegator implements ClassFileConstants
         }
     }
 
-    private static class Info
-    {
+    private static class Info {
         private Class[] interfaces;
         private int[] indexes;
         private Object key;
 
-        public Info(Object[] incoming)
-        {
+        public Info(Object[] incoming) {
             Set seenInterfaces = new HashSet();
             List interfaceList = new LinkedList();
             List indexList = new LinkedList();
@@ -242,8 +224,7 @@ public class Delegator implements ClassFileConstants
         }
     }
 
-    private static Class[] getAllInterfaces(Class clazz)
-    {
+    private static Class[] getAllInterfaces(Class clazz) {
         List interfaces = new ArrayList();
         while (!clazz.equals(OBJECT_CLASS)) {
             interfaces.addAll(Arrays.asList(clazz.getInterfaces()));

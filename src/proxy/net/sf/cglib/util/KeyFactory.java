@@ -67,8 +67,7 @@ abstract public class KeyFactory {
 
     protected KeyFactory() { }
 
-    public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader)
-    throws CodeGenerationException {
+    public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
         // TODO: caching
         if (loader == null) {
             loader = KeyFactory.class.getClassLoader();

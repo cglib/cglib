@@ -23,7 +23,8 @@ import net.sf.cglib.util.*;
 public abstract class MetaClass  {
     
     private static Map cache = new Hashtable();
-    private static final MetaClassKey keyFactory;
+    private static final MetaClassKey keyFactory =
+      (MetaClassKey)KeyFactory.makeFactory(MetaClassKey.class, null);
     
     protected Class target;
     protected String [] getters, setters;
@@ -32,14 +33,6 @@ public abstract class MetaClass  {
     /* package */ interface MetaClassKey {
         public Object newInstance(Class target, String[] getters,
                                   String[] setters, Class[] types);
-    }
-
-    static {
-        try {
-            keyFactory = (MetaClassKey)KeyFactory.makeFactory(MetaClassKey.class, null);
-        } catch (CodeGenerationException e) {
-            throw new ImpossibleError(e);
-        }
     }
     
      /** Creates a new instance of MetaClass */
@@ -223,9 +216,6 @@ public abstract class MetaClass  {
   
     }  
        
-    protected Class define() throws CodeGenerationException {
-      return super.define();
-    }
      public  void generate() throws NoSuchMethodException {
         
       //------------- Generate constructor -------------

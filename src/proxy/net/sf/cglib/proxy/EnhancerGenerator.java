@@ -19,8 +19,7 @@ import net.sf.cglib.util.*;
     private boolean delegating;
         
     /* package */ EnhancerGenerator(String className, Class clazz, Class[] interfaces, MethodInterceptor ih,
-                                    ClassLoader loader, Method wreplace, boolean delegating)
-    throws CodeGenerationException {
+                                    ClassLoader loader, Method wreplace, boolean delegating) {
         super(className, clazz, loader);
         this.interfaces = interfaces;
         this.ih = ih;
@@ -66,11 +65,7 @@ import net.sf.cglib.util.*;
         }
     }
 
-    public Class define() throws CodeGenerationException {
-        return super.define();
-    }
-        
-    protected void generate() throws NoSuchMethodException, CodeGenerationException {
+    protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
             wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", OBJECT_CLASS_ARRAY);
         }
@@ -99,7 +94,7 @@ import net.sf.cglib.util.*;
 
         boolean declaresWriteReplace = false;
         String packageName = getSuperclass().getPackage().getName();
-        Set methodSet = new HashSet();
+        Map methodMap = new HashMap();
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
             int mod = method.getModifiers();
@@ -110,7 +105,12 @@ import net.sf.cglib.util.*;
                     method.getParameterTypes().length == 0) {
                     declaresWriteReplace = true;
                 }
-                methodSet.add(new MethodWrapper(method));
+                Object methodKey = MethodWrapper.newInstance(method);
+                Method other = (Method)methodMap.get(methodKey);
+                if (other != null) {
+                    checkReturnTypesEqual(method, other);
+                }
+                methodMap.put(methodKey, method);
             }
         }
         Method invokeSuper = getInvokeSuper();
@@ -118,8 +118,8 @@ import net.sf.cglib.util.*;
 
         Map methodTable = new HashMap();
         int cntr = 0;
-        for (Iterator it = methodSet.iterator(); it.hasNext();) {
-            Method method = ((MethodWrapper)it.next()).getMethod();
+        for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
+            Method method = (Method)it.next();
             String fieldName = "METHOD_" + cntr++;
             declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, Method.class, fieldName);
             generateMethod(fieldName, method, invokeSuper, afterReturn);
@@ -129,6 +129,14 @@ import net.sf.cglib.util.*;
 
         if (!declaresWriteReplace) {
             generateWriteReplace();
+        }
+    }
+
+    private void checkReturnTypesEqual(Method m1, Method m2) {
+        if (!m1.getReturnType().equals(m2.getReturnType())) {
+            throw new IllegalArgumentException("Can't implement:\n" + m1.getDeclaringClass().getName() +
+                                               "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
+                                               m1.toString() + "\n" + m2.toString());
         }
     }
 
