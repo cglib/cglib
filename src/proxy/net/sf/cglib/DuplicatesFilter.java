@@ -54,69 +54,32 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.util.*;
 
-/**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.9 2003/01/06 21:34:40 herbyderby Exp $
- */
-abstract public class MethodProxy {
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("ProxiedByCGLIB");
-    private static final ClassLoader defaultLoader = MethodProxy.class.getClassLoader();
-    private static final Method INVOKE_SUPER =
-      ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
-
-    abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
-
-    protected MethodProxy() { }
-
-    public static MethodProxy create(Method method) {
-        return create(method, null);
+/* package */ class DuplicatesFilter implements MethodFilter {
+    private Map map = new HashMap();
+    
+    public DuplicatesFilter() {
     }
-
-    public static MethodProxy create(Method method, ClassLoader loader) {
-        try {
-            Class methodClass = method.getDeclaringClass();
-            if (loader == null) {
-                loader = methodClass.getClassLoader();
-                if (loader == null) {
-                    loader = defaultLoader;
-                }
-            }
-            String className = nameFactory.getNextName(methodClass);
-            Class gen = new Generator(className, method, loader).define();
-            return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
+    
+    public boolean accept(Method method) {
+        Object key = MethodWrapper.create(method);
+        Method value = (Method)map.get(key);
+        if (value != null) {
+            checkReturnTypesEqual(method, value);
+            return false;
+        } else {
+            map.put(key, method);
+            return true;
         }
     }
 
-    private static class Generator extends CodeGenerator {
-        private Method method;
-        
-        public Generator(String className, Method method, ClassLoader loader) {
-            super(className, MethodProxy.class, loader);
-            this.method = method;
-        }
-
-        protected void generate() {
-            generateNullConstructor();
-            begin_method(INVOKE_SUPER);
-            load_arg(0);
-            checkcast(method.getDeclaringClass());
-            Class[] types = method.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
-                load_arg(1);
-                push(i);
-                aaload();
-                unbox(types[i]);
-            }
-            invoke(method);
-            box(method.getReturnType());
-            return_value();
-            end_method();
+    private void checkReturnTypesEqual(Method m1, Method m2) {
+        if (!m1.getReturnType().equals(m2.getReturnType())) {
+            throw new IllegalArgumentException("Can't implement:\n" + m1.getDeclaringClass().getName() +
+                                               "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
+                                               m1.toString() + "\n" + m2.toString());
         }
     }
 }
+

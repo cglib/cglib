@@ -67,6 +67,8 @@ import java.util.*;
       ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
     private static final Method MAKE_PROXY =
       ReflectUtils.findMethod("MethodProxy.create(Method)");
+    private static final Method INTERNAL_WRITE_REPLACE =
+      ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
 
     private Class[] interfaces;
     private Method wreplace;
@@ -102,12 +104,9 @@ import java.util.*;
             } catch (NoSuchMethodException e) {
                 cstruct = clazz.getDeclaredConstructor(TYPES_EMPTY);
             }
-            int mod = cstruct.getModifiers();
-                
-            if (!(Modifier.isPublic(mod) ||
-                  Modifier.isProtected(mod) ||
-                  isVisible( cstruct, clazz.getPackage() ))) {
-                throw new IllegalArgumentException( clazz.getName() );
+
+            if (!VisibilityFilter.accept(cstruct, clazz.getPackage())) {
+                throw new IllegalArgumentException(clazz.getName());
             }
 
             if (wreplace != null) {
@@ -132,9 +131,8 @@ import java.util.*;
 
     protected void generate() throws NoSuchMethodException {
         if (wreplace == null) {
-            wreplace = Enhancer.InternalReplace.class.getMethod("writeReplace", TYPES_OBJECT);
+            wreplace = INTERNAL_WRITE_REPLACE;
         }
-        
         declare_interface(Factory.class);
         declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
         if (delegating) {
@@ -147,82 +145,61 @@ import java.util.*;
         // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
         // its superinterfaces.
-        List allMethods = new LinkedList();
-        addDeclaredMethods(allMethods, getSuperclass());
+        List methods = new ArrayList();
+        addDeclaredMethods(methods, getSuperclass());
+
+        Set forcePublic;
         if (interfaces != null) {
             declare_interfaces(interfaces);
+            List interfaceMethods = new ArrayList();
             for (int i = 0; i < interfaces.length; i++) {
-                addDeclaredMethods(allMethods, interfaces[i]);
+                addDeclaredMethods(interfaceMethods, interfaces[i]);
             }
+            forcePublic = MethodWrapper.createSet(interfaceMethods);
+            methods.addAll(interfaceMethods);
+        } else {
+            forcePublic = Collections.EMPTY_SET;
+        }
+
+        filterMethods(methods, new VisibilityFilter(getSuperclass()));
+        if (delegating) {
+            filterMethods(methods, new ModifierFilter(Modifier.PROTECTED, 0));
+        }
+        filterMethods(methods, new DuplicatesFilter());
+        filterMethods(methods, new ModifierFilter(Modifier.FINAL, 0));
+        if (filter != null) {
+            filterMethods(methods, filter);
         }
 
         boolean declaresWriteReplace = false;
-        Package packageName = getSuperclass().getPackage();
-        Map methodMap = new HashMap();
-        Map modifierMap = new HashMap();
-                
-        for (Iterator it = allMethods.iterator(); it.hasNext();) {
-            Method method = (Method)it.next();
-            int mod = method.getModifiers();
-            if (!Modifier.isStatic(mod) &&
-                (!delegating || !Modifier.isProtected(mod)) &&
-                isVisible(method, packageName)) {
-                if (method.getName().equals("writeReplace") &&
-                    method.getParameterTypes().length == 0) {
-                    declaresWriteReplace = true;
-                }
-                Object methodKey = MethodWrapper.newInstance(method);
-                Method existing = (Method)methodMap.get(methodKey);
-                
-                if ( existing != null && 
-                     Modifier.isProtected(existing.getModifiers()) &&
-                     Modifier.isPublic(method.getModifiers()) )  {
-                    modifierMap.put(existing,  new Integer( Modifier.PUBLIC | Modifier.FINAL ) );     
-                }else{
-                    
-                     int modifiers = method.getModifiers();
-                     modifiers = Modifier.FINAL | (modifiers
-                                 & ~Modifier.ABSTRACT
-                                 & ~Modifier.NATIVE
-                                 & ~Modifier.SYNCHRONIZED);
-       
-                    modifierMap.put(method, new Integer( modifiers ) );     
-                }    
-                
-               if(existing == null){     
-                     
-                    methodMap.put(methodKey, method);
-                
-                } else {
-                    checkReturnTypesEqual(method, existing);
-                }
-            }
-        }
-        List methodList = new ArrayList(methodMap.values());
-        List list = new ArrayList();
-        
         int privateFinalStatic = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
-        for (int i = 0, j = 0, size = methodList.size(); j < size; j++) {
-            Method method = (Method)methodList.get(j);
-            if( Modifier.isFinal(method.getModifiers()) || 
-                ( null != filter && !filter.accept(method))   ){
-                continue;
-            }   
-            
+        for (int i = 0; i < methods.size(); i++) {
+            Method method = (Method)methods.get(i);
+            if (method.getName().equals("writeReplace") &&
+                method.getParameterTypes().length == 0) {
+                declaresWriteReplace = true;
+            }
             String fieldName = getFieldName(i);
             String accessName = getAccessName(method, i);
             declare_field(privateFinalStatic, Method.class, fieldName);
             declare_field(privateFinalStatic, MethodProxy.class, accessName);
             generateAccessMethod(method, accessName);
-            int modifiers = ((Integer)modifierMap.get(method)).intValue();
-            generateAroundMethod( modifiers, method, fieldName, accessName);
-            list.add(method);
-            i++;
+            generateAroundMethod(method, fieldName, accessName,
+                                 forcePublic.contains(MethodWrapper.create(method)));
         }
-        generateClInit(list);
+        generateClInit(methods);
 
         if (!declaresWriteReplace) {
             generateWriteReplace();
+        }
+    }
+
+    private void filterMethods(List methods, MethodFilter filter) {
+        Iterator it = methods.iterator();
+        while (it.hasNext()) {
+            if (!filter.accept((Method)it.next())) {
+                it.remove();
+            }
         }
     }
 
@@ -232,14 +209,6 @@ import java.util.*;
     
     private String getAccessName(Method method, int index) {
         return "CGLIB$ACCESS_" + index + "_" + method.getName();
-    }
-
-    private void checkReturnTypesEqual(Method m1, Method m2) {
-        if (!m1.getReturnType().equals(m2.getReturnType())) {
-            throw new IllegalArgumentException("Can't implement:\n" + m1.getDeclaringClass().getName() +
-                                               "\n      and\n" + m2.getDeclaringClass().getName() + "\n"+
-                                               m1.toString() + "\n" + m2.toString());
-        }
     }
 
     private void generateConstructor() throws NoSuchMethodException {
@@ -303,7 +272,6 @@ import java.util.*;
         
     }
 
-    // TODO: need to ensure that MethodInterceptor type is compatible
     private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
         begin_method(Factory.class.getMethod("newInstance", types));
         if (enabled) {
@@ -357,7 +325,7 @@ import java.util.*;
             load_args();
             invoke(method);
         } else if (Modifier.isAbstract(method.getModifiers())) {
-             throwException(AbstractMethodError.class, method.toString() + " is abstract" );
+            throwException(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
             load_args();
@@ -367,7 +335,11 @@ import java.util.*;
         end_method();
     }
 
-    private void generateAroundMethod(int modifiers, Method method, String fieldName, String accessName) {
+    private void generateAroundMethod(Method method, String fieldName, String accessName, boolean forcePublic) {
+        int modifiers = getDefaultModifiers(method);
+        if (forcePublic) {
+            modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
+        }
         begin_method(method, modifiers);
         int outer_eh = begin_handler();
         load_this();
