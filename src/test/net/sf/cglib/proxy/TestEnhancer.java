@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.27 2003/10/29 17:30:35 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.28 2003/11/08 19:18:32 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -332,8 +332,11 @@ public class TestEnhancer extends CodeGenTestCase {
         AroundDemo demo = (AroundDemo)Enhancer.create(AroundDemo.class, null, new MethodInterceptor() {
                 public Object intercept(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
-                    if (method.getName().equals("getFirstName"))
+                    if (method.getName().equals("getFirstName")) {
+                        assertTrue(proxy.getSuperIndex() == 11);
+                        assertTrue(MethodProxy.getSuperName(obj.getClass(), method).equals("CGLIB$$ACCESS_getFirstName_0"));
                         return "Christopher";
+                    }
                     return proxy.invokeSuper(obj, args);
                 }
             });
@@ -489,5 +492,16 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setInterfaces(interfaces);
         e.setCallbackFilter(filter);
         return e.createClass();
+    }
+
+    public interface PublicClone extends Cloneable {
+        Object clone() throws CloneNotSupportedException;
+    }
+
+    public void testNoOpClone() throws Exception {
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(PublicClone.class);
+        enhancer.setCallbackFilter(new SimpleFilter(Callbacks.NO_OP));
+        ((PublicClone)enhancer.create()).clone();
     }
 }
