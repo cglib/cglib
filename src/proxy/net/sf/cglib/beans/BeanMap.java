@@ -148,6 +148,24 @@ abstract public class BeanMap implements Map {
         setBean(bean);
     }
 
+    public Object get(Object key) {
+        return get(bean, key);
+    }
+
+    public Object put(Object key, Object value) {
+        return put(bean, key, value);
+    }
+
+    /**
+     * TODO
+     */
+    abstract public Object get(Object bean, Object key);
+
+    /**
+     * TODO
+     */
+    abstract public Object put(Object bean, Object key, Object value);
+
     /**
      * Change the underlying bean this map should use.
      * @param bean the new JavaBean

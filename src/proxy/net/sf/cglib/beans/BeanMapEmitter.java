@@ -65,10 +65,10 @@ class BeanMapEmitter extends ClassEmitter {
       TypeUtils.parseConstructor("Object");
     private static final Signature CSTRUCT_STRING_ARRAY =
       TypeUtils.parseConstructor("String[]");
-    private static final Signature MAP_GET =
-      TypeUtils.parseSignature("Object get(Object)");
-    private static final Signature MAP_PUT =
-      TypeUtils.parseSignature("Object put(Object, Object)");
+    private static final Signature BEAN_MAP_GET =
+      TypeUtils.parseSignature("Object get(Object, Object)");
+    private static final Signature BEAN_MAP_PUT =
+      TypeUtils.parseSignature("Object put(Object, Object, Object)");
     private static final Signature KEY_SET =
       TypeUtils.parseSignature("java.util.Set keySet()");
     private static final Signature NEW_INSTANCE =
@@ -124,11 +124,10 @@ class BeanMapEmitter extends ClassEmitter {
     }
         
     private void generateGet(Class type, final Map getters) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null, null);
-        e.load_this();
-        e.super_getfield("bean", Constants.TYPE_OBJECT);
-        e.checkcast(Type.getType(type));
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, BEAN_MAP_GET, null, null);
         e.load_arg(0);
+        e.checkcast(Type.getType(type));
+        e.load_arg(1);
         e.checkcast(Constants.TYPE_STRING);
         EmitUtils.string_switch(e, getNames(getters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
@@ -146,11 +145,10 @@ class BeanMapEmitter extends ClassEmitter {
     }
 
     private void generatePut(Class type, final Map setters) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null, null);
-        e.load_this();
-        e.super_getfield("bean", Constants.TYPE_OBJECT);
-        e.checkcast(Type.getType(type));
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, BEAN_MAP_PUT, null, null);
         e.load_arg(0);
+        e.checkcast(Type.getType(type));
+        e.load_arg(1);
         e.checkcast(Constants.TYPE_STRING);
         EmitUtils.string_switch(e, getNames(setters), Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
@@ -163,7 +161,7 @@ class BeanMapEmitter extends ClassEmitter {
                     e.box(Type.getType(pd.getReadMethod().getReturnType()));
                 }
                 e.swap(); // move old value behind bean
-                e.load_arg(1); // new value
+                e.load_arg(2); // new value
                 e.unbox(Type.getType(pd.getWriteMethod().getParameterTypes()[0]));
                 e.invoke(pd.getWriteMethod());
                 e.return_value();
