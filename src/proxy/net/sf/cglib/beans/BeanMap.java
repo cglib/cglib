@@ -130,7 +130,7 @@ abstract public class BeanMap implements Map {
      * @param bean the JavaBean underlying the map
      * @return a new <code>BeanMap</code> instance
      */
-    abstract protected BeanMap newInstance(Object bean);
+    abstract public BeanMap newInstance(Object bean);
 
     /**
      * Get the type of a property.
