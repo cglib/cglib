@@ -41,7 +41,7 @@ public class TransformDemo {
     public static void main( String args [] )throws Exception{
     
         
-        TransformClassVisitor t1 = new TransformClassVisitor( new Filter() );
+        FieldTransformer t1 = new FieldTransformer( new Filter() );
         
         
         AddClintTransformer t2 = new   AddClintTransformer(
