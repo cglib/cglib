@@ -37,7 +37,7 @@ implements CallbackGenerator
                                             ReflectUtils.getExceptionTypes(method),
                                             null);
             Block handler = e.begin_block();
-            context.emitCallback(e);
+            context.emitCallback(e, context.getIndex(method));
             e.load_this();
             e.getfield(fieldName);
             e.create_arg_array();

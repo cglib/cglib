@@ -63,50 +63,27 @@ import org.objectweb.asm.Type;
 class LazyLoaderGenerator implements CallbackGenerator {
     public static final LazyLoaderGenerator INSTANCE = new LazyLoaderGenerator();
 
-    private static final String DELEGATE = "CGLIB$LAZY_LOADER";
-    private static final Signature LOAD_PRIVATE =
-      TypeUtils.parseSignature("Object CGLIB$LOAD_PRIVATE()");
     private static final Signature LOAD_OBJECT = 
       TypeUtils.parseSignature("Object loadObject()");
     private static final Type LAZY_LOADER =
       TypeUtils.parseType("net.sf.cglib.proxy.LazyLoader");
 
     public void generate(ClassEmitter ce, final Context context) {
-        ce.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null, null);
-
-        CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
-                                        Constants.ACC_SYNCHRONIZED |
-                                        Constants.ACC_FINAL,
-                                        LOAD_PRIVATE,
-                                        null,
-                                        null);
-        e.load_this();
-        e.getfield(DELEGATE);
-        e.dup();
-        Label end = e.make_label();
-        e.ifnonnull(end);
-        e.pop();
-        e.load_this();
-        context.emitCallback(e);
-        e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
-        e.dup_x1();
-        e.putfield(DELEGATE);
-        e.mark(end);
-        e.return_value();
-        e.end_method();
-
+        Set indexes = new HashSet();
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                e = ce.begin_method(context.getModifiers(method),
-                                    ReflectUtils.getSignature(method),
-                                    ReflectUtils.getExceptionTypes(method),
-                                    null);
+                int index = context.getIndex(method);
+                indexes.add(new Integer(index));
+                CodeEmitter e = ce.begin_method(context.getModifiers(method),
+                                                ReflectUtils.getSignature(method),
+                                                ReflectUtils.getExceptionTypes(method),
+                                                null);
                 e.load_this();
                 e.dup();
-                e.invoke_virtual_this(LOAD_PRIVATE);
+                e.invoke_virtual_this(loadMethod(index));
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();
                 e.invoke(method);
@@ -114,6 +91,41 @@ class LazyLoaderGenerator implements CallbackGenerator {
                 e.end_method();
             }
         }
+
+        for (Iterator it = indexes.iterator(); it.hasNext();) {
+            int index = ((Integer)it.next()).intValue();
+
+            String delegate = "CGLIB$LAZY_LOADER_" + index;
+            ce.declare_field(Constants.ACC_PRIVATE, delegate, Constants.TYPE_OBJECT, null, null);
+
+            CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
+                                            Constants.ACC_SYNCHRONIZED |
+                                            Constants.ACC_FINAL,
+                                            loadMethod(index),
+                                            null,
+                                            null);
+            e.load_this();
+            e.getfield(delegate);
+            e.dup();
+            Label end = e.make_label();
+            e.ifnonnull(end);
+            e.pop();
+            e.load_this();
+            context.emitCallback(e, index);
+            e.invoke_interface(LAZY_LOADER, LOAD_OBJECT);
+            e.dup_x1();
+            e.putfield(delegate);
+            e.mark(end);
+            e.return_value();
+            e.end_method();
+            
+        }
+    }
+
+    private Signature loadMethod(int index) {
+        return new Signature("CGLIB$LOAD_PRIVATE_" + index,
+                             Constants.TYPE_OBJECT,
+                             Constants.TYPES_EMPTY);
     }
 
     public void generateStatic(CodeEmitter e, Context context) { }

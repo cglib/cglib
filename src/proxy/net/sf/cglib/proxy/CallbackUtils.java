@@ -58,54 +58,36 @@ import org.objectweb.asm.Type;
 class CallbackUtils {
     private CallbackUtils() { }
 
-    private static Class getClass(int type) {
-        switch (type) {
-        case Callbacks.INTERCEPT:
+    // TODO: ensure that callback doesn't implement more than one interface?
+    static Class determineType(Callback callback) {
+        if (callback == null) {
+            return null;
+        } else if (callback instanceof MethodInterceptor) {
             return MethodInterceptor.class;
-        case Callbacks.JDK_PROXY:
+        } else if (callback instanceof InvocationHandler) {
             return InvocationHandler.class;
-        case Callbacks.LAZY_LOAD:
+        } else if (callback instanceof LazyLoader) {
             return LazyLoader.class;
-        case Callbacks.DISPATCH:
+        } else if (callback instanceof Dispatcher) {
             return Dispatcher.class;
-        default:
-            return null;
+        } else {
+            throw new IllegalArgumentException("Unknown callback " + callback.getClass());
         }
     }
 
-    static Type getType(int type) {
-        Class c = getClass(type);
-        return (c != null) ? Type.getType(c) : null;
-    }
-    
-    static CallbackGenerator getGenerator(int type) {
-        switch (type) {
-        case Callbacks.INTERCEPT:
-            return MethodInterceptorGenerator.INSTANCE;
-        case Callbacks.NO_OP:
+    static CallbackGenerator getGenerator(Class type) {
+        if (type == null) {
             return NoOpGenerator.INSTANCE;
-        case Callbacks.JDK_PROXY:
+        } else if (type.equals(MethodInterceptor.class)) {
+            return MethodInterceptorGenerator.INSTANCE;
+        } else if (type.equals(InvocationHandler.class)) {
             return InvocationHandlerGenerator.INSTANCE;
-        case Callbacks.LAZY_LOAD:
+        } else if (type.equals(LazyLoader.class)) {
             return LazyLoaderGenerator.INSTANCE;
-        case Callbacks.DISPATCH:
+        } else if (type.equals(Dispatcher.class)) {
             return DispatcherGenerator.INSTANCE;
-        default:
-            return null;
+        } else {
+            throw new IllegalArgumentException("Unknown callback " + type);
         }
-    }
-
-    static int determineType(Callback callback) {
-        int best = Callbacks.NO_OP;
-        for (int i = Callbacks.MAX_VALUE; i >= 0; i--) {
-            Class type = getClass(i);
-            if (type != null && type.isAssignableFrom(callback.getClass())) {
-                if (best != Callbacks.NO_OP) {
-                    throw new IllegalStateException("Callback implements more than one interceptor interface--use a CallbackFilter");
-                }
-                best = i;
-            }
-        }
-        return best;
     }
 }

@@ -95,9 +95,17 @@ implements ClassGenerator
         this.namePrefix = namePrefix;
     }
 
-    protected String getClassName() {
+    final protected String getClassName() {
+        return getClassName(getClassLoader());
+    }
+
+    private String getClassName(ClassLoader loader) {
         NamingPolicy np = (namingPolicy != null) ? namingPolicy : DefaultNamingPolicy.INSTANCE;
-        return np.getClassName(namePrefix, source.name, key);
+        return np.getClassName(namePrefix, source.name, key, getClassNameCache(loader));
+    }
+
+    private Set getClassNameCache(ClassLoader loader) {
+        return (Set)((Map)source.cache.get(loader)).get(NAME_KEY);
     }
 
     /**
@@ -162,7 +170,7 @@ implements ClassGenerator
                 if (instance == null) {
                     this.key = key;
                     final String keyFieldValue = key.toString();
-                    String className = getClassName();
+                    String className = getClassName(loader);
                     Class gen = null;
                     try {
                         gen = loader.loadClass(className);
@@ -175,7 +183,6 @@ implements ClassGenerator
                     } catch (ClassNotFoundException e) {
                     }
                     if (gen == null) {
-                        className = uniquify(className, (Set)cache2.get(NAME_KEY));
                         DebuggingClassWriter w = new DebuggingClassWriter(true) {
                             public void visitEnd() {
                                 visitField(Constants.ACC_STATIC | Constants.ACC_PUBLIC,
@@ -196,6 +203,7 @@ implements ClassGenerator
                             throw new IllegalStateException("Class name " + className +
                                                             " does not match generated name: " + w.getClassName());
                         }
+                        getClassNameCache(loader).add(className);
                         gen = ReflectUtils.defineClass(className, b, loader);
                     }
                     cache2.put(key, instance = firstInstance(gen));
@@ -210,16 +218,6 @@ implements ClassGenerator
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
-    }
-
-    private static String uniquify(String origName, Set names) {
-        String className = origName;
-        int index = 2;
-        while (names.contains(className)) {
-            className = origName + "-" + index++;
-        }
-        names.add(className);
-        return className;
     }
 
     private static String getKeyField(Class type) {

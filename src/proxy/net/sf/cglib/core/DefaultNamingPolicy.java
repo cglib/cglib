@@ -53,24 +53,34 @@
  */
 package net.sf.cglib.core;
 
+import java.util.Set;
+
 /**
  * The default policy used by {@link AbstractClassGenerator}.
  * Generates names such as
  * <p><code>net.sf.cglib.Foo$$EnhancerByCGLIB$$38272841</code><p>
  * This is composed of a prefix based on the name of the superclass, a fixed
  * string incorporating the CGLIB class responsible for generation, and a
- * hashcode derived from the parameters used to create the object.
+ * hashcode derived from the parameters used to create the object. If the same
+ * name has been previously been used in the same <code>ClassLoader</code>, a
+ * suffix is added to ensure uniqueness.
  */
 public class DefaultNamingPolicy implements NamingPolicy {
     public static final DefaultNamingPolicy INSTANCE = new DefaultNamingPolicy();
     
-    public String getClassName(String prefix, String source, Object key) {
+    public String getClassName(String prefix, String source, Object key, Set names) {
         StringBuffer sb = new StringBuffer();
         sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
         sb.append("$$");
         sb.append(source.substring(source.lastIndexOf('.') + 1));
         sb.append("ByCGLIB$$");
         sb.append(Integer.toHexString(key.hashCode()));
-        return sb.toString();
+        String base = sb.toString();
+        String attempt = base;
+        int index = 2;
+        while (names.contains(attempt)) {
+            attempt = base + "-" + index++;
+        }
+        return attempt;
     }
 }
