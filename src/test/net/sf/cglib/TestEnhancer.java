@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.27 2003/02/02 07:00:48 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.28 2003/02/02 11:02:31 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -236,7 +236,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
-    public void _testSystemClassLoader()throws Throwable{
+    public void testSystemClassLoader()throws Throwable{
         
         Object source =  Enhancer.enhance(
         null,
@@ -248,19 +248,21 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
-    //fails for some reason
+    
     
     public void testCustomClassLoader()throws Throwable{
         
         ClassLoader custom = new ClassLoader(this.getClass().getClassLoader()){};
         
-        Object source =  Enhancer.enhance(
-        null,
-        null, TEST_INTERCEPTOR, custom);
+        Object source =  Enhancer.enhance( null, null, TEST_INTERCEPTOR, custom);
         source.toString();
-        assertTrue("Custom classLoader",
-        source.getClass().getClassLoader()
-        == custom  );
+        assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
+        
+        custom = new ClassLoader(){};
+        
+        source =  Enhancer.enhance( null, null, TEST_INTERCEPTOR, custom);
+        source.toString();
+        assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
         
     }
