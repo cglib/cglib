@@ -51,59 +51,87 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
+import net.sf.cglib.CodeGenTestCase;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.*;
 import junit.framework.*;
-import net.sf.cglib.beans.*;
-import net.sf.cglib.core.*;
-import net.sf.cglib.reflect.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.transform.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.34 2003/09/15 19:31:22 herbyderby Exp $
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: TestParallelSorter.java,v 1.1 2003/09/15 19:31:09 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestParallelSorter extends CodeGenTestCase {
+    public void testSorts() throws Throwable {
+        Object[] data1 = getTestData();
+        Object[] data2 = copy(data1);
+        Object[] data3 = copy(data1);
+        int[] idx1 = getIndexes(data1.length);
+        int[] idx2 = getIndexes(data1.length);
+        int[] idx3 = getIndexes(data1.length);
+        ParallelSorter p1 = ParallelSorter.create(new Object[]{ data1, idx1 });
+        ParallelSorter p2 = ParallelSorter.create(new Object[]{ data2, idx2 });
+        p1.quickSort(0);
+        p2.mergeSort(0);
+        compare(data1, data2);
+        compare(idx1, idx2);
+        p1.quickSort(1);
+        compare(idx1, idx3);
+        compare(data1, data3);
+    }
+
+    private void compare(Object[] data1, Object[] data2) {
+        assertTrue(data1.length == data2.length);
+        for (int i = 0; i < data1.length; i++) {
+            assertTrue(data1[i].equals(data2[i]));
+        }
+    }
+
+    private void compare(int[] data1, int[] data2) {
+        assertTrue(data1.length == data2.length);
+        for (int i = 0; i < data1.length; i++) {
+            assertTrue(data1[i] == data2[i]);
+        }
+    }
+    
+    private int[] getIndexes(int len) {
+        int[] idx = new int[len];
+        for (int i = 0; i < len; i++) {
+            idx[i] = i;
+        }
+        return idx;
+    }
+
+    private Object[] getTestData() throws IOException {
+        InputStream in = getClass().getResource("words.txt").openStream();
+        BufferedReader r = new BufferedReader(new InputStreamReader(in));
+        List list = new ArrayList();
+        String line;
+        int c = 0;
+        while ((line = r.readLine()) != null) {
+            list.add(line);
+            if (c++ == 20) break;
+        }
+        return list.toArray();
+    }
+
+    private Object[] copy(Object[] data) {
+        Object[] copy = new Object[data.length];
+        System.arraycopy(data, 0, copy, 0, data.length);
+        return copy;
+    }
+
+    public TestParallelSorter(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-
-        suite.addTest(TestMixin.suite());
-
-        suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestBeanMap.suite());
-        
-        suite.addTest(TestDelegates.suite());
-        suite.addTest(TestFastClass.suite());
-
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
-
-        suite.addTest(TestParallelSorter.suite());
-
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestParallelSorter.class);
     }
 }
-

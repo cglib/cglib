@@ -80,11 +80,6 @@ public class Emitter {
     private ClassVisitor classv;
     private CodeVisitor codev;
 
-//     public Emitter(String className, Class superclass) {
-//         this.className = className;
-//         this.superclass = superclass;
-//     }
-
     public Emitter() {
     }
 
@@ -142,32 +137,10 @@ public class Emitter {
         classv = null;
     }
 
-//     private Class generate(ClassLoader loader) {
-//         String className = getClassName();
-//         ClassWriter cw = new ClassWriter();
-//         cw.visit(Modifier.PUBLIC,
-//                  ReflectUtils.getInternalName(className),
-//                  ReflectUtils.getInternalName(superclass),
-//                  ReflectUtils.getInternalNames(interfaces),
-//                  Constants.SOURCE_FILE);
-//         accept(cw);
-//         cw.visitEnd();
-//         byte[] b = cw.toByteArray();
-//         return defineClass(source.defineClass, className, b, loader);
-//     }
-    
-
     // TODO: what if end_class will not be called?
     public void register(Object key, FinalizeCallback callback) {
         finalizeCallbacks.put(key, callback);
     }
-
-//     public byte[] getBytes() throws Exception {
-//         for (Iterator it = finalizeCallbacks.values().iterator(); it.hasNext();) {
-//             ((FinalizeCallback)it.next()).process();
-//         }
-//         return this.getBytes();
-//     }
 
     public Class[] getParameterTypes() {
         return parameterTypes;

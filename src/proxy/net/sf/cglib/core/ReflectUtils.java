@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.4 2003/09/15 17:25:33 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.5 2003/09/15 19:31:22 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -74,6 +74,8 @@ public class ReflectUtils {
         "net.sf.cglib",
         "net.sf.cglib.beans",
         "net.sf.cglib.reflect",
+        "net.sf.cglib.util",
+        "net.sf.cglib.transform",
     };
     static {
         primitives.put("byte", Byte.TYPE);
