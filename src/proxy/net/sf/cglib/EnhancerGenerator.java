@@ -309,7 +309,6 @@ import java.util.*;
     }
 
     private static void addDeclaredMethods(List methodList, Class clazz) {
-        
         methodList.addAll(java.util.Arrays.asList(clazz.getDeclaredMethods()));
       
            Class superclass = clazz.getSuperclass();
