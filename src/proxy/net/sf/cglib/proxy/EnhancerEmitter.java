@@ -63,6 +63,7 @@ import org.objectweb.asm.Type;
 
 class EnhancerEmitter extends ClassEmitter {
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
+    private static final String THREAD_CALLBACKS_FIELD = "CGLIB$THREAD_CALLBACKS";
 
     private static final String SET_THREAD_CALLBACKS_NAME = "CGLIB$SET_THREAD_CALLBACKS";
 
@@ -74,6 +75,10 @@ class EnhancerEmitter extends ClassEmitter {
       TypeUtils.parseType("ThreadLocal");
     private static final Type FACTORY =
       TypeUtils.parseType("net.sf.cglib.proxy.Factory");
+    private static final Type CALLBACK =
+      TypeUtils.parseType("net.sf.cglib.proxy.Callback");
+    private static final Type CALLBACK_ARRAY =
+      TypeUtils.parseType("net.sf.cglib.proxy.Callback[]");
 
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
@@ -85,16 +90,14 @@ class EnhancerEmitter extends ClassEmitter {
       TypeUtils.parseSignature("Object newInstance(Class[], Object[], net.sf.cglib.proxy.Callback[])");
     private static final Signature SINGLE_NEW_INSTANCE =
       TypeUtils.parseSignature("Object newInstance(net.sf.cglib.proxy.Callback)");
-    private static final Signature COPY_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance()");
-    private static final Signature COPY_MULTIARG_NEW_INSTANCE =
-      TypeUtils.parseSignature("Object newInstance(Class[], Object[])");
     private static final Signature SET_CALLBACK =
       TypeUtils.parseSignature("void setCallback(int, net.sf.cglib.proxy.Callback)");
     private static final Signature GET_CALLBACK =
       TypeUtils.parseSignature("net.sf.cglib.proxy.Callback getCallback(int)");
     private static final Signature SET_CALLBACKS =
       TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.proxy.Callback[])");
+    private static final Signature GET_CALLBACKS =
+      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback[] getCallbacks()");
 
     private static final Signature THREAD_LOCAL_GET =
       TypeUtils.parseSignature("Object get()");
@@ -171,7 +174,6 @@ class EnhancerEmitter extends ClassEmitter {
             group.add(method);
         }
 
-        declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
         emitMethods(groups, indexes, forcePublic);
         emitConstructors(constructors);
         emitSetThreadCallbacks();
@@ -181,10 +183,9 @@ class EnhancerEmitter extends ClassEmitter {
             emitNewInstanceCallbacks();
             emitNewInstanceCallback();
             emitNewInstanceMultiarg(constructors);
-            emitNewInstanceCopy();
-            emitNewInstanceMultiargCopy(constructors);
             emitGetCallback(keys);
             emitSetCallback(keys);
+            emitGetCallbacks();
             emitSetCallbacks();
         }
         end_class();
@@ -217,24 +218,33 @@ class EnhancerEmitter extends ClassEmitter {
             e.super_invoke_constructor(sig);
             e.push(1);
             e.putfield(CONSTRUCTED_FIELD);
+
+            e.load_this();
+            e.getfield(THREAD_CALLBACKS_FIELD);
+            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
+            e.dup();
+            Label skip = e.make_label();
+            e.ifnull(skip);
+
+            e.checkcast(CALLBACK_ARRAY);
             for (int j = 0; j < callbackTypes.length; j++) {
-                e.load_this();
-                e.dup();
-                e.getfield(getThreadLocal(j));
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
+                e.dup2();
+                e.aaload(j);
                 e.checkcast(Type.getType(callbackTypes[j]));
                 e.putfield(getCallbackField(j));
-
-                // clear thread-locals; TODO: test!
-                e.getfield(getThreadLocal(j));
-                e.aconst_null();
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
             }
+            e.mark(skip);
+
+            // clear thread-locals
+            e.getfield(THREAD_CALLBACKS_FIELD);
+            e.aconst_null();
+            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            
             e.return_value();
             e.end_method();
         }
     }
-    
+
     private int[] getCallbackKeys() {
         int[] keys = new int[callbackTypes.length];
         for (int i = 0; i < callbackTypes.length; i++) {
@@ -265,31 +275,25 @@ class EnhancerEmitter extends ClassEmitter {
         final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null, null);
         e.load_this();
         e.load_arg(1);
-        e.dup();
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
-                // we set thread locals too in case this method is called from within constructor (as Proxy does)
-                e.getfield(getThreadLocal(key));
-                e.swap();
-                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
                 e.checkcast(Type.getType(callbackTypes[key]));
                 e.putfield(getCallbackField(key));
                 e.goTo(end);
             }
             public void processDefault() {
+                // TODO: error?
                 // stack height
                 e.pop2(); 
-                e.pop();
             }
         });
         e.return_value();
         e.end_method();
     }
-        
+
     private void emitSetCallbacks() {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null, null);
-        emitSetThreadCallbacks(e);
         e.load_this();
         e.load_arg(0);
         for (int i = 0; i < callbackTypes.length; i++) {
@@ -302,26 +306,27 @@ class EnhancerEmitter extends ClassEmitter {
         e.end_method();
     }
 
+    private void emitGetCallbacks() {
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_CALLBACKS, null, null);
+        e.load_this();
+        e.push(callbackTypes.length);
+        e.newarray(CALLBACK);
+        for (int i = 0; i < callbackTypes.length; i++) {
+            e.dup();
+            e.push(i);
+            e.load_this();
+            e.getfield(getCallbackField(i));
+            e.aastore();
+        }
+        e.return_value();
+        e.end_method();
+    }
+
     private void emitNewInstanceCallbacks() {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
         e.load_arg(0);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
         emitCommonNewInstance(e);
-    }
-
-    private void emitNewInstanceCopy() {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, COPY_NEW_INSTANCE, null, null);
-        emitCopyCallbacks(e);
-        emitCommonNewInstance(e);
-    }
-
-    private void emitCopyCallbacks(CodeEmitter e) {
-        for (int i = 0; i < callbackTypes.length; i++) {
-            e.getfield(getThreadLocal(i));
-            e.load_this();
-            e.getfield(getCallbackField(i));
-            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-        }
     }
 
     private void emitCommonNewInstance(CodeEmitter e) {
@@ -339,9 +344,14 @@ class EnhancerEmitter extends ClassEmitter {
             // TODO: make sure Callback is null
             break;
         case 1:
-            e.getfield(getThreadLocal(0));
+            // for now just make a new array; TODO: optimize
+            e.push(1);
+            e.newarray(CALLBACK);
+            e.dup();
+            e.push(0);
             e.load_arg(0);
-            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
+            e.aastore();
+            e.invoke_static_this(SET_THREAD_CALLBACKS);
             break;
         default:
             e.throw_exception(ILLEGAL_STATE_EXCEPTION, "More than one callback object required");
@@ -353,12 +363,6 @@ class EnhancerEmitter extends ClassEmitter {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null, null);
         e.load_arg(2);
         e.invoke_static_this(SET_THREAD_CALLBACKS);
-        emitCommonMultiarg(constructors, e);
-    }
-
-    private void emitNewInstanceMultiargCopy(Constructor[] constructors) {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, COPY_MULTIARG_NEW_INSTANCE, null, null);
-        emitCopyCallbacks(e);
         emitCommonMultiarg(constructors, e);
     }
 
@@ -388,19 +392,21 @@ class EnhancerEmitter extends ClassEmitter {
     }
 
     private void emitMethods(Map groups, final Map indexes, final Set forcePublic) throws Exception {
+        declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
+        declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL, null, null);
+
         for (int i = 0; i < callbackTypes.length; i++) {
             declare_field(Constants.ACC_PRIVATE, getCallbackField(i), Type.getType(callbackTypes[i]), null, null);
-            declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null, null);
         }
 
         Set seenGen = new HashSet();
         CodeEmitter e = begin_static();
+        e.new_instance(THREAD_LOCAL);
+        e.dup();
+        e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
+        e.putfield(THREAD_CALLBACKS_FIELD);
+        
         for (int i = 0; i < callbackTypes.length; i++) {
-            e.new_instance(THREAD_LOCAL);
-            e.dup();
-            e.invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
-            e.putfield(getThreadLocal(i));
-
             CallbackGenerator gen = CallbackUtils.getGenerator(callbackTypes[i]);
             if (!seenGen.contains(gen)) {
                 seenGen.add(gen);
@@ -446,18 +452,11 @@ class EnhancerEmitter extends ClassEmitter {
                                      SET_THREAD_CALLBACKS,
                                      null,
                                      null);
-        emitSetThreadCallbacks(e);
+        e.getfield(THREAD_CALLBACKS_FIELD);
+        e.load_arg(0);
+        e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
         e.return_value();
         e.end_method();
-    }
-
-    private void emitSetThreadCallbacks(CodeEmitter e) {
-        for (int i = 0; i < callbackTypes.length; i++) {
-            e.getfield(getThreadLocal(i));
-            e.load_arg(0);
-            e.aaload(i);
-            e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
-        }
     }
 
     private void emitCurrentCallback(CodeEmitter e, int index) {
@@ -470,18 +469,17 @@ class EnhancerEmitter extends ClassEmitter {
         e.getfield(CONSTRUCTED_FIELD);
         e.if_jump(e.NE, end);
         e.pop();
-        e.getfield(getThreadLocal(index));
+        e.getfield(THREAD_CALLBACKS_FIELD);
         e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
+        e.checkcast(CALLBACK_ARRAY);
+        e.push(index);
+        e.aaload();
         e.checkcast(Type.getType(callbackTypes[index]));
         e.mark(end);
     }
 
     private static String getCallbackField(int index) {
         return "CGLIB$CALLBACK_" + index;
-    }
-
-    private static String getThreadLocal(int index) {
-        return "CGLIB$TL_CALLBACK_" + index;
     }
     
     private static void removeFinal(List list) {
