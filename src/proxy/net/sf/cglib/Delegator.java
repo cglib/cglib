@@ -59,7 +59,7 @@ import java.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.18 2003/05/28 03:56:45 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.19 2003/06/07 05:51:33 herbyderby Exp $
  */
 public class Delegator {
     static final Class TYPE = Delegator.class;
@@ -168,7 +168,7 @@ public class Delegator {
      * from the last bean in the list.
      * @param loader The ClassLoader to use. If null uses the one that loaded this class.
      */
-    public static Object createBean(Class cls, Object[] beans, boolean multicast, ClassLoader loader)
+    static Object createBean(Class cls, Object[] beans, boolean multicast, ClassLoader loader)
     {
         Class[] classes = ReflectUtils.getClasses(beans);
         Object key = keyFactory.newInstance(classes, multicast);
