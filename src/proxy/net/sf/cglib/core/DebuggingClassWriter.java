@@ -47,14 +47,17 @@ public class DebuggingClassWriter extends ClassWriter {
         super(computeMaxs);
     }
 
+    /**
+     * @deprecated
+     */
     public DebuggingClassWriter(boolean computeMaxs, int major, int minor) {
-        super(computeMaxs, major, minor);
+        super(computeMaxs);
     }
     
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
+    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
         className = name.replace('/', '.');
         this.superName = superName.replace('/', '.');
-        super.visit(access, name, superName, interfaces, sourceFile);
+        super.visit(version, access, name, superName, interfaces, sourceFile);
     }
     
     public String getClassName() {

@@ -33,7 +33,7 @@ class ParallelSorterEmitter extends ClassEmitter {
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) {
         super(v);
-        begin_class(Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
+        begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
         EmitUtils.null_constructor(this);
         EmitUtils.factory_method(this, NEW_INSTANCE);
         generateConstructor(arrays);

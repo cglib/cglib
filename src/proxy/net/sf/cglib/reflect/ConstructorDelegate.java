@@ -22,7 +22,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.17 2004/06/24 21:15:19 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.18 2004/09/18 21:22:22 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -87,7 +87,8 @@ abstract public class ConstructorDelegate {
             }
 
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.ACC_PUBLIC,
+            ce.begin_class(Constants.V1_2,
+                           Constants.ACC_PUBLIC,
                            getClassName(),
                            CONSTRUCTOR_DELEGATE,
                            new Type[]{ Type.getType(iface) },

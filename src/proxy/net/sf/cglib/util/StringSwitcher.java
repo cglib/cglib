@@ -118,7 +118,8 @@ abstract public class StringSwitcher {
 
         public void generateClass(ClassVisitor v) throws Exception {
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.ACC_PUBLIC,
+            ce.begin_class(Constants.V1_2,
+                           Constants.ACC_PUBLIC,
                            getClassName(),
                            STRING_SWITCHER,
                            null,

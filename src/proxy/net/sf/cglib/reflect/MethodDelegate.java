@@ -102,7 +102,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.22 2004/06/24 21:15:19 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.23 2004/09/18 21:22:21 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -213,7 +213,8 @@ abstract public class MethodDelegate {
 
             ClassEmitter ce = new ClassEmitter(v);
             CodeEmitter e;
-            ce.begin_class(Constants.ACC_PUBLIC,
+            ce.begin_class(Constants.V1_2,
+                           Constants.ACC_PUBLIC,
                            getClassName(),
                            METHOD_DELEGATE,
                            new Type[]{ Type.getType(iface) },

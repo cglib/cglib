@@ -25,7 +25,7 @@ public class ClassFilterTransformer extends AbstractClassFilterTransformer {
         this.filter = filter;
     }
 
-    protected boolean accept(int access, String name, String superName, String[] interfaces, String sourceFile) {
+    protected boolean accept(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
         return filter.accept(name.replace('/', '.'));
     }
 }

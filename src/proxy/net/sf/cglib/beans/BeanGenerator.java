@@ -96,7 +96,8 @@ public class BeanGenerator extends AbstractClassGenerator
             types[i] = (Type)props.get(names[i]);
         }
         ClassEmitter ce = new ClassEmitter(v);
-        ce.begin_class(Constants.ACC_PUBLIC,
+        ce.begin_class(Constants.V1_2,
+                       Constants.ACC_PUBLIC,
                        getClassName(),
                        superclass != null ? Type.getType(superclass) : Constants.TYPE_OBJECT,
                        null,

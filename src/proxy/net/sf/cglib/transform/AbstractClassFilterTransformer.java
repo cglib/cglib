@@ -30,11 +30,11 @@ abstract public class AbstractClassFilterTransformer extends AbstractClassTransf
         this.pass = pass;
     }
 
-    abstract protected boolean accept(int access, String name, String superName, String[] interfaces, String sourceFile);
+    abstract protected boolean accept(int version, int access, String name, String superName, String[] interfaces, String sourceFile);
 
-    public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        target = accept(access, name, superName, interfaces, sourceFile) ? pass : cv;
-        target.visit(access, name, superName, interfaces, sourceFile);
+    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+        target = accept(version, access, name, superName, interfaces, sourceFile) ? pass : cv;
+        target.visit(version, access, name, superName, interfaces, sourceFile);
     }
 
     public void visitEnd() {

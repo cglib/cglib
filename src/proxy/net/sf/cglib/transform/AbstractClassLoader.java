@@ -21,6 +21,8 @@ import net.sf.cglib.core.DebuggingClassWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.*;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.attrs.Attributes;
 
 import java.io.IOException;
 
@@ -101,7 +103,15 @@ abstract public class AbstractClassLoader extends ClassLoader {
     }
 
     protected ClassGenerator getGenerator(ClassReader r) {
-        return new ClassReaderGenerator(r, true); // skipDebug?
+        return new ClassReaderGenerator(r, attributes(), skipDebug());
+    }
+
+    protected boolean skipDebug() {
+        return false;
+    }
+    
+    protected Attribute[] attributes() {
+        return Attributes.getDefaultAttributes();
     }
 
     protected void postProcess(Class c) {

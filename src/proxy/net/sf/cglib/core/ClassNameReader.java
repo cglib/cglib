@@ -37,7 +37,8 @@ public class ClassNameReader {
         final List array = new ArrayList();
         try {
             r.accept(new ClassAdapter(null) {
-                public void visit(int access,
+                public void visit(int version,
+                                  int access,
                                   String name,
                                   String superName,
                                   String[] interfaces,
