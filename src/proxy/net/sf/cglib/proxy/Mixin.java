@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.4 2004/01/25 22:28:02 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.5 2004/04/25 16:15:19 baliuka Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -107,16 +107,23 @@ abstract public class Mixin {
         return gen.create();
     }
 
+    
+    public static Mixin createBean(Object[] beans) {
+    
+        return createBean(null, beans);
+    
+    }
     /**
      * Helper method to create a bean mixin. For finer control over the
      * generated instance, use a new instance of <code>Mixin</code>
      * instead of this static method.
      * TODO
      */
-    public static Mixin createBean(Object[] beans) {
+    public static Mixin createBean(ClassLoader loader,Object[] beans) {
         Generator gen = new Generator();
         gen.setStyle(STYLE_BEANS);
         gen.setDelegates(beans);
+        gen.setClassLoader(loader);
         return gen.create();
     }
     

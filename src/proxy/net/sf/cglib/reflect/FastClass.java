@@ -69,8 +69,14 @@ abstract public class FastClass
     }
 
     public static FastClass create(Class type) {
+    
+        return create(type.getClassLoader(),type);
+        
+    }
+    public static FastClass create(ClassLoader loader, Class type) {
         Generator gen = new Generator();
         gen.setType(type);
+        gen.setClassLoader(loader);
         return gen.create();
     }
 

@@ -63,7 +63,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.3 2003/12/20 23:22:11 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.4 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -160,4 +160,10 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         return new TestSuite(TestTransformingLoader.class);
     }
 
+    public void perform(ClassLoader loader) throws Throwable {
+    }    
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.4 2003/10/05 00:54:35 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.5 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public interface MyKey {
@@ -176,6 +176,8 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
         assertTrue(!mykey.newInstance(5, new int[]{ 6, 7 }, false).equals(new Object()));
     }
     
+    
+    
     public TestKeyFactory(String testName) {
         super(testName);
     }
@@ -187,4 +189,16 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestKeyFactory.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+        
+        KeyFactory.create(loader, MyKey.class, null );
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+        if(leaks()){
+          fail("Memory Leak in KeyFactory");
+        }
+    }
+    
 }

@@ -273,4 +273,11 @@ public class TestXmlParsing extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestXmlParsing.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

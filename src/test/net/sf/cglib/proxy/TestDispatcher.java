@@ -61,7 +61,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestDispatcher.java,v 1.4 2003/12/20 08:47:55 herbyderby Exp $
+ * @version $Id: TestDispatcher.java,v 1.5 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestDispatcher extends CodeGenTestCase {
     interface Foo {
@@ -131,4 +131,11 @@ public class TestDispatcher extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestDispatcher.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

@@ -82,4 +82,11 @@ public class TestNoOp extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestNoOp.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

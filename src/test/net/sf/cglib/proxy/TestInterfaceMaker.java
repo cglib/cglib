@@ -98,4 +98,11 @@ public class TestInterfaceMaker extends CodeGenTestCase
         String[] testCaseName = {TestInterfaceMaker.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

@@ -190,4 +190,12 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestBeanMap.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+        //tested in enhancer test unit
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.42 2004/04/18 06:34:19 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.43 2004/04/25 16:15:03 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -43,7 +43,7 @@
 
     <path id="javadoc.path">
       <pathelement path="${source.home}"/>
-      <pathelement path="${source.asm}"/>
+      <!-- pathelement path="${source.asm}"/ -->
     </path>
 
     <!-- ========== Test Execution Defaults =================================== -->

@@ -64,7 +64,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestProxy.java,v 1.3 2003/12/02 21:59:02 herbyderby Exp $
+ * @version $Id: TestProxy.java,v 1.4 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestProxy extends CodeGenTestCase {
 
@@ -196,4 +196,21 @@ public class TestProxy extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestProxy.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+         InvocationHandler handler = new InvocationHandler() {
+            public Object invoke(Object o, Method method, Object[] args) throws Exception {
+                throw new Exception("test!");
+            }
+        };
+        Proxy.newProxyInstance(loader, new Class[] { Map.class }, handler);
+       
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+        if(leaks()){
+         fail("Memory Leak in Proxy");
+        }
+    }
+    
 }
