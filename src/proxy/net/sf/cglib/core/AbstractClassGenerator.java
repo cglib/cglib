@@ -78,6 +78,7 @@ implements ClassGenerator
     private ClassLoader classLoader;
     private String namePrefix;
     private Object key;
+    private boolean useCache = true;
 
     protected static class Source {
         String name;
@@ -136,6 +137,14 @@ implements ClassGenerator
     }
 
     /**
+     * Whether use and update the static cache of generated classes
+     * for a class with the same properties. Default is <code>true</code>.
+     */
+    public void setUseCache(boolean useCache) {
+        this.useCache = useCache;
+    }
+
+    /**
      * Set the strategy to use to create the bytecode from this generator.
      * By default an instance of {@see DefaultGeneratorStrategy} is used.
      */
@@ -165,13 +174,16 @@ implements ClassGenerator
             Object instance = null;
             synchronized (source) {
                 ClassLoader loader = getClassLoader();
-                Map cache2 = (Map)source.cache.get(loader);
-                if (cache2 != null) {
-                    instance = cache2.get(key);
-                } else {
-                    cache2 = new HashMap();
-                    cache2.put(NAME_KEY, new HashSet());
-                    source.cache.put(loader, cache2);
+                Map cache2 = null;
+                if (useCache) {
+                    cache2 = (Map)source.cache.get(loader);
+                    if (cache2 != null) {
+                        instance = cache2.get(key);
+                    } else {
+                        cache2 = new HashMap();
+                        cache2.put(NAME_KEY, new HashSet());
+                        source.cache.put(loader, cache2);
+                    }
                 }
                 if (instance == null) {
                     this.key = key;
@@ -179,7 +191,9 @@ implements ClassGenerator
                     String className = ClassNameReader.getClassName(new ClassReader(b));
                     getClassNameCache(loader).add(className);
                     instance = firstInstance(ReflectUtils.defineClass(className, b, loader));
-                    cache2.put(key, instance);
+                    if (useCache) {
+                        cache2.put(key, instance);
+                    }
                     return instance;
                 }
             }
