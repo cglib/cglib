@@ -96,13 +96,17 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.8 2003/09/30 18:21:50 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.9 2003/10/01 06:05:37 herbyderby Exp $
  */
-abstract public class KeyFactory {
-    protected int hash;
-
+public class KeyFactory extends AbstractClassGenerator {
+    private static final Source SOURCE = new Source(KeyFactory.class.getName());
     private static final Signature GET_NAME =
       TypeUtils.parseSignature("String getName()");
+    private static final Signature GET_CLASS =
+      TypeUtils.parseSignature("Class getClass()");
+
+    private Class keyInterface;
+    private Customizer customizer;
 
     public static final Customizer CLASS_BY_NAME = new Customizer() {
         public void customize(Emitter e, Type type) {
@@ -112,61 +116,53 @@ abstract public class KeyFactory {
         }
     };
 
-    protected KeyFactory() {
-    }
+    public static final Customizer OBJECT_BY_CLASS = new Customizer() {
+        public void customize(Emitter e, Type type) {
+            e.invoke_virtual(Constants.TYPE_OBJECT, GET_CLASS);
+        }
+    };
 
-    public static KeyFactory create(Class keyInterface) {
+    public static Object create(Class keyInterface) {
         return create(keyInterface, null);
     }
 
-    public static KeyFactory create(Class keyInterface, Customizer customizer) {
-        Generator gen = new Generator();
+    public static Object create(Class keyInterface, Customizer customizer) {
+        KeyFactory gen = new KeyFactory();
         gen.setInterface(keyInterface);
         gen.setCustomizer(customizer);
         return gen.create();
     }
 
-    public int hashCode() {
-        return hash;
+    public KeyFactory() {
+        super(SOURCE);
     }
 
-    public static class Generator extends AbstractClassGenerator
-    {
-        private static final Source SOURCE = new Source(KeyFactory.class.getName());
-        private Class keyInterface;
-        private Customizer customizer;
+    protected ClassLoader getDefaultClassLoader() {
+        return keyInterface.getClassLoader();
+    }
 
-        public Generator() {
-            super(SOURCE);
-        }
+    public void setCustomizer(Customizer customizer) {
+        this.customizer = customizer;
+    }
 
-        protected ClassLoader getDefaultClassLoader() {
-            return keyInterface.getClassLoader();
-        }
+    public void setInterface(Class keyInterface) {
+        this.keyInterface = keyInterface;
+    }
 
-        public void setCustomizer(Customizer customizer) {
-            this.customizer = customizer;
-        }
+    public KeyFactory create() {
+        setNamePrefix(keyInterface.getName());
+        return (KeyFactory)super.create(keyInterface.getName());
+    }
 
-        public void setInterface(Class keyInterface) {
-            this.keyInterface = keyInterface;
-        }
+    public void generateClass(ClassVisitor v) throws Exception {
+        new KeyFactoryEmitter(v, getClassName(), keyInterface, customizer).emit();
+    }
 
-        public KeyFactory create() {
-            setNamePrefix(keyInterface.getName());
-            return (KeyFactory)super.create(keyInterface.getName());
-        }
+    protected Object firstInstance(Class type) {
+        return ReflectUtils.newInstance(type);
+    }
 
-        public void generateClass(ClassVisitor v) throws Exception {
-            new KeyFactoryEmitter(v, getClassName(), keyInterface, customizer).emit();
-        }
-
-        protected Object firstInstance(Class type) {
-            return ReflectUtils.newInstance(type);
-        }
-
-        protected Object nextInstance(Object instance) {
-            return instance;
-        }
+    protected Object nextInstance(Object instance) {
+        return instance;
     }
 }
