@@ -123,6 +123,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
         this.superclass = superclass;
 	}
 
+    protected Class getSuperclass() {
+        return superclass;
+    }
+
     public static void setDebugLocation(String debugLocation) {
         CodeGenerator.debugLocation = debugLocation;
     }

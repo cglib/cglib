@@ -89,7 +89,7 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.32 2002/11/18 21:40:21 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.33 2002/11/19 08:10:53 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
@@ -97,9 +97,22 @@ public class Enhancer implements ClassFileConstants {
     private static int index = 0;
     private static Map factories = new HashMap();
     private static Map cache = new WeakHashMap();
+    private static final EnhancerKey keyFactory;
 
-    private Enhancer() {}
+    /* package */ interface EnhancerKey {
+        public Object newInstance(Class cls, Class[] interfaces, Method wreplace, boolean delegating);
+    }
+
+    static {
+        try {
+            keyFactory = (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
+        } catch (CodeGenerationException e) {
+            throw new ImpossibleError(e);
+        }
+    }
     
+    private Enhancer() {}
+
     public static MethodInterceptor getMethodInterceptor(Object enhanced){
       
             return ((Factory)enhanced).getInterceptor();
@@ -125,7 +138,7 @@ public class Enhancer implements ClassFileConstants {
         null,
         null );
     }
-     public synchronized static Object enhance(
+     public static Object enhance(
     Class cls,
     Class interfaces[],
     MethodInterceptor ih,
@@ -157,11 +170,31 @@ public class Enhancer implements ClassFileConstants {
      * @throws Throwable on error
      * @return instanse of enhanced  class
      */
-    public synchronized static Object enhance(Class cls,
-    Class interfaces[],
-    MethodInterceptor ih,
-    ClassLoader loader,
-    java.lang.reflect.Method wreplace )
+    public static Object enhance(Class cls,
+                                 Class[] interfaces,
+                                 MethodInterceptor ih,
+                                 ClassLoader loader,
+                                 Method wreplace)
+    throws CodeGenerationException {
+        return enhanceHelper(cls, null, interfaces, ih, loader, wreplace);
+    }
+
+    public static Object enhanceObject(Object obj,
+                                       Class[] interfaces,
+                                       MethodInterceptor ih,
+                                       ClassLoader loader,
+                                       Method wreplace)
+    throws CodeGenerationException {
+        return enhanceHelper(obj.getClass(), obj, interfaces, ih, loader, wreplace);
+    }
+
+    
+    private synchronized static Object enhanceHelper(Class cls,
+                                                     Object obj,
+                                                     Class[] interfaces,
+                                                     MethodInterceptor ih,
+                                                     ClassLoader loader,
+                                                     Method wreplace)
     throws CodeGenerationException {
         if (ih == null) {
             throw new NullPointerException("MethodInterceptor is null");
@@ -170,27 +203,29 @@ public class Enhancer implements ClassFileConstants {
         if (cls == null) {
             cls = Object.class;
         }
-        
+
         if (loader == null) {
             loader = Enhancer.class.getClassLoader();
         }
 
-        Object key = new Key(cls, interfaces, wreplace);
-        
         Map map = (Map)cache.get(loader);
         if (map == null) {
             map = new Hashtable();
             cache.put(loader, map);
         }
-        Class result = (Class) map.get(key);
+
+        boolean delegating = (obj != null);
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating);
         
+        Class result = (Class) map.get(key);
+
         if ( result == null ) {
             String class_name = cls.getName() + CLASS_SUFFIX;
             if (class_name.startsWith("java")) {
                 class_name = CLASS_PREFIX + class_name;
             }
             class_name += index++;
-            result = new EnhancerGenerator(class_name, cls, interfaces, ih, loader, wreplace).define();
+            result = new EnhancerGenerator(class_name, cls, interfaces, ih, loader, wreplace, delegating).define();
             map.put(key, result);
         }
         
@@ -198,7 +233,13 @@ public class Enhancer implements ClassFileConstants {
         if (factory == null) {
             try {
                 Class mi = Class.forName(MethodInterceptor.class.getName(), true, loader);
-                factory = (Factory)result.getConstructor(new Class[]{ mi }).newInstance(new Object[] { null });
+                if (delegating) {
+                    factory = (Factory)result.getConstructor(new Class[]{ mi, Object.class })
+                        .newInstance(new Object[] { null, null });
+                } else {
+                    factory = (Factory)result.getConstructor(new Class[]{ mi })
+                        .newInstance(new Object[] { null });
+                }
                 factories.put(result,factory);
             } catch (RuntimeException e) {
                 throw e;
@@ -206,42 +247,12 @@ public class Enhancer implements ClassFileConstants {
                 throw new CodeGenerationException(e);
             }
         }
-        return factory.newInstance(ih);
-    }
-
-    private static final class Key {
-        private static final int hashConstant = 13; // positive and odd
-        private int hash = 41; // positive and odd
-        private Class cls;
-        private Class[] interfaces;
-        private Method wreplace;
-
-        public Key(Class cls, Class[] interfaces, Method wreplace) {
-            this.cls = cls;
-            this.interfaces = interfaces;
-            this.wreplace = wreplace;
-            hash = hash * hashConstant + cls.hashCode();
-            if (interfaces != null) {
-                for (int i = 0, size = interfaces.length; i < size; i++) {
-                    hash = hash * hashConstant + interfaces[i].hashCode();
-                }
-            }
-            if (wreplace != null)
-                hash = hash * hashConstant + wreplace.hashCode();
-        }
-
-        public boolean equals(Object obj) {
-            Key other = (Key)obj;
-            return cls.equals(other.cls) &&
-                (wreplace == null ? other.wreplace == null : wreplace.equals(other.wreplace)) &&
-                Arrays.equals(interfaces, other.interfaces);
-        }
-
-        public int hashCode() {
-            return hash;
+        if (delegating) {
+            return factory.newInstance(ih, obj);
+        } else {
+            return factory.newInstance(ih);
         }
     }
-
 
     public static class InternalReplace implements Serializable {
         private String parentClassName;

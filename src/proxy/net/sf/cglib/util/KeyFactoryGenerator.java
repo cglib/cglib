@@ -141,9 +141,7 @@ class KeyFactoryGenerator extends CodeGenerator {
             putfield(fieldName);
         }
         loadAndStoreConstant("hashMultiplier");
-        dup();
         loadAndStoreConstant("hashConstant");
-        imul();
         for (int i = 0; i < numArgs; i++) {
             load_arg(i);
             hash_code(parameterTypes[i]);
@@ -165,50 +163,62 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     private void hash_code(Class clazz) {
         if (clazz.isArray()) {
-            String isNull = newLabel();
-            String end = newLabel();
-            dup();
-            ifnull(isNull);
-            process_array(clazz, hashCallback);
-            goTo(end);
-            nop(isNull);
-            pop();
-            nop(end);
+            hash_array(clazz);
         } else {
             if (clazz.isPrimitive()) {
-                if (clazz.equals(Boolean.TYPE)) {
-                    // f ? 0 : 1
-                    push(1);
-                    ixor();
-                } else if (clazz.equals(Double.TYPE)) {
-                    // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-                    invoke(doubleToLongBits);
-                    hash_long();
-                } else if (clazz.equals(Float.TYPE)) {
-                    // Float.floatToIntBits(f)
-                    invoke(floatToIntBits);
-                } else if (clazz.equals(Long.TYPE)) {
-                    hash_long();
-                } else { // byte, char, short, int
-                    // (int)f
-                }
+                hash_primitive(clazz);
             } else {
-                // (f == null) ? 0 : f.hashCode()
-                String isNull = newLabel();
-                String end = newLabel();
-                dup();
-                ifnull(isNull);
-                invoke(hashCode);
-                goTo(end);
-                nop(isNull);
-                pop();
-                push(0);
-                nop(end);
+                hash_object();
             }
             iadd();
             swap();
             dup_x1();
             imul();
+        }
+    }
+
+    private void hash_array(Class clazz) {
+        String isNull = newLabel();
+        String end = newLabel();
+        dup();
+        ifnull(isNull);
+        process_array(clazz, hashCallback);
+        goTo(end);
+        nop(isNull);
+        pop();
+        nop(end);
+    }
+
+    private void hash_object() {
+        // (f == null) ? 0 : f.hashCode()
+        String isNull = newLabel();
+        String end = newLabel();
+        dup();
+        ifnull(isNull);
+        invoke(hashCode);
+        goTo(end);
+        nop(isNull);
+        pop();
+        push(0);
+        nop(end);
+    }
+
+    private void hash_primitive(Class clazz) {
+        if (clazz.equals(Boolean.TYPE)) {
+            // f ? 0 : 1
+            push(1);
+            ixor();
+        } else if (clazz.equals(Double.TYPE)) {
+            // Double.doubleToLongBits(f), hash_code(Long.TYPE)
+            invoke(doubleToLongBits);
+            hash_long();
+        } else if (clazz.equals(Float.TYPE)) {
+            // Float.floatToIntBits(f)
+            invoke(floatToIntBits);
+        } else if (clazz.equals(Long.TYPE)) {
+            hash_long();
+        } else { // byte, char, short, int
+            // (int)f
         }
     }
 
