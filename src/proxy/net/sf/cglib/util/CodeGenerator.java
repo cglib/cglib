@@ -1181,7 +1181,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
         end_method();
     }
 
-    protected boolean isVisible(Member member, String packageName) {
+    protected boolean isVisible(Member member, Package packageName) {
         int mod = member.getModifiers();
         if (Modifier.isPrivate(mod)) {
             return false;
@@ -1189,7 +1189,11 @@ public abstract class CodeGenerator implements ClassFileConstants {
         if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
             return true;
         }
-        return member.getDeclaringClass().getPackage().getName().equals(packageName);
+        
+        Package p = member.getDeclaringClass().getPackage();
+        return ( null == packageName ? p == null : 
+                                       packageName.equals(p) ); 
+                                                    
     }
 
     protected interface ProcessArrayCallback {
