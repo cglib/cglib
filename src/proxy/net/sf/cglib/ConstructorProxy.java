@@ -57,12 +57,13 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.2 2003/01/12 20:46:51 baliuka Exp $
+ * @version $Id: ConstructorProxy.java,v 1.3 2003/01/13 18:07:04 baliuka Exp $
  */
 public abstract class ConstructorProxy {
     
     private static java.lang.reflect.Method NEW_INSTANCE = 
-     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
+     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
+    
     private static final ClassNameFactory nameFactory = 
                                new ClassNameFactory("ConstructorProxiedByCGLIB");
    
@@ -97,7 +98,7 @@ public abstract class ConstructorProxy {
     
     }
     
-    public abstract Object  newInstance( Object args[] ) throws Throwable;
+    public abstract Object  newInstance( Object args[],MethodInterceptor interceptor ) throws Throwable;
     
     
      private static class Generator extends CodeGenerator {
@@ -114,12 +115,13 @@ public abstract class ConstructorProxy {
             new_instance( costructor.getDeclaringClass() );
             dup();
             Class types[] = costructor.getParameterTypes();
-            for (int i = 0; i < types.length; i++) {
+            for (int i = 0; i < types.length - 1; i++) {
                 load_arg(0);
                 push(i);
                 aaload();
                 unbox(types[i]);
             }
+            load_arg(1);
             invoke_constructor(costructor.getDeclaringClass(), types );
             return_value();
            end_method();

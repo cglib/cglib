@@ -75,6 +75,9 @@ import java.util.*;
       ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
     private static final Method NEW_CALSS_KEY = 
      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
+    private static java.lang.reflect.Method PROXY_NEW_INSTANCE = 
+     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
+    
     private static final Method NEW_INSTANCE = 
        ReflectUtils.findMethod("Factory.newInstance(Class[],Object[],MethodInterceptor)");
    
@@ -260,9 +263,10 @@ import java.util.*;
             argTypes[ argTypes.length - 2 ] = MethodInterceptor.class; 
           }else{
              argTypes[ argTypes.length - 1 ] = MethodInterceptor.class; 
+             constructorTypes.add(new Object[]{argTypes,types});//todo: delegating 
           }
           
-          constructorTypes.add(argTypes);
+          
           
           begin_constructor(argTypes);
            load_this();
@@ -317,6 +321,25 @@ import java.util.*;
         getfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
+        
+        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP ); 
+        
+        begin_method(NEW_INSTANCE);
+        getstatic(CONSTRUCTOR_PROXY_MAP);
+        load_arg(0);// Class[] types
+        invoke(NEW_CALSS_KEY);//key
+        invoke(MethodConstants.MAP_GET);// PROXY_MAP.get( key(types) )    
+        checkcast(ConstructorProxy.class);
+        dup();
+        ifnull("fail");
+        load_arg(1);
+        load_arg(2);
+        invoke(PROXY_NEW_INSTANCE);
+        return_value();
+        nop("fail");
+        throwException(IllegalArgumentException.class, "Constructor not found ");
+        end_method();
+        
     }
 
     private void throwWrongType() {
@@ -464,7 +487,7 @@ import java.util.*;
              CGLIB$ACCESS_0 = MethodProxy.create(proxied);
            }
         */
-        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP ); 
+        
         begin_static();
         for (int i = 0, size = methodList.size(); i < size; i++) {
             Method method = (Method)methodList.get(i);
@@ -493,14 +516,14 @@ import java.util.*;
         putstatic(CONSTRUCTOR_PROXY_MAP);
         store_local("args");//reuses alocal for map
         for( Iterator i = constructorTypes.iterator(); i.hasNext(); ){
-            Class[] types = (Class[])i.next();
+            Object[] pair    = (Object[])i.next();
+            Class[] cTypes   = (Class[])pair[0]; 
+            Class[] keyTypes = (Class[])pair[1]; 
             load_local("args");
-            push_object(types);//constructor types
-            dup();
+            push_object(keyTypes);
             invoke(NEW_CALSS_KEY);//key
-            swap();
             load_class_this();
-            swap();
+            push_object(cTypes);
             invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
             invoke(MAKE_CONSTRUCTOR_PROXY);//value
             invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodConstants.java,v 1.4 2003/01/12 20:46:52 baliuka Exp $
+ * @version $Id: MethodConstants.java,v 1.5 2003/01/13 18:07:12 baliuka Exp $
  */
 abstract /* package */ class MethodConstants {
     public static final Method EQUALS =
@@ -93,4 +93,7 @@ abstract /* package */ class MethodConstants {
       ReflectUtils.findMethod("Number.intValue()");
     public static final Method MAP_PUT =
       ReflectUtils.findMethod("java.util.Map.put(Object,Object)");
+    public static final Method MAP_GET =
+      ReflectUtils.findMethod("java.util.Map.get(Object)");
+
 }
