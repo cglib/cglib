@@ -25,7 +25,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask implemen
 
         public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
             this.name = name.replace('/', '.');
-            if (!accept(name)) {
+            if (!accept(this.name)) {
                 throw new EarlyExitException();
             }
             super.visit(access, name, superName, interfaces, sourceFile);
