@@ -52,10 +52,10 @@
  * <http://www.apache.org/>.
  */
 
-package net.sf.cglib;
+package net.sf.cglib.core;
 
 import java.lang.reflect.Constructor;
-import net.sf.cglib.util.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
  * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
@@ -74,7 +74,7 @@ import net.sf.cglib.util.*;
  * <p>
  * This example should print <code>true</code> followed by <code>false</code>:
  * <p><pre>
- *   import net.sf.cglib.KeyFactory;
+ *   import net.sf.cglib.core.KeyFactory;
  *   public class KeySample {
  *       private interface MyFactory {
  *           public Object newInstance(int a, char[] b, String c);
@@ -94,10 +94,10 @@ import net.sf.cglib.util.*;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.17 2003/07/15 16:38:46 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.1 2003/09/14 17:14:04 herbyderby Exp $
  */
 abstract public class KeyFactory {
-    private static final FactoryCache cache = new FactoryCache(KeyFactory.class);
+    // private static final FactoryCache cache = new FactoryCache(KeyFactory.class);
 
     protected int hashConstant;
     protected int hashMultiplier;
@@ -106,29 +106,59 @@ abstract public class KeyFactory {
     protected KeyFactory() {
     }
 
-    public static KeyFactory create(final Class keyInterface, ClassLoader loader) {
-        return (KeyFactory)cache.get(loader, null, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new KeyFactoryGenerator(keyInterface);
-                }
-            });
+    public static KeyFactory create(Class keyInterface) {
+        Generator gen = new Generator();
+        gen.setInterface(keyInterface);
+        return gen.create();
     }
-    
+
     public int hashCode() {
         return hash;
     }
 
-    /**
-     * Returns the list of objects that were used to create the key.
-     * Primitive objects are wrapped.
-     */
-    abstract public Object[] getArgs();
+//     /**
+//      * Returns the list of objects that were used to create the key.
+//      * Primitive objects are wrapped.
+//      */
+//     abstract public Object[] getArgs();
 
-    int getHashConstant() {
+    public int getHashConstant() {
         return hashConstant;
     }
 
-    int getHashMultiplier() {
+    public int getHashMultiplier() {
         return hashMultiplier;
+    }
+
+    public static class Generator extends AbstractClassGenerator
+    {
+        private static final Source SOURCE = new Source(KeyFactory.class, true);
+        private Class keyInterface;
+
+        public Generator() {
+            super(SOURCE);
+            setSuperclass(KeyFactory.class);
+        }
+
+        public void setInterface(Class keyInterface) {
+            this.keyInterface = keyInterface;
+            setNamePrefix(keyInterface.getName());
+        }
+
+        public KeyFactory create() {
+            return (KeyFactory)super.create(keyInterface);
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            new KeyFactoryEmitter(v, getClassName(), keyInterface);
+        }
+
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type);
+        }
+
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
     }
 }

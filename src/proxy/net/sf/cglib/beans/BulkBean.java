@@ -57,7 +57,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import net.sf.cglib.KeyFactory;
+import net.sf.cglib.core.KeyFactory;
 import net.sf.cglib.util.*;
 
 /**
@@ -67,7 +67,7 @@ abstract public class BulkBean
 {
     private static final FactoryCache CACHE = new FactoryCache(BulkBean.class);
     private static final BulkBeanKey KEY_FACTORY =
-      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class, null);
+      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class);
     
     interface BulkBeanKey {
         public Object newInstance(Class target, String[] getters, String[] setters, Class[] types);

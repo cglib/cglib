@@ -52,20 +52,17 @@
  * <http://www.apache.org/>.
  */
 
-package net.sf.cglib;
+package net.sf.cglib.core;
 
 import java.lang.reflect.*;
-import net.sf.cglib.util.*;
+import org.objectweb.asm.ClassVisitor;
 
 /**
- * @version $Id: KeyFactoryGenerator.java,v 1.16 2003/07/16 18:27:57 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.1 2003/09/14 17:14:04 herbyderby Exp $
  * @author Chris Nokleberg
  */
-class KeyFactoryGenerator extends CodeGenerator {
-    private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
-    private Method newInstance;
-    private Class[] parameterTypes;
-    private int numArgs;
+class KeyFactoryEmitter extends Emitter {
+    // private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
     
     //generated numbers: 
     private final static int PRIMES[] = {
@@ -83,44 +80,33 @@ class KeyFactoryGenerator extends CodeGenerator {
         264202273,  362693231,  497900099, 683510293,
         938313161, 1288102441, 1768288259  };
 
+    public KeyFactoryEmitter(ClassVisitor v, String className, Class keyInterface) throws Exception {
+        setClassVisitor(v);
 
-    private final ProcessArrayCallback hashCallback = new ProcessArrayCallback() {
-            public void processElement(Class type) {
-                hash_code(type);
-            }
-        };
-
-    public KeyFactoryGenerator(Class keyInterface) {
-        setSuperclass(KeyFactory.class);
-        setNamePrefix(keyInterface.getName());
-
-        newInstance = ReflectUtils.findNewInstance(keyInterface);
+        Method newInstance = ReflectUtils.findNewInstance(keyInterface);
         if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
         
-        parameterTypes = newInstance.getParameterTypes();
-        numArgs = parameterTypes.length;
-
-        addInterface(keyInterface);
-    }
-
-    protected void generate() throws NoSuchFieldException {
-        null_constructor();
-        factory_method(newInstance);
-        generateConstructor();
-        generateEquals();
-        generateGetArgs();
+        Class[] parameterTypes = newInstance.getParameterTypes();
+        
+        begin_class(Modifier.PUBLIC, className, KeyFactory.class, new Class[]{ keyInterface });
+        Virt.null_constructor(this);
+        Virt.factory_method(this, newInstance);
+        generateConstructor(parameterTypes);
+        generateEquals(parameterTypes);
+        // generateGetArgs(parameterTypes);
+        end_class();
     }
 
     // TODO: this doesn't exactly follow Effective Java recommendations
     // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
-    private void generateConstructor() throws NoSuchFieldException {
+    private void generateConstructor(Class[] parameterTypes) throws NoSuchFieldException {
         begin_constructor(parameterTypes);
         load_this();
         super_invoke_constructor();
         load_this();
-        for (int i = 0; i < numArgs; i++) {
+        for (int i = 0; i < parameterTypes.length; i++) {
             declare_field(Modifier.PRIVATE | Modifier.FINAL, parameterTypes[i], getFieldName(i));
             dup();
             load_arg(i);
@@ -128,7 +114,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         }
         loadAndStoreConstant("hashMultiplier");
         loadAndStoreConstant("hashConstant");
-        for (int i = 0; i < numArgs; i++) {
+        for (int i = 0; i < parameterTypes.length; i++) {
             load_arg(i);
             hash_code(parameterTypes[i]);
         }
@@ -168,7 +154,11 @@ class KeyFactoryGenerator extends CodeGenerator {
         Label end = make_label();
         dup();
         ifnull(isNull);
-        process_array(clazz, hashCallback);
+        Virt.process_array(this, clazz, new Virt.ProcessArrayCallback() {
+            public void processElement(Class type) {
+                hash_code(type);
+            }
+        });
         goTo(end);
         mark(isNull);
         pop();
@@ -225,19 +215,19 @@ class KeyFactoryGenerator extends CodeGenerator {
         return "FIELD_" + arg;
     }
 
-    private void generateEquals() {
+    private void generateEquals(Class[] parameterTypes) {
         Label fail = make_label();
         begin_method(MethodConstants.EQUALS);
         load_arg(0);
         instance_of_this();
         ifeq(fail);
-        for (int i = 0; i < numArgs; i++) {
+        for (int i = 0; i < parameterTypes.length; i++) {
             load_this();
             getfield(getFieldName(i));
             load_arg(0);
             checkcast_this();
             getfield(getFieldName(i));
-            not_equals(parameterTypes[i], fail);
+            Virt.not_equals(this, parameterTypes[i], fail);
         }
         push(1);
         return_value();
@@ -247,19 +237,19 @@ class KeyFactoryGenerator extends CodeGenerator {
         end_method();
     }
 
-    private void generateGetArgs() {
-        begin_method(GET_ARGS);
-        push(parameterTypes.length);
-        newarray();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            dup();
-            push(i);
-            load_this();
-            getfield(getFieldName(i));
-            box(parameterTypes[i]);
-            aastore();
-        }
-        return_value();
-        end_method();
-    }
+//     private void generateGetArgs(Class[] parameterTypes) {
+//         begin_method(GET_ARGS);
+//         push(parameterTypes.length);
+//         newarray();
+//         for (int i = 0; i < parameterTypes.length; i++) {
+//             dup();
+//             push(i);
+//             load_this();
+//             getfield(getFieldName(i));
+//             box(parameterTypes[i]);
+//             aastore();
+//         }
+//         return_value();
+//         end_method();
+//     }
 }

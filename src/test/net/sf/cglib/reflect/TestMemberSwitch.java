@@ -51,7 +51,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.reflect;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -59,7 +59,7 @@ import java.util.*;
 import net.sf.cglib.util.*;
 import junit.framework.*;
 
-public class TestMemberSwitch extends CodeGenTestCase {
+public class TestMemberSwitch extends net.sf.cglib.CodeGenTestCase {
     private static int index = 0;
 
     private static final Constructor C0 =

@@ -1,4 +1,4 @@
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
 import java.io.ObjectStreamException;
 

@@ -51,22 +51,24 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.beans;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Map;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.3 2003/01/28 11:54:09 nemecec Exp $
+ * @version $Id: BeanMapProxy.java,v 1.1 2003/09/14 17:14:04 herbyderby Exp $
  */
 public class BeanMapProxy implements InvocationHandler {
     private Map map;
 
     public static Object newInstance(Map map, Class[] interfaces) {
         return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                                   interfaces,
-                                                   new BeanMapProxy(map));
+                                      interfaces,
+                                      new BeanMapProxy(map));
     }
 
     public BeanMapProxy(Map map) {

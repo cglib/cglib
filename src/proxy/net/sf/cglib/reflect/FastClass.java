@@ -83,7 +83,7 @@ abstract public class FastClass
 
         public void setType(Class type) {
             this.type = type;
-            setPackageName(ReflectUtils.getPackageName(type));
+            setNamePrefix(type.getName());
         }
         
         public FastClass create() {

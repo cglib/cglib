@@ -70,7 +70,8 @@ implements ClassGenerator
     private ClassLoader classLoader;
 
     private String className;
-    private String packageName;
+//     private String packageName;
+    private String namePrefix;
     private Class superclass;
     private int counter;
 
@@ -112,9 +113,13 @@ implements ClassGenerator
         this.className = className;
     }
 
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
+    public void setNamePrefix(String namePrefix) {
+        this.namePrefix = namePrefix;
     }
+
+//     public void setPackageName(String packageName) {
+//         this.packageName = packageName;
+//     }
 
     // TODO: pluggable policy?
     protected String getClassName() {
@@ -124,11 +129,7 @@ implements ClassGenerator
             // TODO: use package of interface if applicable
             Class sc = getSuperclass();
             StringBuffer sb = new StringBuffer();
-            if (packageName != null) {
-                sb.append(packageName).append('.').append(ReflectUtils.getNameWithoutPackage(sc));
-            } else {
-                sb.append(sc.getName());
-            }
+            sb.append((namePrefix != null) ? namePrefix : sc.getName());
             sb.append("$$");
             sb.append(ReflectUtils.getNameWithoutPackage(source.type));
             sb.append("ByCGLIB$$");

@@ -51,16 +51,15 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.reflect;
 
-import net.sf.cglib.reflect.*;
 import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestDelegates.java,v 1.2 2003/09/11 17:40:48 herbyderby Exp $
+ * @version $Id: TestDelegates.java,v 1.1 2003/09/14 17:14:03 herbyderby Exp $
  */
-public class TestDelegates extends CodeGenTestCase {
+public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
 
     public interface StringMaker {
         Object newInstance(char[] buf, int offset, int count);
