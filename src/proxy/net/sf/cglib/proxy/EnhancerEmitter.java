@@ -85,14 +85,12 @@ class EnhancerEmitter extends ClassEmitter {
       TypeUtils.parseSignature("net.sf.cglib.proxy.Factory newInstance(Class[], Object[], net.sf.cglib.proxy.Callbacks)");
     private static final Signature SINGLE_NEW_INSTANCE =
       TypeUtils.parseSignature("net.sf.cglib.proxy.Factory newInstance(net.sf.cglib.proxy.Callback)");
-    private static final Signature GET_CALLBACK =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback getCallback(int)");
     private static final Signature SET_CALLBACK =
       TypeUtils.parseSignature("void setCallback(int, net.sf.cglib.proxy.Callback)");
     private static final Signature SET_CALLBACKS =
       TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.proxy.Callbacks)");
-    private static final Signature CALLBACKS_GET =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback get(int)");
+    private static final Signature GET_CALLBACK =
+      TypeUtils.parseSignature("net.sf.cglib.proxy.Callback getCallback(int)");
 
     private static final Signature THREAD_LOCAL_GET =
       TypeUtils.parseSignature("Object get()");
@@ -331,7 +329,7 @@ class EnhancerEmitter extends ClassEmitter {
                         e.dup2();
                     }
                     e.push(i);
-                    e.invoke_interface(CALLBACKS, CALLBACKS_GET);
+                    e.invoke_interface(CALLBACKS, GET_CALLBACK);
                     e.checkcast(CallbackUtils.getType(i));
                     e.putfield(getCallbackField(i));
                 }
@@ -416,7 +414,7 @@ class EnhancerEmitter extends ClassEmitter {
             if (usedCallbacks.get(i)) {
                 e.load_arg(0);
                 e.push(i);
-                e.invoke_interface(CALLBACKS, CALLBACKS_GET);
+                e.invoke_interface(CALLBACKS, GET_CALLBACK);
                 e.getfield(getThreadLocal(i));
                 e.swap();
                 e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);

@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.26 2003/10/29 03:45:38 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.27 2003/10/29 17:30:35 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -167,6 +167,9 @@ public class TestEnhancer extends CodeGenTestCase {
         EA proxy = (EA)Enhancer.create( EA.class,  new DelegateInterceptor(save) );
      
         assertTrue(proxy.getName().equals("herby"));
+
+        Factory factory = (Factory)proxy;
+        assertTrue(((EA)factory.newInstance(factory)).getName().equals("herby"));
     }
 
     class DelegateInterceptor implements MethodInterceptor {
@@ -414,7 +417,7 @@ public class TestEnhancer extends CodeGenTestCase {
          ((Factory)a).setCallback(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
          assertEquals("test", a.toString());
          SimpleCallbacks callbacks = new SimpleCallbacks();
-         callbacks.set(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
+         callbacks.setCallback(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },
                                                        callbacks);
