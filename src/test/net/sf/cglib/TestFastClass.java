@@ -72,6 +72,8 @@ public class TestFastClass extends CodeGenTestCase {
         FastClass fc = FastClass.create(MemberSwitchBean.class);
         MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
         assertTrue(bean.init == 0);
+        assertTrue(fc.getName().equals("net.sf.cglib.MemberSwitchBean"));
+        assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
         
         FastConstructor c1 = fc.getConstructor(new Class[0]);
         assertTrue(((MemberSwitchBean)c1.newInstance()).init == 0);

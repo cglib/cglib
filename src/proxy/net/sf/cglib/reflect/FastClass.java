@@ -61,7 +61,10 @@ abstract public class FastClass
 {
     private static final FactoryCache CACHE = new FactoryCache(FastClass.class);
 
-    protected FastClass() {
+    private Class type;
+
+    protected FastClass(Class type) {
+        this.type = type;
     }
 
     public static FastClass create(Class type) {
@@ -76,11 +79,13 @@ abstract public class FastClass
             public BasicCodeGenerator newGenerator() {
                 return new FastClassGenerator(type);
             }
+            public Object newFactory(Class ftype) {
+                return ReflectUtils.newInstance(ftype,
+                                                new Class[]{ Class.class },
+                                                new Object[]{ type });
+            }
         });
     }
-
-    // TODO: add String getName()
-    // TODO: add Class getJavaClass()
 
     public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) {
         return invoke(getIndex(name, parameterTypes), obj, args);
@@ -110,6 +115,15 @@ abstract public class FastClass
         return getConstructor(constructor.getParameterTypes());
     }
 
+    public String getName() {
+        return type.getName();
+    }
+
+    public Class getJavaClass() {
+        return type;
+    }
+
+    // package protected
     abstract int getIndex(String name, Class[] parameterTypes);
     abstract int getIndex(Class[] parameterTypes);
     abstract Object invoke(int index, Object obj, Object[] args);
