@@ -63,7 +63,7 @@ import java.lang.reflect.Modifier;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.17 2003/05/13 06:17:08 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.18 2003/05/14 19:25:01 herbyderby Exp $
  */
 abstract public class MethodProxy {
     
@@ -82,15 +82,19 @@ abstract public class MethodProxy {
     /**
      * Invoke the original (super) method on the specified object.
      * @param obj the enhanced object, must be the object passed as the first
-     * argument to the MethodInterceptor.
+     * argument to the MethodInterceptor
+     * @param args the arguments passed to the intercepted method; you may substitute a different
+     * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
      */
     abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
 
     /**
      * Invoke the original method, on a different object of the same type.
-     * @param obj the compatible object, must <b>not</b> the object passed as the first
-     * argument to the MethodInterceptor, or you will get an infinite loop.
+     * @param obj the compatible object; recursion will result if you use the object passed as the first
+     * argument to the MethodInterceptor (usually not what you want)
+     * @param args the arguments passed to the intercepted method; you may substitute a different
+     * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
      */
     abstract public Object invoke(Object obj, Object[] args) throws Throwable;
