@@ -32,7 +32,9 @@
         Uses cglib to generate  proxies  for persistent classes.
       <li/>"<a href="http://staff.develop.com/halloway/code/gd.html">The Java Class File Editor</a> allows you to read / modify java .class files, either on disk or while loading classes at runtime.  The project grew out of the Generic Delegator, which creates new classes on the fly, allowing you to dynamically implement a group of interfaces by forwarding them to a shim"
         Both cglib and JCFE provide dynamic proxy implementation
-   </ul>
+      <li/>"<a href="http://voruta.sourceforge.net">Voruta</a>reduces JDBC code in application, it makes code more readable and safe, SQL procedures and queries are mapped to JAVA methods using custom javadoc tags and dynamic code generation at runtime. It needs no custom build tools or external files" 
+        Uses cglib to generate method implementations.  
+    </ul>
    </p>
    </section> 
   </body>
