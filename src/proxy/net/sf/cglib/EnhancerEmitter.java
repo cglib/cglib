@@ -107,7 +107,6 @@ class EnhancerEmitter extends Emitter {
                            Class[] interfaces,
                            CallbackFilter filter) throws Exception {
         super(v);
-        interfaces = ReflectUtils.add(interfaces, Factory.class);
         if (superclass == null) {
             superclass = Object.class;
         }
@@ -115,7 +114,7 @@ class EnhancerEmitter extends Emitter {
         begin_class(Constants.ACC_PUBLIC,
                     className,
                     Type.getType(superclass),
-                    TypeUtils.getTypes(interfaces),
+                    TypeUtils.add(TypeUtils.getTypes(interfaces), FACTORY),
                     Constants.SOURCE_FILE);
         
         List constructors = new ArrayList(Arrays.asList(superclass.getDeclaredConstructors()));
@@ -131,9 +130,11 @@ class EnhancerEmitter extends Emitter {
         ReflectUtils.addAllMethods(superclass, methods);
 
         List interfaceMethods = new ArrayList();
-        for (int i = 0; i < interfaces.length; i++) {
-            if (interfaces[i] != Factory.class) {
-                ReflectUtils.addAllMethods(interfaces[i], interfaceMethods);
+        if (interfaces != null) {
+            for (int i = 0; i < interfaces.length; i++) {
+                if (interfaces[i] != Factory.class) {
+                    ReflectUtils.addAllMethods(interfaces[i], interfaceMethods);
+                }
             }
         }
         Set forcePublic = MethodWrapper.createSet(interfaceMethods);
@@ -351,7 +352,11 @@ class EnhancerEmitter extends Emitter {
                         generateCurrentCallback(type);
                     }
                     public int getModifiers(Method method) {
-                        int modifiers = ReflectUtils.getDefaultModifiers(method);
+                        int modifiers = Constants.ACC_FINAL
+                            | (method.getModifiers()
+                               & ~Constants.ACC_ABSTRACT
+                               & ~Constants.ACC_NATIVE
+                               & ~Constants.ACC_SYNCHRONIZED);
                         if (forcePublic.contains(MethodWrapper.create(method))) {
                             modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
                         }

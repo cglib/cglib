@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.11 2003/09/21 02:33:10 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.12 2003/09/22 01:02:10 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -185,7 +185,7 @@ abstract public class MethodDelegate {
     abstract public MethodDelegate newInstance(Object target);
 
     public static class Generator extends AbstractClassGenerator {
-        private static final Source SOURCE = new Source(MethodDelegate.class, true);
+        private static final Source SOURCE = new Source(MethodDelegate.class.getName(), true);
         private static final Signature NEW_INSTANCE =
           TypeUtils.parseSignature("net.sf.cglib.reflect.MethodDelegate newInstance(Object)");
         private static final Type METHOD_DELEGATE =

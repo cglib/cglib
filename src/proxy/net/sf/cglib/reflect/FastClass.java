@@ -73,7 +73,7 @@ abstract public class FastClass
 
     public static class Generator extends AbstractClassGenerator
     {
-        private static final Source SOURCE = new Source(FastClass.class, true);
+        private static final Source SOURCE = new Source(FastClass.class.getName(), true);
         private Class type;
         
         public Generator() {

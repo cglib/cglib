@@ -54,6 +54,7 @@
 package net.sf.cglib.core;
 
 import java.lang.reflect.*;
+import org.objectweb.asm.Type;
 
 public class VisibilityPredicate implements Predicate {
     private boolean protectedOk;
@@ -61,7 +62,7 @@ public class VisibilityPredicate implements Predicate {
 
     public VisibilityPredicate(Class source, boolean protectedOk) {
         this.protectedOk = protectedOk;
-        pkg = ReflectUtils.getPackageName(source);
+        pkg = TypeUtils.getPackageName(Type.getType(source));
     }
 
     public boolean evaluate(Object arg) {
@@ -73,7 +74,7 @@ public class VisibilityPredicate implements Predicate {
         } else if (Modifier.isProtected(mod)) {
             return protectedOk;
         } else {
-            return pkg.equals(ReflectUtils.getPackageName(((Member)arg).getDeclaringClass()));
+            return pkg.equals(TypeUtils.getPackageName(Type.getType(((Member)arg).getDeclaringClass())));
         }
     }
 }

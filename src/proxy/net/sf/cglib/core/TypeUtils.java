@@ -32,6 +32,13 @@ public class TypeUtils {
         return (Constants.ACC_ABSTRACT & access) != 0;
     }
 
+    // getPackage returns null on JDK 1.2
+    public static String getPackageName(Type type) {
+        String name = getClassName(type);
+        int idx = name.lastIndexOf('.');
+        return (idx < 0) ? "" : name.substring(0, idx);
+    }
+
     public static String upperFirst(String s) {
         if (s == null || s.length() == 0) {
             return s;

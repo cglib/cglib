@@ -94,7 +94,7 @@ import org.objectweb.asm.ClassVisitor;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.4 2003/09/20 09:01:26 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.5 2003/09/22 01:02:11 herbyderby Exp $
  */
 abstract public class KeyFactory {
     protected int hashConstant;
@@ -124,7 +124,7 @@ abstract public class KeyFactory {
 
     public static class Generator extends AbstractClassGenerator
     {
-        private static final Source SOURCE = new Source(KeyFactory.class, true);
+        private static final Source SOURCE = new Source(KeyFactory.class.getName(), true);
         private Class keyInterface;
 
         public Generator() {

@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.9 2003/09/21 02:33:10 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.10 2003/09/22 01:02:11 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -216,14 +216,6 @@ public class ReflectUtils {
     }
 
 
-    public static Class forName(String name, ClassLoader loader) {
-        try {
-            return Class.forName(name, false, loader);
-        } catch (ClassNotFoundException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
     public static Object newInstance(Class type) {
         return newInstance(type, Constants.EMPTY_CLASS_ARRAY, null);
     }
@@ -257,50 +249,25 @@ public class ReflectUtils {
         }
     }
 
-    public static Class[] getClasses(Object[] objects) {
-        Class[] classes = new Class[objects.length];
-        for (int i = 0; i < objects.length; i++) {
-            classes[i] = objects[i].getClass();
-        }
-        return classes;
-    }
+//     public static Class[] getClasses(Object[] objects) {
+//         Class[] classes = new Class[objects.length];
+//         for (int i = 0; i < objects.length; i++) {
+//             classes[i] = objects[i].getClass();
+//         }
+//         return classes;
+//     }
 
     public static Method findNewInstance(Class iface) {
-        if (!iface.isInterface()) {
-            throw new IllegalArgumentException(iface + " is not an interface");
+        Method m = findInterfaceMethod(iface);
+        if (!m.getName().equals("newInstance")) {
+            throw new IllegalArgumentException(iface + " missing newInstance method");
         }
-        Method newInstance = null;
-        Method[] methods = iface.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++) {
-            if (methods[i].getName().equals("newInstance")) {
-                if (newInstance != null) {
-                    throw new IllegalArgumentException("Multiple newInstance methods");
-                }
-                newInstance = methods[i];
-            }
-        }
-        if (newInstance == null) {
-            throw new IllegalArgumentException("Missing newInstance method");
-        }
-        return newInstance;
+        return m;
     }
 
-    // getPackage returns null on JDK 1.2
-    public static String getPackageName(Class type) {
-        String name = type.getName();
-        int idx = name.lastIndexOf('.');
-        return (idx < 0) ? "" : name.substring(0, idx);
-    }
-
-    public static String getNameWithoutPackage(Class type) {
-        String pkg = getPackageName(type);
-        int len = pkg.length();
-        return (len == 0) ? type.getName() : type.getName().substring(len + 1);
-    }
-
-    public static PropertyDescriptor[] getBeanProperties(Class type) {
-        return getPropertiesHelper(type, true, true);
-    }
+//     public static PropertyDescriptor[] getBeanProperties(Class type) {
+//         return getPropertiesHelper(type, true, true);
+//     }
 
     public static PropertyDescriptor[] getBeanGetters(Class type) {
         return getPropertiesHelper(type, true, false);
@@ -331,21 +298,6 @@ public class ReflectUtils {
         }
     }
 
-    public static Method[] getPropertyMethods(PropertyDescriptor[] properties, boolean read, boolean write) {
-        Set methods = new HashSet();
-        for (int i = 0; i < properties.length; i++) {
-            PropertyDescriptor pd = properties[i];
-            if (read) {
-                methods.add(pd.getReadMethod());
-            }
-            if (write) {
-                methods.add(pd.getWriteMethod());
-            }
-        }
-        methods.remove(null);
-        return (Method[])methods.toArray(new Method[methods.size()]);
-    }
-
     public static Method findDeclaredMethod(Class type, String methodName, Class[] parameterTypes)
     throws NoSuchMethodException {
         Class cl = type;
@@ -370,33 +322,6 @@ public class ReflectUtils {
             addAllMethods(interfaces[i], list);
         }
         return list;
-    }
-
-    public static Class[] getParameterTypes(Member member) {
-        if (member instanceof Method) {
-            return ((Method)member).getParameterTypes();
-        } else {
-            return ((Constructor)member).getParameterTypes();
-        }
-    }
-
-    public static Class[] add(Class[] classes, Class extra) {
-        if (classes == null) {
-            return new Class[]{ extra };
-        } else {
-            Class[] copy = new Class[classes.length + 1];
-            System.arraycopy(classes, 0, copy, 0, classes.length);
-            copy[classes.length] = extra;
-            return copy;
-        }
-    }
-
-    public static int getDefaultModifiers(Method method) {
-        return Constants.ACC_FINAL
-            | (method.getModifiers()
-               & ~Constants.ACC_ABSTRACT
-               & ~Constants.ACC_NATIVE
-               & ~Constants.ACC_SYNCHRONIZED);
     }
 
     public static Method findInterfaceMethod(Class iface) {

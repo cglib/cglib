@@ -54,5 +54,5 @@
 package net.sf.cglib.core;
 
 public interface NamingPolicy {
-    String getClassName(String prefix, Class source, int counter);
+    String getClassName(String prefix, String source, int counter);
 }

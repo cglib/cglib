@@ -88,7 +88,7 @@ public class TestSwitch extends CodeGenTestCase {
     }
 
     private static class Generator extends TestGenerator {
-        private static final Source SOURCE = new Source(TestSwitch.class, false);
+        private static final Source SOURCE = new Source(TestSwitch.class.getName(), false);
         private int[] keys;
         private String[] values;
 
