@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: ReflectUtils.java,v 1.1 2002/12/29 21:35:19 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.2 2003/01/05 23:55:10 herbyderby Exp $
  */
 abstract /* package */ class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -90,10 +90,10 @@ abstract /* package */ class ReflectUtils {
 
     public static Method findMethod(String desc, ClassLoader loader) {
         try {
-            int dot = desc.indexOf('.');
-            String className = desc.substring(0, dot).trim();
-            int lparen = desc.indexOf('(', dot);
+            int lparen = desc.indexOf('(');
             int rparen = desc.indexOf(')', lparen);
+            int dot = desc.lastIndexOf('.', lparen);
+            String className = desc.substring(0, dot).trim();
             String methodName = desc.substring(dot + 1, lparen).trim();
             List params = new ArrayList();
             int start = lparen + 1;
