@@ -102,7 +102,7 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
 
     public void testBeanMap() {
         TestBean bean = new TestBean();
-        Map map = BeanMap.create(bean);
+        BeanMap map = BeanMap.create(bean);
         assertTrue(map.get("foo") == null);
         map.put("foo", "FOO");
         assertTrue("FOO".equals(map.get("foo")));
@@ -111,6 +111,10 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(((Integer)map.get("quick")).intValue() == 42);
         map.put("quud", new Integer(13));
         assertTrue(bean.getQuud() == 13);
+
+        assertTrue(map.getPropertyType("foo").equals(String.class));
+        assertTrue(map.getPropertyType("quud").equals(Integer.TYPE));
+        assertTrue(map.getPropertyType("kdkkj") == null);
     }
 
     public static Map create(Object bean, int switchStyle) {
