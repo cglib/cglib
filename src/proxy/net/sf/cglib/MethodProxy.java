@@ -58,10 +58,11 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.5 2002/12/07 15:36:49 baliuka Exp $
+ * @version $Id: MethodProxy.java,v 1.6 2002/12/21 08:36:45 herbyderby Exp $
  */
 abstract public class MethodProxy {
     private static/* final */Method INVOKE_SUPER = null;//bug in jdk1.2 javac
+    private static final String CLASS_PREFIX = "net.sf.cglib";
     private static final String CLASS_SUFFIX = "$$ProxiedByCGLIB$$";
     private static int index = 0;
 
@@ -84,17 +85,30 @@ abstract public class MethodProxy {
 
     public static MethodProxy generate(Method method, ClassLoader loader) {
         try {
+            Class methodClass = method.getDeclaringClass();
             if (loader == null) {
-                loader = method.getDeclaringClass().getClassLoader();
+                loader = methodClass.getClassLoader();
+                if (loader == null) {
+                    loader = MethodProxy.class.getClassLoader();
+                }
             }
-            String className = method.getDeclaringClass().getName() + CLASS_SUFFIX + index++;
-            Class gen = new Generator(className, method, loader).define();
+            Class gen = new Generator(getNextName(methodClass), method, loader).define();
             return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    // TODO: move to helper class
+    private static String getNextName(Class cls) {
+        String class_name = cls.getName() + CLASS_SUFFIX;
+        if (class_name.startsWith("java")) {
+            class_name = CLASS_PREFIX + class_name;
+        }
+        class_name += index++;
+        return class_name;
     }
 
     private static class Generator extends CodeGenerator {
