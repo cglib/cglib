@@ -464,6 +464,46 @@ abstract public class BasicCodeGenerator {
         }
     }
 
+    protected void neg(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LNEG);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DNEG);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FNEG);
+        } else {
+            backend.emit(Opcodes.INEG);
+        }
+    }
+
+    protected void rem(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LREM);
+        } else if (type == Double.TYPE) {
+            backend.emit(Opcodes.DREM);
+        } else if (type == Float.TYPE) {
+            backend.emit(Opcodes.FREM);
+        } else {
+            backend.emit(Opcodes.IREM);
+        }
+    }
+
+    protected void and(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LAND);
+        } else {
+            backend.emit(Opcodes.IAND);
+        }
+    }
+    
+    protected void or(Class type) {
+        if (type == Long.TYPE) {
+            backend.emit(Opcodes.LOR);
+        } else {
+            backend.emit(Opcodes.IOR);
+        }
+    }
+
     /**
      * Casts from one primitive numeric type to another
      */
