@@ -88,6 +88,7 @@ import java.util.*;
     private MethodInterceptor ih;
     private boolean delegating;
     private MethodFilter filter;
+    private Constructor cstruct;
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -111,12 +112,16 @@ import java.util.*;
         }
 
         try {
-            Constructor construct = clazz.getDeclaredConstructor(TYPES_EMPTY);
-            int mod = construct.getModifiers();
+            try {
+                cstruct = clazz.getDeclaredConstructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
+            } catch (NoSuchMethodException e) {
+                cstruct = clazz.getDeclaredConstructor(TYPES_EMPTY);
+            }
+            int mod = cstruct.getModifiers();
                 
             if (!(Modifier.isPublic(mod) ||
                   Modifier.isProtected(mod) ||
-                  isVisible( construct, clazz.getPackage() ))) {
+                  isVisible( cstruct, clazz.getPackage() ))) {
                 throw new IllegalArgumentException( clazz.getName() );
             }
 
@@ -237,11 +242,15 @@ import java.util.*;
         }
     }
 
-    private void generateConstructor() {
+    private void generateConstructor() throws NoSuchMethodException {
         begin_constructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
         load_this();
         dup();
-        super_invoke_constructor();
+        Class[] types = cstruct.getParameterTypes();
+        if (types.length > 0) {
+            load_args();
+        }
+        super_invoke_constructor(types);
         load_arg(0);
         putfield(INTERCEPTOR_FIELD);
         if (delegating) {
