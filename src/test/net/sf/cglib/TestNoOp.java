@@ -67,7 +67,7 @@ public class TestNoOp extends CodeGenTestCase {
     }
     
     public void testNoOp() {
-        Object obj = Enhancer.enhance(Foo.class, null, null, null, new SimpleFilter(Callbacks.NO_OP));
+        Object obj = Enhancer.enhance(Foo.class, null, null, new SimpleFilter(Callbacks.NO_OP), null);
         assertTrue("foo".equals(obj.toString()));
     }
 

@@ -17,7 +17,7 @@ public class Trace implements MethodInterceptor {
     
     public static  Object newInstance( Class clazz ){
       try{  
-        return Enhancer.enhance( clazz, null, callback );
+        return Enhancer.enhance(clazz, callback);
       }catch( Throwable e ){
          e.printStackTrace(); 
          throw new Error(e.getMessage());
