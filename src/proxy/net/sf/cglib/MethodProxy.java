@@ -57,32 +57,30 @@ import java.lang.reflect.Method;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.10 2003/01/23 11:16:29 nemecec Exp $
+ * @version $Id: MethodProxy.java,v 1.11 2003/01/24 19:49:47 herbyderby Exp $
  */
 abstract public class MethodProxy {
-    private static final ClassNameFactory nameFactory = new ClassNameFactory("ProxiedByCGLIB");
-    private static final ClassLoader defaultLoader = MethodProxy.class.getClassLoader();
     private static final Method INVOKE_SUPER =
       ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
+
+    private static final ClassNameFactory NAME_FACTORY =
+      new ClassNameFactory("ProxiedByCGLIB");
+
+    private static final ClassLoader DEFAULT_LOADER =
+      MethodProxy.class.getClassLoader();
 
     abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
 
     protected MethodProxy() { }
 
     public static MethodProxy create(Method method) {
-        return create(method, null);
-    }
-
-    public static MethodProxy create(Method method, ClassLoader loader) {
         try {
-            Class methodClass = method.getDeclaringClass();
+            Class declaring = method.getDeclaringClass();
+            String className = NAME_FACTORY.getNextName(declaring);
+            ClassLoader loader = declaring.getClassLoader();
             if (loader == null) {
-                loader = methodClass.getClassLoader();
-                if (loader == null) {
-                    loader = defaultLoader;
-                }
+                loader = DEFAULT_LOADER;
             }
-            String className = nameFactory.getNextName(methodClass);
             Class gen = new Generator(className, method, loader).define();
             return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
         } catch (RuntimeException e) {

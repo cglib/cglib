@@ -57,24 +57,27 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.4 2003/01/24 19:29:58 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.5 2003/01/24 19:49:48 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     
-    private static java.lang.reflect.Method NEW_INSTANCE = 
-     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
+    private static final Method NEW_INSTANCE = 
+      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
     
-    private static final ClassNameFactory nameFactory = 
-                               new ClassNameFactory("ConstructorProxiedByCGLIB");
+    private static final ClassNameFactory NAME_FACTORY = 
+      new ClassNameFactory("ConstructorProxiedByCGLIB");
    
     private static final ClassKey CLASS_KEY_FACTORY =
       (ClassKey)KeyFactory.create(ClassKey.class, null);
+
+    private static final ClassLoader DEFAULT_LOADER =
+      ConstructorProxy.class.getClassLoader();
   
     public static Object newClassKey(Class[] args){
-      return CLASS_KEY_FACTORY.newInstance(args);
+        return CLASS_KEY_FACTORY.newInstance(args);
     }
     
-    public interface ClassKey{
+    public interface ClassKey {
         public Object newInstance(Class[] args); 
     }
 
@@ -82,39 +85,33 @@ public abstract class ConstructorProxy {
     protected ConstructorProxy() {
     }
    
-    public static  Object  create(Constructor constructor
-                                       )throws Throwable{
-    
-         
-         String className = nameFactory.
-                               getNextName(constructor.getDeclaringClass());
-         
-         Class gen = new Generator(className, constructor , 
-                       constructor.getDeclaringClass().getClassLoader() ).define();
-         
-         return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).
-                                                   newInstance(null);
-                                          
-    
+    public static Object create(Constructor constructor) throws Throwable {
+        Class declaring = constructor.getDeclaringClass();
+        String className = NAME_FACTORY.getNextName(declaring);
+        ClassLoader loader = declaring.getClassLoader();
+        if (loader == null) {
+            loader = DEFAULT_LOADER;
+        }
+        Class gen = new Generator(className, constructor, loader).define();
+        return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
     }
     
-    public abstract Object  newInstance( Object args[],MethodInterceptor interceptor ) throws Throwable;
+    public abstract Object newInstance(Object args[], MethodInterceptor interceptor) throws Throwable;
     
-    
-     private static class Generator extends CodeGenerator {
-        private Constructor costructor;
+    private static class Generator extends CodeGenerator {
+        private Constructor constructor;
         
-        public Generator(String className, Constructor costructor , ClassLoader loader) {
+        public Generator(String className, Constructor constructor, ClassLoader loader) {
             super(className, ConstructorProxy.class, loader);
-            this.costructor = costructor;
+            this.constructor = constructor;
         }
 
         protected void generate() {
-           generateNullConstructor();
-           begin_method(NEW_INSTANCE);
-            new_instance( costructor.getDeclaringClass() );
+            generateNullConstructor();
+            begin_method(NEW_INSTANCE);
+            new_instance(constructor.getDeclaringClass());
             dup();
-            Class types[] = costructor.getParameterTypes();
+            Class types[] = constructor.getParameterTypes();
             for (int i = 0; i < types.length - 1; i++) {
                 load_arg(0);
                 push(i);
@@ -122,10 +119,9 @@ public abstract class ConstructorProxy {
                 unbox(types[i]);
             }
             load_arg(1);
-            invoke_constructor(costructor.getDeclaringClass(), types );
+            invoke_constructor(constructor.getDeclaringClass(), types);
             return_value();
-           end_method();
+            end_method();
         }
     }
-    
 }
