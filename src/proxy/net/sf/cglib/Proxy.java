@@ -54,7 +54,6 @@
 package net.sf.cglib;
 
 import java.io.Serializable;
-import java.util.*;
 import java.lang.reflect.Method;
 
 /**
@@ -70,12 +69,10 @@ import java.lang.reflect.Method;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.4 2003/01/28 21:57:40 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.5 2003/01/29 16:43:31 nemecec Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
-
-    protected InvocationHandler h;
 
     private static class HandlerAdapter implements MethodInterceptor {
         private InvocationHandler handler;
@@ -90,7 +87,6 @@ public class Proxy implements Serializable {
     }
 
     protected Proxy(InvocationHandler h) {
-        this.h = h;
         ((Factory)this).setInterceptor(new HandlerAdapter(h));
     }
 
@@ -102,7 +98,7 @@ public class Proxy implements Serializable {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((Proxy)proxy).h;
+        return ((HandlerAdapter)((Factory)proxy).getInterceptor()).handler;
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
