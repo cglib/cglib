@@ -57,6 +57,29 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Comparator;
 
+/**
+ * For the efficient sorting of multiple arrays in parallel.
+ * <p>
+ * Given two arrays of equal length and varying types, the standard
+ * technique for sorting them in parallel is to create a new temporary
+ * object for each row, store the objects in a temporary array, sort the
+ * array using a custom comparator, and the extract the original values
+ * back into their respective arrays. This is wasteful in both time and
+ * memory.
+ * <p>
+ * This class generates bytecode customized to the particular set of
+ * arrays you need to sort, in such a way that both arrays are sorted
+ * in-place, simultaneously.
+ * <p>
+ * Two sorting algorithms are provided.
+ * Quicksort is best when you only need to sort by a single column, as
+ * it requires very few comparisons and swaps. Mergesort is best used
+ * when sorting multiple columns, as it is a "stable" sort--that is, it
+ * does not affect the relative order of equal objects from previous sorts.
+ * <p>
+ * The mergesort algorithm here is an "in-place" variant, which while
+ * slower, does not require a temporary array.
+ */
 abstract public class ParallelSorter extends SorterTemplate {
     static final Class TYPE = ParallelSorter.class;
     private static final FactoryCache cache = new FactoryCache();
@@ -81,10 +104,22 @@ abstract public class ParallelSorter extends SorterTemplate {
 
     abstract protected ParallelSorter cglib_newInstance(Object[] arrays);
 
+    /**
+     * Helper method, has same effect as <pre>return create(arrays, null);</pre>
+     * @see #create(Object[], ClassLaoder)
+     */
     public static ParallelSorter create(Object[] arrays) {
         return create(arrays, null);
     }
 
+    /**
+     * Create a new ParallelSorter object for a set of arrays. You may
+     * sort the arrays multiple times via the same ParallelSorter object.
+     * @param arrays An array of arrays to sort. The arrays may be a mix
+     * of primitive and non-primitive types, but should all be the same
+     * length.
+     * @param loader ClassLoader for generated class, uses "current" if null
+     */
     public static ParallelSorter create(Object[] arrays, ClassLoader loader) {
         if (loader == null) {
             loader = defaultLoader;
@@ -112,35 +147,79 @@ abstract public class ParallelSorter extends SorterTemplate {
         return ((Object[])a[0]).length;
     }
 
+    /**
+     * Sort the arrays using the quicksort algorithm.
+     * @param index array (column) to sort by
+     */
     public void quickSort(int index) {
         quickSort(index, 0, len(), null);
     }
 
+    /**
+     * Sort the arrays using the quicksort algorithm.
+     * @param index array (column) to sort by
+     * @param lo starting array index (row), inclusive
+     * @param hi ending array index (row), exclusive
+     */
     public void quickSort(int index, int lo, int hi) {
         quickSort(index, lo, hi, null);
     }
 
+    /**
+     * Sort the arrays using the quicksort algorithm.
+     * @param index array (column) to sort by
+     * @param cmp Comparator to use if the specified column is non-primitive
+     */
     public void quickSort(int index, Comparator cmp) {
         quickSort(index, 0, len(), cmp);
     }
 
+    /**
+     * Sort the arrays using the quicksort algorithm.
+     * @param index array (column) to sort by
+     * @param lo starting array index (row), inclusive
+     * @param hi ending array index (row), exclusive
+     * @param cmp Comparator to use if the specified column is non-primitive
+     */
     public void quickSort(int index, int lo, int hi, Comparator cmp) {
         chooseComparer(index, cmp);
         super.quickSort(lo, hi - 1);
     }
 
+    /**
+     * @param index array (column) to sort by
+     */
     public void mergeSort(int index) {
         mergeSort(index, 0, len(), null);
     }
 
+    /**
+     * Sort the arrays using an in-place merge sort.
+     * @param index array (column) to sort by
+     * @param lo starting array index (row), inclusive
+     * @param hi ending array index (row), exclusive
+     */
     public void mergeSort(int index, int lo, int hi) {
         mergeSort(index, lo, hi, null);
     }
 
+    /**
+     * Sort the arrays using an in-place merge sort.
+     * @param index array (column) to sort by
+     * @param lo starting array index (row), inclusive
+     * @param hi ending array index (row), exclusive
+     */
     public void mergeSort(int index, Comparator cmp) {
         mergeSort(index, 0, len(), cmp);
     }
 
+    /**
+     * Sort the arrays using an in-place merge sort.
+     * @param index array (column) to sort by
+     * @param lo starting array index (row), inclusive
+     * @param hi ending array index (row), exclusive
+     * @param cmp Comparator to use if the specified column is non-primitive
+     */
     public void mergeSort(int index, int lo, int hi, Comparator cmp) {
         chooseComparer(index, cmp);
         super.mergeSort(lo, hi - 1);
