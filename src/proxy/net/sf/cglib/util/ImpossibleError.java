@@ -52,23 +52,22 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
+
 package net.sf.cglib.util;
 
-import net.sf.cglib.proxy.MethodInterceptor;
-import org.apache.bcel.classfile.*;
-import org.apache.bcel.generic.*;
-/**
- * private utility
- * @author  baliuka
- * @deprecated ClassFileConstants is internal utility and can be removed in the future
- */
-public interface ClassFileConstants extends org.apache.bcel.Constants {
-    public static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
-    public static final Class OBJECT_CLASS = Object.class;
-    public static final Class[] OBJECT_CLASS_ARRAY = { Object.class };
-    public static final Class[] EMPTY_CLASS_ARRAY = {};
-    public static final Class OBJECT_ARRAY_CLASS = Object[].class;
-    public static final Class[] OBJECT_ARRAY_CLASS_ARRAY = { Object[].class };
-    public static final Class[] STRING_CLASS_ARRAY = { String.class };
-    public static final Object[] EMPTY_OBJECT_ARRAY = {};
+public class ImpossibleError extends Error {
+    private Throwable cause;
+
+    public ImpossibleError(Throwable cause) {
+        super(cause.getMessage());
+        this.cause = cause;
+    }
+
+    public ImpossibleError(String msg) {
+        super(msg);
+    }
+
+    public Throwable getCause() {
+        return cause;
+    }
 }

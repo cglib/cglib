@@ -1,19 +1,8 @@
 package net.sf.cglib.delegator;
 
 import junit.framework.*;
-import org.apache.bcel.generic.*;
-import java.io.*;
 
-public class TestDelegator extends TestCase {
-    /*
-    public void testOutput() throws Exception {
-        ClassGen cg = Delegator.makeClassGen(new Class[]{ I1.class, I2.class });
-        OutputStream out = new FileOutputStream("/tmp/" + cg.getClassName() + ".class");
-        out.write(cg.getJavaClass().getBytes());
-        out.close();
-    }
-    */
-    
+public class TestDelegator extends TestCase {    
     public void testSimple() throws Exception {
         Object obj = Delegator.makeDelegator(new Class[]{ I1.class, I2.class },
                                              new Object[]{ new C1(), new C2() },
