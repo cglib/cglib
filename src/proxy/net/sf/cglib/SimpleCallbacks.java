@@ -53,6 +53,9 @@
  */
 package net.sf.cglib;
 
+/**
+ * A trivial implementation of the <code>Callbacks</code> interface.
+ */
 public class SimpleCallbacks
 implements Callbacks
 {
