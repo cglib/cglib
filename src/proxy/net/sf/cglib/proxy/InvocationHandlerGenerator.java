@@ -18,8 +18,6 @@ implements CallbackGenerator
       TypeUtils.parseType("java.lang.reflect.Method");
     private static final Signature INVOKE =
       TypeUtils.parseSignature("Object invoke(Object, java.lang.reflect.Method, Object[])");
-    private static final Signature CSTRUCT_THROWABLE =
-      TypeUtils.parseConstructor("Throwable");
 
     private String getFieldName(Context context, Method method) {
         return "CGLIB$$METHOD_" + context.getUniqueName(method);
