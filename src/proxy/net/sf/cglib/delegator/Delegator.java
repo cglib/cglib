@@ -70,14 +70,15 @@ implements ClassFileConstants
     private static final Class OBJECT_CLASS = Object.class;
     private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
     private static final String PARENT_CLASS = "java.lang.Object";
-    private static final String PARENT_SIGNATURE = Type.getMethodSignature(Type.VOID, null);
-    private static final Type[] EMPTY_TYPE_ARRAY = {};
+    // private static final String PARENT_SIGNATURE = Type.getMethodSignature(Type.VOID, null);
+    private static final Class[] EMPTY_CLASS_ARRAY = {};
+    // private static final Type[] EMPTY_TYPE_ARRAY = {};
     private static final String FIELD_NAME = "delegates";
     private static final Class ARG_CLASS = Object[].class;
     private static final Class[] ARG_CLASS_ARRAY = { ARG_CLASS };
-    private static final Type ARG_TYPE = Type.getType(ARG_CLASS.getName());
-    private static final Type[] ARG_TYPE_ARRAY = { ARG_TYPE };
-    private static final String ARG_SIGNATURE = ARG_TYPE.getSignature();
+    // private static final Type ARG_TYPE = Type.getType(ARG_CLASS.getName());
+    // private static final Type[] ARG_TYPE_ARRAY = { ARG_TYPE };
+    // private static final String ARG_SIGNATURE = ARG_TYPE.getSignature();
     private static int index = 0;
 
     private static final Map loaders = new WeakHashMap();
@@ -177,10 +178,7 @@ implements ClassFileConstants
             loaders.put(loader, factories = new HashMap());
         Object factory = (Factory)factories.get(key);
         if (factory == null) {
-            ClassGen cg = makeClassGen(interfaces);
-            Class clazz = ClassFileUtils.defineClass(loader,
-                                                     cg.getClassName(),
-                                                     cg.getJavaClass().getBytes());
+            Class clazz = new DelegatorGenerator(interfaces, loader).define();
             factory = clazz.getConstructor(ARG_CLASS_ARRAY).newInstance(new Object[]{ delegates });
             factories.put(key, factory);
             return factory;
@@ -189,115 +187,89 @@ implements ClassFileConstants
         }
     }
 
-    // package protected for testing purposes
-    static ClassGen makeClassGen(Class[] interfaces)
-    throws NoSuchMethodException    
-    {
-        ClassGen cg = new ClassGen(CLASS_NAME + index++,
-                                   PARENT_CLASS,
-                                   SOURCE_FILE,
-                                   ACC_PUBLIC | ACC_FINAL,
-                                   null);
-        for (int i = 0; i < interfaces.length; i++) {
-            cg.addInterface(interfaces[i].getName());
+    static private class DelegatorGenerator extends CodeGenerator {
+        private Class[] interfaces;
+        
+        private DelegatorGenerator(Class[] interfaces, ClassLoader loader) {
+            super(CLASS_NAME + index++, PARENT_CLASS, loader); // | ACC_FINAL ?
+            this.interfaces = interfaces;
         }
-        cg.addInterface(Factory.class.getName());
-        int fieldref = addField(cg);
-        int cstructref = addConstructor(cg, fieldref);
-        ConstantPoolGen cp = cg.getConstantPool();
-        Set sigset = new HashSet();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class iface = interfaces[i];
-            int ifaceref = cp.addClass(iface.getName());
-            if (!iface.isInterface())
-                throw new IllegalArgumentException(iface + " is not an interface");
-            Method[] methods = iface.getMethods();
-            for (int j = 0; j < methods.length; j++) {
-                Method method = methods[j];
-                Object sigkey = getSignatureKey(method);
-                if (!sigset.contains(sigkey)) {
-                    sigset.add(sigkey);
-                    addProxy(cg, method, ifaceref, fieldref, i);
+
+        protected Class define() {
+            return super.define();
+        }
+        
+        public void generate() throws NoSuchMethodException {
+            add_interfaces(interfaces);
+            add_interface(Factory.class);
+            add_field(ACC_PRIVATE, ARG_CLASS, FIELD_NAME);
+
+            addConstructor();
+            addFactory();
+
+            Set sigset = new HashSet();
+            for (int i = 0; i < interfaces.length; i++) {
+                Class iface = interfaces[i];
+                if (!iface.isInterface())
+                    throw new IllegalArgumentException(iface + " is not an interface");
+                Method[] methods = iface.getMethods();
+                for (int j = 0; j < methods.length; j++) {
+                    Method method = methods[j];
+                    Object sigkey = getSignatureKey(method);
+                    if (!sigset.contains(sigkey)) {
+                        sigset.add(sigkey);
+                        addProxy(iface, method, i);
+                    }
                 }
             }
         }
-        addFactory(cg, cstructref);
-        return cg;
-    }
 
-    private static Object getSignatureKey(Method method)
-    {
-        Class[] types = method.getParameterTypes();
-        Object[] key = new Object[types.length + 1];
-        key[0] = method.getName();
-        System.arraycopy(types, 0, key, 1, types.length);
-        return new ArrayKey(key);
-    }
-
-    private static int addField(ClassGen cg)
-    {
-        ConstantPoolGen cp = cg.getConstantPool();
-        FieldGen fg = new FieldGen(ACC_PRIVATE, ARG_TYPE, FIELD_NAME, cp);
-        cg.addField(fg.getField());
-        return cp.addFieldref(cg.getClassName(), FIELD_NAME, ARG_SIGNATURE);
-    }
-
-    private static int addConstructor(ClassGen cg, int fieldref)
-    {
-        InstructionList il = new InstructionList();
-        ConstantPoolGen cp = cg.getConstantPool();
-        MethodGen cstruct =
-            new MethodGen(ACC_PUBLIC,
-                          Type.VOID,
-                          ARG_TYPE_ARRAY, null,
-                          CONSTRUCTOR_NAME, cg.getClassName(),
-                          il, cp);
-        int cstructref = cp.addMethodref(cstruct);
-        int superref = cp.addMethodref(PARENT_CLASS, CONSTRUCTOR_NAME, PARENT_SIGNATURE);
-        il.append(new ALOAD(0));
-        il.append(new INVOKESPECIAL(superref));
-        il.append(new ALOAD(0));
-        il.append(new ALOAD(1));
-        il.append(new PUTFIELD(fieldref));
-        il.append(new RETURN());
-        cg.addMethod(ClassFileUtils.getMethod(cstruct));
-        return cstructref;
-    }
-
-    private static void addProxy(ClassGen cg, Method method, int ifaceref, int fieldref, int arrayref)
-    {
-        InstructionList il = new InstructionList();
-        ConstantPoolGen cp = cg.getConstantPool();
-        MethodGen mg = ClassFileUtils.toMethodGen(method, cg.getClassName(), il, cp);
-        Type[] args = mg.getArgumentTypes();
-        il.append(new ALOAD(0));
-        il.append(new GETFIELD(fieldref));
-        il.append(ClassFileUtils.getIntConst(arrayref, cp));
-        il.append(new AALOAD());
-        il.append(new CHECKCAST(ifaceref));
-        int pos = 1;
-        for (int i = 0; i < args.length; i++) {
-            pos = ClassFileUtils.loadArg(il, args[i], pos);
+        private void addConstructor()
+        {
+            begin_constructor(ARG_CLASS_ARRAY);
+            load_this();
+            super_invoke_constructor(EMPTY_CLASS_ARRAY);
+            load_this();
+            load_args();
+            putfield(FIELD_NAME);
+            return_value();
+            end_method();
         }
-        int methodRef = cp.addInterfaceMethodref(method.getDeclaringClass().getName(), mg.getName(), mg.getSignature());
-        il.append(new INVOKEINTERFACE(methodRef, args.length + 1));
-        il.append(ClassFileUtils.newReturn(mg.getReturnType()));
-        cg.addMethod(ClassFileUtils.getMethod(mg));
-    }
 
-    private static void addFactory(ClassGen cg, int cstructref)
-    throws NoSuchMethodException    
-    {
-        InstructionList il = new InstructionList();
-        ConstantPoolGen cp = cg.getConstantPool();
-        Method m = Factory.class.getMethod("cglib_newInstance", ARG_CLASS_ARRAY);
-        MethodGen newInstance = ClassFileUtils.toMethodGen(m, cg.getClassName(), il, cp);
-        il.append(new NEW(cp.addClass(cg.getClassName())));
-        il.append(new DUP());
-        il.append(new ALOAD(1));
-        il.append(new INVOKESPECIAL(cstructref));
-        il.append(new ARETURN());
-        cg.addMethod(ClassFileUtils.getMethod(newInstance));
+        private void addFactory()
+        throws NoSuchMethodException
+        {
+            Method newInstance = Factory.class.getMethod("cglib_newInstance", ARG_CLASS_ARRAY);
+            begin_method(newInstance);
+        	new_instance_this();
+	        dup();
+            load_args();
+            invoke_constructor_this(ARG_CLASS_ARRAY);
+            return_value();
+            end_method();
+        }
+
+        private Object getSignatureKey(Method method)
+        {
+            Class[] types = method.getParameterTypes();
+            Object[] key = new Object[types.length + 1];
+            key[0] = method.getName();
+            System.arraycopy(types, 0, key, 1, types.length);
+            return new ArrayKey(key);
+        }
+
+        private void addProxy(Class iface, Method method, int arrayref)
+        {
+            begin_method(method);
+            load_this();
+            getfield(FIELD_NAME);
+            aload(arrayref);
+            checkcast(iface);
+            load_args();
+            invoke(method);
+            return_value();
+            end_method();
+        }
     }
 
     private static class ArrayKey

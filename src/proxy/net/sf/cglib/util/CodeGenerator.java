@@ -84,18 +84,18 @@ public abstract class CodeGenerator implements ClassFileConstants {
 	private Class returnType;
 	private Map  branches;  
 	private Map  labels;
-	private Map  locals;//TODO: map index to name and type 
+	private Map  locals;//TODO: map index to name and type
+
+    private Map fields;
+    private int pos;
 	
-	
-	protected CodeGenerator( String className, String parentClassName, ClassLoader loader  ){
+	protected CodeGenerator( String className, String parentClassName, ClassLoader loader ){
 	  
 	  this.loader = loader;
 	  cg = new ClassGen(className,parentClassName,SOURCE_FILE,ACC_PUBLIC,null); 
 	  cp = cg.getConstantPool();
-	  
-	
 	}
-	
+
 	protected CodeGenerator(){
 	
 	}
@@ -104,33 +104,69 @@ public abstract class CodeGenerator implements ClassFileConstants {
 	 * method used to generate code  
 	 *
 	 * */
-	abstract protected void generate();
+	abstract protected void generate() throws Throwable;
 	
-	 protected Class define(){
-       generate(); 
-      return ClassFileUtils.defineClass(loader,cg.getClassName(),
-                                         cg.getJavaClass().getBytes() );     
-	
+    protected Class define() {
+         try {
+             generate();
+         } catch (RuntimeException e) {
+             throw e;
+         } catch (Error e) {
+             throw e;
+         } catch (Exception e) {
+             ClassFormatError err = new ClassFormatError(e.getMessage());
+             try {
+                 err.initCause(e);
+             } catch (Throwable notjdk14) {
+                 e.printStackTrace();
+             }
+             throw err;
+         } catch (Throwable e) {
+             // impossible
+         }
+         return ClassFileUtils.defineClass(loader, cg.getClassName(),
+                                           cg.getJavaClass().getBytes());
 	}
 
     protected Class getReturnType(){
        return returnType; 
     }
+
+    protected void add_interfaces(Class[] interfaces) {
+        for (int i = 0; i < interfaces.length; i++) {
+            add_interface(interfaces[i]);
+        }
+    }
+
+    protected void add_interface(Class iface) {
+        cg.addInterface(iface.getName());
+    }
+
+    protected void add_field(int access_flags, Class typeClass, String name) {
+        Type type = Type.getType(typeClass.getName());
+        FieldGen fg = new FieldGen(ACC_PRIVATE, type, name, cp);
+        cg.addField(fg.getField());
+        int fieldref = cp.addFieldref(cg.getClassName(), name, type.getSignature());
+        if (fields == null)
+            fields = new HashMap();
+        fields.put(name, new Integer(fieldref));
+    }
+        
     protected void begin_method(java.lang.reflect.Method method){
       returnType = method.getReturnType();	
       mg = ClassFileUtils.toMethodGen(method,cg.getClassName(),il, cp );    	
-    
     }
-    
-    protected void begin_constructor(java.lang.reflect.Constructor constructor){
-      returnType = Void.TYPE;	
-      mg = new MethodGen(ACC_PUBLIC,Type.VOID,
-                  ClassFileUtils.toType(constructor.getParameterTypes()),null,
-                  CONSTRUCTOR_NAME,cg.getClassName(),il,cp);
-      
-    
+
+    protected void begin_constructor(java.lang.reflect.Constructor constructor) {
+        begin_constructor(constructor.getParameterTypes());
     }
-    
+
+    protected void begin_constructor(Class[] parameterTypes) {
+        Type[] types = ClassFileUtils.toType(parameterTypes);
+        returnType = Void.TYPE;	
+        mg = new MethodGen(ACC_PUBLIC, Type.VOID, types, null,
+                           CONSTRUCTOR_NAME, cg.getClassName(), il, cp);
+    }
 
     protected	void end_method(){
 
@@ -311,7 +347,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
   
    protected  void load_args( int fromArg, int count ){
   	
-  	int pos = fromArg;
+       pos = fromArg;
   	 for( int i = 0; i < count; i++   ){
   	  pos = ClassFileUtils.loadArg(il,mg.getArgumentType(fromArg + i - 1),pos);
   	 }
@@ -319,7 +355,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
   }
   
    protected  void load_args(){
-  	int pos = 1;
+       pos = 1;
   	 for( int i = 0; i < mg.getArgumentTypes().length; i++   ){
   	  pos = ClassFileUtils.loadArg(il,mg.getArgumentType( i ),pos);
   	 
@@ -364,6 +400,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
     append(ClassFileUtils.newReturn(ClassFileUtils.toType(type)));	
    	
   }
+
+    protected void return_value() {
+        append(ClassFileUtils.newReturn(ClassFileUtils.toType(returnType)));
+    }
   
   // --------------- Field access ----------------
   
@@ -384,15 +424,21 @@ public abstract class CodeGenerator implements ClassFileConstants {
     //TODO:
    
    }
+
+    private int getFieldref(String name) {
+        Integer ref = (Integer)fields.get(name);
+        if (ref == null)
+            throw new IllegalArgumentException("No field named \"" + name + "\"");
+        return ref.intValue();
+    }
   
-   protected    void getfield(String name){
-     //TODO:
-   
-   }
-   protected    void putfield(String name){
-    //TODO:
-   
-   } 
+    protected void getfield(String name) {
+        il.append(new GETFIELD(getFieldref(name)));
+    }
+
+    protected void putfield(String name) {
+        il.append(new PUTFIELD(getFieldref(name)));
+    } 
   
   //super class
   
@@ -408,10 +454,16 @@ public abstract class CodeGenerator implements ClassFileConstants {
   
    // --------------- Invoke method ----------------
   
-   protected   void invoke(Method method){
-   
-    //TODO:
-   
+   protected void invoke(Method method) {
+       Class clazz = method.getDeclaringClass();
+       int methodRef = cp.addInterfaceMethodref(clazz.getName(),
+                                                method.getName(),
+                                                ClassFileUtils.getSignature(method));
+       if (clazz.isInterface()) {
+           il.append(new INVOKEINTERFACE(methodRef, pos));
+       } else {
+           il.append(new INVOKEVIRTUAL(methodRef));
+       }
    }
   
    protected   void super_invoke(Method method){
@@ -419,7 +471,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
    
    }
    
-   protected void invoke_costructor(Class type){
+   protected void invoke_null_constructor(Class type){
    
    append( new INVOKESPECIAL( cp.addMethodref(
            type.getName(),CONSTRUCTOR_NAME,
@@ -429,7 +481,6 @@ public abstract class CodeGenerator implements ClassFileConstants {
        );
    
    }
-
 
  protected  void invoke_virtual(Method method){
   append( new INVOKEVIRTUAL( cp.addMethodref( 
@@ -444,23 +495,31 @@ public abstract class CodeGenerator implements ClassFileConstants {
                      
  }          
 
-   
-   protected void super_invoke(Constructor constructor){
-   	
-    append( new INVOKESPECIAL( cp.addMethodref(
-           cg.getSuperclassName(),CONSTRUCTOR_NAME,
-           Type.getMethodSignature(Type.VOID,
-               ClassFileUtils.toType( 
-               constructor.getParameterTypes() 
-               ) 
-            )
-        )
-       )
-      );
-        
-   
-   }
-  
+    protected void super_invoke(Constructor constructor) {
+        super_invoke_constructor(constructor.getParameterTypes());
+    }
+
+    protected void super_invoke_constructor(Class[] parameterTypes) {
+        invoke_constructor_helper(cg.getSuperclassName(), parameterTypes);
+    }
+
+    protected void invoke_constructor_this(Class[] parameterTypes)
+    {
+        invoke_constructor_helper(cg.getClassName(), parameterTypes);
+    }
+
+    private void invoke_constructor_helper(String className, Class[] parameterTypes)
+    {
+        Type[] types = ClassFileUtils.toType(parameterTypes);
+        int ref = cp.addMethodref(className,
+                                  CONSTRUCTOR_NAME,
+                                  Type.getMethodSignature(Type.VOID, types));
+        append(new INVOKESPECIAL(ref));
+    }
+
+    protected void new_instance_this() {
+            append(new NEW(cp.addClass(cg.getClassName())));
+    }
   
    protected void new_instance( Class type ){ 
   	append( new NEW( cp.addClass(type.getName() ) ) ); 
