@@ -159,4 +159,36 @@ public class Enhancer extends AbstractClassGenerator
     protected Object nextInstance(Object instance) {
         return classOnly ? instance : ((Factory)instance).newInstance(callbacks);
     }
+
+    public static Factory create(Class type, Callback callback) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(type);
+        e.setCallback(callback);
+        return e.create();
+    }
+
+    public static Factory create(Class superclass, Class interfaces[], Callback callback) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallback(callback);
+        return e.create();
+    }
+
+    public static Factory create(Class superclass, Class[] interfaces, CallbackFilter filter, Callbacks callbacks) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(filter);
+        e.setCallbacks(callbacks);
+        return e.create();
+    }
+
+    public static Class createClass(Class superclass, Class[] interfaces, CallbackFilter filter) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(superclass);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(filter);
+        return e.createClass();
+    }
 }
