@@ -58,7 +58,7 @@ import net.sf.cglib.util.*;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
- * @version $Id: ConstructorProxy.java,v 1.14 2003/06/24 21:00:10 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.15 2003/06/25 17:24:27 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final FactoryCache cache = new FactoryCache(ConstructorProxy.class);
@@ -112,7 +112,6 @@ public abstract class ConstructorProxy {
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
         private Method newInstance;
-        private Class declaring;        
 
         public Generator(Constructor constructor, Method newInstance) {
             setSuperclass(ConstructorProxy.class);
