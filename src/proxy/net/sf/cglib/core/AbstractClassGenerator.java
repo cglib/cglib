@@ -63,18 +63,6 @@ import org.objectweb.asm.Type;
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
-    private static final RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
-      new RuntimePermission("defineCGLIBClassInJavaPackage");
-    private static final Method DEFINE_CLASS;
-
-    static {
-        try {
-            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ byte[].class, int.class, int.class });
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
-
     private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
         public String getClassName(String prefix, String source, int counter) {
             StringBuffer sb = new StringBuffer();
@@ -161,9 +149,9 @@ implements ClassGenerator
                 }
                 if (instance == null) {
                     DebuggingClassWriter w = new DebuggingClassWriter(true);
-                    generateClass(transform(w));
+                    generateClass(w);
                     byte[] b = w.toByteArray();
-                    Class gen = defineClass(DEFINE_CLASS, getClassName(), b, loader);
+                    Class gen = ReflectUtils.defineClass(getClassName(), b, loader);
                     instance = firstInstance(gen);
 
                     if (cache2 != null) {
@@ -182,22 +170,6 @@ implements ClassGenerator
         }
     }
 
-    protected ClassVisitor transform(ClassWriter cw) {
-        return cw;
-    }
-
     abstract protected Object firstInstance(Class type) throws Exception;
     abstract protected Object nextInstance(Object instance) throws Exception;
-
-    private static Class defineClass(Method m, String className, byte[] b, ClassLoader loader) throws Exception {
-        m.setAccessible(true);
-        SecurityManager sm = System.getSecurityManager();
-        if (className != null && className.startsWith("java.") && sm != null) {
-            sm.checkPermission(DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION);
-        }
-        // deprecated method in jdk to define classes, used because it
-        // does not throw SecurityException if class name starts with "java."
-        Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
-        return (Class)m.invoke(loader, args);
-    }
 }
