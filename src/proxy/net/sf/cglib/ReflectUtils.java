@@ -57,13 +57,13 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.9 2003/02/03 22:52:34 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.10 2003/05/13 06:17:51 herbyderby Exp $
  */
 abstract class ReflectUtils {
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
-    private static final String[] packages = { "java.lang", "java.lang.reflect", "net.sf.cglib" };
+    private static final String[] CGLIB_PACKAGES = { "java.lang", "java.lang.reflect", "net.sf.cglib" };
 
     static {
         primitives.put("char", Character.TYPE);
@@ -121,6 +121,10 @@ abstract class ReflectUtils {
     }
 
     private static Class getClass(String className, ClassLoader loader) throws ClassNotFoundException {
+        return getClass(className, loader, CGLIB_PACKAGES);
+    }
+    
+    private static Class getClass(String className, ClassLoader loader, String[] packages) throws ClassNotFoundException {
         String save = className;
         int dimensions = 0;
         int index = 0;
