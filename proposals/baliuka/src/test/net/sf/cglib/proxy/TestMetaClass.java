@@ -32,7 +32,7 @@ public class TestMetaClass extends TestCase {
                            char.class,double.class,
                            String.class,Long.class, String.class } ;
                            
-       Object values[] = { new Integer(2) , new Long(4) , new Byte((byte)8),
+   private    Object values[] = { new Integer(2) , new Long(4) , new Byte((byte)8),
                            new Short((short)4),new Float(1.2),
                            Boolean.TRUE,
                            new Character('S'),new Double(5.6),
@@ -80,19 +80,20 @@ public class TestMetaClass extends TestCase {
     
        MetaClass mClass = MetaClass.getInstance( this.getClass().getClassLoader(),
                                                 A.class,getters,setters,types );  
-       int iterations = 1000*10;
-       
-       System.out.print( mClass.getClass().getName() + ":" );
+       int iterations = 10000;
+       System.out.println();
+       System.out.println("iteration count: " + iterations);
+       System.out.println( mClass.getClass().getName() + ": " );
        int a = performanceTest( mClass, iterations );
-       System.out.println( a + " ms."  );
+       System.out.println( a + " ms.   " + ( a/(float)iterations)  + " per iteration" );
        
        mClass = new MetaClassReflectImpl( A.class,getters,setters,types );
        
-       System.out.print( mClass.getClass().getName() + ":" );
+       System.out.println( mClass.getClass().getName() + ": " );
        int b = performanceTest( mClass, iterations );
-       System.out.println( b + " ms."  );
+       System.out.println( b + " ms.   "  + ( b/(float)iterations)  + " per iteration" );
        
-       System.out.println( "facor: " + b/a );
+       System.out.println( "facor: " + b/(float)a );
        
     
     }
