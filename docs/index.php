@@ -51,7 +51,7 @@
    <b>public boolean invokeSuper</b>( Object obj, Method method,
                         Object args[])<b> throws </b> Throwable{
 <span style="color:green">//invoke supper in generated code</span>
-         <b><span style="color:red">System.out.println("before: " +  method + "->" + obj)</span></b>;
+         <b><span style="color:red">System.out.println("before: " +  method )</span></b>;
       <b>return true </b>; 
      }
    <b>public</b> Object <b>afterReturn</b>(
@@ -60,7 +60,7 @@
                              Object retValFromSuper,Throwable e 
                                    )<b>throws</b> Throwable{
 <span style="color:green">//print "this" and method signature  </span>
-            <b><span style="color:red">System.out.println("after: " +  method + "->" + obj)</span></b>;
+            <b><span style="color:red">System.out.println("after: " +  method )</span></b>;
        <b>return</b> retValFromSuper;
      }
  <b>public static</b> Object <b>newInstance</b>(Class clazz){
@@ -78,8 +78,8 @@
   This code must produce output like this:<br>
  
   <span style="color:green">
-  before: public boolean Vector.add( Object ) -> []<br>
-  after: public boolean Vector.add( Object ) -> [TEST]<br>
+  before: public boolean Vector.add( Object ) <br>
+  after: public boolean Vector.add( Object ) <br>
       
   </span>
    
