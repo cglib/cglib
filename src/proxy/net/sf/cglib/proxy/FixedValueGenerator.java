@@ -53,15 +53,33 @@
  */
 package net.sf.cglib.proxy;
 
-/**
- * All callback interfaces used by {@link Enhancer} extend this interface.
- * @see MethodInterceptor
- * @see NoOp
- * @see LazyLoader
- * @see Dispatcher
- * @see InvocationHandler
- * @see FixedValue
- */
-public interface Callback
-{
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.*;
+import net.sf.cglib.core.*;
+import org.objectweb.asm.Type;
+
+class FixedValueGenerator implements CallbackGenerator {
+    public static final FixedValueGenerator INSTANCE = new FixedValueGenerator();
+    private static final Type FIXED_VALUE =
+      TypeUtils.parseType("net.sf.cglib.proxy.FixedValue");
+    private static final Signature LOAD_OBJECT =
+      TypeUtils.parseSignature("Object loadObject()");
+
+    public void generate(ClassEmitter ce, final Context context) {
+        for (Iterator it = context.getMethods(); it.hasNext();) {
+            Method method = (Method)it.next();
+            CodeEmitter e = ce.begin_method(context.getModifiers(method),
+                                            ReflectUtils.getSignature(method),
+                                            ReflectUtils.getExceptionTypes(method),
+                                            null);
+            context.emitCallback(e, context.getIndex(method));
+            e.invoke_interface(FIXED_VALUE, LOAD_OBJECT);
+            e.unbox_or_zero(e.getReturnType());
+            e.return_value();
+            e.end_method();
+        }
+    }
+
+    public void generateStatic(CodeEmitter e, Context context) { }
 }
