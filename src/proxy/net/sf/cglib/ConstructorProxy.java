@@ -57,14 +57,11 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.9 2003/01/25 08:22:33 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.10 2003/01/28 20:11:16 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
-
-//     private static final Method NEW_INSTANCE_HACK = 
-//       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[], Object)");
     
     private static final ClassNameFactory NAME_FACTORY = 
       new ClassNameFactory("ConstructorProxiedByCGLIB");
@@ -135,7 +132,7 @@ public abstract class ConstructorProxy {
 
         protected void generate() {
             generateNullConstructor();
-            generateNewInstanceHelper(NEW_INSTANCE, false);
+            generateNewInstance();
 
             if (newInstance != null) {
                 declare_interface(newInstance.getDeclaringClass());
@@ -149,8 +146,8 @@ public abstract class ConstructorProxy {
             }
         }
 
-        private void generateNewInstanceHelper(Method method, boolean isHack) {
-            begin_method(method);
+        private void generateNewInstance() {
+            begin_method(NEW_INSTANCE);
             new_instance(constructor.getDeclaringClass());
             dup();
             Class types[] = constructor.getParameterTypes();
