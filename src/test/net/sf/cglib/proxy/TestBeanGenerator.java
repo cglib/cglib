@@ -77,89 +77,54 @@ public class TestBeanGenerator extends TestCase {
     
     public static Test suite() {
         TestSuite suite = new TestSuite(TestBeanGenerator.class);
-        suite.addTest(InfoTest.suite());
-        
         return suite;
     }
     
-    /** Test of getProperties method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testGetProperties() {
-        fail("The test case is empty.");
-    }
-    
-    /** Test of getMethods method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testGetMethods() {
-        fail("The test case is empty.");
-    }
-    
-    /** Test of generate method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testGenerate() {
-        fail("The test case is empty.");
-    }
-    
-    /** Test of copyMethods method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testCopyMethods() {
-        fail("The test case is empty.");
-    }
     
     /** Test of addMethod method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testAddMethod() {
-        fail("The test case is empty.");
+    public void testAddMethod() throws Exception{
+       
+        final String sinus = "sin";
+        
+       BeanGenerator bg = new BeanGenerator();
+       bg.addMethod( Math.class.getMethod(sinus,
+                                    new Class[]{ double.class }), null );
+       Object bean = bg.getBeanClass().newInstance();
+       java.lang.reflect.Method sin = 
+            bean.getClass().getMethod( sinus, new Class[]{ double.class } );
+            
+       assertEquals( " bean method " + sinus, new Double(0), 
+                                  sin.invoke(bean,new Object[]{new Double(0)}) );
+       
     }
     
-    /** Test of addProperties method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testAddProperties() {
-        fail("The test case is empty.");
-    }
     
     /** Test of addProperty method, of class net.sf.cglib.proxy.BeanGenerator. */
-    public void testAddProperty() {
-        fail("The test case is empty.");
-    }
-    
-    public static class InfoTest extends TestCase {
+    public void testAddProperty()throws Exception {
+      
+      final String name = "test";
         
-        public InfoTest(java.lang.String testName) {
-            super(testName);
-        }
-        
-        public static void main(java.lang.String[] args) {
-            junit.textui.TestRunner.run(suite());
-        }
-        
-        public static Test suite() {
-            TestSuite suite = new TestSuite(InfoTest.class);
-            
-            return suite;
-        }
-        
-        /** Test of getBeanDescriptor method, of class net.sf.cglib.proxy.BeanGenerator.Info. */
-        public void testGetBeanDescriptor() {
-            fail("The test case is empty.");
-        }
-        
-        /** Test of getDefaultEventIndex method, of class net.sf.cglib.proxy.BeanGenerator.Info. */
-        public void testGetDefaultEventIndex() {
-            fail("The test case is empty.");
-        }
-        
-        /** Test of getEventSetDescriptors method, of class net.sf.cglib.proxy.BeanGenerator.Info. */
-        public void testGetEventSetDescriptors() {
-            fail("The test case is empty.");
-        }
-        
-        /** Test of getMethodDescriptors method, of class net.sf.cglib.proxy.BeanGenerator.Info. */
-        public void testGetMethodDescriptors() {
-            fail("The test case is empty.");
-        }
-        
-        /** Test of getPropertyDescriptors method, of class net.sf.cglib.proxy.BeanGenerator.Info. */
-        public void testGetPropertyDescriptors() {
-            fail("The test case is empty.");
-        }
+       BeanGenerator bg = new BeanGenerator();
+       bg.addProperty( name , String.class, null );
+       
+       Object bean = bg.getBeanClass().newInstance();
+       
+       java.beans.BeanInfo info = java.beans.Introspector.getBeanInfo( bean.getClass() );
+       java.beans.PropertyDescriptor descriptors [] =  info.getPropertyDescriptors();
+       java.beans.PropertyDescriptor  descriptor = null;
+       
+       for( int i = 0; i< descriptors.length; i++ ){
+           if( name.equals(descriptors[i].getName()) ){
+             descriptor = descriptors[i]; 
+           }
+       }
+       
+       assertTrue( name + " property ",
+                               descriptor != null );
+       assertEquals( name + " property type ",
+                               descriptor.getPropertyType(), String.class  );
         
     }
-    
     
     
 }
