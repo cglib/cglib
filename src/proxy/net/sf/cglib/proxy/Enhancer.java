@@ -138,6 +138,9 @@ public class Enhancer extends AbstractClassGenerator
     public void setSuperclass(Class superclass) {
         if (superclass != null && superclass.isInterface()) {
             setInterfaces(new Class[]{ superclass });
+        } else if (superclass.equals(Object.class)) {
+            // affects choice of ClassLoader
+            this.superclass = null;
         } else {
             this.superclass = superclass;
         }
