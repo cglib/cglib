@@ -23,11 +23,24 @@ import net.sf.cglib.util.*;
 public abstract class MetaClass  {
     
     private static Map cache = new Hashtable();
+    private static final MetaClassKey keyFactory;
     
     protected Class target;
     protected String [] getters, setters;
     protected Class[] types;
-    
+
+    /* package */ interface MetaClassKey {
+        public Object newInstance(Class target, String[] getters,
+                                  String[] setters, Class[] types);
+    }
+
+    static {
+        try {
+            keyFactory = (MetaClassKey)KeyFactory.makeFactory(MetaClassKey.class, null);
+        } catch (CodeGenerationException e) {
+            throw new ImpossibleError(e);
+        }
+    }
     
      /** Creates a new instance of MetaClass */
    protected MetaClass( Class target, String getters[], 
@@ -86,11 +99,6 @@ public abstract class MetaClass  {
   
   }   
    
-   private static String generateKey( Class target, String getters[],
-                                      String setters[], Class types[] ){
-      return target.getName();
-   }
-  
    private static void validate( Class target, String getters[], 
                                  String setters[], Class types[],
                                  Method getters_out[], Method setters_out[] ){
@@ -154,7 +162,7 @@ public abstract class MetaClass  {
           loader = MetaClass.class.getClassLoader();
       }
        
-      String key = generateKey(target, getters, setters, types);
+      Object key = keyFactory.newInstance(target, getters, setters, types);
       MetaClass result = (MetaClass)cache.get(key);
        
       if( result != null ){

@@ -7,22 +7,25 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /* package */ class EnhancerGenerator extends CodeGenerator {
-    private static final String FIELD_NAME = "CGLIB$INTERCEPTOR";
-    private static final Class[] INTERCEPTOR_CLASS_ARRAY = new Class[]{ MethodInterceptor.class };
+    private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
+    private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
+    private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
+    private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
     private static int index = 0;
 
     private Class[] interfaces;
     private Method wreplace;
     private MethodInterceptor ih;
-    private Class parentClass;
+    private boolean delegating;
         
     /* package */ EnhancerGenerator(String className, Class clazz, Class[] interfaces, MethodInterceptor ih,
-                                    ClassLoader loader, Method wreplace) throws CodeGenerationException {
+                                    ClassLoader loader, Method wreplace, boolean delegating)
+    throws CodeGenerationException {
         super(className, clazz, loader);
-        parentClass = clazz;
         this.interfaces = interfaces;
         this.ih = ih;
         this.wreplace = wreplace;
+        this.delegating = delegating;
 
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
@@ -73,17 +76,20 @@ import net.sf.cglib.util.*;
         }
         
         declare_interface(Factory.class);
-        declare_field(Modifier.PRIVATE, MethodInterceptor.class, FIELD_NAME);
+        declare_field(Modifier.PRIVATE, MethodInterceptor.class, INTERCEPTOR_FIELD);
+        if (delegating) {
+            declare_field(Modifier.PRIVATE, getSuperclass(), DELEGATE_FIELD);
+        }
 
         generateConstructor();
         generateFactory();
         generateFindClass();
 
-        // Order is very important: must add parentClass, then
+        // Order is very important: must add superclass, then
         // its superclass chain, then each interface and
         // its superinterfaces.
         List allMethods = new LinkedList();
-        addDeclaredMethods(allMethods, parentClass);
+        addDeclaredMethods(allMethods, getSuperclass());
         if (interfaces != null) {
             declare_interfaces(interfaces);
             for (int i = 0; i < interfaces.length; i++) {
@@ -92,7 +98,7 @@ import net.sf.cglib.util.*;
         }
 
         boolean declaresWriteReplace = false;
-        String packageName = parentClass.getPackage().getName();
+        String packageName = getSuperclass().getPackage().getName();
         Set methodSet = new HashSet();
         for (Iterator it = allMethods.iterator(); it.hasNext();) {
             Method method = (Method)it.next();
@@ -146,30 +152,63 @@ import net.sf.cglib.util.*;
     }
 
     private void generateConstructor() {
-        begin_constructor(INTERCEPTOR_CLASS_ARRAY);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        putfield(FIELD_NAME);
-        return_value();
-        end_constructor();
+        if (delegating) {
+            begin_constructor(DELEGATE_ARGS);
+            load_this();
+            dup();
+            super_invoke_constructor();
+            dup();
+            load_arg(0);
+            putfield(INTERCEPTOR_FIELD);
+            load_arg(1);
+            checkcast(getSuperclass());
+            putfield(DELEGATE_FIELD);
+            return_value();
+            end_constructor();
+        } else {
+            begin_constructor(NORMAL_ARGS);
+            load_this();
+            dup();
+            super_invoke_constructor();
+            load_arg(0);
+            putfield(INTERCEPTOR_FIELD);
+            return_value();
+            end_constructor();
+        }
     }
 
     private void generateFactory() throws NoSuchMethodException {
-        begin_method(Factory.class.getMethod("newInstance", INTERCEPTOR_CLASS_ARRAY));
-        new_instance_this();
-        dup();
-        load_arg(0);
-        invoke_constructor_this(INTERCEPTOR_CLASS_ARRAY);
-        return_value();
-        end_method();
+        generateFactoryHelper(NORMAL_ARGS, !delegating);
+        generateFactoryHelper(DELEGATE_ARGS, delegating);
 
+        // TODO: getDelegate
+        
         begin_method(Factory.class.getMethod("getInterceptor", EMPTY_CLASS_ARRAY));
         load_this();
-        getfield(FIELD_NAME);
+        getfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
+    }
+
+    private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
+        if (enabled) {
+            begin_method(Factory.class.getMethod("newInstance", types));
+            new_instance_this();
+            dup();
+            load_args();
+            invoke_constructor_this(types);
+            return_value();
+            end_method();
+        } else {
+            begin_method(Factory.class.getMethod("newInstance", types));
+            new_instance(UnsupportedOperationException.class);
+            dup();
+            push("Using a delegating enhanced class as non-delegating, or vice versa");
+            invoke_constructor(UnsupportedOperationException.class, new Class[]{ String.class });
+            athrow();
+            return_value();
+            end_method();
+        }
     }
 
     private void generateWriteReplace() {
@@ -203,7 +242,9 @@ import net.sf.cglib.util.*;
         Class[] args = method.getParameterTypes();
         Class returnType = method.getReturnType();
         boolean returnsValue = !returnType.equals(Void.TYPE);
-        boolean isAbstract = Modifier.isAbstract(method.getModifiers());
+        int mod = method.getModifiers();
+        boolean isAbstract = Modifier.isAbstract(mod);
+        boolean isProtected = Modifier.isProtected(mod);
 
         begin_method(method);
         int outer_eh = begin_handler();
@@ -220,7 +261,7 @@ import net.sf.cglib.util.*;
         
         if (!isAbstract) {
             load_this();
-            getfield(FIELD_NAME);
+            getfield(INTERCEPTOR_FIELD);
             load_this();
             getstatic(fieldName);
             load_local("args");
@@ -232,8 +273,14 @@ import net.sf.cglib.util.*;
 
             int eh = begin_handler();
             load_this();
-            load_args();
-            super_invoke();
+            if (delegating && !isProtected) {
+                getfield(DELEGATE_FIELD);
+                load_args();
+                invoke(method);
+            } else {
+                load_args();
+                super_invoke();
+            }
             if (returnsValue) {
                 box(returnType);
                 store_local("resultFromSuper");
@@ -247,7 +294,7 @@ import net.sf.cglib.util.*;
         }
 
         load_this();
-        getfield(FIELD_NAME);
+        getfield(INTERCEPTOR_FIELD);
         load_this();
         getstatic(fieldName);
         load_local("args");

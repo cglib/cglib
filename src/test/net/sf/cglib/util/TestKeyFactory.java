@@ -5,7 +5,7 @@ import java.util.*;
 
 public class TestKeyFactory extends TestCase {    
     public void setUp() {
-        // CodeGenerator.setDebugLocation("/tmp/");
+        // net.sf.cglib.util.CodeGenerator.setDebugLocation("/tmp/");
     }
 
     public interface MyKey {
@@ -32,7 +32,7 @@ public class TestKeyFactory extends TestCase {
         int code1 = instance.hashCode();
         int result = ((KeyFactory)instance).getHashConstant();
         int mult = ((KeyFactory)instance).getHashMultiplier();
-        int code2 = ((((result * mult + 1) * mult + 2) * mult + 3) * mult + 4) * mult;
+        int code2 = ((((result + 1) * mult + 2) * mult + 3) * mult + 4) * mult;
         assertTrue(code1 == code2);
     }
 

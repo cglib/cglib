@@ -65,6 +65,19 @@ public class Delegator implements ClassFileConstants
 {
     private static final String CLASS_NAME = "net.sf.cglib.delegator.Delegator$$CreatedByCGLIB$$";
     private static int index = 0;
+    private static final DelegatorKey keyFactory;
+
+    /* package */ interface DelegatorKey {
+        public Object newInstance(Class[] classes);
+    }
+
+    static {
+        try {
+            keyFactory = (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
+        } catch (CodeGenerationException e) {
+            throw new ImpossibleError(e);
+        }
+    }
 
     private static String getNextName() {
         return CLASS_NAME + index++;
@@ -99,7 +112,7 @@ public class Delegator implements ClassFileConstants
     public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader)
     throws CodeGenerationException
     {
-        return makeDelegatorHelper(new ArrayKey(interfaces), interfaces, delegates, loader);
+        return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader);
     }
     
     /**
@@ -149,14 +162,19 @@ public class Delegator implements ClassFileConstants
 
     synchronized private static Info getInfo(Object[] delegates)
     {
-        Object key = new ClassesKey(delegates);
+        // TODO: optimize object->class conversion?
+        Class[] classes = new Class[delegates.length];
+        for (int i = 0; i < delegates.length; i++) {
+            classes[i] = delegates[i].getClass();
+        }
+        Object key = keyFactory.newInstance(classes);
         Info info = (Info)infoCache.get(key);
         if (info == null)
             infoCache.put(key, info = new Info(delegates));
         return info;
     }
 
-    synchronized private static Object makeDelegatorHelper(ArrayKey key,
+    synchronized private static Object makeDelegatorHelper(Object key,
                                                            Class[] interfaces,
                                                            Object[] delegates,
                                                            ClassLoader loader)
@@ -186,61 +204,11 @@ public class Delegator implements ClassFileConstants
         }
     }
 
-    private static class ArrayKey
-    {
-        private Object[] array;
-        private int hash = 23; // should be odd
-    
-        public ArrayKey(Object[] array)
-        {
-            this.array = array;
-            for (int i = 0; i < array.length; i++) {
-                hash = hash * 57 + filter(array[i]).hashCode();
-            }
-        }
-
-        public int hashCode()
-        {
-            return hash;
-        }
-
-        protected Object filter(Object obj)
-        {
-            return obj;
-        }
-
-        public boolean equals(Object obj)
-        {
-            ArrayKey other = (ArrayKey)obj;
-            if (array.length != other.array.length)
-                return false;
-            for (int i = 0; i < array.length; i++) {
-                if (!filter(array[i]).equals(filter(other.array[i])))
-                    return false;
-            }
-            return true;
-        }
-    }
-
-    private static class ClassesKey
-    extends ArrayKey
-    {
-        public ClassesKey(Object[] array)
-        {
-            super(array);
-        }
-
-        protected Object filter(Object obj)
-        {
-            return obj.getClass();
-        }
-    }
-
     private static class Info
     {
         private Class[] interfaces;
         private int[] indexes;
-        private ArrayKey key;
+        private Object key;
 
         public Info(Object[] incoming)
         {
@@ -270,7 +238,7 @@ public class Delegator implements ClassFileConstants
             for (int i = 0; it.hasNext(); i++) {
                 indexes[i] = ((Integer)it.next()).intValue();
             }
-            key = new ArrayKey(interfaces);
+            key = keyFactory.newInstance(interfaces);
         }
     }
 
