@@ -138,7 +138,7 @@ implements ClassGenerator
     /**
      * TODO
      */
-    public void setGeneratorStrategy(GeneratorStrategy strategy) {
+    public void setStrategy(GeneratorStrategy strategy) {
         this.strategy = strategy;
     }
 
