@@ -69,6 +69,9 @@ public interface CallbackFilter {
         public String toString() {
             return "ALL_ZERO";
         }
+        public int hashCode() {
+            return 999;
+        }
     };
     
     /**
