@@ -77,8 +77,6 @@ import java.util.*;
     private boolean needsFindClass;
     
     private int nextPrivateLabel;
-    private int nextPrivateLocal;
-
 	private Set labels = new HashSet();
     private Map locals = new HashMap();
     private Map localTypes = new HashMap();

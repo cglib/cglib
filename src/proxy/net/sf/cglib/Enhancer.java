@@ -79,10 +79,9 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.30 2003/01/29 18:23:21 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.31 2003/01/31 01:04:26 herbyderby Exp $
  */
 public class Enhancer {
-    private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
     private static final FactoryCache cache = new FactoryCache();
     private static final FactoryCache classCache = new FactoryCache();
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();

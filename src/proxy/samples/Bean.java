@@ -9,10 +9,6 @@ public abstract class Bean implements java.io.Serializable{
    
     String sampleProperty;
     
-    /** Creates a new instance of Bean */
-    public Bean() {
-    }
-    
   abstract public void addPropertyChangeListener(PropertyChangeListener listener); 
    
   abstract public void removePropertyChangeListener(PropertyChangeListener listener);

@@ -13,12 +13,6 @@ public class Beans extends BeforeAfterInterceptor {
     
     private PropertyChangeSupport propertySupport;
    
-    
-    /** Creates new Bean */
-    public Beans() {
-        
-    }
-    
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         
         propertySupport.addPropertyChangeListener(listener);
