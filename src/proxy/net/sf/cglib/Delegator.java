@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.4 2002/12/03 07:08:11 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
@@ -173,11 +173,12 @@ public class Delegator {
         if (factories == null) {
             loaders.put(loader, factories = new HashMap());
         }
-        Object factory = (Factory)factories.get(key);
+        Factory factory = (Factory)factories.get(key);
         if (factory == null) {
             Class clazz = new DelegatorGenerator(getNextName(), interfaces, loader).define();
             try {
-                factory = clazz.getConstructor(Constants.TYPES_OBJECT_ARRAY).newInstance(new Object[]{ delegates });
+                factory = (Factory)clazz.getConstructor(Constants.TYPES_OBJECT_ARRAY).
+                    newInstance(new Object[]{ delegates });
                 factories.put(key, factory);
                 return factory;
             } catch (RuntimeException e) {
@@ -186,7 +187,7 @@ public class Delegator {
                 throw new CodeGenerationException(e);
             }
         } else {
-            return ((Factory)factory).cglib_newInstance(delegates);
+            return factory.cglib_newInstance(delegates);
         }
     }
 
