@@ -55,6 +55,8 @@ package net.sf.cglib;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -77,7 +79,7 @@ import java.lang.reflect.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.20 2003/01/23 11:15:08 nemecec Exp $
+ *@version    $Id: Enhancer.java,v 1.21 2003/01/23 13:05:23 nemecec Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -317,13 +319,20 @@ public class Enhancer {
             MethodInterceptor mi = Enhancer.getMethodInterceptor(enhanced);
             String parentClassName = enhanced.getClass().getSuperclass().getName();
             Class interfaces[] = enhanced.getClass().getInterfaces();
-            String [] interfaceNames = new String[interfaces.length];
+            List interfaceNames = new ArrayList(interfaces.length);
             
             for (int i = 0; i < interfaces.length; i++) {
-                interfaceNames[i] = interfaces[i].getName();
+                //skip CGLIB interfaces
+                if (interfaces[i].getPackage() != Enhancer.class.getPackage()) {
+                    interfaceNames.add(interfaces[i].getName());
+                }
             }
-            
-            return new InternalReplace(parentClassName, interfaceNames, mi);
+
+            return new InternalReplace(
+                parentClassName, 
+                (String[]) interfaceNames.toArray(new String[interfaceNames.size()]), 
+                mi
+            );
         }
         
         
