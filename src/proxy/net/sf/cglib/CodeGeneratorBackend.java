@@ -63,6 +63,8 @@ abstract class CodeGeneratorBackend {
         this.superclass = superclass;
     }
 
+    abstract public void setInterface(boolean flag);
+
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
