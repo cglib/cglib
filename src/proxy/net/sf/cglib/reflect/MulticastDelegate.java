@@ -58,6 +58,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.*;
 import net.sf.cglib.util.*;
+import net.sf.cglib.core.ReflectUtils;
 
 abstract public class MulticastDelegate implements Cloneable {
     private static final FactoryCache cache = new FactoryCache(MulticastDelegate.class);
@@ -125,7 +126,7 @@ abstract public class MulticastDelegate implements Cloneable {
             setSuperclass(MulticastDelegate.class);
 
             this.iface = iface;
-            method = MethodDelegate.findInterfaceMethod(iface);
+            method = ReflectUtils.findInterfaceMethod(iface);
             addInterface(iface);
         }
 
