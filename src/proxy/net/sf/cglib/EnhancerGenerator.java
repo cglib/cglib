@@ -61,9 +61,13 @@ import java.util.*;
     private static final String INTERCEPTOR_FIELD = "CGLIB$INTERCEPTOR";
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
     private static final String CONSTRUCTOR_PROXY_MAP = "CGLIB$CONSTRUCTOR_PROXY_MAP";
-    private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
-    private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
-    private static final  int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+
+    private static final int PRIVATE_FINAL_STATIC = Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC;
+
+    private static final Method NORMAL_NEW_INSTANCE =
+      ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor)");
+    private static final Method DELEGATE_NEW_INSTANCE =
+      ReflectUtils.findMethod("Factory.newInstance(MethodInterceptor, Object)");
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
     private static final Method MAKE_PROXY =
@@ -72,15 +76,19 @@ import java.util.*;
       ReflectUtils.findMethod("ConstructorProxy.create(Constructor)");
     private static final Method INTERNAL_WRITE_REPLACE =
       ReflectUtils.findMethod("Enhancer$InternalReplace.writeReplace(Object)");
-    private static final Method NEW_CALSS_KEY = 
+    private static final Method NEW_CLASS_KEY = 
      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
-    private static java.lang.reflect.Method PROXY_NEW_INSTANCE = 
+    private static final Method PROXY_NEW_INSTANCE = 
      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
-    
-    private static final Method NEW_INSTANCE = 
-       ReflectUtils.findMethod("Factory.newInstance(Class[],Object[],MethodInterceptor)");
-   
-    
+    private static final Method MULTIARG_NEW_INSTANCE = 
+      ReflectUtils.findMethod("Factory.newInstance(Class[],Object[],MethodInterceptor)");
+    private static final Method SET_DELEGATE =
+      ReflectUtils.findMethod("Factory.setDelegate(Object)");
+    private static final Method GET_DELEGATE =
+      ReflectUtils.findMethod("Factory.getDelegate()");
+    private static final Method GET_INTERCEPTOR =
+      ReflectUtils.findMethod("Factory.getInterceptor()");
+
     private Class[] interfaces;
     private Method wreplace;
     private boolean delegating;
@@ -104,27 +112,21 @@ import java.util.*;
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
              !Modifier.isPublic(wreplace.getModifiers()) ||
-             wreplace.getReturnType() != TYPE_OBJECT || 
+             wreplace.getReturnType() != Object.class || 
              wreplace.getParameterTypes().length != 1 ||
-             wreplace.getParameterTypes()[0] != TYPE_OBJECT)) {
+             wreplace.getParameterTypes()[0] != Object.class)) {
             throw new IllegalArgumentException(wreplace.toString());
         }
 
         try {
             
-            
+
             try {
-                cstruct = clazz.getDeclaredConstructor(delegating ? DELEGATE_ARGS : NORMAL_ARGS);
-            } catch (NoSuchMethodException e) {
-                try {
-                cstruct = clazz.getDeclaredConstructor(TYPES_EMPTY);
-                }catch (NoSuchMethodException e2) {
+                cstruct = clazz.getDeclaredConstructor(Constants.TYPES_EMPTY);
+                if (!VisibilityFilter.accept(cstruct, clazz.getPackage())) {
                     cstruct = null;
                 }
-            }
-
-            if ( cstruct == null || !VisibilityFilter.accept(cstruct, clazz.getPackage())) {
-                 cstruct = null;
+            } catch (NoSuchMethodException ignore) {
             }
 
             Constructor[] constructors = clazz.getDeclaredConstructors();
@@ -283,18 +285,17 @@ import java.util.*;
         }
          return_value();       
         
-        end_constructor();
+         end_method();
         
       }
         
     }
     
-    
     private void generateFactory() throws NoSuchMethodException {
-        generateFactoryHelper(NORMAL_ARGS, !delegating);
-        generateFactoryHelper(DELEGATE_ARGS, delegating);
+        generateFactoryHelper(NORMAL_NEW_INSTANCE, !delegating);
+        generateFactoryHelper(DELEGATE_NEW_INSTANCE, delegating);
 
-        begin_method(Factory.class.getMethod("getDelegate", null));
+        begin_method(GET_DELEGATE);
         if (delegating) {
             load_this();
             getfield(DELEGATE_FIELD);
@@ -304,19 +305,19 @@ import java.util.*;
         return_value();
         end_method();
 
-        begin_method(Factory.class.getMethod("setDelegate", TYPES_OBJECT));
         if (delegating) {
+            begin_method(SET_DELEGATE);
             load_this();
             load_arg(0);
             checkcast(getSuperclass());
             putfield(DELEGATE_FIELD);
+            return_value();
+            end_method();
         } else {
-            throwWrongType();
+            throwWrongType(SET_DELEGATE);
         }
-        return_value();
-        end_method();
 
-        begin_method(Factory.class.getMethod("getInterceptor", null));
+        begin_method(GET_INTERCEPTOR);
         load_this();
         getfield(INTERCEPTOR_FIELD);
         return_value();
@@ -324,10 +325,10 @@ import java.util.*;
         
         declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP ); 
         
-        begin_method(NEW_INSTANCE);
-        getstatic(CONSTRUCTOR_PROXY_MAP);
+        begin_method(MULTIARG_NEW_INSTANCE);
+        getfield(CONSTRUCTOR_PROXY_MAP);
         load_arg(0);// Class[] types
-        invoke(NEW_CALSS_KEY);//key
+        invoke(NEW_CLASS_KEY);//key
         invoke(MethodConstants.MAP_GET);// PROXY_MAP.get( key(types) )    
         checkcast(ConstructorProxy.class);
         dup();
@@ -337,39 +338,37 @@ import java.util.*;
         invoke(PROXY_NEW_INSTANCE);
         return_value();
         nop("fail");
-        throwException(IllegalArgumentException.class, "Constructor not found ");
+        throw_exception(IllegalArgumentException.class, "Constructor not found ");
         end_method();
         
     }
 
-    private void throwWrongType() {
-        
-        throwException(UnsupportedOperationException.class,
-        "Using a delegating enhanced class as non-delegating, or the reverse");
-        
-    }
-
-    private void generateFactoryHelper(Class[] types, boolean enabled) throws NoSuchMethodException {
-        begin_method(Factory.class.getMethod("newInstance", types));
-        if( cstruct == null ){
-          throwException(IllegalStateException.class, "can't find constructor" );
-        }else if (enabled) {
-            new_instance_this();
-            dup();
-            load_args();
-            invoke_constructor_this(types);
-        } else {
-            throwWrongType();
-        }
+    private void throwWrongType(Method method) {
+        begin_method(method);
+        throw_exception(UnsupportedOperationException.class,
+                        "Using a delegating enhanced class as non-delegating, or the reverse");
         return_value();
         end_method();
+    }
+
+    private void generateFactoryHelper(Method method, boolean enabled) throws NoSuchMethodException {
+        if (cstruct == null) {
+            begin_method(method);
+            throw_exception(IllegalStateException.class, "can't find constructor" );
+            return_value();
+            end_method();
+        } else if (enabled) {
+            generateFactoryMethod(method);
+        } else {
+            throwWrongType(method);
+        }
     }
 
     private void generateWriteReplace() {
         begin_method(Modifier.PRIVATE,
                      Object.class, 
                      "writeReplace",
-                     TYPES_EMPTY,
+                     Constants.TYPES_EMPTY,
                      new Class[]{ ObjectStreamException.class });
         load_this();
         invoke(wreplace);
@@ -404,7 +403,7 @@ import java.util.*;
             load_args();
             invoke(method);
         } else if (Modifier.isAbstract(method.getModifiers())) {
-            throwException(AbstractMethodError.class, method.toString() + " is abstract" );
+            throw_exception(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
             load_args();
@@ -420,22 +419,22 @@ import java.util.*;
             modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
         }
         begin_method(method, modifiers);
-        int outer_eh = begin_handler();
+        Object handler = begin_handler();
         load_this();
         getfield(INTERCEPTOR_FIELD);
         load_this();
-        getstatic(fieldName);
+        getfield(fieldName);
         create_arg_array();
-        getstatic(accessName);
+        getfield(accessName);
         invoke(AROUND_ADVICE);
         unbox_or_zero(method.getReturnType());
         return_value();
         end_handler();
-        generateHandleUndeclared(method, outer_eh);
+        generateHandleUndeclared(method, handler);
         end_method();
     }
 
-    private void generateHandleUndeclared(Method method, int handler) {
+    private void generateHandleUndeclared(Method method, Object handler) {
         /* generates:
            } catch (RuntimeException e) {
                throw e;
@@ -468,7 +467,7 @@ import java.util.*;
             new_instance(UndeclaredThrowableException.class);
             dup_x1();
             swap();
-            invoke_constructor(UndeclaredThrowableException.class, TYPES_THROWABLE);
+            invoke_constructor(UndeclaredThrowableException.class, Constants.TYPES_THROWABLE);
             athrow();
         }
     }
@@ -499,7 +498,7 @@ import java.util.*;
             dup();
             store_local("args");
             invoke(MethodConstants.GET_DECLARED_METHOD);
-            putstatic(fieldName);
+            putfield(fieldName);
 
             String accessName = getAccessName(method, i);
             load_class_this();
@@ -507,13 +506,13 @@ import java.util.*;
             load_local("args");
             invoke(MethodConstants.GET_DECLARED_METHOD);
             invoke(MAKE_PROXY);
-            putstatic(accessName);
+            putfield(accessName);
         }
         new_instance(HashMap.class);
         dup();
         dup();
         invoke_constructor(HashMap.class);
-        putstatic(CONSTRUCTOR_PROXY_MAP);
+        putfield(CONSTRUCTOR_PROXY_MAP);
         final String LOCAL_MAP = "map";
         store_local(LOCAL_MAP);
         for( Iterator i = constructorTypes.iterator(); i.hasNext(); ){
@@ -522,7 +521,7 @@ import java.util.*;
             Class[] keyTypes = (Class[])pair[1]; 
             load_local(LOCAL_MAP);
             push_object(keyTypes);
-            invoke(NEW_CALSS_KEY);//key
+            invoke(NEW_CLASS_KEY);//key
             load_class_this();
             push_object(cTypes);
             invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
@@ -532,6 +531,6 @@ import java.util.*;
         }
         
         return_value();
-        end_static();
+        end_method();
     }
 }

@@ -60,23 +60,25 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: DelegatorGenerator.java,v 1.5 2003/01/06 21:34:41 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.6 2003/01/24 00:27:48 herbyderby Exp $
  */
 /* package */ class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
+    private static final Method NEW_INSTANCE =
+      ReflectUtils.findMethod("Delegator$Factory.cglib_newInstance(Object[])");
 
     private Class[] classes;
     private boolean bean;
         
-    /* package */ DelegatorGenerator(String className, Class[] classes, ClassLoader loader, boolean bean) {
-        super(className, TYPE_OBJECT, loader);
+    public DelegatorGenerator(String className, Class[] classes, ClassLoader loader, boolean bean) {
+        super(className, Object.class, loader);
         this.classes = classes;
         this.bean = bean;
     }
 
     protected void generate() throws NoSuchMethodException {
         generateConstructor();
-        generateFactory();
+        generateFactoryMethod(NEW_INSTANCE);
         declare_interface(Delegator.Factory.TYPE);
 
         Set methodSet = new HashSet();
@@ -130,24 +132,12 @@ import java.util.*;
 
     private void generateConstructor() {
         declare_field(Modifier.PRIVATE, Object[].class, FIELD_NAME);
-        begin_constructor(TYPES_OBJECT_ARRAY);
+        begin_constructor(Constants.TYPES_OBJECT_ARRAY);
         load_this();
         super_invoke_constructor();
         load_this();
         load_arg(0);
         putfield(FIELD_NAME);
-        return_value();
-        end_constructor();
-    }
-
-    private void generateFactory() throws NoSuchMethodException {
-        Method newInstance =
-            Delegator.Factory.TYPE.getMethod("cglib_newInstance", TYPES_OBJECT_ARRAY);
-        begin_method(newInstance);
-        new_instance_this();
-        dup();
-        load_arg(0);
-        invoke_constructor_this(TYPES_OBJECT_ARRAY);
         return_value();
         end_method();
     }

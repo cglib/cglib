@@ -136,7 +136,7 @@ import java.lang.reflect.Modifier;
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
  * @author <a href="mailto:bloritsch@apache.org">Berin Loritsch</a>
  * @author <a href="mailto:leo.sutic@inspireinfrastructure.com">Leo Sutic</a>
- * @version $Id: MethodDelegate.java,v 1.3 2003/01/06 21:34:40 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.4 2003/01/24 00:27:48 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     /* package */ static final Class TYPE = MethodDelegate.class;
@@ -205,7 +205,7 @@ abstract public class MethodDelegate {
                 Method method = findProxiedMethod(clazz, methodName, iface);
                 String className = nameFactory.getNextName(clazz);
                 Class result = new Generator(className, method, iface, loader).define();
-                factory = (MethodDelegate)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
+                factory = (MethodDelegate)ReflectUtils.newInstance(result);
                 cache.put(loader, key, factory);
             }
         }
@@ -270,7 +270,7 @@ abstract public class MethodDelegate {
             dup();
             dup2();
             invoke_constructor_this();
-            getstatic("eqMethod");
+            getfield("eqMethod");
             super_putfield("eqMethod");
             load_arg(0);
             super_putfield("delegate");
@@ -279,11 +279,21 @@ abstract public class MethodDelegate {
 
             // static initializer
             begin_static();
-            push(CodeGenerator.getMethodSignature(method));
-            putstatic("eqMethod");
+            push(getSignature(method));
+            putfield("eqMethod");
             return_value();
-            end_static();
+            end_method();
         }
 
+        private String getSignature(Method method) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(method.getDeclaringClass().getName()).append('.');
+            sb.append(method.getName()).append('(');
+            Class[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                sb.append(types[i].getName());
+            }
+            return sb.toString();
+        }
     }
 }

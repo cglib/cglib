@@ -55,13 +55,15 @@ package net.sf.cglib;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.1 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.2 2003/01/24 00:27:48 herbyderby Exp $
  */
-public interface Constants extends org.apache.bcel.Constants {
+abstract /* package */ class Constants {
     public static final Class[] TYPES_OBJECT = { Object.class };
     public static final Class[] TYPES_EMPTY = {};
     public static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
     public static final Class[] TYPES_STRING = { String.class };
     public static final Class[] TYPES_THROWABLE = { Throwable.class };
-    public static final Class TYPE_OBJECT = Object.class;
+    public static final String CONSTRUCTOR_NAME = "<init>";
+    public static final String SOURCE_FILE = "<generated>";
+    public static final String STATIC_NAME = "<clinit>";
 }

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: ReflectUtils.java,v 1.2 2003/01/05 23:55:10 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.3 2003/01/24 00:27:48 herbyderby Exp $
  */
 abstract /* package */ class ReflectUtils {
     private static final Map primitives = new HashMap(8);
@@ -169,6 +169,10 @@ abstract /* package */ class ReflectUtils {
         }
     }
 
+    public static Object newInstance(Class clazz) {
+        return newInstance(clazz, Constants.TYPES_EMPTY, null);
+    }
+
     public static Object newInstance(Class clazz, Class[] parameterTypes, Object[] args) {
         try {
             return clazz.getConstructor(parameterTypes).newInstance(args);
@@ -181,5 +185,13 @@ abstract /* package */ class ReflectUtils {
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e.getTargetException());
         }
+    }
+
+    public static Class[] getClasses(Object[] objects) {
+        Class[] classes = new Class[objects.length];
+        for (int i = 0; i < objects.length; i++) {
+            classes[i] = objects[i].getClass();
+        }
+        return classes;
     }
 }

@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.9 2003/01/05 23:55:43 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.10 2003/01/24 00:27:48 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
     private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
@@ -111,7 +111,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         if (newInstance == null) {
             throw new IllegalArgumentException("Missing newInstance method");
         }
-        if (!newInstance.getReturnType().equals(TYPE_OBJECT)) {
+        if (!newInstance.getReturnType().equals(Object.class)) {
             throw new IllegalArgumentException("newInstance method must return Object");
         }
         parameterTypes = newInstance.getParameterTypes();
@@ -119,7 +119,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         declare_interface(keyInterface);
         generateNullConstructor();
         generateConstructor();
-        generateFactory();
+        generateFactoryMethod(newInstance);
         generateEquals();
         generateGetArgs();
     }
@@ -145,7 +145,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         pop();
         super_putfield("hash");
         return_value();
-        end_constructor();
+        end_method();
     }
 
     private void loadAndStoreConstant(String fieldName) throws NoSuchFieldException {
@@ -173,8 +173,8 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void hash_array(Class clazz) {
-        String isNull = newLabel();
-        String end = newLabel();
+        String isNull = anon_label();
+        String end = anon_label();
         dup();
         ifnull(isNull);
         process_array(clazz, hashCallback);
@@ -186,8 +186,8 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     private void hash_object() {
         // (f == null) ? 0 : f.hashCode();
-        String isNull = newLabel();
-        String end = newLabel();
+        String isNull = anon_label();
+        String end = anon_label();
         dup();
         ifnull(isNull);
         invoke(MethodConstants.HASH_CODE);
@@ -229,17 +229,6 @@ class KeyFactoryGenerator extends CodeGenerator {
     private int pickHashConstant() {
       return  PRIMES[ (int)(PRIMES.length*Math.random()) ];
     }
-
-    private void generateFactory() throws NoSuchMethodException {
-        begin_method(newInstance);
-        new_instance_this();
-        dup();
-        load_args();
-        invoke_constructor_this(parameterTypes);
-        return_value();
-        end_method();
-    }
-
     private String getFieldName(int arg) {
         return "FIELD_" + arg;
     }

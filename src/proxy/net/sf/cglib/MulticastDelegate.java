@@ -126,7 +126,7 @@ abstract public class MulticastDelegate implements Cloneable {
                 String className = nameFactory.getNextName(iface);
                 Method method = MethodDelegate.findInterfaceMethod(iface);
                 Class result = new Generator(className, method, iface, loader).define();
-                factory = (MulticastDelegate)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
+                factory = (MulticastDelegate)ReflectUtils.newInstance(result);
                 cache.put(loader, key, factory);
             }
         }

@@ -271,7 +271,7 @@ public abstract class MetaClass  {
 	    load_args();
 	    super_invoke_constructor(constructor);
             return_value();
-           end_constructor();
+        end_method();
         
         //------------- newInstance -------------------------
         
