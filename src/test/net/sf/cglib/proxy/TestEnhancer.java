@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.21 2002/11/19 08:10:53 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.22 2002/11/19 17:53:27 herbyderby Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -171,7 +171,7 @@ public class TestEnhancer extends TestCase {
     public void testEnhanceObject() throws Throwable {
         A obj = new A();
         obj.setName("herby");
-        obj = (A)Enhancer.enhanceObject(obj, null, NOOP_INTERCEPTOR, null, null);
+        obj = (A)Enhancer.enhance(obj, null, null, NOOP_INTERCEPTOR, null, null);
         assertTrue(obj.getName().equals("herby"));
     }
     
