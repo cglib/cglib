@@ -502,10 +502,8 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         float density = (float)len / range;
         boolean useTable = density >= minTableDensity;
 
-        Label start = make_label();
         Label def = make_label();
         Label end = make_label();
-        goTo(start);
 
         Label[] labels;
         if (useTable) {
@@ -514,6 +512,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             for (int i = 0; i < len; i++) {
                 labels[keys[i] - min] = make_label();
             }
+            getBackend().emit_switch(min, max, labels, def);
             for (int i = 0; i < range; i++) {
                 Label label = labels[i];
                 if (label != def) {
@@ -525,19 +524,15 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
             labels = new Label[len];
             for (int i = 0; i < len; i++) {
                 mark(labels[i] = make_label());
+            }
+            getBackend().emit_switch(keys, labels, def);
+            for (int i = 0; i < len; i++) {
                 callback.processCase(keys[i], end);
             }
         }
 
         mark(def);
         callback.processDefault();
-        goTo(end);
-        mark(start);
-        if (useTable) {
-            getBackend().emit_switch(min, max, labels, def);
-        } else {
-            getBackend().emit_switch(keys, labels, def);
-        }
         mark(end);
     }
 }
