@@ -53,6 +53,8 @@
  */
 package net.sf.cglib.core;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -71,6 +73,8 @@ public class ComplexOps {
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
 
+    private static final Signature GET_NAME =
+      TypeUtils.parseSignature("String getName()");
     private static final Signature FIND_CLASS =
       TypeUtils.parseSignature("Class CGLIB$findClass(String)");
     private static final Signature HASH_CODE =
@@ -426,50 +430,51 @@ public class ComplexOps {
         }
     }
 
-    public static void hash_code(CodeEmitter e, Type type, Customizer customizer) {
+    public static void hash_code(CodeEmitter e, Type type, int multiplier, Customizer customizer) {
         if (TypeUtils.isArray(type)) {
-            hash_array(e, type, customizer);
+            hash_array(e, type, multiplier, customizer);
         } else {
+            e.swap(Type.INT_TYPE, type);
+            e.push(multiplier);
+            e.math(e.MUL, Type.INT_TYPE);
+            e.swap(type, Type.INT_TYPE);
             if (TypeUtils.isPrimitive(type)) {
                 hash_primitive(e, type);
             } else {
                 hash_object(e, type, customizer);
             }
             e.math(e.ADD, Type.INT_TYPE);
-            e.swap();
-            e.dup_x1();
-            e.math(e.MUL, Type.INT_TYPE);
         }
     }
 
-    private static void hash_array(final CodeEmitter e, Type type, final Customizer customizer) {
-        Label isNull = e.make_label();
+    private static void hash_array(final CodeEmitter e, Type type, final int multiplier, final Customizer customizer) {
+        Label skip = e.make_label();
         Label end = e.make_label();
         e.dup();
-        e.ifnull(isNull);
+        e.ifnull(skip);
         ComplexOps.process_array(e, type, new ProcessArrayCallback() {
             public void processElement(Type type) {
-                hash_code(e, type, customizer);
+                hash_code(e, type, multiplier, customizer);
             }
         });
         e.goTo(end);
-        e.mark(isNull);
+        e.mark(skip);
         e.pop();
         e.mark(end);
     }
 
     private static void hash_object(CodeEmitter e, Type type, Customizer customizer) {
         // (f == null) ? 0 : f.hashCode();
-        Label isNull = e.make_label();
+        Label skip = e.make_label();
         Label end = e.make_label();
         e.dup();
-        e.ifnull(isNull);
+        e.ifnull(skip);
         if (customizer != null) {
             customizer.customize(e, type);
         }
         e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
         e.goTo(end);
-        e.mark(isNull);
+        e.mark(skip);
         e.pop();
         e.push(0);
         e.mark(end);
@@ -482,22 +487,22 @@ public class ComplexOps {
             e.push(1);
             e.math(e.XOR, Type.INT_TYPE);
             break;
-        case Type.DOUBLE:
-            // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            e.invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
-            hash_long(e);
         case Type.FLOAT:
             // Float.floatToIntBits(f)
             e.invoke_static(Constants.TYPE_FLOAT, FLOAT_TO_INT_BITS);
+            break;
+        case Type.DOUBLE:
+            // Double.doubleToLongBits(f), hash_code(Long.TYPE)
+            e.invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
+            // fall through
         case Type.LONG:
             hash_long(e);
-        default:
-            // (int)f
         }
     }
 
     private static void hash_long(CodeEmitter e) {
         // (int)(f ^ (f >>> 32))
+        e.dup2();
         e.push(32);
         e.math(e.USHR, Type.LONG_TYPE);
         e.math(e.XOR, Type.LONG_TYPE);
@@ -585,6 +590,7 @@ public class ComplexOps {
         e.mark(end);
     }
 
+    /*
     public static void to_string(CodeEmitter e,
                                  Type type,
                                  ArrayDelimiters delims,
@@ -592,9 +598,11 @@ public class ComplexOps {
         e.new_instance(Constants.TYPE_STRING_BUFFER);
         e.dup();
         e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
+        e.swap();
         append_string(e, type, delims, customizer);
         e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
     }
+    */
 
     public static void append_string(final CodeEmitter e,
                                      Type type,
@@ -629,7 +637,7 @@ public class ComplexOps {
                 e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
                 break;
             case Type.FLOAT:
-                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_FLOAT);
                 break;
             case Type.LONG:
                 e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_LONG);
@@ -695,5 +703,169 @@ public class ComplexOps {
         e.push(method.getName());
         push_object(e, method.getParameterTypes());
         e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
+    }
+
+    private interface ParameterTyper {
+        Class[] getParameterTypes(Object member);
+    }
+
+    public static void method_switch(CodeEmitter e,
+                                     Method[] methods,
+                                     ObjectSwitchCallback callback) {
+        member_switch_helper(e, Arrays.asList(methods), callback, true, new ParameterTyper() {
+            public Class[] getParameterTypes(Object member) {
+                return ((Method)member).getParameterTypes();
+            }
+        });
+    }
+
+    public static void constructor_switch(CodeEmitter e,
+                                          Constructor[] cstructs,
+                                          ObjectSwitchCallback callback) {
+        member_switch_helper(e, Arrays.asList(cstructs), callback, false, new ParameterTyper() {
+            public Class[] getParameterTypes(Object member) {
+                return ((Constructor)member).getParameterTypes();
+            }
+        });
+    }
+
+    private static void member_switch_helper(final CodeEmitter e,
+                                             List members,
+                                             final ObjectSwitchCallback callback,
+                                             boolean useName,
+                                             final ParameterTyper typer) {
+        try {
+            final Map cache = new HashMap();
+            final ParameterTyper cached = new ParameterTyper() {
+                    public Class[] getParameterTypes(Object member) {
+                        Class[] types = (Class[])cache.get(member);
+                        if (types == null) {
+                            cache.put(member, types = typer.getParameterTypes(member));
+                        }
+                        return types;
+                    }
+                };
+            final Label def = e.make_label();
+            final Label end = e.make_label();
+            if (useName) {
+                e.swap();
+                final Map buckets = CollectionUtils.bucket(members, new Transformer() {
+                        public Object transform(Object value) {
+                            return ((Member)value).getName();
+                        }
+                    });
+                String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+                        public void processCase(Object key, Label dontUseEnd) throws Exception {
+                            member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
+                        }
+                        public void processDefault() throws Exception {
+                            e.goTo(def);
+                        }
+                    });
+            } else {
+                member_helper_size(e, members, callback, cached, def, end);
+            }
+            e.mark(def);
+            e.pop();
+            callback.processDefault();
+            e.mark(end);
+        } catch (RuntimeException ex) {
+            throw ex;
+        } catch (Error ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new CodeGenerationException(ex);
+        }
+    }
+
+    private static void member_helper_size(final CodeEmitter e,
+                                           List members,
+                                           final ObjectSwitchCallback callback,
+                                           final ParameterTyper typer,
+                                           final Label def,
+                                           final Label end) throws Exception {
+        final Map buckets = CollectionUtils.bucket(members, new Transformer() {
+            public Object transform(Object value) {
+                return new Integer(typer.getParameterTypes(value).length);
+            }
+        });
+        e.dup();
+        e.arraylength();
+        e.process_switch(ComplexOps.getSwitchKeys(buckets), new ProcessSwitchCallback() {
+            public void processCase(int key, Label dontUseEnd) throws Exception {
+                List bucket = (List)buckets.get(new Integer(key));
+                Class[] types = typer.getParameterTypes(bucket.get(0));
+                member_helper_type(e, bucket, callback, typer, def, end, new TinyBitSet());
+            }
+            public void processDefault() throws Exception {
+                e.goTo(def);
+            }
+        });
+    }
+
+    private static void member_helper_type(final CodeEmitter e,
+                                           List members,
+                                           final ObjectSwitchCallback callback,
+                                           final ParameterTyper typer,
+                                           final Label def,
+                                           final Label end,
+                                           final TinyBitSet checked) throws Exception {
+        if (members.size() == 1) {
+            // need to check classes that have not already been checked via switches
+            Member member = (Member)members.get(0);
+            Class[] types = typer.getParameterTypes(member);
+            for (int i = 0; i < types.length; i++) {
+                if (checked == null || !checked.get(i)) {
+                    e.dup();
+                    e.aaload(i);
+                    e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
+                    e.push(types[i].getName());
+                    e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
+                    e.if_jump(e.EQ, def);
+                }
+            }
+            e.pop();
+            callback.processCase(member, end);
+        } else {
+            // choose the index that has the best chance of uniquely identifying member
+            Class[] example = typer.getParameterTypes(members.get(0));
+            Map buckets = null;
+            int index = -1;
+            for (int i = 0; i < example.length; i++) {
+                final int j = i;
+                Map test = CollectionUtils.bucket(members, new Transformer() {
+                    public Object transform(Object value) {
+                        return typer.getParameterTypes(value)[j].getName();
+                    }
+                });
+                if (buckets == null || test.size() > buckets.size()) {
+                    buckets = test;
+                    index = i;
+                }
+            }
+            if (buckets == null) {
+                // TODO: switch by returnType
+                // must have two methods with same name, types, and different return types
+                e.goTo(def);
+            } else {
+                checked.set(index);
+
+                e.dup();
+                e.aaload(index);
+                e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
+
+                final Map fbuckets = buckets;
+                String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
+                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+                    public void processCase(Object key, Label dontUseEnd) throws Exception {
+                        member_helper_type(e, (List)fbuckets.get(key), callback, typer, def, end, checked);
+                    }
+                    public void processDefault() throws Exception {
+                        e.goTo(def);
+                    }
+                });
+            }
+        }
     }
 }

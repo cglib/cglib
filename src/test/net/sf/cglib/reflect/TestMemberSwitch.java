@@ -119,7 +119,7 @@ public class TestMemberSwitch extends CodeGenTestCase {
                                                   ReflectUtils.getSignature(method),
                                                   ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
-            ReflectOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
+            ComplexOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         e.push(clist.indexOf(key));
                         e.goTo(end);
