@@ -11,6 +11,6 @@ public class ClassFilterTransformer extends AbstractClassFilterTransformer {
     }
 
     protected boolean accept(int access, String name, String superName, String[] interfaces, String sourceFile) {
-        return filter.accept(name);
+        return filter.accept(name.replace('/', '.'));
     }
 }
