@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.13 2002/12/06 19:06:53 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.14 2002/12/29 21:20:33 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -23,7 +23,7 @@
 
     <property name="dist.home" value="dist"/>
     <property name="source.home" value="src/proxy"/>
-    <property name="samples.source.home" value="src/samples"/>
+    <property name="samples.source.home" value="src/proxy/samples"/>
     <property name="source.test" value="src/test"/>
     
   
