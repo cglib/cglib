@@ -85,7 +85,7 @@ implements CallbackGenerator
     private static final Signature GET_CLASS_LOADER =
       TypeUtils.parseSignature("ClassLoader getClassLoader()");
     private static final Signature MAKE_PROXY =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.MethodProxy create(ClassLoader, Class, Class, String, String, String, boolean)");
+      TypeUtils.parseSignature("net.sf.cglib.proxy.MethodProxy create(ClassLoader, Class, Class, String, String, String)");
     private static final Signature INTERCEPT =
       TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.proxy.MethodProxy)");
     private static final Signature TO_STRING =
@@ -200,7 +200,6 @@ implements CallbackGenerator
             e.push(sig.getDescriptor());
             e.push(sig.getName());
             e.push(impl.getName());
-            e.push(context.getAttemptLoad());
             e.invoke_static(METHOD_PROXY, MAKE_PROXY);
             e.putfield(getMethodProxyField(impl));
         }

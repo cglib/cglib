@@ -71,9 +71,10 @@ abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
     private static final Object NAME_KEY = new Object();
+    private static final ThreadLocal CURRENT = new ThreadLocal();
 
     private GeneratorStrategy strategy = DefaultGeneratorStrategy.INSTANCE;
-    private NamingPolicy namingPolicy;
+    private NamingPolicy namingPolicy = DefaultNamingPolicy.INSTANCE;
     private Source source;
     private ClassLoader classLoader;
     private String namePrefix;
@@ -105,9 +106,8 @@ implements ClassGenerator
     }
 
     private String getClassName(ClassLoader loader) {
-        NamingPolicy np = (namingPolicy != null) ? namingPolicy : DefaultNamingPolicy.INSTANCE;
         final Set nameCache = getClassNameCache(loader);
-        return np.getClassName(namePrefix, source.name, key, new Predicate() {
+        return namingPolicy.getClassName(namePrefix, source.name, key, new Predicate() {
             public boolean evaluate(Object arg) {
                 return nameCache.contains(arg);
             }
@@ -137,7 +137,16 @@ implements ClassGenerator
      * @param namingPolicy the custom policy, or null to use the default
      */
     public void setNamingPolicy(NamingPolicy namingPolicy) {
+        if (namingPolicy == null)
+            namingPolicy = DefaultNamingPolicy.INSTANCE;
         this.namingPolicy = namingPolicy;
+    }
+
+    /**
+     * @see #setNamingPolicy
+     */
+    public NamingPolicy getNamingPolicy() {
+        return namingPolicy;
     }
 
     /**
@@ -149,6 +158,13 @@ implements ClassGenerator
     }
 
     /**
+     * @see #setUseCache
+     */
+    public boolean getUseCache() {
+        return useCache;
+    }
+
+    /**
      * If set, CGLIB will attempt to load classes from the specified
      * <code>ClassLoader</code> before generating them. Because generated
      * class names are not guaranteed to be unique, the default is <code>false</code>.
@@ -157,16 +173,36 @@ implements ClassGenerator
         this.attemptLoad = attemptLoad;
     }
 
+    public boolean getAttemptLoad() {
+        return attemptLoad;
+    }
+    
     /**
      * Set the strategy to use to create the bytecode from this generator.
      * By default an instance of {@see DefaultGeneratorStrategy} is used.
      */
     public void setStrategy(GeneratorStrategy strategy) {
+        if (strategy == null)
+            strategy = DefaultGeneratorStrategy.INSTANCE;
         this.strategy = strategy;
     }
 
-    // TODO: pluggable policy?
-    protected ClassLoader getClassLoader() {
+    /**
+     * @see #setStrategy
+     */
+    public GeneratorStrategy getStrategy() {
+        return strategy;
+    }
+
+    /**
+     * Used internally by CGLIB. Returns the <code>AbstractClassGenerator</code>
+     * that is being used to generate a class in the current thread.
+     */
+    public static AbstractClassGenerator getCurrent() {
+        return (AbstractClassGenerator)CURRENT.get();
+    }
+
+    public ClassLoader getClassLoader() {
         ClassLoader t = classLoader;
         if (t == null) {
             t = getDefaultClassLoader();
@@ -186,6 +222,7 @@ implements ClassGenerator
     abstract protected ClassLoader getDefaultClassLoader();
 
     protected Object create(Object key) {
+        Object save = CURRENT.get();
         try {
             Object instance = null;
             synchronized (source) {
@@ -201,6 +238,7 @@ implements ClassGenerator
                     instance = ( ref == null ) ? null : ref.get(); 
                 }
                 if (instance == null) {
+                    CURRENT.set(this);
                     this.key = key;
                     Class gen = null;
                     if (attemptLoad) {
@@ -230,6 +268,8 @@ implements ClassGenerator
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
+        } finally {
+            CURRENT.set(save);
         }
     }
 

@@ -1013,9 +1013,6 @@ public class Enhancer extends AbstractClassGenerator
                 final List fmethods = (List)groups.get(gen);
                 if (fmethods != null) {
                     CallbackGenerator.Context context = new CallbackGenerator.Context() {
-                        public boolean getAttemptLoad() {
-                            return attemptLoad;
-                        }
                         public int getOriginalModifiers(MethodInfo method) {
                             return ((Integer)originalModifiers.get(method)).intValue();
                         }

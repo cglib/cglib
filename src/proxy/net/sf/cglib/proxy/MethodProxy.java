@@ -56,9 +56,7 @@ package net.sf.cglib.proxy;
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.List;
-import net.sf.cglib.core.CodeGenerationException;
-import net.sf.cglib.core.ReflectUtils;
-import net.sf.cglib.core.Signature;
+import net.sf.cglib.core.*;
 import net.sf.cglib.reflect.*;
 
 /**
@@ -66,7 +64,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.10 2004/05/08 06:29:21 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.11 2004/05/09 19:04:01 herbyderby Exp $
  */
 public class MethodProxy {
     private Signature sig;
@@ -80,11 +78,11 @@ public class MethodProxy {
      * For internal use by {@link Enhancer} only; see the {@link net.sf.cglib.reflect.FastMethod} class
      * for similar functionality.
      */
-    public static MethodProxy create(ClassLoader loader, Class c1, Class c2, String desc, String name1, String name2, boolean attemptLoad) {
+    public static MethodProxy create(ClassLoader loader, Class c1, Class c2, String desc, String name1, String name2) {
         final Signature sig1 = new Signature(name1, desc);
         Signature sig2 = new Signature(name2, desc);
-        FastClass f1 = helper(loader, c1, attemptLoad);
-        FastClass f2 = helper(loader, c2, attemptLoad);
+        FastClass f1 = helper(loader, c1);
+        FastClass f2 = helper(loader, c2);
         int i1 = f1.getIndex(sig1);
         int i2 = f2.getIndex(sig2);
 
@@ -108,11 +106,16 @@ public class MethodProxy {
         return proxy;
     }
 
-    private static FastClass helper(ClassLoader loader, Class type, boolean attemptLoad) {
+    private static FastClass helper(ClassLoader loader, Class type) {
         FastClass.Generator g = new FastClass.Generator();
-        g.setAttemptLoad(attemptLoad);
         g.setType(type);
         g.setClassLoader(loader);
+        AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
+        if (fromEnhancer != null) {
+            g.setNamingPolicy(fromEnhancer.getNamingPolicy());
+            g.setStrategy(fromEnhancer.getStrategy());
+            g.setAttemptLoad(fromEnhancer.getAttemptLoad());
+        }
         return g.create();
     }
 
