@@ -102,7 +102,7 @@ public class Emitter {
     private ClassVisitor classv;
     private Type classType;
     private Type superType;
-    private Map endClassCallbacks = new HashMap();
+//     private Map endClassCallbacks = new HashMap();
     private Map fieldInfo = new HashMap();    
 
     // current method
@@ -112,7 +112,6 @@ public class Emitter {
     private String methodName;
     private Type returnType;
     private Type[] argumentTypes;
-    private boolean isStatic;
     private int localOffset;
     private int firstLocal;
     private int nextLocal;
@@ -192,16 +191,16 @@ public class Emitter {
 
     public void end_class() {
         closeMethod();
-        for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
-            ((EndClassCallback)it.next()).process();
-        }
+//         for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
+//             ((EndClassCallback)it.next()).process();
+//         }
         classv.visitEnd();
         classv = null; // for safety
     }
 
-    public void register(Object key, EndClassCallback callback) {
-        endClassCallbacks.put(key, callback);
-    }
+//     public void register(Object key, EndClassCallback callback) {
+//         endClassCallbacks.put(key, callback);
+//     }
     
     private static boolean isStatic(int access) {
         return (Constants.ACC_STATIC & access) != 0;
@@ -218,8 +217,7 @@ public class Emitter {
         methodName = sig.getName();
         returnType = sig.getReturnType();
         argumentTypes = sig.getArgumentTypes();
-        isStatic = isStatic(access);
-        localOffset = isStatic ? 0 : 1;
+        localOffset = isStatic(access) ? 0 : 1;
         remap.clear();
         
         firstLocal = nextLocal = localOffset + getStackSize(argumentTypes);
@@ -487,7 +485,7 @@ public class Emitter {
     }
     
     public void load_this() {
-        if (isStatic) {
+        if (isStatic(methodAccess)) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
         codev.visitVarInsn(Constants.ALOAD, 0);
@@ -807,9 +805,9 @@ public class Emitter {
         mark(end);
     }
 
-    public interface EndClassCallback {
-        void process();
-    }
+//     public interface EndClassCallback {
+//         void process();
+//     }
 
     private static boolean isSorted(int[] keys) {
         for (int i = 1; i < keys.length; i++) {
