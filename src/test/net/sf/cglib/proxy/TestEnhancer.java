@@ -59,18 +59,27 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.lang.reflect.*;
+
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.2 2002/09/22 15:17:04 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.3 2002/09/22 16:45:56 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
+    private boolean invokedProtectedMethod = false;
+    
+    private boolean invokedPackageMethod   = false;
+    
+    private boolean invokedAbstractMethod  = false;
     
     public TestEnhancer(String testName) {
         super(testName);
     }
+    
+
     
     public static Test suite() {
         return new TestSuite(TestEnhancer.class);
@@ -84,32 +93,11 @@ public class TestEnhancer extends TestCase {
     
     public void testEnhance()throws Throwable{
         
-        MethodInterceptor interceptor =
-        new MethodInterceptor(){
-            
-            
-            public boolean invokeSuper( Object obj,java.lang.reflect.Method method,
-            Object args[] )
-            throws java.lang.Throwable{
-                return true;
-            }
-            
-            
-            public Object afterReturn(  Object obj,     java.lang.reflect.Method method,
-            Object args[],
-            boolean invokedSuper, Object retValFromSuper,
-            java.lang.Throwable e )throws java.lang.Throwable{
-                assertTrue("Pure method " + method,invokedSuper);
-                return retValFromSuper;//return the same as supper
-            }
-            
-        };
+        MethodInterceptor interceptor =  new NoOpInterceptor();
         
-        java.util.Vector vector = (java.util.Vector)Enhancer.enhance(
+        java.util.Vector vector1 = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
         new Class[]{java.util.List.class},interceptor );
-        
-        
         
         java.util.Vector vector2  = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
@@ -118,24 +106,83 @@ public class TestEnhancer extends TestCase {
         
         
         
-        assertTrue("Cache failed",vector.getClass() == vector2.getClass());
-        //TODO : Add meanigful asserts
-        
-        String value = "VALUE";
-        vector.add(null);
-        
-        vector.elements();
-        vector.size();
-        vector.add(value);
-        vector.remove(value);
-        vector.remove(value);
-        vector.contains(value);
-        vector.get(0);
-        vector.contains(value);
-        vector.toArray(new Object[]{});
+        assertTrue("Cache failed",vector1.getClass() == vector2.getClass());
         
     }
     
+   
+   public void testMethods()throws Throwable{
+       
+       MethodInterceptor interceptor =
+        new NoOpInterceptor(){
+            
+            public Object afterReturn(  Object obj, Method method,
+            Object args[],
+            boolean invokedSuper, Object retValFromSuper,
+            java.lang.Throwable e )throws java.lang.Throwable{
+                int mod =  method.getModifiers(); 
+               
+                if( Modifier.isProtected( mod ) ){
+                 invokedProtectedMethod = true;
+                }
+               
+                if( Modifier.isAbstract( mod ) ){
+                   invokedAbstractMethod = true;
+                }
+                
+                
+                if( ! ( Modifier.isProtected( mod ) || Modifier.isPublic( mod ) )){
+                   invokedPackageMethod = true;
+                } 
+        
+                return retValFromSuper;//return the same as supper
+            }
+            
+        };
+        
+        
+   Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        new Class[]{java.util.List.class},interceptor );
+        
+        source.callAll();
+        assertTrue("protected", invokedProtectedMethod );
+        assertTrue("package", invokedPackageMethod );
+        assertTrue("abstract", invokedAbstractMethod );
+   }
+ 
+  public void testEnhanced()throws Throwable{
+    
+       MethodInterceptor interceptor =  new NoOpInterceptor();
+       Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        new Class[]{java.util.List.class}, interceptor );
+   
+       
+       TestCase.assertTrue("enhance", Source.class != source.getClass() );
+  
+  } 
+    
+  public void testTypes()throws Throwable{
+  
+     MethodInterceptor interceptor =  new NoOpInterceptor();
+     Source source =  (Source)Enhancer.enhance(
+        Source.class,
+        new Class[]{java.util.List.class}, interceptor );
+   
+     
+      
+     TestCase.assertTrue("intType",   1   == source.intType(1));
+     TestCase.assertTrue("longType",  1L  == source.longType(1L));
+     TestCase.assertTrue("floatType", 1f  == source.floatType(1f));
+     TestCase.assertTrue("doubleType",1.0 == source.doubleType(1.0));
+     TestCase.assertEquals("objectType","1", source.objectType("1") );
+     
+    
+   
+   }
+   
+   
 }
 
 
