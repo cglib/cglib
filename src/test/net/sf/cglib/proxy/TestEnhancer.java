@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.49 2004/12/23 03:46:25 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.50 2004/12/23 04:55:25 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -735,5 +735,36 @@ public class TestEnhancer extends CodeGenTestCase {
         assertEquals(42, ((ReturnTypeA)obj).foo("foo"));
         assertEquals("hello", ((ReturnTypeB)obj).foo("foo"));
         assertEquals(-1, FastClass.create(obj.getClass()).getIndex("foo", new Class[]{ String.class }));
+    }
+
+
+    public static class ConstructorCall
+    {
+        private String x;
+        public ConstructorCall() {
+            x = toString();
+        }
+        public String toString() {
+            return "foo";
+        }
+    }
+    
+    public void testInterceptDuringConstruction() {
+        FixedValue fixedValue = new FixedValue() {
+            public Object loadObject() {
+                return "bar";
+            }
+        };
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(ConstructorCall.class);
+        e.setCallback(fixedValue);
+        assertEquals("bar", ((ConstructorCall)e.create()).x);
+
+        e = new Enhancer();
+        e.setSuperclass(ConstructorCall.class);
+        e.setCallback(fixedValue);
+        e.setInterceptDuringConstruction(false);
+        assertEquals("foo", ((ConstructorCall)e.create()).x);
     }
 }
