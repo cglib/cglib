@@ -63,11 +63,13 @@ import net.sf.cglib.util.*;
  * @author Juozas Baliuka
  */
 abstract public class MetaClass  {
+    
+    private static final Object NULL = new Object();
     private static final FactoryCache cache = new FactoryCache(MetaClass.class);
     private static final MetaClassKey KEY_FACTORY =
-      (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
+    (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
     private static final MemberKey MEMBER_KEY_FACTORY =
-      (MemberKey)KeyFactory.create(MemberKey.class, null);
+    (MemberKey)KeyFactory.create(MemberKey.class, null);
     
     protected Class target;
     protected String[] getters, setters;
@@ -81,43 +83,97 @@ abstract public class MetaClass  {
     interface MemberKey {
         public Object newInstance(Class target, String name, Class[] types);
     }
-
+    
     protected MetaClass() { }
-
+    
     abstract public Object newInstance();
     abstract public Object[] getPropertyValues(Object bean);
     abstract public void setPropertyValues(Object bean, Object[] values);
-        
+    
     public Class[] getPropertyTypes() {
         return (Class[])types.clone();
     }
     
-    private void addMembers() {
-        Method[] methods = target.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
-            members.put(methodKey(m.getName(), m.getParameterTypes()), MethodProxy.create(m, m));
+    
+    public MethodProxy getMethod(String name, Class[] types) {
+        
+        Object key    = methodKey(name, types);
+        Object result = members.get(key);
+        
+        if( result == NULL ){
+            
+            return null;
+            
         }
         
-        Constructor[] constructors = target.getConstructors();
-        for (int i = 0; i < constructors.length; i++) {
-            Constructor c = constructors[i];
-            members.put(cstructKey(c.getParameterTypes()), ConstructorProxy.create(c));
+        if( result == null ){
+            
+            try{
+                
+                Method  m = target.getMethod( name, types);
+                
+                MethodProxy proxy = MethodProxy.create(m, m);
+                members.put(key, proxy );
+                return proxy;
+                
+            }catch(Exception e){
+                
+                members.put(key,NULL);
+                return null;
+                
+            }
+            
+        }else{
+            
+            return (MethodProxy)result;
         }
-    }
-
-    public MethodProxy getMethod(String name, Class[] types) {
-        return (MethodProxy)members.get(methodKey(name, types));
+        
+        
+        
+        
     }
     
     public ConstructorProxy getConstructor(Class[] types) {
-        return (ConstructorProxy)members.get(cstructKey(types));
+         
+        Object key    = cstructKey( types);
+        Object result = members.get(key);
+        
+        if( result == NULL ){
+            
+            return null;
+            
+        }
+        
+        if( result == null ){
+            
+            try{
+                
+                Constructor  c = target.getConstructor(types);
+                ConstructorProxy proxy = ConstructorProxy.create(c);
+                members.put(key, proxy );
+                
+                return proxy;
+                
+            }catch(Exception e){
+                
+                members.put(key,NULL);
+                return null;
+                
+            }
+            
+        }else{
+            
+            return (ConstructorProxy)result;
+        }
+        
+        
+   
     }
-
+    
     private Object methodKey(String methodName, Class[] parameterTypes) {
         return MEMBER_KEY_FACTORY.newInstance(target, methodName, parameterTypes);
     }
-
+    
     private Object cstructKey(Class[] parameterTypes) {
         return MEMBER_KEY_FACTORY.newInstance(target, "<init>", parameterTypes);
     }
@@ -129,36 +185,36 @@ abstract public class MetaClass  {
     public String[] getSetters() {
         return (String[])setters.clone();
     }
-        
+    
     public static MetaClass getInstance(ClassLoader loader,
-                                        final Class target,
-                                        final String[] getters,
-                                        final String[] setters,
-                                        final Class[] types) {
+    final Class target,
+    final String[] getters,
+    final String[] setters,
+    final Class[] types) {
         Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
         return (MetaClass)cache.get(loader, key, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new MetaClassGenerator(target, getters, setters, types);
+            public BasicCodeGenerator newGenerator() {
+                return new MetaClassGenerator(target, getters, setters, types);
+            }
+            public Object newInstance(Object factory, boolean isNew) {
+                if (isNew) {
+                    MetaClass singleton = (MetaClass)factory;
+                    singleton.target = target;
+                    
+                    int length = getters.length;
+                    singleton.getters = new String[length];
+                    System.arraycopy(getters, 0, singleton.getters, 0, length);
+                    
+                    singleton.setters = new String[length];
+                    System.arraycopy(setters, 0, singleton.setters, 0, length);
+                    
+                    singleton.types = new Class[types.length];
+                    System.arraycopy(types, 0, singleton.types, 0, types.length);
+                    
+                    
                 }
-                public Object newInstance(Object factory, boolean isNew) {
-                    if (isNew) {
-                        MetaClass singleton = (MetaClass)factory;
-                        singleton.target = target;
-
-                        int length = getters.length;
-                        singleton.getters = new String[length];
-                        System.arraycopy(getters, 0, singleton.getters, 0, length);
-
-                        singleton.setters = new String[length];
-                        System.arraycopy(setters, 0, singleton.setters, 0, length);
-                                               
-                        singleton.types = new Class[types.length];
-                        System.arraycopy(types, 0, singleton.types, 0, types.length);
-
-                        singleton.addMembers();
-                    }
-                    return factory;
-                }
-            });
+                return factory;
+            }
+        });
     }
 }

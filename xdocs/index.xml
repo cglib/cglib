@@ -34,7 +34,12 @@
         Both cglib and JCFE provide dynamic proxy implementation
       <li/>"<a href="http://voruta.sourceforge.net">Voruta</a>reduces JDBC code in application, it makes code more readable and safe, SQL procedures and queries are mapped to JAVA methods using custom javadoc tags and dynamic code generation at runtime. It needs no custom build tools or external files" 
         Uses cglib to generate method implementations.  
+      <li/>"<a href="http://nanning.codehaus.org"> Nanning Aspects </a>  is a simple yet scaleable aspect-oriented framework for Java." 
+      <li/>"<a href="http://www.springframework.org"> Spring </a> is a J2EE application framework based on code published in Expert One-on-One J2EE Design and Development http://www.wrox.com/books/1861007841.htm by Rod Johnson."
+      <li/>"<a href="http://www.ibatis.com">The iBATIS  Database Layer </a> takes a different approach to solving the Object Relational mapping problem --it avoids it altogether!"
+
     </ul>
+
    </p>
    </section> 
   </body>
