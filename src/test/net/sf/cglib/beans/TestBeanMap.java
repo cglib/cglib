@@ -120,6 +120,12 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(map.getPropertyType("kdkkj") == null);
     }
 
+    public void testEntrySet() {
+        TestBean bean = new TestBean();
+        BeanMap map = BeanMap.create(bean);
+        assertTrue(map.entrySet().size() == map.size());
+    }
+
     public void testNoUnderlyingBean() {
         BeanMap.Generator gen = new BeanMap.Generator();
         gen.setBeanClass(TestBean.class);
