@@ -58,30 +58,22 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.7 2002/12/22 00:21:17 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.8 2002/12/29 21:38:35 herbyderby Exp $
  */
 abstract public class MethodProxy {
-    private static/* final */Method INVOKE_SUPER = null;//bug in jdk1.2 javac
     private static final ClassNameFactory nameFactory = new ClassNameFactory("ProxiedByCGLIB");
-
-    static {
-        try {
-            Class[] types = new Class[]{ Object.class, Object[].class };
-            INVOKE_SUPER = MethodProxy.class.getDeclaredMethod("invokeSuper", types);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
+    private static final Method INVOKE_SUPER =
+      ReflectUtils.findMethod("MethodProxy.invokeSuper(Object, Object[])");
 
     abstract public Object invokeSuper(Object obj, Object[] args) throws Throwable;
 
     protected MethodProxy() { }
 
-    public static MethodProxy generate(Method method) {
-        return generate(method, null);
+    public static MethodProxy create(Method method) {
+        return create(method, null);
     }
 
-    public static MethodProxy generate(Method method, ClassLoader loader) {
+    public static MethodProxy create(Method method, ClassLoader loader) {
         try {
             Class methodClass = method.getDeclaringClass();
             if (loader == null) {

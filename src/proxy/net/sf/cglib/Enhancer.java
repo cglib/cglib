@@ -78,14 +78,14 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.13 2002/12/27 12:11:37 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.14 2002/12/29 21:38:02 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
     private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
     private static final EnhancerKey keyFactory =
-      (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
+      (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
     private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
     // should be package-protected but causes problems on jdk1.2
@@ -228,12 +228,12 @@ public class Enhancer {
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
-                Class mi = FactoryCache.forName(INTERCEPTOR_NAME, loader);
+                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
                 String className = nameFactory.getNextName(cls);
                 Class result = new EnhancerGenerator(className, cls, interfaces,
                                                      ih, loader, wreplace, delegating, filter).define();
                 Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
-                factory = (Factory)FactoryCache.newInstance(result, types, new Object[delegating ? 2 : 1]);
+                factory = (Factory)ReflectUtils.newInstance(result, types, new Object[delegating ? 2 : 1]);
                 cache.put(loader, key, factory);
             }
         }

@@ -63,21 +63,10 @@ import java.util.*;
     private static final String DELEGATE_FIELD = "CGLIB$DELEGATE";
     private static final Class[] NORMAL_ARGS = new Class[]{ MethodInterceptor.class };
     private static final Class[] DELEGATE_ARGS = new Class[]{ MethodInterceptor.class, Object.class };
-    private static final Method AROUND_ADVICE;
-    private static final Method MAKE_PROXY;
-
-
-    static {
-        try {
-            Class[] types = new Class[]{ Object.class, Method.class, Object[].class, MethodProxy.class };
-            AROUND_ADVICE = MethodInterceptor.class.getDeclaredMethod("aroundAdvice", types);
-
-            types = new Class[]{ Method.class };
-            MAKE_PROXY = MethodProxy.class.getDeclaredMethod("generate", types);
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
-    }
+    private static final Method AROUND_ADVICE =
+      ReflectUtils.findMethod("MethodInterceptor.aroundAdvice(Object, Method, Object[], MethodProxy)");
+    private static final Method MAKE_PROXY =
+      ReflectUtils.findMethod("MethodProxy.create(Method)");
 
     private Class[] interfaces;
     private Method wreplace;
@@ -443,7 +432,7 @@ import java.util.*;
 
              Class thisClass = findClass("NameOfThisClass");
              Method proxied = thisClass.getDeclaredMethod("CGLIB$ACCESS_O", args);
-             CGLIB$ACCESS_0 = MethodProxy.generate(proxied);
+             CGLIB$ACCESS_0 = MethodProxy.create(proxied);
            }
         */
         begin_static();
