@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.3 2003/09/29 22:56:26 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.4 2003/10/05 00:54:35 herbyderby Exp $
  */
 public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public interface MyKey {
@@ -85,16 +85,68 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
         public Object newInstance(Class returnType, Class[] parameterTypes);
     }
 
+    public interface PrimitivesKey {
+        public Object newInstance(boolean b, double d, float f, int i, long l);
+    }
+
+    public interface IntegerKey {
+        public Object newInstance(int i);
+    }
+
+    public interface LongKey {
+        public Object newInstance(long l);
+    }
+
+    public interface FloatKey {
+        public Object newInstance(float f);
+    }
+    
     public void testSimple() throws Exception {
         MyKey mykey = (MyKey)KeyFactory.create(MyKey.class);
         assertTrue(mykey.newInstance(5, new int[]{ 6, 7 }, false).hashCode() ==
                    mykey.newInstance(5, new int[]{ 6, 7 }, false).hashCode());
     }
 
+    private Object helper(Class type) {
+        KeyFactory.Generator gen = new KeyFactory.Generator();
+        gen.setInterface(type);
+        gen.setHashConstant(5);
+        gen.setHashMultiplier(3);
+        return gen.create();
+    }
+
+    public void testPrimitives() throws Exception {
+        PrimitivesKey factory = (PrimitivesKey)helper(PrimitivesKey.class);
+        Object instance = factory.newInstance(true, 1.234d, 5.678f, 100, 200L);
+        assertTrue(instance.hashCode() == 1525582882);
+    }
+
+    public void testInteger() throws Exception {
+        IntegerKey factory = (IntegerKey)helper(IntegerKey.class);
+        Object instance = factory.newInstance(7);
+        assertTrue(instance.hashCode() == 22);
+    }
+
+    public void testLong() throws Exception {
+        LongKey factory = (LongKey)helper(LongKey.class);
+        Object instance = factory.newInstance(7L);
+        assertTrue(instance.hashCode() == 22);
+    }
+
+    public void testFloat() throws Exception {
+        FloatKey factory = (FloatKey)helper(FloatKey.class);
+        Object instance = factory.newInstance(7f);
+        assertTrue(instance.hashCode() == 1088421903);
+    }
+    
     public void testNested() throws Exception {
-        MyKey2 mykey2 = (MyKey2)KeyFactory.create(MyKey2.class);
+        KeyFactory.Generator gen = new KeyFactory.Generator();
+        gen.setInterface(MyKey2.class);
+        gen.setHashConstant(17);
+        gen.setHashMultiplier(37);
+        MyKey2 mykey2 = (MyKey2)gen.create();
         Object instance = mykey2.newInstance(new int[][]{ { 1, 2 }, { 3, 4 } });
-        assertTrue(instance.hashCode() == -1836783069);
+        assertTrue(instance.hashCode() == 31914243);
     }
 
     public void testCharArray() throws Exception {

@@ -257,8 +257,29 @@ public class CodeEmitter extends CodeAdapter {
     public void dup2() { cv.visitInsn(Constants.DUP2); }
     public void dup_x1() { cv.visitInsn(Constants.DUP_X1); }
     public void dup_x2() { cv.visitInsn(Constants.DUP_X2); }
+    public void dup2_x1() { cv.visitInsn(Constants.DUP2_X1); }
+    public void dup2_x2() { cv.visitInsn(Constants.DUP2_X2); }
     public void swap() { cv.visitInsn(Constants.SWAP); }
     public void aconst_null() { cv.visitInsn(Constants.ACONST_NULL); }
+
+    public void swap(Type prev, Type type) {
+        if (type.getSize() == 1) {
+            if (prev.getSize() == 1) {
+                swap(); // same as dup_x1(), pop();
+            } else {
+                dup_x2();
+                pop();
+            }
+        } else {
+            if (prev.getSize() == 1) {
+                dup2_x1();
+                pop2();
+            } else {
+                dup2_x2();
+                pop2();
+            }
+        }
+    }
 
     public void monitorenter() { cv.visitInsn(Constants.MONITORENTER); }
     public void monitorexit() { cv.visitInsn(Constants.MONITOREXIT); }
@@ -486,7 +507,7 @@ public class CodeEmitter extends CodeAdapter {
         emit_field(Constants.PUTSTATIC, owner, name, type);
     }
 
-    // package-protected for ReflectOps, try to fix
+    // package-protected for ComplexOps, try to fix
     void emit_field(int opcode, Type ctype, String name, Type ftype) {
         cv.visitFieldInsn(opcode,
                              ctype.getInternalName(),

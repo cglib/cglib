@@ -103,13 +103,13 @@ class FastClassEmitter extends ClassEmitter {
         // getIndex(String, Class[])
         e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
         e.load_args();
-        ReflectOps.method_switch(e, methods, new GetIndexCallback(e, methods));
+        ComplexOps.method_switch(e, methods, new GetIndexCallback(e, methods));
         e.end_method();
 
         // getIndex(Class[])
         e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
         e.load_args();
-        ReflectOps.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
+        ComplexOps.constructor_switch(e, constructors, new GetIndexCallback(e, constructors));
         e.end_method();
 
         // invoke(int, Object, Object[])

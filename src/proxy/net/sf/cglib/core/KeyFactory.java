@@ -96,7 +96,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.12 2003/10/04 21:59:17 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.13 2003/10/05 00:54:35 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -161,6 +161,8 @@ abstract public class KeyFactory {
         private static final Source SOURCE = new Source(KeyFactory.class.getName());
         private Class keyInterface;
         private Customizer customizer;
+        private int constant;
+        private int multiplier;
 
         public Generator() {
             super(SOURCE);
@@ -181,6 +183,14 @@ abstract public class KeyFactory {
         public KeyFactory create() {
             setNamePrefix(keyInterface.getName());
             return (KeyFactory)super.create(keyInterface.getName());
+        }
+
+        public void setHashConstant(int constant) {
+            this.constant = constant;
+        }
+
+        public void setHashMultiplier(int multiplier) {
+            this.multiplier = multiplier;
         }
 
         protected Object firstInstance(Class type) {
@@ -208,8 +218,6 @@ abstract public class KeyFactory {
             ComplexOps.null_constructor(ce);
             ComplexOps.factory_method(ce, ReflectUtils.getSignature(newInstance));
 
-            // TODO: change to exactly follow Effective Java recommendations
-            // constructor
             int seed = 0;
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                             TypeUtils.parseConstructor(parameterTypes),
@@ -232,15 +240,14 @@ abstract public class KeyFactory {
             
             // hash code
             e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
-            e.push(PRIMES[(int)(seed % PRIMES.length)]);
-            e.push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
+            int hc = (constant != 0) ? constant : PRIMES[(int)(seed % PRIMES.length)];
+            int hm = (multiplier != 0) ? multiplier : PRIMES[(int)((seed * 13) % PRIMES.length)];
+            e.push(hc);
             for (int i = 0; i < parameterTypes.length; i++) {
                 e.load_this();
                 e.getfield(getFieldName(i));
-                ComplexOps.hash_code(e, parameterTypes[i], customizer);
+                ComplexOps.hash_code(e, parameterTypes[i], hm, customizer);
             }
-            e.swap();
-            e.pop();
             e.return_value();
             e.end_method();
 
