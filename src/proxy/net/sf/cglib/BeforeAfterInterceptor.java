@@ -56,29 +56,14 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * An implementation of MethodInterceptor provides separate callbacks for
+ * An implementation of Callback that provides separate callbacks for
  * code to execute before and after the original method execution.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: BeforeAfterInterceptor.java,v 1.9 2003/05/13 06:17:09 herbyderby Exp $
+ * @version $Id: BeforeAfterInterceptor.java,v 1.10 2003/09/04 18:53:46 herbyderby Exp $
  */
-abstract public class BeforeAfterInterceptor implements MethodInterceptor {
-
-    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable {
-        Throwable e = null;                                                                            
-        boolean invokedSuper = false;                                                                  
-        Object retValFromSuper = null;
-        if (  !java.lang.reflect.Modifier.isAbstract( method.getModifiers() ) && 
-              invokeSuper(obj, method, args)) {
-            invokedSuper = true;                                                                        
-            try {
-                retValFromSuper = proxy.invokeSuper(obj, args);
-            } catch (Throwable t) {
-                e = t;
-            }
-        }
-        return afterReturn(obj, method, args, invokedSuper, retValFromSuper, e);
-    }
-    
+public interface BeforeAfterInterceptor
+extends Callback
+{
     /**
      * This method is called before invoking the super (non-intercepted) method.
      * @param obj  "this", the enhanced object
@@ -87,8 +72,8 @@ abstract public class BeforeAfterInterceptor implements MethodInterceptor {
      * @return true to invoke super method, false to skip
      * @throws Throwable any exception may be thrown; super method will not be invoked
      */    
-    abstract public boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable;
-    
+    boolean invokeSuper(Object obj, Method method, Object[] args) throws Throwable;
+
     /**
      * This method is called after invoking the super (non-intercepted) method, or
      * directly after the invokeSuper interceptor method, if it returned false.
@@ -101,7 +86,7 @@ abstract public class BeforeAfterInterceptor implements MethodInterceptor {
      * @return value to return from generated method; primitive will be unwrapped if necessary
      * @throws Throwable any exception may be thrown
      */    
-    abstract public Object afterReturn(Object obj, Method method, Object[] args,
-                                       boolean invokedSuper, Object retValFromSuper,
-                                       Throwable e) throws Throwable;
+    Object afterReturn(Object obj, Method method, Object[] args,
+                       boolean invokedSuper, Object retValFromSuper,
+                       Throwable e) throws Throwable;
 }

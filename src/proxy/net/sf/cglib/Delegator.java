@@ -62,7 +62,7 @@ import net.sf.cglib.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.22 2003/07/15 16:38:46 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.23 2003/09/04 18:53:46 herbyderby Exp $
  * @author Chris Nokleberg
  */
 public class Delegator {
@@ -76,7 +76,7 @@ public class Delegator {
     }
 
     private Delegator() { }
-    
+
     public interface Factory {
         final Class TYPE = Delegator.Factory.class;
         public Object newInstance(Object[] delegates);

@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.32 2003/08/27 16:51:52 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.33 2003/09/04 18:53:45 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -344,10 +344,9 @@ public class TestEnhancer extends CodeGenTestCase {
         
         assertTrue("type",  ser instanceof Source );
         assertTrue("interceptor",
-        Enhancer.getMethodInterceptor(ser) instanceof TestInterceptor );
+                   ((Factory)ser).getCallback(Callbacks.INTERCEPT) instanceof TestInterceptor );
         
-        TestInterceptor interceptor = (TestInterceptor)Enhancer.getMethodInterceptor(ser);
-        
+        TestInterceptor interceptor = (TestInterceptor)((Factory)ser).getCallback(Callbacks.INTERCEPT);
         assertEquals("testValue", testValue, interceptor.getValue()  );
     }
 
@@ -474,21 +473,23 @@ public class TestEnhancer extends CodeGenTestCase {
     
      public void testArgInit() throws Throwable{
     
-         Class f = Enhancer.enhanceClass(ArgInit.class, null, null, (MethodFilter)null );
+         Class f = Enhancer.enhanceClass(ArgInit.class, null, null, new SimpleFilter(Callbacks.INTERCEPT));
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
          assertEquals("test", a.toString());
-          ((Factory)a).interceptor(TEST_INTERCEPTOR);
+         ((Factory)a).setCallback(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
          assertEquals("test", a.toString());
+         SimpleCallbacks callbacks = new SimpleCallbacks();
+         callbacks.set(Callbacks.INTERCEPT, TEST_INTERCEPTOR);
          ArgInit b = (ArgInit)((Factory)a).newInstance(new Class[]{ String.class },
                                                        new Object[]{ "test2" },
-                                                       TEST_INTERCEPTOR);
+                                                       callbacks);
          assertEquals("test2", b.toString());
          try{
-         
-             ((Factory)a).newInstance( new Class[]{  String.class, String.class },
-                                       new Object[]{"test"}, TEST_INTERCEPTOR );
+             ((Factory)a).newInstance(new Class[]{  String.class, String.class },
+                                      new Object[]{"test"},
+                                      callbacks);
              fail("must throw exception");
          }catch( IllegalArgumentException iae ){
          
@@ -503,7 +504,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
     public void testSignature() throws Throwable {
         Signature sig = (Signature)Enhancer.enhance(Signature.class, TEST_INTERCEPTOR);
-        assertTrue(((Factory)sig).interceptor() == TEST_INTERCEPTOR);
+        assertTrue(((Factory)sig).getCallback(Callbacks.INTERCEPT) == TEST_INTERCEPTOR);
         assertTrue(sig.interceptor() == 42);
     }
 

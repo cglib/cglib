@@ -53,22 +53,16 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
+import net.sf.cglib.util.CodeGenerator;
 
-class FixedKeySet extends AbstractSet {
-    private Set set;
-    private int size;
+class NoOpGenerator
+implements CallbackGenerator
+{
+    public static final NoOpGenerator INSTANCE = new NoOpGenerator();
 
-    public FixedKeySet(String[] keys) {
-        size = keys.length;
-        set = Collections.unmodifiableSet(new HashSet(Arrays.asList(keys)));
-    }
-
-    public Iterator iterator() {
-        return set.iterator();
-    }
-
-    public int size() {
-        return size;
-    }
+    public void generate(CodeGenerator cg, Context context) { }
+    public void generateStatic(CodeGenerator cg, Context context) { }
 }

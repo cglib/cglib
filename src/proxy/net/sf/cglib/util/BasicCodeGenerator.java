@@ -790,7 +790,7 @@ abstract public class BasicCodeGenerator {
     }
 
     public void declare_field(int modifiers, Class type, String name) {
-        if (getFieldInfo(name) != null) {
+        if (fieldInfo.get(name) != null) {
             throw new IllegalArgumentException("Field \"" + name + "\" already exists");
         }
         backend.declare_field(modifiers, type, name);
@@ -798,7 +798,11 @@ abstract public class BasicCodeGenerator {
     }
     
     private FieldInfo getFieldInfo(String name) {
-        return (FieldInfo)fieldInfo.get(name);
+        FieldInfo field = (FieldInfo)fieldInfo.get(name);
+        if (field == null) {
+            throw new IllegalArgumentException("Field " + name + " is not declared");
+        }
+        return field;
     }
     
     private static class FieldInfo {

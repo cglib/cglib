@@ -53,23 +53,23 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.*;
 
-public class NotFromObjectFilter implements MethodFilter {
-    public static final NotFromObjectFilter INSTANCE = new NotFromObjectFilter();
-    private static final Set OBJECT_METHODS = new HashSet();
+class HandlerAdapter implements BeforeAfterInterceptor {
+    InvocationHandler handler;
 
-    static {
-        Method[] methods = Object.class.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            OBJECT_METHODS.add(MethodWrapper.create(methods[i]));
-        }
+    public HandlerAdapter(InvocationHandler handler) {
+        this.handler = handler;
     }
-    
-    public boolean accept(Member method) {
-        return !OBJECT_METHODS.contains(MethodWrapper.create((Method)method));
+
+    public boolean invokeSuper(Object obj, Method method, Object[] args) {
+        return false;
+    }
+
+    public Object afterReturn(Object obj, Method method, Object[] args,
+                              boolean invokedSuper, Object retValFromSuper,
+                              Throwable e) throws Throwable {
+        return handler.invoke(obj, method, args);
     }
 }
 

@@ -91,7 +91,7 @@ import net.sf.cglib.util.*;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.43 2003/08/27 16:51:53 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.44 2003/09/04 18:53:46 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache(Enhancer.class);
@@ -106,15 +106,6 @@ public class Enhancer {
     private Enhancer() { }
 
     /**
-     * Helper method to get the current interceptor for an enhanced object.
-     * @throws ClassCastException If the object is not an enhanced object (i.e. does not implement Factory).
-     * @see Factory#interceptor()
-     */
-    public static MethodInterceptor getMethodInterceptor(Object enhanced) {
-        return ((Factory)enhanced).interceptor();
-    }
-    
-    /**
      * Overrides non-abstract methods and implements all abstract methods.  
      * The returned instance extends/implements the supplied class, and
      * additionally implements the Factory interface.
@@ -122,27 +113,27 @@ public class Enhancer {
      * @param ih interceptor used to handle implemented methods
      * @return instance of supplied Class; new Class is defined in the same class loader
      */
-    public static Factory enhance(Class cls, MethodInterceptor ih) {
+    public static Factory enhance(Class cls, Callback callback) {
         return (Factory)enhanceHelper(cls.isInterface() ? null : cls,
                                       cls.isInterface() ? new Class[]{ cls } : null,
-                                      adapt(ih), cls.getClassLoader(), null, null );
+                                      callback, cls.getClassLoader(), null, null );
     }
      
     /**
      * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, null, null, null);</pre>
      * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
      */
-    public static Object enhance(Class cls, Class interfaces[], MethodInterceptor ih) {
-        return enhanceHelper(cls, interfaces, adapt(ih), null, null, null);
+    public static Object enhance(Class cls, Class interfaces[], Callback callback) {
+        return enhanceHelper(cls, interfaces, callback, null, null, null);
     }
 
     /**
      * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, loader, null, null);</pre>
      * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
      */
-    public static Object enhance(Class cls, Class interfaces[], MethodInterceptor ih,
+    public static Object enhance(Class cls, Class interfaces[], Callback callback,
                                  ClassLoader loader) {
-        return enhanceHelper(cls, interfaces, adapt(ih), loader, null, null);
+        return enhanceHelper(cls, interfaces, callback, loader, null, null);
    
     } 
 
@@ -150,9 +141,9 @@ public class Enhancer {
      * Helper method, has same effect as <pre>return enhance(cls, interfaces, ih, loader, wreplace, null);</pre>
      * @see #enhance(Class, Class[], MethodInterceptor, ClassLoader, Method, MethodFilter)
      */
-    public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
+    public static Object enhance(Class cls, Class[] interfaces, Callback callback,
                                  ClassLoader loader, Method wreplace) {
-        return enhanceHelper(cls, interfaces, adapt(ih), loader, wreplace, null);
+        return enhanceHelper(cls, interfaces, callback, loader, wreplace, null);
     }
 
     /**
@@ -172,11 +163,6 @@ public class Enhancer {
      * @see InternalReplace#writeReplace(Object)
      * @see Factory
      */
-    public static Object enhance(Class cls, Class[] interfaces, MethodInterceptor ih,
-                                 ClassLoader loader, Method wreplace, MethodFilter filter) {
-        return enhanceHelper(cls, interfaces, adapt(ih), loader, wreplace, adapt(filter));
-    }
-
     public static Object enhance(Class cls, Class[] interfaces, Callbacks callbacks,
                                  ClassLoader loader, Method wreplace, CallbackFilter filter) {
         return enhanceHelper(cls, interfaces, callbacks, loader, wreplace, filter);
@@ -188,19 +174,15 @@ public class Enhancer {
      * @param cls class to extend, uses Object.class if null
      * @param interfaces interfaces to implement, can be null or empty
      * @param loader ClassLoader for enhanced class, uses "current" if null
-     * @param filter a filter to prevent certain methods from being intercepted, may be null to intercept all possible methods
+     * @param filter a filter to prevent certain methods from being intercepted
      */
-    public static Class enhanceClass(Class cls,
-                                     Class[] interfaces,
-                                     ClassLoader loader,
-                                     MethodFilter filter) {
-        return enhanceClass(cls, interfaces, loader, adapt(filter));
-    }
-
     public static Class enhanceClass(Class cls,
                                      final Class[] interfaces,
                                      ClassLoader loader,
                                      final CallbackFilter filter) {
+        if (filter == null) {
+            throw new IllegalArgumentException("CallbackFilter is required for enhanceClass");
+        }
         final Class base = (cls == null) ? Object.class : cls;
         return (Class)
             cache.get(loader,
@@ -213,55 +195,43 @@ public class Enhancer {
     }
 
     private static Object enhanceHelper(Class cls,
+                                        Class[] interfaces,
+                                        final Callback callback,
+                                        ClassLoader loader,
+                                        Method wreplace,
+                                        CallbackFilter filter) {
+        Callbacks callbacks = new Callbacks() {
+            public Callback get(int type) {
+                return callback;
+            }
+        };
+        if (filter == null) {
+            filter = new SimpleFilter(Callbacks.determineType(callback));
+        }
+        return enhanceHelper(cls, interfaces, callbacks, loader, wreplace, filter);
+    }
+    
+    private static Object enhanceHelper(Class cls,
                                         final Class[] interfaces,
                                         final Callbacks callbacks,
                                         ClassLoader loader,
                                         final Method wreplace,
                                         final CallbackFilter filter) {
-//         if (callbacks == null) {
-//             throw new IllegalArgumentException("MethodInterceptor is null");
-//         }
         final Class base = (cls == null) ? Object.class : cls;
         Object key = KEY_FACTORY.newInstance(base, interfaces, wreplace, filter);
         return cache.get(loader, key, new FactoryCache.AbstractCallback() {
-                public BasicCodeGenerator newGenerator() {
-                    return new EnhancerGenerator(base, interfaces, wreplace, filter, callbacks);
+            public BasicCodeGenerator newGenerator() {
+                return new EnhancerGenerator(base, interfaces, wreplace, filter, callbacks);
+            }
+            public Object newInstance(Object factory, boolean isNew) {
+                if (isNew) {
+                    ((Factory)factory).setCallbacks(callbacks);
+                    return factory;
+                } else {
+                    return ((Factory)factory).newInstance(callbacks);
                 }
-                public Object newInstance(Object factory, boolean isNew) {
-                    if (isNew) {
-                        ((Factory)factory).callbacks(callbacks);
-                        return factory;
-                    } else {
-                        return ((Factory)factory).newInstance(callbacks);
-                    }
-                }
-            });
-    }
-
-    private static CallbackFilter adapt(final MethodFilter filter) {
-        if (filter == null) {
-            return null;
-        }
-        return new CallbackFilter() {
-                public int accept(Member member) {
-                    return filter.accept(member) ? Callbacks.INTERCEPT : Callbacks.NO_OP;
-                }
-                public boolean equals(Object o) {
-                    return filter.equals(o);
-                }
-                public int hashCode() {
-                    return filter.hashCode();
-                }
-            };
-    }
-
-    private static Callbacks adapt(MethodInterceptor interceptor) {
-        if (interceptor == null) {
-            return null;
-        }
-        Callbacks callbacks = new Callbacks();
-        callbacks.set(Callbacks.INTERCEPT, interceptor);
-        return callbacks;
+            }
+        });
     }
     
     /**
@@ -284,7 +254,7 @@ public class Enhancer {
         }
 
         public static Object writeReplace(Object enhanced) throws ObjectStreamException {
-            MethodInterceptor mi = Enhancer.getMethodInterceptor(enhanced);
+            MethodInterceptor mi = (MethodInterceptor)((Factory)enhanced).getCallback(Callbacks.INTERCEPT);
             String parentClassName = enhanced.getClass().getSuperclass().getName();
             Class interfaces[] = enhanced.getClass().getInterfaces();
             List interfaceNames = new ArrayList(interfaces.length);

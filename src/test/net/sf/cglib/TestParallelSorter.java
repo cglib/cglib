@@ -53,6 +53,7 @@
  */
 package net.sf.cglib;
 
+import net.sf.cglib.algorithm.*;
 import java.lang.reflect.Method;
 import java.util.*;
 import junit.framework.*;
@@ -60,7 +61,7 @@ import java.io.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.5 2003/02/02 03:53:52 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.6 2003/09/04 18:53:45 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
     public void testSorts() throws Throwable {

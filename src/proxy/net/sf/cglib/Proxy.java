@@ -71,25 +71,13 @@ import net.sf.cglib.util.CodeGenerationException;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.9 2003/08/27 16:51:53 herbyderby Exp $
+ * @version $Id: Proxy.java,v 1.10 2003/09/04 18:53:46 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
 
-    private static class HandlerAdapter implements MethodInterceptor {
-        private InvocationHandler handler;
-
-        public HandlerAdapter(InvocationHandler handler) {
-            this.handler = handler;
-        }
-
-        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-            return handler.invoke(obj, method, args);
-        }
-    }
-
     protected Proxy(InvocationHandler h) {
-        ((Factory)this).callback(Callbacks.JDK_PROXY, new HandlerAdapter(h));
+        ((Factory)this).setCallback(Callbacks.JDK_PROXY, new HandlerAdapter(h));
     }
 
     // private for security of isProxyClass
@@ -100,15 +88,11 @@ public class Proxy implements Serializable {
     }
 
     public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((HandlerAdapter)((Factory)proxy).callback(Callbacks.JDK_PROXY)).handler;
+        return ((HandlerAdapter)((Factory)proxy).getCallback(Callbacks.JDK_PROXY)).handler;
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, new CallbackFilter() {
-                public int accept(Member member) {
-                    return Callbacks.JDK_PROXY;
-                }
-            });
+        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, new SimpleFilter(Callbacks.JDK_PROXY));
     }
 
     public static boolean isProxyClass(Class cl) {

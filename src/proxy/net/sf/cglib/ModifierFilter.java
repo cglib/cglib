@@ -55,7 +55,7 @@ package net.sf.cglib;
 
 import java.lang.reflect.Member;
 
-public class ModifierFilter implements MethodFilter {
+class ModifierFilter implements MethodFilter {
     private int mask;
     private int value;
 
@@ -66,15 +66,6 @@ public class ModifierFilter implements MethodFilter {
     
     public boolean accept(Member method) {
         return (method.getModifiers() & mask) == value;
-    }
-
-    public int hashCode() {
-       return mask * 37 + value * 37;
-    }
-
-    public boolean equals(Object obj) {
-        ModifierFilter other = (ModifierFilter)obj;
-        return other.mask == mask && other.value == value;
     }
 }
 

@@ -53,65 +53,90 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.util.*;
 
-class LazyLoaderGenerator
-implements CallbackGenerator
+class BeforeAfterGenerator
+extends MethodInterceptorGenerator
 {
-    public static final LazyLoaderGenerator INSTANCE = new LazyLoaderGenerator();
+    public static final BeforeAfterGenerator INSTANCE = new BeforeAfterGenerator();
 
-    private static final String DELEGATE = "CGLIB$LAZY_LOADER";
-    private static final String LOAD_PRIVATE = "CGLIB$LOAD_PRIVATE";
-    private static final Method LOAD_OBJECT =
-      ReflectUtils.findMethod("LazyLoader.loadObject()");
+    private static final Method INVOKE_SUPER =
+      ReflectUtils.findMethod("BeforeAfterInterceptor.invokeSuper(Object, Method, Object[])");
+    private static final Method AFTER_RETURN =
+      ReflectUtils.findMethod("BeforeAfterInterceptor.afterReturn(Object, Method, Object[], boolean, Object, Throwable)");
 
-    public void generate(CodeGenerator cg, Context context) {
-        cg.declare_field(Modifier.PRIVATE, Object.class, DELEGATE);
+    protected void generateAroundMethod(CodeGenerator cg,
+                                        Context context,
+                                        Method method) {
+        cg.begin_method(method, context.getModifiers(method));
+        Block handler = cg.begin_block();
 
-        cg.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
-                        Object.class,
-                        LOAD_PRIVATE,
-                        null,
-                        null);
-        cg.load_this();
-        cg.getfield(DELEGATE);
-        cg.dup();
-        Label end = cg.make_label();
-        cg.ifnonnull(end);
-        cg.pop();
-        cg.load_this();
-        context.emitCallback();
-        cg.checkcast(LazyLoader.class);
-        cg.invoke(LOAD_OBJECT);
-        cg.dup_x1();
-        cg.putfield(DELEGATE);
-        cg.mark(end);
-        cg.return_value();
-        cg.end_method();
+        Local args = cg.make_local();
+        Local resultFromSuper = cg.make_local();
+        Local superInvoked = cg.make_local(Boolean.TYPE);
+        Local error = cg.make_local();
+        
+        cg.create_arg_array();
+        cg.store_local(args);
+        cg.aconst_null();
+        cg.store_local(resultFromSuper);
+        cg.push(0);
+        cg.store_local(superInvoked);
+        cg.aconst_null();
+        cg.store_local(error);
 
-        for (Iterator it = context.getMethods(); it.hasNext();) {
-            Method method = (Method)it.next();
-            if (Modifier.isProtected(method.getModifiers())) {
-                // ignore protected methods
-            } else {
-                cg.begin_method(method, context.getModifiers(method));
-                Block handler = cg.begin_block();
-                cg.load_this();
-                cg.dup();
-                cg.invoke_virtual_this(LOAD_PRIVATE, Object.class, null);
-                cg.checkcast(method.getDeclaringClass());
-                cg.load_args();
-                cg.invoke(method);
-                cg.return_value();
-                cg.end_block();
-                cg.handle_undeclared(method.getExceptionTypes(), handler);
-                cg.end_method();
+        if (!Modifier.isAbstract(method.getModifiers())) {
+            context.emitCallback();
+            cg.load_this();
+            cg.getfield(getFieldName(context, method));
+            cg.load_local(args);
+            cg.invoke(INVOKE_SUPER);
+
+            Label endif = cg.make_label();
+            cg.ifeq(endif);
+            cg.push(1);
+            cg.store_local(superInvoked);
+
+            Block h2 = cg.begin_block();
+            cg.load_this();
+            cg.load_args();
+            cg.super_invoke();
+            if (!method.getReturnType().equals(Void.TYPE)) {
+                cg.box(method.getReturnType());
+                cg.store_local(resultFromSuper);
             }
+            cg.goTo(endif);
+            cg.end_block();
+            
+            cg.catch_exception(h2, Throwable.class);
+            cg.store_local(error);
+            cg.mark(endif);
         }
+        
+        context.emitCallback();
+        cg.load_this();
+        cg.getfield(getFieldName(context, method));
+        cg.load_local(args);
+        cg.load_local(superInvoked);
+        cg.load_local(resultFromSuper);
+        cg.load_local(error);
+        cg.invoke(AFTER_RETURN);
+
+        unbox(cg, method.getReturnType());
+        cg.return_value();
+
+        cg.end_block();
+        cg.handle_undeclared(method.getExceptionTypes(), handler);
+        cg.end_method();
     }
 
-    public void generateStatic(CodeGenerator cg, Context context) { }
+    protected boolean needsMethodProxy() {
+        return false;
+    }
+
+    protected void unbox(CodeGenerator cg, Class type) {
+        cg.unbox_or_zero(type);
+    }
 }

@@ -59,7 +59,7 @@ package net.sf.cglib;
  * If you want methods called during object construction to be intercepted,
  * use one of the newInstance methods here instead of via reflection.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.11 2003/08/27 16:51:53 herbyderby Exp $
+ * @version $Id: Factory.java,v 1.12 2003/09/04 18:53:46 herbyderby Exp $
  */
 public interface Factory {
     /**
@@ -67,12 +67,8 @@ public interface Factory {
      * @param ih the new interceptor to use
      * @return new instance
      */     
-    Object newInstance(MethodInterceptor ih);
-
-    /**
-     * Returns the current interceptor in use.
-     */
-    MethodInterceptor interceptor();
+    Object newInstance(Callback callback);
+    Object newInstance(Callbacks callbacks);
 
     /**
      * Creates a new instance of the same type, using the constructor
@@ -81,16 +77,16 @@ public interface Factory {
      * @param args the constructor arguments
      * @param ih the new interceptor to use
      */
-    Object newInstance(Class types[], Object args[], MethodInterceptor ih);
+    Object newInstance(Class[] types, Object[] args, Callbacks callbacks);
+    
+    /**
+     * Returns the current interceptor in use.
+     */
+    Callback getCallback(int type);
 
     /**
      * Set the current interceptor for this object.
      */
-    void interceptor(MethodInterceptor ih);
-
-    Object newInstance(Callbacks callbacks);
-    Object newInstance(Class[] types, Object[] args, Callbacks callbacks);
-    Callback callback(int type);
-    void callback(int type, Callback callback);
-    void callbacks(Callbacks callbacks);
+    void setCallback(int type, Callback callback);
+    void setCallbacks(Callbacks callbacks);
 }
