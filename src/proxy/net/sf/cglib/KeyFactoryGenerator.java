@@ -58,9 +58,10 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.8 2003/01/05 12:54:13 baliuka Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.9 2003/01/05 23:55:43 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
+    private static final Method GET_ARGS = ReflectUtils.findMethod("KeyFactory.getArgs()");
     private Class keyInterface;
     private Method newInstance;
     private Class[] parameterTypes;
@@ -120,6 +121,7 @@ class KeyFactoryGenerator extends CodeGenerator {
         generateConstructor();
         generateFactory();
         generateEquals();
+        generateGetArgs();
     }
 
     private void generateConstructor() throws NoSuchFieldException {
@@ -128,11 +130,10 @@ class KeyFactoryGenerator extends CodeGenerator {
         super_invoke_constructor();
         load_this();
         for (int i = 0; i < numArgs; i++) {
-            String fieldName = "FIELD_" + i;
-            declare_field(Modifier.PRIVATE | Modifier.FINAL, parameterTypes[i], fieldName);
+            declare_field(Modifier.PRIVATE | Modifier.FINAL, parameterTypes[i], getFieldName(i));
             dup();
             load_arg(i);
-            putfield(fieldName);
+            putfield(getFieldName(i));
         }
         loadAndStoreConstant("hashMultiplier");
         loadAndStoreConstant("hashConstant");
@@ -239,24 +240,43 @@ class KeyFactoryGenerator extends CodeGenerator {
         end_method();
     }
 
+    private String getFieldName(int arg) {
+        return "FIELD_" + arg;
+    }
+
     private void generateEquals() {
         begin_method(MethodConstants.EQUALS);
         load_arg(0);
         instance_of_this();
         ifeq("failure");
         for (int i = 0; i < numArgs; i++) {
-            String fieldName = "FIELD_" + i;
             load_this();
-            getfield(fieldName);
+            getfield(getFieldName(i));
             load_arg(0);
             checkcast_this();
-            getfield(fieldName);
+            getfield(getFieldName(i));
             not_equals(parameterTypes[i], "failure");
         }
         push(1);
         return_value();
         nop("failure");
         push(0);
+        return_value();
+        end_method();
+    }
+
+    private void generateGetArgs() {
+        begin_method(GET_ARGS);
+        push(parameterTypes.length);
+        newarray();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            dup();
+            push(i);
+            load_this();
+            getfield(getFieldName(i));
+            box(parameterTypes[i]);
+            aastore();
+        }
         return_value();
         end_method();
     }

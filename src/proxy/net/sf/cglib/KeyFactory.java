@@ -94,7 +94,7 @@ import java.util.*;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.9 2002/12/29 21:37:30 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.10 2003/01/05 23:55:43 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;
@@ -117,10 +117,16 @@ abstract public class KeyFactory {
         Class result = new KeyFactoryGenerator(className, keyInterface, loader).define();
         return (KeyFactory)ReflectUtils.newInstance(result, Constants.TYPES_EMPTY, null);
     }
-    
+
     public int hashCode() {
         return hash;
     }
+
+    /**
+     * Returns the list of objects that were used to create the key.
+     * Primitive objects are wrapped.
+     */
+    abstract public Object[] getArgs();
 
     /* package */ int getHashConstant() {
         return hashConstant;

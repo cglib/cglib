@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.7 2002/12/29 21:38:51 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.8 2003/01/05 23:55:55 herbyderby Exp $
  */
 public class TestKeyFactory extends CodeGenTestCase {
     public interface MyKey {
@@ -102,6 +102,7 @@ public class TestKeyFactory extends CodeGenTestCase {
         Object key1 = f.newInstance(new char[]{ 'a', 'b' });
         Object key2 = f.newInstance(new char[]{ 'a', '_' });
         assertTrue(!key1.equals(key2));
+        assertTrue(((char[])((Object[])((KeyFactory)key2).getArgs())[0])[1] == '_');
     }
 
     public void testBooleanArray() throws Exception {
