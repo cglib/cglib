@@ -48,7 +48,7 @@ public class TransformDemo {
     
      TransformingLoader.ClassTransformerFactory transformation =  
      
-        new TransformingLoader.ClassTransformerFactory (){
+        new TransformingLoader.ClassTransformrFactory (){
         
            public ClassTransformer newInstance(){
             try{       
