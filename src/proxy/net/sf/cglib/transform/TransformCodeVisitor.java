@@ -6,21 +6,22 @@ import net.sf.cglib.util.Opcodes;
  *
  * @author  baliuka
  */
-public class TransformCodeVisitor implements CodeVisitor {
+ class TransformCodeVisitor implements CodeVisitor {
     
     CodeVisitor cv;
     ReadWriteFieldFilter filter;
+    Class delegateImpl;
+    boolean transFormInit;
+    TransformClassVisitor tcv;
     /** Creates a new instance of TransformCodeVisitor */
-    public TransformCodeVisitor(CodeVisitor cv, ReadWriteFieldFilter filter ) {
+    public TransformCodeVisitor(TransformClassVisitor tcv ,CodeVisitor cv, ReadWriteFieldFilter filter,Class delegateImpl ) {
         this.cv = cv;
         this.filter = filter;
+        this.delegateImpl = delegateImpl;
+        transFormInit = delegateImpl != null;
+        this.tcv = tcv;
     }
     
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-    }
     
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
         
@@ -119,6 +120,17 @@ public class TransformCodeVisitor implements CodeVisitor {
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         
         cv.visitMethodInsn(opcode, owner, name, desc );
+        //transform constructors
+        if(transFormInit && opcode == Opcodes.INVOKESPECIAL){
+          cv.visitVarInsn( Opcodes.ALOAD, 0 );  
+          cv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(delegateImpl));
+          cv.visitInsn( Opcodes.DUP );
+          cv.visitVarInsn( Opcodes.ALOAD, 0 );
+          cv.visitMethodInsn(Opcodes.INVOKESPECIAL,Type.getInternalName(delegateImpl), "<init>", "(Ljava/lang/Object;)V"); 
+          cv.visitFieldInsn(Opcodes.PUTFIELD,tcv.getClassName(), Signature.DELEGATE, Type.getDescriptor(Object.class) );
+          transFormInit = false;  
+        }
+        
         
     }
     

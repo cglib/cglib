@@ -27,50 +27,77 @@ class Signature {
         
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(int.class), new Object[]{
             "readInt",  Type.getMethodDescriptor( Type.INT_TYPE, new Type[]{ oType,sType, Type.INT_TYPE  } ),
-            "writeInt", Type.getMethodDescriptor( Type.INT_TYPE, new Type[]{ oType,sType, Type.INT_TYPE, Type.INT_TYPE  } )
+            "writeInt", Type.getMethodDescriptor( Type.INT_TYPE, new Type[]{ oType,sType, Type.INT_TYPE, Type.INT_TYPE  } ),
+            "getInt",   Type.getMethodDescriptor( Type.INT_TYPE, new Type[]{ sType } ),
+            "setInt",   Type.getMethodDescriptor( Type.INT_TYPE, new Type[]{sType, Type.INT_TYPE } )
           }  
         );
         
          MAP_BY_DESCRIPTOR.put( Type.getDescriptor(char.class), new Object[]{
             "readChar",  Type.getMethodDescriptor( Type.CHAR_TYPE, new Type[]{ oType,sType, Type.CHAR_TYPE  } ),
-            "writeChar", Type.getMethodDescriptor( Type.CHAR_TYPE, new Type[]{ oType,sType, Type.CHAR_TYPE, Type.CHAR_TYPE } )
+            "writeChar", Type.getMethodDescriptor( Type.CHAR_TYPE, new Type[]{ oType,sType, Type.CHAR_TYPE, Type.CHAR_TYPE } ),
+            "getChar",   Type.getMethodDescriptor( Type.CHAR_TYPE, new Type[]{ sType } ),
+            "setChar",   Type.getMethodDescriptor( Type.CHAR_TYPE, new Type[]{sType, Type.CHAR_TYPE } )
+          
           }  
         );
      
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(boolean.class),  new Object[]{
             "readBoolean"  , Type.getMethodDescriptor( Type.BOOLEAN_TYPE, new Type[]{ oType,sType, Type.BOOLEAN_TYPE  } ),
-            "writeBoolean" , Type.getMethodDescriptor( Type.BOOLEAN_TYPE, new Type[]{ oType,sType, Type.BOOLEAN_TYPE, Type.BOOLEAN_TYPE  } )
+            "writeBoolean" , Type.getMethodDescriptor( Type.BOOLEAN_TYPE, new Type[]{ oType,sType, Type.BOOLEAN_TYPE, Type.BOOLEAN_TYPE  } ),
+            "getBoolean",   Type.getMethodDescriptor( Type.BOOLEAN_TYPE, new Type[]{ sType } ),
+            "setBoolean",   Type.getMethodDescriptor( Type.BOOLEAN_TYPE, new Type[]{sType, Type.BOOLEAN_TYPE } )
+          
          }  
         );
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(byte.class), new Object[]{
             "readByte",  Type.getMethodDescriptor( Type.BYTE_TYPE, new Type[]{ oType,sType, Type.BYTE_TYPE  } ),
-            "writeByte", Type.getMethodDescriptor( Type.BYTE_TYPE, new Type[]{ oType,sType, Type.BYTE_TYPE,Type.BYTE_TYPE  } )
+            "writeByte", Type.getMethodDescriptor( Type.BYTE_TYPE, new Type[]{ oType,sType, Type.BYTE_TYPE,Type.BYTE_TYPE  } ),
+            "getByte",   Type.getMethodDescriptor( Type.BYTE_TYPE, new Type[]{ sType } ),
+            "setByte",   Type.getMethodDescriptor( Type.BYTE_TYPE, new Type[]{ sType, Type.BYTE_TYPE } )
+          
          }  
         );
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(short.class), new Object[]{
             "readShort" , Type.getMethodDescriptor( Type.SHORT_TYPE, new Type[]{ oType,sType, Type.SHORT_TYPE  } ),
-            "writeShort", Type.getMethodDescriptor( Type.SHORT_TYPE, new Type[]{ oType,sType, Type.SHORT_TYPE, Type.SHORT_TYPE  } )
+            "writeShort", Type.getMethodDescriptor( Type.SHORT_TYPE, new Type[]{ oType,sType, Type.SHORT_TYPE, Type.SHORT_TYPE  } ),
+            "getShort",   Type.getMethodDescriptor( Type.SHORT_TYPE, new Type[]{ sType } ),
+            "setShort",   Type.getMethodDescriptor( Type.SHORT_TYPE, new Type[]{sType, Type.SHORT_TYPE } )
+          
          }  
         );
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(float.class), new Object[]{
             "readFloat" , Type.getMethodDescriptor( Type.FLOAT_TYPE, new Type[]{ oType,sType, Type.FLOAT_TYPE  } ),
-            "writeFloat", Type.getMethodDescriptor( Type.FLOAT_TYPE, new Type[]{ oType,sType, Type.FLOAT_TYPE, Type.FLOAT_TYPE } )
+            "writeFloat", Type.getMethodDescriptor( Type.FLOAT_TYPE, new Type[]{ oType,sType, Type.FLOAT_TYPE, Type.FLOAT_TYPE } ),
+            "getFloat",   Type.getMethodDescriptor( Type.FLOAT_TYPE, new Type[]{ sType } ),
+            "setFloat",   Type.getMethodDescriptor( Type.FLOAT_TYPE, new Type[]{sType, Type.FLOAT_TYPE } )
+          
         }  
         );
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(double.class), new Object[]{
             "readDouble" , Type.getMethodDescriptor( Type.DOUBLE_TYPE, new Type[]{ oType,sType, Type.DOUBLE_TYPE  } ),
-            "writeDouble", Type.getMethodDescriptor( Type.DOUBLE_TYPE, new Type[]{ oType,sType, Type.DOUBLE_TYPE,Type.DOUBLE_TYPE   } )
+            "writeDouble", Type.getMethodDescriptor( Type.DOUBLE_TYPE, new Type[]{ oType,sType, Type.DOUBLE_TYPE,Type.DOUBLE_TYPE   } ),
+            "getDouble",   Type.getMethodDescriptor( Type.DOUBLE_TYPE, new Type[]{ sType } ),
+            "setDouble",   Type.getMethodDescriptor( Type.DOUBLE_TYPE, new Type[]{sType, Type.DOUBLE_TYPE } )
+          
           }  
         );
         MAP_BY_DESCRIPTOR.put( Type.getDescriptor(long.class), new Object[]{
             "readLong" , Type.getMethodDescriptor( Type.LONG_TYPE, new Type[]{ oType,sType, Type.LONG_TYPE  } ),
-            "writeLong", Type.getMethodDescriptor( Type.LONG_TYPE, new Type[]{ oType,sType, Type.LONG_TYPE, Type.LONG_TYPE  } )
+            "writeLong", Type.getMethodDescriptor( Type.LONG_TYPE, new Type[]{ oType,sType, Type.LONG_TYPE, Type.LONG_TYPE  } ),
+            "getLong",   Type.getMethodDescriptor( Type.LONG_TYPE, new Type[]{ sType } ),
+            "setLong",   Type.getMethodDescriptor( Type.LONG_TYPE, new Type[]{sType, Type.LONG_TYPE } )
+          
          }  
         );
         
          MAP_BY_DESCRIPTOR.put( Type.getDescriptor(Object.class), new Object[]{
+             
             "readObject" , Type.getMethodDescriptor( oType, new Type[]{ oType,sType, oType  } ),
-            "writeObject", Type.getMethodDescriptor( oType, new Type[]{ oType,sType, oType, oType  } )
+            "writeObject", Type.getMethodDescriptor( oType, new Type[]{ oType,sType, oType, oType  } ),
+            "getObject",   Type.getMethodDescriptor( oType, new Type[]{ sType } ),
+            "setObject",   Type.getMethodDescriptor( oType, new Type[]{ sType,oType  } )
+          
          }  
         );
     
@@ -213,6 +240,46 @@ class Signature {
    
    }
    
+   public static String fieldGetName(String desc){
+   
+      Object[] value =  (Object[])MAP_BY_DESCRIPTOR.get(desc);
+      if(value == null){
+        return "getObject";
+      }else{
+        return value[4].toString();
+      }
+      
+
+   }
+   public static String fieldGetSignature(String desc){
+     if(isObject(desc)){
+       return (String)((Object[])MAP_BY_DESCRIPTOR.get(Type.getDescriptor(Object.class)))[5];
+     }else{
+       return (String)((Object[])MAP_BY_DESCRIPTOR.get(desc))[5];
+     }
+   }
+   
+   
+   
+     public static String fieldSetName(String desc){
+   
+      Object[] value =  (Object[])MAP_BY_DESCRIPTOR.get(desc);
+      if(value == null){
+        return "setObject";
+      }else{
+        return value[6].toString();
+      }
+      
+
+   }
+   public static String fieldSetSignature(String desc){
+     if(isObject(desc)){
+       return (String)((Object[])MAP_BY_DESCRIPTOR.get(Type.getDescriptor(Object.class)))[7];
+     }else{
+       return (String)((Object[])MAP_BY_DESCRIPTOR.get(desc))[7];
+     }
+   }
+ 
    
    public static String getInternalName(Class cls){
      return cls.getName().replace('.','/');

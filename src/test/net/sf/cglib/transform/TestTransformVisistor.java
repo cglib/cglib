@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.4 2003/09/12 14:08:30 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.5 2003/09/13 11:20:41 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -126,6 +126,8 @@ public class TestTransformVisistor extends TestCase {
     
     public void testFieldTransform( )throws Exception{
         
+        
+        
        Transformed t = ( Transformed )transform( MA.class,
                       PersistenceCapable.class,
                       PersistenceCapableImpl.class
@@ -138,7 +140,8 @@ public class TestTransformVisistor extends TestCase {
        map.put("name", value );
        
        assertEquals(clb.getValue(),value);
-       t.setDelegate( new PersistenceCapableImpl() );
+       
+       assertEquals(t.getObject("name"),value);
        
        PersistenceCapable capable = (PersistenceCapable)t;
        capable.setPersistenceManager(value);
@@ -156,14 +159,14 @@ public class TestTransformVisistor extends TestCase {
             TransformClassVisitor tv = new TransformClassVisitor(is,acceptAll);
             tv.setDelegate(iface, impl);
             data = tv.transform();
-            //print(data);
+           // print(data);
             
         }finally{
             
             is.close();
             
         }
-        //print(data);
+        
         
         TransforClassLoader loader = new TransforClassLoader(data,cls.getName());
         Class transformed = loader.loadClass(cls.getName());
