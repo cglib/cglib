@@ -53,38 +53,35 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Method;
+import java.util.*;
 import junit.framework.*;
 
 /**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.12 2003/01/24 00:31:26 herbyderby Exp $
+ * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
+ * @version $Id: TestParallelSorter.java,v 1.1 2003/01/24 00:31:26 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestParallelSorter extends CodeGenTestCase {
+    public void testSimple() throws Throwable {
+        String[] sortme = { "foo", "bar", "qux", "baz", "moof" };
+        int[] indexes = { 0, 1, 2, 3, 4 };
+        ParallelSorter.create(new Object[]{ sortme, indexes }).quickSort(0);
+        assertTrue(indexes[0] == 1);
+        assertTrue(indexes[1] == 3);
+        assertTrue(indexes[2] == 0);
+        assertTrue(indexes[3] == 4);
+        assertTrue(indexes[4] == 2);
+    }
+
+    public TestParallelSorter(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestJdkCompatibleProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-           
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestParallelSorter.class);
     }
 }
-
