@@ -150,15 +150,17 @@ public abstract class MetaClass  {
                                         String setters[], Class types[] )
                                                             throws Throwable{
 
-
-
+      if (loader == null) {
+          loader = MetaClass.class.getClassLoader();
+      }
+       
       String key = generateKey(target, getters, setters, types);
       MetaClass result = (MetaClass)cache.get(key);
        
       if( result != null ){
        	   return result;
        }
-       
+
       Method g[] = new Method[types.length] ;
       Method  s[] = new Method[types.length] ;
       String name = target.getName() + "MetaClass";
@@ -205,7 +207,7 @@ public abstract class MetaClass  {
                                   ClassLoader loader,
                                   Class target,
                                   Method [] getters,Method [] setters ){
-    	super(className,MetaClass.class.getName(),loader );
+    	super(className, MetaClass.class, loader );
     	this.target = target;
     	this.getters = getters;
     	this.setters = setters;
@@ -213,7 +215,7 @@ public abstract class MetaClass  {
   
     }  
        
-    protected Class define(){
+    protected Class define() throws CodeGenerationException {
       return super.define();
     }
      public  void generate() throws NoSuchMethodException {
@@ -230,10 +232,10 @@ public abstract class MetaClass  {
         
 	        load_this();
 	        load_args();
-	        super_invoke(constructor);
-            return_value(Void.TYPE);
+	        super_invoke_constructor(constructor);
+            return_value();
 
-        end_method();
+        end_constructor();
         
         //------------- newInstance -------------------------
         
@@ -243,49 +245,40 @@ public abstract class MetaClass  {
         
         	new_instance(target);
 	        dup();
-	        invoke_null_constructor(target);    
-	        return_value(target);
+	        invoke_constructor(target);    
+	        return_value();
         
         end_method();
             
         //------------- getPropertyValues -------------------------    
             
-         Method getPropertyValues = 
-                     MetaClass.class.getMethod("getPropertyValues",
-                                                new Class[]{ Object.class} ) ;
+        Method getPropertyValues = 
+            MetaClass.class.getMethod("getPropertyValues", new Class[]{ Object.class });
            
         begin_method(getPropertyValues);   
                    
-           load_arg(1);
-           checkcast(target);
-           alocal(2);
-           push(getters.length);
-           new_aaray();
-           alocal(3);
-           
-           for( int i = 0; i < getters.length; i++  ){
-           if( getters[i] != null ){    
-               
-            load_alocal(3);
-            push(i);
-            
-           
-            if( getters[i].getReturnType().isPrimitive() ){
-                 box(getters[i].getReturnType());
-            }
-            
-            load_alocal(2);
-            invoke(getters[i]);
-            
-            if( getters[i].getReturnType().isPrimitive() ){
-              init(getters[i].getReturnType());
-            }
-            aastore();
+        load_arg(0);
+        checkcast(target);
+        store_local("bean");
+        push(getters.length);
+        newarray();
+
+        // store_local("values");
+
+        for( int i = 0; i < getters.length; i++  ){
+            if( getters[i] != null ){    
+                dup();
+                // load_local("values");
+                push(i);
+                load_local("bean");
+                invoke(getters[i]);
+                box(getters[i].getReturnType());
+                aastore();
             }//write only
-           }
-           load_alocal(3);
-           return_value(Object[].class);
-           
+        }
+        // load_local("values");
+        return_value();
+
         end_method();   
         
      //------------- setPropertyValues -------------------------     
@@ -295,29 +288,24 @@ public abstract class MetaClass  {
                      MetaClass.class.getMethod("setPropertyValues",
                       new Class[]{ Object.class, Object[].class } );
                       
-        begin_method(setPropertyValues);              
+       begin_method(setPropertyValues);              
           
-           load_arg(1);            
-           checkcast(target);
-           alocal(3);
+       load_arg(0);            
+       checkcast(target);
+       load_arg(1);
          
-           for( int i = 0; i < setters.length; i++  ){
+       for( int i = 0; i < setters.length; i++  ){
            	
-               if(setters[i] != null){
-               	
-                load_alocal(3);
-                load_arg(2);
-                aload(i); // arg2[i]
-
-                unbox(setters[i].getParameterTypes()[0]); 
-                invoke( setters[i] );
-
-                
-               }//read only
-           }  
-          return_value(Void.TYPE);
+           if(setters[i] != null){
+               dup2();
+               aaload(i);
+               unbox_or_checkcast(setters[i].getParameterTypes()[0]);
+               invoke(setters[i]);
+           }//read only
+       }  
+       return_value();
           
-        end_method(); 
+       end_method(); 
    }
  
  

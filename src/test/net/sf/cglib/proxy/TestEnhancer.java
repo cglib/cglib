@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.19 2002/11/06 18:15:54 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.20 2002/11/16 19:20:09 herbyderby Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -98,7 +98,6 @@ public class TestEnhancer extends TestCase {
     
     public void testEnhance()throws Throwable{
         
-        
         java.util.Vector vector1 = (java.util.Vector)Enhancer.enhance(
         java.util.Vector.class,
         new Class[]{java.util.List.class}, NOOP_INTERCEPTOR );
@@ -111,7 +110,6 @@ public class TestEnhancer extends TestCase {
         
         
         assertTrue("Cache failed",vector1.getClass() == vector2.getClass());
-        
     }
     
     

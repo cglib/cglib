@@ -73,5 +73,8 @@ public class UndeclaredThrowableException extends java.lang.RuntimeException {
        return t;
     }
 
-    
+    // for jdk1.4 compatibility
+    public Throwable getCause() {
+        return t;
+    }
 }
