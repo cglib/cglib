@@ -327,14 +327,18 @@ import java.util.*;
                      accessName,
                      method.getParameterTypes(),
                      method.getExceptionTypes());
-        load_this();
-        if (delegating) {
-            getfield(DELEGATE_FIELD);
-            load_args();
-            invoke(method);
+        if (Modifier.isAbstract(method.getModifiers())) {
+            zero_or_null(method.getReturnType());
         } else {
-            load_args();
-            super_invoke(method);
+            load_this();
+            if (delegating) {
+                getfield(DELEGATE_FIELD);
+                load_args();
+                invoke(method);
+            } else {
+                load_args();
+                super_invoke(method);
+            }
         }
         return_value();
         end_method();
@@ -350,7 +354,8 @@ import java.util.*;
         create_arg_array();
         getstatic(accessName);
         invoke(AROUND_ADVICE);
-        return_zero_if_null();
+        unbox_or_zero(method.getReturnType());
+        return_value();
         end_handler();
         generateHandleUndeclared(method, outer_eh);
         end_method();

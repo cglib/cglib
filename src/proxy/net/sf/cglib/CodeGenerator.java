@@ -1002,30 +1002,49 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
         } while (locals.containsKey(local));
         return local;
     }
-    
-    protected void return_zero_if_null() {
-        if (!returnType.equals(Void.TYPE)) {
-            if (returnType.isPrimitive()) {
-                dup();
-                String nonNull = newLabel();
-                ifnonnull(nonNull);
-                if (returnType.equals(Double.TYPE)) {
-                    push(0d);
-                } else if (returnType.equals(Long.TYPE)) {
-                    push(0L);
-                } else if (returnType.equals(Float.TYPE)) {
-                    push(0f);
-                } else {
-                    push(0);
-                }
-                return_value();
-                nop(nonNull);
-                unbox(returnType);
+
+    /**
+     * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
+     */
+    protected void zero_or_null(Class type) {
+        if (type.isPrimitive()) {
+            if (type.equals(Double.TYPE)) {
+                push(0d);
+            } else if (type.equals(Long.TYPE)) {
+                push(0L);
+            } else if (type.equals(Float.TYPE)) {
+                push(0f);
+            } else if (type.equals(Void.TYPE)) {
+                // ignore
             } else {
-                checkcast(returnType);
+                push(0);
             }
+        } else {
+            aconst_null();
         }
-        return_value();
+    }
+
+    /**
+     * Unboxes the object on the top of the stack. If the object is null, the
+     * unboxed primitive value becomes zero.
+     */
+    protected void unbox_or_zero(Class type) {
+        if (type.isPrimitive()) {
+            if (!type.equals(Void.TYPE)) {
+                String nonNull = newLabel();
+                String end = newLabel();
+                dup();
+                ifnonnull(nonNull);
+                pop();
+                zero_or_null(type);
+                goTo(end);
+                nop(nonNull);
+                unbox(type);
+                nop(end);
+            }
+        } else {
+            checkcast(type);
+        }
     }
 
     private Class getPrimitiveClass(BasicType type) {
@@ -1098,7 +1117,7 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
     protected void unbox(Class clazz) {
         if (clazz.isPrimitive()) {
             if (clazz.equals(Void.TYPE)) {
-                // TODO: error
+                // ignore
             }
             Class wrapper = (Class)primitiveToWrapper.get(clazz);
             Method convert = (Method)primitiveMethods.get(clazz);
