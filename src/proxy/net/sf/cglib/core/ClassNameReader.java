@@ -53,20 +53,31 @@
  */
 package net.sf.cglib.core;
 
-import java.util.Set;
+import org.objectweb.asm.ClassAdapter;
+import org.objectweb.asm.ClassReader;
 
-/**
- * Customize the generated class name for {@link AbstractClassGenerator}-based utilities.
- */
-public interface NamingPolicy {
-    /**
-     * Choose a name for a generated class.
-     * @param prefix a dotted-name chosen by the generating class (possibly to put the generated class in a particular package)
-     * @param source the fully-qualified class name of the generating class (for example "net.sf.cglib.Enhancer")
-     * @param key A key object representing the state of the parameters; for caching to work properly, equal keys should result
-     * in the same generated class name. The default policy incorporates <code>key.hashCode()</code> into the class name.
-     * @param names a predicate that returns true if the given classname has already been used in the same ClassLoader.
-     * @return the fully-qualified class name
-     */
-    String getClassName(String prefix, String source, Object key, Predicate names);
+// TODO: optimize (ClassReader buffers entire class before accept)
+public class ClassNameReader {
+    private ClassNameReader() {
+    }
+
+    private static final EarlyExitException EARLY_EXIT = new EarlyExitException();
+    private static class EarlyExitException extends RuntimeException { }
+    
+    public static String getClassName(ClassReader r) {
+        final String[] array = new String[1];
+        try {
+            r.accept(new ClassAdapter(null) {
+                public void visit(int access,
+                                  String name,
+                                  String superName,
+                                  String[] interfaces,
+                                  String sourceFile) {
+                    array[0] = name.replace('/', '.');
+                    throw EARLY_EXIT;
+                }
+            }, true);
+        } catch (EarlyExitException e) { }
+        return array[0];
+    }
 }

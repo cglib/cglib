@@ -19,7 +19,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
     protected void processFile(File file) throws Exception {
         ClassWriter w = new DebuggingClassWriter(true);
-        String name = getClassName(file);
+        String name = ClassNameReader.getClassName(getClassReader(file));
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
             new TransformingGenerator(new ClassReaderGenerator(getClassReader(file), true), t).generateClass(w);
@@ -37,21 +37,5 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         ClassReader r = new ClassReader(in);
         in.close();
         return r;
-    }
-
-    private static final EarlyExitException EARLY_EXIT = new EarlyExitException();
-    private static class EarlyExitException extends RuntimeException { }
-
-    private static String getClassName(File file) throws Exception {
-        final String[] array = new String[1];
-        try {
-            getClassReader(file).accept(new ClassAdapter(null) {
-                public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-                    array[0] = name.replace('/', '.');
-                    throw EARLY_EXIT;
-                }
-            }, true);
-        } catch (EarlyExitException e) { }
-        return array[0];
     }
 }

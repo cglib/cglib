@@ -56,6 +56,7 @@ package net.sf.cglib.core;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -71,12 +72,12 @@ implements ClassGenerator
 {
     private static final Object NAME_KEY = new Object();
 
+    private GeneratorStrategy strategy = DefaultGeneratorStrategy.INSTANCE;
     private NamingPolicy namingPolicy;
     private Source source;
     private ClassLoader classLoader;
     private String namePrefix;
     private Object key;
-    private Transformer transformer;
 
     protected static class Source {
         String name;
@@ -100,7 +101,12 @@ implements ClassGenerator
 
     private String getClassName(ClassLoader loader) {
         NamingPolicy np = (namingPolicy != null) ? namingPolicy : DefaultNamingPolicy.INSTANCE;
-        return np.getClassName(namePrefix, source.name, key, getClassNameCache(loader));
+        final Set nameCache = getClassNameCache(loader);
+        return np.getClassName(namePrefix, source.name, key, new Predicate() {
+            public boolean evaluate(Object arg) {
+                return nameCache.contains(arg);
+            }
+        });
     }
 
     private Set getClassNameCache(ClassLoader loader) {
@@ -132,8 +138,8 @@ implements ClassGenerator
     /**
      * TODO
      */
-    public void setTransformer(Transformer transformer) {
-        this.transformer = transformer;
+    public void setGeneratorStrategy(GeneratorStrategy strategy) {
+        this.strategy = strategy;
     }
 
     // TODO: pluggable policy?
@@ -168,31 +174,11 @@ implements ClassGenerator
                 }
                 if (instance == null) {
                     this.key = key;
-                    String className = getClassName(loader);
-                    Class gen = null;
-                    try {
-                        gen = loader.loadClass(className);
-                        if (gen.getClassLoader() != loader) {
-                            gen = null;
-                        }
-                    } catch (ClassNotFoundException e) {
-                    }
-                    if (gen == null) {
-                        DebuggingClassWriter w = new DebuggingClassWriter(true);
-                        ClassGenerator cg = this;
-                        if (transformer != null) {
-                            cg = (ClassGenerator)transformer.transform(this);
-                        }
-                        cg.generateClass(w);
-                        byte[] b = w.toByteArray();
-                        if (!className.equals(w.getClassName())) {
-                            throw new IllegalStateException("Class name " + className +
-                                                            " does not match generated name: " + w.getClassName());
-                        }
-                        getClassNameCache(loader).add(className);
-                        gen = ReflectUtils.defineClass(className, b, loader);
-                    }
-                    cache2.put(key, instance = firstInstance(gen));
+                    byte[] b = strategy.generate(this);
+                    String className = ClassNameReader.getClassName(new ClassReader(b));
+                    getClassNameCache(loader).add(className);
+                    instance = firstInstance(ReflectUtils.defineClass(className, b, loader));
+                    cache2.put(key, instance);
                     return instance;
                 }
             }
