@@ -5,8 +5,8 @@ import junit.framework.TestCase;
 
 public abstract class Source implements java.io.Serializable{
     
-    public static class CheckedException1 extends Exception{}
-    public static class CheckedException2 extends Exception{}
+    public static class CheckedException extends Exception{}
+    public static class UndeclaredException extends Exception{}
 
 
     public Source() {
@@ -33,8 +33,8 @@ public abstract class Source implements java.io.Serializable{
     
     abstract void abstractMethod();
     
-    public void throwChecked()throws CheckedException1{
-      throw new CheckedException1();
+    public void throwChecked()throws CheckedException{
+      throw new CheckedException();
     }
     
     public synchronized void synchronizedMethod(){}
