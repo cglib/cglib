@@ -80,7 +80,7 @@ implements ClassFileConstants
     private static final String ARG_SIGNATURE = ARG_TYPE.getSignature();
     private static int index = 0;
 
-    private static final Map factories = new HashMap();
+    private static final Map loaders = new WeakHashMap();
     private static final Map infoCache = new HashMap();
     
     // Inner and private because if the makeDelegator(Object[]) constructor
@@ -100,14 +100,16 @@ implements ClassFileConstants
      * @param delegates The array of delegates. Must be the same length
      * as the interface array, and each delegates must implements the
      * corresponding interface.
+     * @param loader The ClassLoader to use. If null uses the one that
+     * loaded this class.
      * @return the dynamically created object
      */
-    public static Object makeDelegator(Class[] interfaces, Object[] delegates)
+    public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader)
     throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
     {
-        return makeDelegatorHelper(new ArrayKey(interfaces), interfaces, delegates);
+        return makeDelegatorHelper(new ArrayKey(interfaces), interfaces, delegates, loader);
     }
-
+    
     /**
      * Returns an object that implements all of the interfaces
      * implemented by the specified objects. For each interface, all
@@ -117,10 +119,12 @@ implements ClassFileConstants
      * <b>Note:</b> interfaces which have no methods (marker interfaces)
      * are not implemented by the returned object.
      * @param delegates the array of delegates
+     * @param loader The ClassLoader to use. If null uses the one that
+     * loaded this class.
      * @return the dynamically created object
      * @see #getInterfaceMap(Object[])
      */
-    public static Object makeDelegator(Object[] delegates)
+    public static Object makeDelegator(Object[] delegates, ClassLoader loader)
     throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
     {
         Info info = getInfo(delegates);
@@ -128,7 +132,7 @@ implements ClassFileConstants
         for (int i = 0; i < remapped.length; i++) {
             remapped[i] = delegates[info.indexes[i]];
         }
-        return makeDelegatorHelper(info.key, info.interfaces, remapped);
+        return makeDelegatorHelper(info.key, info.interfaces, remapped, loader);
     }
 
     /**
@@ -160,28 +164,29 @@ implements ClassFileConstants
         return info;
     }
 
-    synchronized private static Object makeDelegatorHelper(ArrayKey key, Class[] interfaces, Object[] delegates)
+    synchronized private static Object makeDelegatorHelper(ArrayKey key,
+                                                           Class[] interfaces,
+                                                           Object[] delegates,
+                                                           ClassLoader loader)
     throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException
     {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader(); // TODO
+        if (loader == null)
+            loader = Delegator.class.getClassLoader();
+        Map factories = (Map)loaders.get(loader);
+        if (factories == null)
+            loaders.put(loader, factories = new HashMap());
         Object factory = (Factory)factories.get(key);
         if (factory == null) {
-            Class clazz = makeDelegatorClass(interfaces, loader);
+            ClassGen cg = makeClassGen(interfaces);
+            Class clazz = ClassFileUtils.defineClass(loader,
+                                                     cg.getClassName(),
+                                                     cg.getJavaClass().getBytes());
             factory = clazz.getConstructor(ARG_CLASS_ARRAY).newInstance(new Object[]{ delegates });
             factories.put(key, factory);
             return factory;
         } else {
             return ((Factory)factory).cglib_newInstance(delegates);
         }
-    }
-
-    private static Class makeDelegatorClass(Class[] interfaces, ClassLoader loader)
-    throws NoSuchMethodException
-    {
-        ClassGen cg = makeClassGen(interfaces);
-        return ClassFileUtils.defineClass(loader,
-                                          cg.getClassName(),
-                                          cg.getJavaClass().getBytes());
     }
 
     // package protected for testing purposes
