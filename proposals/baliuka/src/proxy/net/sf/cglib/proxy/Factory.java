@@ -58,7 +58,7 @@ package net.sf.cglib.proxy;
 /** All enhanced instances implemet this interface
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- * @version $Id: Factory.java,v 1.1 2002/11/02 12:02:24 baliuka Exp $
+ * @version $Id: Factory.java,v 1.2 2002/11/02 17:40:10 baliuka Exp $
  */
 
  public interface Factory{
@@ -70,6 +70,17 @@ package net.sf.cglib.proxy;
        public Object newInstance( MethodInterceptor ih );    
        
        public MethodInterceptor getInterceptor();
+       
+       public Object invokePublic( Object src, 
+                                   java.lang.reflect.Method method,
+                                   Object[] args )
+                           throws java.lang.reflect.InvocationTargetException,
+                                  NoSuchMethodException;
+       
+                                     
+                                     
+        
+       
     }
    
     

@@ -689,7 +689,7 @@ class ClassFileUtils implements ClassFileConstants {
     
     
     
-    static boolean isVisible(java.lang.reflect.Method m ,
+    static boolean isVisible(java.lang.reflect.Member m ,
     String packageName )throws Throwable{
         
         
@@ -710,6 +710,7 @@ class ClassFileUtils implements ClassFileConstants {
         
         return ClassFileUtils.getPackageName( m.getDeclaringClass().getName()
         ).equals( packageName );
+      
     }
     
     

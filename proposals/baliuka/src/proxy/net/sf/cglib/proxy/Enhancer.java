@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.1 2002/11/02 12:02:24 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.2 2002/11/02 17:40:09 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -490,6 +490,7 @@ public class Enhancer implements ClassFileConstants {
         
         
         generateClInit(cg, cp, methodTable);
+        generateInvoke(cg, cp, methodTable );
         
         JavaClass jcl = cg.getJavaClass();
         
@@ -810,7 +811,61 @@ public class Enhancer implements ClassFileConstants {
         
     }
     
+    private static void generateInvoke( ClassGen cg, 
+                                        ConstantPoolGen cp,
+                                        java.util.Map methods )throws Throwable{
     
+      InstructionList il = new InstructionList();
+       MethodGen invoke = ClassFileUtils.toMethodGen(
+            Factory.class.getMethod( "invokePublic", 
+                    new Class[]{ Object.class, 
+                                 java.lang.reflect.Method.class, 
+                                 Object[].class
+                               } ),
+                  cg.getClassName(), il, cp );
+                               
+       il.append( new ALOAD( 1 )  ); 
+       il.append( new CHECKCAST( cp.addClass( cg.getSuperclassName() ) )  );
+       il.append( new ASTORE( 4 ) );
+       
+       for( java.util.Iterator i = methods.entrySet().iterator(); i.hasNext(); ){
+           
+         java.util.Map.Entry entry = (java.util.Map.Entry)i.next();         
+         String fieldName = (String)entry.getKey();
+         java.lang.reflect.Method method = 
+                                 (java.lang.reflect.Method)entry.getValue();
+        
+         String methodClassName = "Ljava/lang/reflect/Method;";
+         IFEQ ifEq = new IFEQ(null);
+         il.append( new GETSTATIC( cp.addFieldref( 
+                                                   cg.getClassName(), 
+                                                   fieldName, 
+                                                   methodClassName 
+                                                  ) 
+                                ) );  
+         il.append( new ALOAD(2) );
+         il.append( new INVOKEVIRTUAL( cp.addMethodref( methodClassName, "equals", "(Ljava/lang/Object;)V" ) )  );
+         Instruction newWapper = ClassFileUtils.newWrapper( 
+                         ClassFileUtils.toType(method.getReturnType())  
+                      );
+         
+         if( newWapper != null ){
+           il.append( newWapper );
+           il.append( new DUP() );
+         }
+         int index = 3;
+         for( int i = 0; i< method.getParameterTypes().length; i++ ){
+         
+         } 
+         il.append( ALOAD( 4 ) );
+         
+         
+          
+       }
+                               
+               
+      cg.addMethod( ClassFileUtils.getMethod(  invoke )  );  
+    } 
     
     static public class InternalReplace implements java.io.Serializable{
         
@@ -878,6 +933,6 @@ public class Enhancer implements ClassFileConstants {
         
     }
     
-    
+   
     
 }

@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.26 2002/11/01 20:12:03 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.27 2002/11/02 17:40:11 baliuka Exp $
  */
 public class Enhancer implements ClassFileConstants {
     
@@ -258,11 +258,13 @@ public class Enhancer implements ClassFileConstants {
             
             try{
                 
-                java.lang.reflect.Constructor construct =  cls.getConstructor( new Class[0] );
+                java.lang.reflect.Constructor construct =  cls.getDeclaredConstructor( new Class[0] );
                 int mod = construct.getModifiers();
                 
                 if( !( java.lang.reflect.Modifier.isPublic( mod ) ||
-                java.lang.reflect.Modifier.isProtected( mod ) )  ){
+                java.lang.reflect.Modifier.isProtected( mod ) || 
+                ClassFileUtils.isVisible( construct,
+                                ClassFileUtils.getPackageName(cls.getName())) )  ){
                     
                     throw new IllegalArgumentException( cls.getName() );
                 }
