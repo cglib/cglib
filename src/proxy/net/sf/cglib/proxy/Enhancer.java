@@ -89,7 +89,7 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.33 2002/11/19 08:10:53 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.34 2002/11/19 17:53:28 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
@@ -176,32 +176,30 @@ public class Enhancer implements ClassFileConstants {
                                  ClassLoader loader,
                                  Method wreplace)
     throws CodeGenerationException {
-        return enhanceHelper(cls, null, interfaces, ih, loader, wreplace);
+        return enhance(null, cls, interfaces, ih, loader, wreplace);
     }
 
-    public static Object enhanceObject(Object obj,
-                                       Class[] interfaces,
-                                       MethodInterceptor ih,
-                                       ClassLoader loader,
-                                       Method wreplace)
-    throws CodeGenerationException {
-        return enhanceHelper(obj.getClass(), obj, interfaces, ih, loader, wreplace);
-    }
-
-    
-    private synchronized static Object enhanceHelper(Class cls,
-                                                     Object obj,
-                                                     Class[] interfaces,
-                                                     MethodInterceptor ih,
-                                                     ClassLoader loader,
-                                                     Method wreplace)
+    public static Object enhance(Object obj,
+                                 Class cls,
+                                 Class[] interfaces,
+                                 MethodInterceptor ih,
+                                 ClassLoader loader,
+                                 Method wreplace)
     throws CodeGenerationException {
         if (ih == null) {
             throw new NullPointerException("MethodInterceptor is null");
         }
         
+        if (cls != null && obj != null && !cls.isAssignableFrom(obj.getClass())) {
+            throw new IllegalArgumentException("Class must be same class or superclass of delegate");
+        }
+
         if (cls == null) {
-            cls = Object.class;
+            if (obj == null) {
+                cls = Object.class;
+            } else {
+                cls = obj.getClass();
+            }
         }
 
         if (loader == null) {
