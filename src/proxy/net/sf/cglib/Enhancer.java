@@ -79,16 +79,15 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.26 2003/01/25 00:12:09 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.27 2003/01/25 02:21:43 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
     private static final FactoryCache cache = new FactoryCache();
+    private static final FactoryCache classCache = new FactoryCache();
     private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, null);
-    private static final EnhancerClassKey classKeyFactory =
-      (EnhancerClassKey)KeyFactory.create(EnhancerClassKey.class, null);
 
     private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
@@ -97,12 +96,6 @@ public class Enhancer {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
                                    boolean delegating, Object filter);
     }
-    
-    public interface EnhancerClassKey {
-        public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
-                                   boolean delegating, Object filter, int flag );
-    }
-
     
     private Enhancer() {}
 
@@ -216,11 +209,14 @@ public class Enhancer {
      *
      */
     public static Class enhanceClass(Class cls, Class[] interfaces, 
-                                      ClassLoader loader,
-                                      MethodFilter filter) {
-        if (cls == null) cls = Object.class;
-        if (loader == null) loader = defaultLoader;
-        return getEnhancerGenerator(false, cls, interfaces, loader, null, filter, null, null);
+                                     ClassLoader loader, MethodFilter filter) {
+        if (cls == null) {
+            cls = Object.class;
+        }
+        if (loader == null) {
+            loader = defaultLoader;
+        }
+        return enhanceClassHelper(false, cls, interfaces, loader, null, filter);
     }
     
     private static Object enhanceHelper(boolean delegating, Object obj, Class cls,
@@ -245,7 +241,7 @@ public class Enhancer {
         synchronized (cache) {
             factory = (Factory)cache.get(loader, key);
             if (factory == null) {
-                Class gen = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
+                Class gen = enhanceClassHelper(delegating, cls, interfaces, loader, wreplace, filter);
                 Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
                 Class[] types = delegating ? new Class[]{ mi, Object.class } : new Class[]{ mi };
                 Object[] args = delegating ? new Object[]{ ih, obj } : new Object[]{ ih };
@@ -260,25 +256,19 @@ public class Enhancer {
         }
     }
 
-    private static Class getEnhancerGenerator(boolean delegating, Class cls, Class[] interfaces, ClassLoader loader,
-                                                                    Method wreplace, MethodFilter filter, Object key, Factory factory) {
-        if (key == null) key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
-        Object classKey = classKeyFactory.newInstance(cls, interfaces, wreplace, delegating, filter, 0);
+    private static Class enhanceClassHelper(boolean delegating, Class cls,
+                                            Class[] interfaces, ClassLoader loader, Method wreplace,
+                                            MethodFilter filter) {
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
         Class result;
-        synchronized (cache) {
-            result = (Class) cache.get(loader, classKey);
+        synchronized (classCache) {
+            result = (Class)classCache.get(loader, key);
             if (result == null) {
-                if (factory == null) factory = (Factory) cache.get(loader, key);
-                if( factory != null ){
-                    result = factory.getClass();
-                }
-                if (result == null) {
-                    String className = nameFactory.getNextName(cls);
-                    result = new EnhancerGenerator(className, cls, interfaces,
-                                                          loader, wreplace, 
-                                                         delegating, filter).define();
-                }
-                if (result != null) cache.put(loader, classKey, result);
+                String className = nameFactory.getNextName(cls);
+                result = new EnhancerGenerator(className, cls,
+                                               interfaces, loader, wreplace, 
+                                               delegating, filter).define();
+                classCache.put(loader, key, result);
             }
         }
         return result;
@@ -307,7 +297,7 @@ public class Enhancer {
             
             for (int i = 0; i < interfaces.length; i++) {
                 //skip CGLIB interfaces
-                if (interfaces[i].getPackage() != Enhancer.class.getPackage()) {
+                if (!interfaces[i].getPackage().equals(Enhancer.class.getPackage())) {
                     interfaceNames.add(interfaces[i].getName());
                 }
             }
