@@ -56,6 +56,7 @@ class CallbackInfo
         new CallbackInfo(LazyLoader.class, LazyLoaderGenerator.INSTANCE),
         new CallbackInfo(Dispatcher.class, DispatcherGenerator.INSTANCE),
         new CallbackInfo(FixedValue.class, FixedValueGenerator.INSTANCE),
+        new CallbackInfo(ProxyRefDispatcher.class, DispatcherGenerator.PROXY_REF_INSTANCE),
     };
 
     private CallbackInfo(Class cls, CallbackGenerator generator) {
