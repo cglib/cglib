@@ -53,33 +53,17 @@
  */
 package net.sf.cglib.core;
 
-// TODO: use KeyFactory w/Customizer
 public class ClassesKey {
-    private Transformer GET_CLASS_TRANSFORMER = new Transformer() {
-        public Object transform(Object value) {
-            return value.getClass().getName();
-        }
-    };
-        
-    private Object[] array;
-    private int hashCode;
-
-    public ClassesKey(Object[] array) {
-        this.array = array;
-        hashCode = 31;
-        for (int i = 0; i < array.length; i++) {
-            Object value = array[0];
-            hashCode = hashCode * 37 + ((value == null) ? 0 : value.getClass().hashCode());
-        }
+    private static final Key FACTORY = (Key)KeyFactory.create(Key.class, KeyFactory.OBJECT_BY_CLASS);
+    
+    interface Key {
+        Object newInstance(Object[] array);
     }
 
-    public boolean equals(Object o) {
-        return o != null
-            && (o instanceof ClassesKey)
-            && CollectionUtils.arrayEquals(array, ((ClassesKey)o).array, GET_CLASS_TRANSFORMER);
+    private ClassesKey() {
     }
 
-    public int hashCode() {
-        return hashCode;
+    public static Object create(Object[] array) {
+        return FACTORY.newInstance(array);
     }
 }
