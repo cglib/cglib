@@ -54,7 +54,7 @@
 
 package net.sf.cglib.core;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -96,17 +96,38 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.10 2003/10/03 19:25:07 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.11 2003/10/03 22:57:23 herbyderby Exp $
  */
-public class KeyFactory extends AbstractClassGenerator {
-    private static final Source SOURCE = new Source(KeyFactory.class.getName());
+abstract public class KeyFactory {
     private static final Signature GET_NAME =
       TypeUtils.parseSignature("String getName()");
     private static final Signature GET_CLASS =
       TypeUtils.parseSignature("Class getClass()");
-
-    private Class keyInterface;
-    private Customizer customizer;
+    private static final Signature HASH_CODE =
+      TypeUtils.parseSignature("int hashCode()");
+    private static final Signature EQUALS =
+      TypeUtils.parseSignature("boolean equals(Object)");
+    private static final Signature TO_STRING =
+      TypeUtils.parseSignature("String toString()");
+    private static final Type KEY_FACTORY =
+      TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
+    
+    //generated numbers: 
+    private final static int PRIMES[] = {
+               11,         73,        179,       331,
+              521,        787,       1213,      1823,
+             2609,       3691,       5189,      7247,
+            10037,      13931,      19289,     26627,
+            36683,      50441,      69403,     95401,
+           131129,     180179,     247501,    340057,
+           467063,     641371,     880603,   1209107,
+          1660097,    2279161,    3129011,   4295723,
+          5897291,    8095873,   11114263,  15257791,
+         20946017,   28754629,   39474179,  54189869,
+         74391461,  102123817,  140194277, 192456917,
+        264202273,  362693231,  497900099, 683510293,
+        938313161, 1288102441, 1768288259  };
+    
 
     public static final Customizer CLASS_BY_NAME = new Customizer() {
         public void customize(CodeEmitter e, Type type) {
@@ -122,47 +143,147 @@ public class KeyFactory extends AbstractClassGenerator {
         }
     };
 
-    public static Object create(Class keyInterface) {
+    protected KeyFactory() {
+    }
+
+    public static KeyFactory create(Class keyInterface) {
         return create(keyInterface, null);
     }
 
-    public static Object create(Class keyInterface, Customizer customizer) {
-        KeyFactory gen = new KeyFactory();
+    public static KeyFactory create(Class keyInterface, Customizer customizer) {
+        Generator gen = new Generator();
         gen.setInterface(keyInterface);
         gen.setCustomizer(customizer);
         return gen.create();
     }
 
-    public KeyFactory() {
-        super(SOURCE);
-    }
+    public static class Generator extends AbstractClassGenerator {
+        private static final Source SOURCE = new Source(KeyFactory.class.getName());
+        private Class keyInterface;
+        private Customizer customizer;
 
-    protected ClassLoader getDefaultClassLoader() {
-        return keyInterface.getClassLoader();
-    }
+        public Generator() {
+            super(SOURCE);
+        }
 
-    public void setCustomizer(Customizer customizer) {
-        this.customizer = customizer;
-    }
+        protected ClassLoader getDefaultClassLoader() {
+            return keyInterface.getClassLoader();
+        }
 
-    public void setInterface(Class keyInterface) {
-        this.keyInterface = keyInterface;
-    }
+        public void setCustomizer(Customizer customizer) {
+            this.customizer = customizer;
+        }
 
-    public KeyFactory create() {
-        setNamePrefix(keyInterface.getName());
-        return (KeyFactory)super.create(keyInterface.getName());
-    }
+        public void setInterface(Class keyInterface) {
+            this.keyInterface = keyInterface;
+        }
 
-    public void generateClass(ClassVisitor v) throws Exception {
-        new KeyFactoryEmitter(v, getClassName(), keyInterface, customizer).emit();
-    }
+        public KeyFactory create() {
+            setNamePrefix(keyInterface.getName());
+            return (KeyFactory)super.create(keyInterface.getName());
+        }
 
-    protected Object firstInstance(Class type) {
-        return ReflectUtils.newInstance(type);
-    }
+        protected Object firstInstance(Class type) {
+            return ReflectUtils.newInstance(type);
+        }
 
-    protected Object nextInstance(Object instance) {
-        return instance;
+        protected Object nextInstance(Object instance) {
+            return instance;
+        }
+
+        public void generateClass(ClassVisitor v) throws Exception {
+            ClassEmitter ce = new ClassEmitter(v);
+            
+            Method newInstance = ReflectUtils.findNewInstance(keyInterface);
+            if (!newInstance.getReturnType().equals(Object.class)) {
+                throw new IllegalArgumentException("newInstance method must return Object");
+            }
+
+            Type[] parameterTypes = TypeUtils.getTypes(newInstance.getParameterTypes());
+            ce.begin_class(Constants.ACC_PUBLIC,
+                           getClassName(),
+                           KEY_FACTORY,
+                           new Type[]{ Type.getType(keyInterface) },
+                           Constants.SOURCE_FILE);
+            ComplexOps.null_constructor(ce);
+            ComplexOps.factory_method(ce, ReflectUtils.getSignature(newInstance));
+
+            // TODO: change to exactly follow Effective Java recommendations
+            // constructor
+            int seed = 0;
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
+                                            TypeUtils.parseConstructor(parameterTypes),
+                                            null);
+            e.load_this();
+            e.super_invoke_constructor();
+            e.load_this();
+            for (int i = 0; i < parameterTypes.length; i++) {
+                seed += parameterTypes[i].hashCode();
+                ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
+                                 getFieldName(i),
+                                 parameterTypes[i],
+                                 null);
+                e.dup();
+                e.load_arg(i);
+                e.putfield(getFieldName(i));
+            }
+            e.return_value();
+            e.end_method();
+            
+            // hash code
+            e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
+            e.push(PRIMES[(int)(seed % PRIMES.length)]);
+            e.push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
+            for (int i = 0; i < parameterTypes.length; i++) {
+                e.load_this();
+                e.getfield(getFieldName(i));
+                ComplexOps.hash_code(e, parameterTypes[i], customizer);
+            }
+            e.swap();
+            e.pop();
+            e.return_value();
+            e.end_method();
+
+            // equals
+            e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null);
+            Label fail = e.make_label();
+            e.load_arg(0);
+            e.instance_of_this();
+            e.if_jump(e.EQ, fail);
+            for (int i = 0; i < parameterTypes.length; i++) {
+                e.load_this();
+                e.getfield(getFieldName(i));
+                e.load_arg(0);
+                e.checkcast_this();
+                e.getfield(getFieldName(i));
+                ComplexOps.not_equals(e, parameterTypes[i], fail, customizer);
+            }
+            e.push(1);
+            e.return_value();
+            e.mark(fail);
+            e.push(0);
+            e.return_value();
+            e.end_method();
+
+            // toString
+            e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
+            e.new_instance(Constants.TYPE_STRING_BUFFER);
+            e.dup();
+            e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
+            for (int i = 0; i < parameterTypes.length; i++) {
+                e.load_this();
+                e.getfield(getFieldName(i));
+                ComplexOps.append_string(e, parameterTypes[i], ComplexOps.DEFAULT_DELIMITERS, customizer);
+            }
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
+            e.return_value();
+            e.end_method();
+
+            ce.end_class();
+        }
+
+        private String getFieldName(int arg) {
+            return "FIELD_" + arg;
+        }
     }
 }

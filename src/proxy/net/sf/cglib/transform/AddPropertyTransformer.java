@@ -1,9 +1,6 @@
 package net.sf.cglib.transform;
 
 import net.sf.cglib.core.*;
-import net.sf.cglib.core.Signature;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
 
 public class AddPropertyTransformer extends EmittingTransformer {
