@@ -10,7 +10,7 @@ import java.util.*;
 public class Beans implements MethodInterceptor{
     
     private PropertyChangeSupport propertySupport;
-    private Object oldValue;
+   
     
     /** Creates new Bean */
     public Beans() {
@@ -60,9 +60,6 @@ public class Beans implements MethodInterceptor{
         method.getReturnType() == Void.TYPE ){
             
             char propName[] = name.substring("set".length()).toCharArray();
-            Object oldValue = obj.getClass().
-            getMethod( "get" + new String( propName ) , C ).
-            invoke(obj,emptyArgs);
             
             propName[0] = Character.toLowerCase( propName[0] );
             propertySupport.firePropertyChange( new String( propName ) , null , args[0]);

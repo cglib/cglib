@@ -86,7 +86,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.3 2002/07/13 10:25:19 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.4 2002/07/24 17:46:09 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -644,7 +644,7 @@ public class Enhancer implements org.apache.bcel.Constants {
                 return new NEW(cp.addClass(FLOAT_OBJECT));
             }
         }
-         throw new InternalError(type.toString());
+         return null;
     }
     
     private static Instruction initWrapper(Type type, ConstantPoolGen cp) {

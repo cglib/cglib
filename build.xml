@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.5 2002/07/06 10:20:37 baliuka Exp $ -->
+<!--         "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.6 2002/07/24 17:46:08 baliuka Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -13,15 +13,17 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="alpha"/>
+    <property name="component.version" value="beta"/>
 
     <property name="build.home" value="build/proxy"/>
+    <property name="samples.build.home" value="build/samples"/>
 
 
     <property name="test.build.home" value="build/test"/>
 
     <property name="dist.home" value="dist"/>
     <property name="source.home" value="src/proxy"/>
+    <property name="samples.source.home" value="src/samples"/>
     <property name="source.test" value="src/test"/>
     
   
@@ -53,6 +55,7 @@
   <target depends="init" description="Prepare build directory" name="prepare">
     <mkdir dir="${build.home}"/>
     <mkdir dir="${build.home}/classes"/>
+    <mkdir dir="${samples.build.home}/classes"/>
     <mkdir dir="${build.home}/conf"/>
     <mkdir dir="${test.build.home}/classes"/>
    
@@ -137,7 +140,58 @@
          name="dist">
   </target>
  
-  
+   <target depends="compile" name="compile-samples">
+     <javac debug="${compile.debug}" 
+            deprecation="${compile.deprecation}" 
+            destdir="${samples.build.home}/classes" 
+            optimize="${compile.optimize}" 
+            srcdir="${samples.source.home}">
+       <classpath refid="compile.classpath"/>
+     </javac>
+   
+
+   </target>  
+
+
+   <target depends="compile-samples" 
+          description="runs samples" 
+          name="samples-beans">
+    <java classname="Beans" 
+          failonerror="${test.failonerror}"
+          fork="yes" 
+          >
+
+        <classpath>
+          <pathelement path="${samples.build.home}/classes"/>
+          <pathelement path="${build.home}/classes"/>
+          <fileset dir="./lib">
+		<include name="*.*"/>
+          </fileset>
+        </classpath>
+    </java>
+  </target>
+
+
+
+   <target depends="compile-samples" 
+          description="runs samples" 
+          name="samples-trace">
+    <java classname="Trace" 
+          failonerror="${test.failonerror}"
+          fork="yes" 
+          >
+
+        <classpath>
+          <pathelement path="${samples.build.home}/classes"/>
+          <pathelement path="${build.home}/classes"/>
+          <fileset dir="./lib">
+		<include name="*.*"/>
+          </fileset>
+        </classpath>
+    </java>
+  </target>
+
+
 
 
   <target depends="compile"
