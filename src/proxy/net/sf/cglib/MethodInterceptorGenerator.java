@@ -56,6 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 class MethodInterceptorGenerator
@@ -68,7 +69,7 @@ implements CallbackGenerator
     private static final Method AROUND_ADVICE =
       ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
 
-    public void generate(Emitter2 e, Context context) {
+    public void generate(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             String accessName = getAccessName(context, method);
@@ -89,7 +90,7 @@ implements CallbackGenerator
         return "CGLIB$$ACCESS_" + context.getUniqueName(method);
     }
 
-    private void generateAccessMethod(Emitter2 e, Context context, Method method) {
+    private void generateAccessMethod(Emitter e, Context context, Method method) {
         Ops.begin_method(e,
                          Constants.ACC_FINAL,
                          getAccessName(context, method),
@@ -106,11 +107,11 @@ implements CallbackGenerator
         e.return_value();
     }
 
-    private void generateAroundMethod(Emitter2 e,
+    private void generateAroundMethod(Emitter e,
                                       Context context,
                                       Method method) {
         Ops.begin_method(e, method, context.getModifiers(method));
-        org.objectweb.asm.Label nullInterceptor = e.make_label();
+        Label nullInterceptor = e.make_label();
         context.emitCallback();
         e.dup();
         e.ifnull(nullInterceptor);
@@ -130,7 +131,7 @@ implements CallbackGenerator
         e.return_value();
     }
 
-    public void generateStatic(Emitter2 e, Context context) {
+    public void generateStatic(Emitter e, Context context) {
         /* generates:
            static {
              Class [] args;

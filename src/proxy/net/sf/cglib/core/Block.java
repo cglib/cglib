@@ -53,6 +53,8 @@
  */
 package net.sf.cglib.core;
 
+import org.objectweb.asm.Label;
+
 public class Block
 {
     private Block parent;

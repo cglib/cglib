@@ -55,12 +55,12 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.util.Iterator;
-import net.sf.cglib.core.Emitter2;
+import net.sf.cglib.core.Emitter;
 
 interface CallbackGenerator
 {
-    void generate(Emitter2 cg, Context context) throws Exception;
-    void generateStatic(Emitter2 cg, Context context) throws Exception;
+    void generate(Emitter cg, Context context) throws Exception;
+    void generateStatic(Emitter cg, Context context) throws Exception;
 
     interface Context
     {

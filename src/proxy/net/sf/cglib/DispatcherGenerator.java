@@ -66,7 +66,7 @@ class DispatcherGenerator implements CallbackGenerator {
     private static final Signature LOAD_OBJECT =
       Signature.parse("Object loadObject(String)");
 
-    public void generate(Emitter2 e, Context context) {
+    public void generate(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
@@ -85,5 +85,5 @@ class DispatcherGenerator implements CallbackGenerator {
         }
     }
 
-    public void generateStatic(Emitter2 e, Context context) { }
+    public void generateStatic(Emitter e, Context context) { }
 }

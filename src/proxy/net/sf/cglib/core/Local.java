@@ -53,12 +53,14 @@
  */
 package net.sf.cglib.core;
 
+import org.objectweb.asm.Type;
+
 public class Local
 {
-    private Class type;
+    private Type type;
     private int index;
     
-    public Local(Class type, int index) {
+    public Local(int index, Type type) {
         this.type = type;
         this.index = index;
     }
@@ -67,7 +69,7 @@ public class Local
         return index;
     }
 
-    public Class getType() {
+    public Type getType() {
         return type;
     }
 }

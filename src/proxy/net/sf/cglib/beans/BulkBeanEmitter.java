@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
     
-class BulkBeanEmitter extends Emitter2 {
+class BulkBeanEmitter extends Emitter {
     private static final Signature GET_PROPERTY_VALUES =
       Signature.parse("void getPropertyValues(Object, Object[])");
     private static final Signature SET_PROPERTY_VALUES =
@@ -93,7 +93,7 @@ class BulkBeanEmitter extends Emitter2 {
         begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
         load_arg(0);
         checkcast(Type.getType(target));
-        Local2 bean = make_local();
+        Local bean = make_local();
         store_local(bean);
         for (int i = 0; i < getters.length; i++) {
             if (getters[i] != null) {
@@ -111,13 +111,13 @@ class BulkBeanEmitter extends Emitter2 {
     private void generateSet(Class target, Method[] setters) {
         // setPropertyValues
         begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
-        Local2 index = make_local(Type.INT_TYPE);
+        Local index = make_local(Type.INT_TYPE);
         push(0);
         store_local(index);
         load_arg(0);
         checkcast(Type.getType(target));
         load_arg(1);
-        Block2 handler = begin_block();
+        Block handler = begin_block();
         int lastIndex = 0;
         for (int i = 0; i < setters.length; i++) {
             if (setters[i] != null) {

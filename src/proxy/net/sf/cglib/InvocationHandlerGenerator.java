@@ -21,7 +21,7 @@ implements CallbackGenerator
         return "CGLIB$$METHOD_" + context.getUniqueName(method);
     }
 
-    public void generate(Emitter2 e, Context context) {
+    public void generate(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
 
@@ -29,7 +29,7 @@ implements CallbackGenerator
             e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Types.METHOD, null);
 
             Ops.begin_method(e, method, context.getModifiers(method));
-            Block2 handler = e.begin_block();
+            Block handler = e.begin_block();
             context.emitCallback();
             e.load_this();
             e.getfield(fieldName);
@@ -42,7 +42,7 @@ implements CallbackGenerator
         }
     }
 
-    public void generateStatic(Emitter2 e, Context context) {
+    public void generateStatic(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             Ops.load_method(e, method);
@@ -50,7 +50,7 @@ implements CallbackGenerator
         }
     }
 
-    private static void handle_undeclared(Emitter2 e, Class[] exceptionTypes, Block2 handler) {
+    private static void handle_undeclared(Emitter e, Class[] exceptionTypes, Block handler) {
         /* generates:
            } catch (RuntimeException e) {
                throw e;

@@ -131,7 +131,7 @@ abstract public class MulticastDelegate implements Cloneable {
             setNamePrefix(MulticastDelegate.class.getName());
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
-            final Emitter2 e = new Emitter2(v);
+            final Emitter e = new Emitter(v);
             Ops.begin_class(e,
                             Modifier.PUBLIC,
                             getClassName(),
@@ -144,7 +144,7 @@ abstract public class MulticastDelegate implements Cloneable {
             Ops.begin_method(e, method);
             Type returnType = e.getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
-            Local2 result = null;
+            Local result = null;
             if (returns) {
                 result = e.make_local(returnType);
                 Ops.zero_or_null(e, returnType);
@@ -152,7 +152,7 @@ abstract public class MulticastDelegate implements Cloneable {
             }
             e.load_this();
             e.super_getfield("targets", Types.OBJECT_ARRAY);
-            final Local2 result2 = result;
+            final Local result2 = result;
             Ops.process_array(e, Types.OBJECT_ARRAY, new ProcessArrayCallback() {
                     public void processElement(Type type) {
                         e.checkcast(Type.getType(iface));

@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.6 2003/09/20 07:49:16 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.7 2003/09/20 09:01:26 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -251,7 +251,7 @@ abstract public class MethodDelegate {
                 throw new IllegalArgumentException("Static method " + (isStatic ? "not " : "") + "expected");
             }
 
-            Emitter2 e = new Emitter2(v);
+            Emitter e = new Emitter(v);
             Ops.begin_class(e,
                             Modifier.PUBLIC,
                             getClassName(),

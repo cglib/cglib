@@ -57,6 +57,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 class LazyLoaderGenerator implements CallbackGenerator {
@@ -69,7 +70,7 @@ class LazyLoaderGenerator implements CallbackGenerator {
       Signature.parse("Object loadObject()");
     private static final Type LAZY_LOADER = Type.getType(LazyLoader.class);
 
-    public void generate(Emitter2 e, Context context) {
+    public void generate(Emitter e, Context context) {
         e.declare_field(Modifier.PRIVATE, DELEGATE, Types.OBJECT, null);
 
         e.begin_method(Modifier.PRIVATE | Modifier.SYNCHRONIZED | Modifier.FINAL,
@@ -78,7 +79,7 @@ class LazyLoaderGenerator implements CallbackGenerator {
         e.load_this();
         e.getfield(DELEGATE);
         e.dup();
-        org.objectweb.asm.Label end = e.make_label();
+        Label end = e.make_label();
         e.ifnonnull(end);
         e.pop();
         e.load_this();
@@ -107,5 +108,5 @@ class LazyLoaderGenerator implements CallbackGenerator {
         }
     }
 
-    public void generateStatic(Emitter2 e, Context context) { }
+    public void generateStatic(Emitter e, Context context) { }
 }

@@ -59,9 +59,10 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-class BeanMapEmitter extends Emitter2 {
+class BeanMapEmitter extends Emitter {
     private static final Signature NEW_INSTANCE =
       Signature.parse("net.sf.cglib.beans.BeanMap newInstance(Object)");
     private static final Type FIXED_KEY_SET =
@@ -111,7 +112,7 @@ class BeanMapEmitter extends Emitter2 {
         load_arg(0);
         checkcast(Types.STRING);
         Ops.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
-            public void processCase(Object key, org.objectweb.asm.Label end) {
+            public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                 Ops.invoke(BeanMapEmitter.this, pd.getReadMethod());
                 Ops.box(BeanMapEmitter.this, Type.getType(pd.getReadMethod().getReturnType()));
@@ -132,7 +133,7 @@ class BeanMapEmitter extends Emitter2 {
         load_arg(0);
         checkcast(Types.STRING);
         Ops.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
-            public void processCase(Object key, org.objectweb.asm.Label end) {
+            public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                 if (pd.getReadMethod() == null) {
                     aconst_null();

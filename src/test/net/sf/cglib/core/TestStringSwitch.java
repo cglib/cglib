@@ -60,6 +60,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import junit.framework.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Label;
 
 public class TestStringSwitch extends CodeGenTestCase {
     private static int index = 0;
@@ -69,8 +70,8 @@ public class TestStringSwitch extends CodeGenTestCase {
     }
 
     public void testSimple() {
-        simpleHelper(Virt.SWITCH_STYLE_HASH);
-        simpleHelper(Virt.SWITCH_STYLE_TRIE);
+        simpleHelper(Ops.SWITCH_STYLE_HASH);
+        simpleHelper(Ops.SWITCH_STYLE_TRIE);
     }
 
     private void simpleHelper(int switchStyle) {
@@ -95,7 +96,7 @@ public class TestStringSwitch extends CodeGenTestCase {
         String[] keys = new String[]{ "ABC", "AAb", "foo" };
         assertTrue("ABC".hashCode() == "AAb".hashCode());
         assertTrue("ABC".hashCode() != "foo".hashCode());
-        Indexed test = (Indexed)new Generator(keys, Virt.SWITCH_STYLE_HASH).create();
+        Indexed test = (Indexed)new Generator(keys, Ops.SWITCH_STYLE_HASH).create();
         assertTrue(test.getIndex("foo") == 'o');
         assertTrue(test.getIndex("ABC") == 'C');
         assertTrue(test.getIndex("AAb") == 'b');
@@ -114,12 +115,12 @@ public class TestStringSwitch extends CodeGenTestCase {
 
         public void generateClass(ClassVisitor v) throws Exception {
             final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
-            Virt.null_constructor(e);
+            Ops.begin_class(e, Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
+            Ops.null_constructor(e);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
-            e.begin_method(method);
+            Ops.begin_method(e, method);
             e.load_arg(0);
-            Virt.string_switch(e, keys, switchStyle, new Virt.ObjectSwitchCallback() {
+            Ops.string_switch(e, keys, switchStyle, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
                         String string = (String)key;
                         e.push((int)string.charAt(string.length() - 1));
@@ -130,7 +131,6 @@ public class TestStringSwitch extends CodeGenTestCase {
                     }
                 });
             e.return_value();
-            e.end_method();
             e.end_class();
         }
     }
