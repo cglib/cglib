@@ -39,22 +39,22 @@ abstract public class AbstractProcessTask extends Task {
             String[] srcFiles = ds.getIncludedFiles();
             File dir = fs.getDir(p);
             for (int j = 0; j < srcFiles.length; j++) {
-                if( srcFiles[j].endsWith(".class") ){
                  File src = new File(dir, srcFiles[j]);
                  fileMap.put(src.getAbsolutePath(), src);
-                }//asumes it is not a class file
             }
         }
         return fileMap.values();
     }
 
+    
+    
     public void execute() throws BuildException {
         beforeExecute();
         for (Iterator it = getFiles().iterator(); it.hasNext();) {
             try {
                 processFile((File)it.next());
             } catch (Exception e) {
-                throw new BuildException(e);
+                 throw new BuildException(e);
             }
         }
     }
