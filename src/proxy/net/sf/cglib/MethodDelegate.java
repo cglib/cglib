@@ -134,7 +134,7 @@ import java.lang.reflect.Modifier;
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
  * @author <a href="mailto:bloritsch@apache.org">Berin Loritsch</a>
  * @author <a href="mailto:leo.sutic@inspireinfrastructure.com">Leo Sutic</a>
- * @version $Id: MethodDelegate.java,v 1.1 2002/12/29 21:36:22 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.2 2002/12/29 23:50:25 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     /* package */ static final Class TYPE = MethodDelegate.class;
@@ -163,6 +163,10 @@ abstract public class MethodDelegate {
 
     public int hashCode() {
         return delegate.hashCode() ^ eqMethod.hashCode();
+    }
+
+    public Object getInvocationTarget() {
+        return delegate;
     }
 
     protected MethodDelegate() {
@@ -206,7 +210,7 @@ abstract public class MethodDelegate {
         return factory.cglib_newInstance(delegate);
     }
 
-    private static Method findProxiedMethod(Class clazz, String methodName, Class iface) {
+    /* package */ static Method findInterfaceMethod(Class iface) {
         if (!iface.isInterface()) {
             throw new IllegalArgumentException(iface + " is not an interface");
         }
@@ -214,7 +218,11 @@ abstract public class MethodDelegate {
         if (methods.length != 1) {
             throw new IllegalArgumentException("expecting exactly 1 method in " + iface);
         }
-        Method proxy = methods[0];
+        return methods[0];
+    }
+
+    private static Method findProxiedMethod(Class clazz, String methodName, Class iface) {
+        Method proxy = findInterfaceMethod(iface);
         try {
             Method method = clazz.getMethod(methodName, proxy.getParameterTypes());
             if (method == null) {
