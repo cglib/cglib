@@ -58,13 +58,9 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.4 2002/12/03 07:55:37 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.5 2002/12/03 08:02:40 herbyderby Exp $
  */
-public class TestKeyFactory extends TestCase {    
-    public void setUp() {
-        // net.sf.cglib.CodeGenerator.setDebugLocation("/tmp/");
-    }
-
+public class TestKeyFactory extends CodeGenTestCase {
     public interface MyKey {
         public Object newInstance(int a, int[] b, boolean flag);
     }
@@ -123,11 +119,11 @@ public class TestKeyFactory extends TestCase {
         assertTrue(!methodSet.contains(factory.newInstance(Number.class, new Class[]{ Integer.class })));
     }
 
-    public TestKeyFactory(java.lang.String testName) {
+    public TestKeyFactory(String testName) {
         super(testName);
     }
     
-    public static void main(java.lang.String[] args) {
+    public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
     
