@@ -223,6 +223,11 @@ class EnhancerEmitter extends ClassEmitter {
                 e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
                 e.checkcast(Type.getType(callbackTypes[j]));
                 e.putfield(getCallbackField(j));
+
+                // clear thread-locals; TODO: test!
+                e.getfield(getThreadLocal(j));
+                e.aconst_null();
+                e.invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
             }
             e.return_value();
             e.end_method();
