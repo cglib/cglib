@@ -269,7 +269,7 @@ public abstract class MetaClass  {
            begin_constructor( constructor );
 	    load_this();
 	    load_args();
-	    super_invoke_constructor(constructor);
+	    super_invoke(constructor);
             return_value();
         end_method();
         
