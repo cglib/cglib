@@ -15,13 +15,18 @@ import org.objectweb.asm.ClassWriter;
 abstract public class AbstractTransformTask extends Task implements ClassFilter {
     private FileUtils FILE_UTILS = new FileUtils() { };
     private Vector filesets = new Vector();
-    private File destdir;
+    private ClassTransformer transformer;
+    private boolean verbose;
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
 
     public void addFileset(FileSet set) {
         filesets.addElement(set);
     }
     
-    private Iterator getFiles() {
+    private Collection getFiles() {
         Map fileMap = new HashMap();
         Project p = getProject();
         for (int i = 0; i < filesets.size(); i++) {
@@ -34,31 +39,21 @@ abstract public class AbstractTransformTask extends Task implements ClassFilter 
                 fileMap.put(src.getAbsolutePath(), src);
             }
         }
-        return fileMap.values().iterator();
-    }
-
-    public void setDestdir(File value) {
-        destdir = value;
-    }
-
-    protected void validateAttributes() throws BuildException {
-        if (filesets.size() == 0) {
-            throw new BuildException("Specify at least one source fileset.");
-        }
-        if (destdir == null) {
-            throw new BuildException("destdir is not set");
-        }
+        return fileMap.values();
     }
 
     public void execute() throws BuildException {
-         validateAttributes();
-         for (Iterator it = getFiles(); it.hasNext();) {
-             try {
-                 processFile((File)it.next());
-             } catch (Exception e) {
-                 throw new BuildException(e);
-             }
-         }
+        if (filesets.size() == 0) {
+            throw new BuildException("Specify at least one source fileset.");
+        }
+        transformer = getClassTransformer();
+        for (Iterator it = getFiles().iterator(); it.hasNext();) {
+            try {
+                processFile((File)it.next());
+            } catch (Exception e) {
+                throw new BuildException(e);
+            }
+        }
     }
 
     private static class EarlyExitException extends RuntimeException { }
@@ -71,7 +66,7 @@ abstract public class AbstractTransformTask extends Task implements ClassFilter 
         }
 
         public void visit(int access, String name, String superName, String[] interfaces, String sourceFile) {
-            this.name = name;
+            this.name = name.replace('/', '.');
             if (!accept(name)) {
                 throw new EarlyExitException();
             }
@@ -84,34 +79,24 @@ abstract public class AbstractTransformTask extends Task implements ClassFilter 
     }
 
     private void processFile(File file) throws Exception {
-
-        if (!file.getAbsolutePath().endsWith(".class")) {
-            // is this right?
-            return;
-        }
-        boolean modified = false;
-        ClassReader r = new ClassReader(new BufferedInputStream(new FileInputStream(file)));
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
+        ClassReader r = new ClassReader(in);
         CaptureNameWriter w = new CaptureNameWriter(true);
-        ClassTransformer t = getClassTransformer();
-        if (t != null) {
-            try {
-                new TransformingGenerator(new ClassReaderGenerator(r, true), t).generateClass(w);
-                modified = true;
-            } catch (EarlyExitException e) {
-            }
-        }
-        String name = w.getName();
-        File outFile = new File(destdir, w.getName() + ".class");
-        outFile.getParentFile().mkdirs();
-        if (modified) {
+        ClassTransformer t = (ClassTransformer)transformer.clone();
+        try {
+            new TransformingGenerator(new ClassReaderGenerator(r, true), t).generateClass(w);
+            in.close();
             byte[] b = w.toByteArray();
-            FileOutputStream fos = new FileOutputStream(outFile);
+            FileOutputStream fos = new FileOutputStream(file);
             fos.write(b);
             fos.close();
-        } else {
-            FILE_UTILS.copyFile(file, outFile);
+            if (verbose) {
+                System.out.println("Enhancing class " + w.getName());
+            }
+        } catch (EarlyExitException e) {
+            // ignore this file
         }
     }
-
+                
     abstract protected ClassTransformer getClassTransformer();
 }

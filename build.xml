@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.33 2003/09/22 00:09:36 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.34 2003/09/22 23:49:49 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -96,7 +96,7 @@
     <javadoc author="true" 
              bottom="Copyright (c) 2001 - Apache Software Foundation" 
              destdir="docs" 
-             doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
+             doctitle="${component.title}"
              packagenames="net.sf.cglib.*"
              access="protected"
              sourcepathref="javadoc.path" version="true" 
@@ -221,8 +221,6 @@
 
   </target>
 
-
-  
   <target depends="init,build-test" 
           description="runs (junit) unit tests" 
           name="test">
@@ -254,6 +252,9 @@
 
   <target name="test-transform" depends="build-test">
     <mkdir dir="${build.transform}"/>
+    <copy todir="${build.transform}" preservelastmodified="yes">
+      <fileset dir="${build.home}/classes"/>
+    </copy>
     <taskdef name="example" classname="net.sf.cglib.transform.ExampleTask">
       <classpath>
         <pathelement path="${build.home}/classes"/>
@@ -261,13 +262,13 @@
         <pathelement path="${classpath}"/>
       </classpath>
     </taskdef>
-    <example destdir="${build.transform}" fieldsuffix="Cglib">
-      <fileset dir="${test.build.home}" includes="**/*.class">
-        <depend targetdir="${build.transform}"/>
+    <example fieldsuffix="Cglib" verbose="yes">
+      <fileset dir="${build.transform}" includes="**/*.class">
+        <not><depend targetdir="${build.home}/classes"/></not>
       </fileset>
       <newproperty name="cglibFoo" type="long"/>
       <newproperty name="cglibBar" type="Double"/>
     </example>
   </target>
-  
+
 </project>
