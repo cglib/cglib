@@ -59,7 +59,8 @@ import java.lang.reflect.*;
 
 /**
  * This class is meant to be used as a drop-in replacement for
- * <code>java.lang.reflect.Proxy</code>. There are some known subtle differences:
+ * <code>java.lang.reflect.Proxy</code>. It is compatible with JDK 1.2 or higher (as is all of CGLIB).
+ * There are some known subtle differences:
  * <ul>
  * <li>The exceptions returned by invoking <code>getExceptionTypes</code>
  * on the <code>Method</code> passed to the <code>invoke</code> method
@@ -70,10 +71,10 @@ import java.lang.reflect.*;
  * <code>newProxyInstance</code> static method.
  * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>, because the latter
- * is not availabe in JDK 1.2.
+ * is not available in JDK 1.2.
  * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.3 2002/12/06 19:03:02 herbyderby Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.4 2002/12/06 19:37:05 herbyderby Exp $
  */
 public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
