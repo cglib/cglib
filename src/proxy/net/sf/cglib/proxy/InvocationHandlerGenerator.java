@@ -30,11 +30,12 @@ implements CallbackGenerator
             Method method = (Method)it.next();
 
             String fieldName = getFieldName(context, method);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
 
             CodeEmitter e = ce.begin_method(context.getModifiers(method),
                                             ReflectUtils.getSignature(method),
-                                            ReflectUtils.getExceptionTypes(method));
+                                            ReflectUtils.getExceptionTypes(method),
+                                            null);
             Block handler = e.begin_block();
             context.emitCallback(e);
             e.load_this();

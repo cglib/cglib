@@ -181,7 +181,8 @@ implements ClassGenerator
                                 visitField(Constants.ACC_STATIC | Constants.ACC_PUBLIC,
                                            KEY_FIELD,
                                            Constants.TYPE_STRING.getDescriptor(),
-                                           keyFieldValue);
+                                           keyFieldValue,
+                                           null);
                                 super.visitEnd();
                             }
                         };

@@ -110,8 +110,8 @@ public class ClassEmitter extends ClassAdapter {
          }
          if (hook == null) {
              ClassEmitter oe = new ClassEmitter(outer);
-             oe.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE, null);
-             CodeEmitter e = oe.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null);
+             oe.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE, null, null);
+             CodeEmitter e = oe.begin_method(Constants.ACC_STATIC, STATIC_HOOK, null, null);
              Label ok = e.make_label();
              e.getstatic(classType, STATIC_HOOK_FLAG, Type.BOOLEAN_TYPE);
              e.if_jump(e.EQ, ok);
@@ -147,6 +147,7 @@ public class ClassEmitter extends ClassAdapter {
                 CodeVisitor v = outer.visitMethod(Constants.ACC_STATIC,
                                                   Constants.SIG_STATIC.getName(),
                                                   Constants.SIG_STATIC.getDescriptor(),
+                                                  null,
                                                   null);
                 v.visitInsn(Constants.RETURN);
                 v.visitMaxs(0, 0);
@@ -158,11 +159,12 @@ public class ClassEmitter extends ClassAdapter {
         cv.visitEnd();
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
         CodeVisitor v = cv.visitMethod(access,
                                        sig.getName(),
                                        sig.getDescriptor(),
-                                       TypeUtils.toInternalNames(exceptions));
+                                       TypeUtils.toInternalNames(exceptions),
+                                       attrs);
         if (sig.equals(STATIC_HOOK)) {
             hook = new CodeEmitter(this, v, access, sig, exceptions) {
                 public boolean isStaticHook() {
@@ -191,10 +193,10 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public CodeEmitter begin_static() {
-        return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null);
+        return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null, null);
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
+    public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {
         FieldInfo existing = (FieldInfo)fieldInfo.get(name);
         FieldInfo info = new FieldInfo(access, name, type, value);
         if (existing != null) {
@@ -203,8 +205,12 @@ public class ClassEmitter extends ClassAdapter {
             }
         } else {
             fieldInfo.put(name, info);
-            cv.visitField(access, name, type.getDescriptor(), value);
+            cv.visitField(access, name, type.getDescriptor(), value, attrs);
         }
+    }
+
+    public void define_attribute(Attribute attrs) {
+        cv.visitAttribute(attrs);
     }
 
     // TODO: make public?
@@ -268,15 +274,20 @@ public class ClassEmitter extends ClassAdapter {
         end_class();
     }
     
-    public void visitField(int access, String name, String desc, Object value) {
-        declare_field(access, name, Type.getType(desc), value);
+    public void visitField(int access, String name, String desc, Object value, Attribute attrs) {
+        declare_field(access, name, Type.getType(desc), value, attrs);
     }
 
     // TODO: handle visitInnerClass?
     
-    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
+    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
         return begin_method(access,
                             new Signature(name, desc),
-                            TypeUtils.fromInternalNames(exceptions));
+                            TypeUtils.fromInternalNames(exceptions),
+                            attrs);
+    }
+
+    public void visitAttribute(Attribute attrs) {
+        define_attribute(attrs);
     }
 }

@@ -12,6 +12,7 @@ import org.objectweb.asm.ClassVisitor;
 
 import org.objectweb.asm.CodeVisitor;
 
+import org.objectweb.asm.Attribute;
 
 
 public class DumpFieldsTask extends AbstractProcessTask {
@@ -69,9 +70,11 @@ public class DumpFieldsTask extends AbstractProcessTask {
 
             public void visitInnerClass(String name, String outerName, String innerName, int access) { }
 
+            public void visitAttribute(Attribute attrs) { }
 
 
-            public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
+
+            public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
 
                 return null;
 
@@ -87,7 +90,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 
 
 
-            public void visitField(int access, String name, String desc, Object value) {
+            public void visitField(int access, String name, String desc, Object value, Attribute attrs) {
 
                 out.println("class=" + className + ", field=" + name);
 

@@ -72,12 +72,13 @@ class LazyLoaderGenerator implements CallbackGenerator {
       TypeUtils.parseType("net.sf.cglib.proxy.LazyLoader");
 
     public void generate(ClassEmitter ce, final Context context) {
-        ce.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null);
+        ce.declare_field(Constants.ACC_PRIVATE, DELEGATE, Constants.TYPE_OBJECT, null, null);
 
         CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
                                         Constants.ACC_SYNCHRONIZED |
                                         Constants.ACC_FINAL,
                                         LOAD_PRIVATE,
+                                        null,
                                         null);
         e.load_this();
         e.getfield(DELEGATE);
@@ -101,7 +102,8 @@ class LazyLoaderGenerator implements CallbackGenerator {
             } else {
                 e = ce.begin_method(context.getModifiers(method),
                                     ReflectUtils.getSignature(method),
-                                    ReflectUtils.getExceptionTypes(method));
+                                    ReflectUtils.getExceptionTypes(method),
+                                    null);
                 e.load_this();
                 e.dup();
                 e.invoke_virtual_this(LOAD_PRIVATE);

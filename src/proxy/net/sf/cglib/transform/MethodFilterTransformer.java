@@ -10,7 +10,7 @@ public class MethodFilterTransformer extends AbstractFilterTransformer {
         this.filter = filter;
     }
 
-    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
-        return (filter.accept(access, name, desc, exceptions) ? pass : cv).visitMethod(access, name, desc, exceptions);
+    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
+        return (filter.accept(access, name, desc, exceptions, attrs) ? pass : cv).visitMethod(access, name, desc, exceptions, attrs);
     }
 }

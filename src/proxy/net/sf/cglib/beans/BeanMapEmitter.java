@@ -115,7 +115,7 @@ class BeanMapEmitter extends ClassEmitter {
     }
 
     private void generateConstructor() {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null, null);
         e.load_this();
         e.load_arg(0);
         e.super_invoke_constructor(CSTRUCT_OBJECT);
@@ -124,7 +124,7 @@ class BeanMapEmitter extends ClassEmitter {
     }
         
     private void generateGet(Class type, final Map getters) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_GET, null, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
         e.checkcast(Type.getType(type));
@@ -146,7 +146,7 @@ class BeanMapEmitter extends ClassEmitter {
     }
 
     private void generatePut(Class type, final Map setters) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, MAP_PUT, null, null);
         e.load_this();
         e.super_getfield("bean", Constants.TYPE_OBJECT);
         e.checkcast(Type.getType(type));
@@ -179,7 +179,7 @@ class BeanMapEmitter extends ClassEmitter {
             
     private void generateKeySet(String[] allNames) {
         // static initializer
-        declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null);
+        declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null, null);
 
         CodeEmitter e = begin_static();
         e.new_instance(FIXED_KEY_SET);
@@ -191,7 +191,7 @@ class BeanMapEmitter extends ClassEmitter {
         e.end_method();
 
         // keySet
-        e = begin_method(Constants.ACC_PUBLIC, KEY_SET, null);
+        e = begin_method(Constants.ACC_PUBLIC, KEY_SET, null, null);
         e.load_this();
         e.getfield("keys");
         e.return_value();
@@ -199,7 +199,7 @@ class BeanMapEmitter extends ClassEmitter {
     }
 
     private void generateGetPropertyType(final Map allProps, String[] allNames) {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_TYPE, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_TYPE, null, null);
         e.load_arg(0);
         EmitUtils.string_switch(e, allNames, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {

@@ -3,6 +3,7 @@ package net.sf.cglib.transform;
 import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
 /**
@@ -39,6 +40,7 @@ public class AddDelegateTransformer extends EmittingTransformer {
         declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                       DELEGATE,
                       delegateType,
+                      null,
                       null);
         for (int i = 0; i < delegateIf.length; i++) {
             Method[] methods = delegateIf[i].getMethods();
@@ -53,8 +55,8 @@ public class AddDelegateTransformer extends EmittingTransformer {
         }
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        final CodeEmitter e = super.begin_method(access, sig, exceptions);
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
+        final CodeEmitter e = super.begin_method(access, sig, exceptions, attrs);
         if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
             return new CodeEmitter(e) {
                 private boolean transformInit = true;
@@ -88,7 +90,7 @@ public class AddDelegateTransformer extends EmittingTransformer {
 
         final Signature sig = ReflectUtils.getSignature(m);
         Type[] exceptions = TypeUtils.getTypes(m.getExceptionTypes());
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, sig, exceptions);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, sig, exceptions, null);
         e.load_this();
         e.getfield(DELEGATE);
         e.load_args();

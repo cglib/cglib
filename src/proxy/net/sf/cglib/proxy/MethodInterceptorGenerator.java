@@ -87,15 +87,16 @@ implements CallbackGenerator
             String accessName = getAccessName(context, method);
             String fieldName = getFieldName(context, method);
 
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null, null);
             CodeEmitter e;
 
             // access method
             e = ce.begin_method(Constants.ACC_FINAL,
                                 new Signature(getAccessName(context, method),
                                               ReflectUtils.getSignature(method).getDescriptor()),
-                                ReflectUtils.getExceptionTypes(method));
+                                ReflectUtils.getExceptionTypes(method),
+                                null);
             if (Modifier.isAbstract(method.getModifiers())) {
                 e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
             } else {
@@ -109,7 +110,8 @@ implements CallbackGenerator
             // around method
             e = ce.begin_method(context.getModifiers(method),
                                 ReflectUtils.getSignature(method),
-                                ReflectUtils.getExceptionTypes(method));
+                                ReflectUtils.getExceptionTypes(method),
+                                null);
             Label nullInterceptor = e.make_label();
             context.emitCallback(e);
             e.dup();

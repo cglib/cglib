@@ -113,9 +113,9 @@ public class ImmutableBean
                            null,
                            Constants.SOURCE_FILE);
 
-            ce.declare_field(Constants.ACC_FINAL | Constants.ACC_PRIVATE, FIELD_NAME, targetType, null);
+            ce.declare_field(Constants.ACC_FINAL | Constants.ACC_PRIVATE, FIELD_NAME, targetType, null, null);
 
-            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null, null);
             e.load_this();
             e.super_invoke_constructor();
             e.load_this();
@@ -132,7 +132,8 @@ public class ImmutableBean
             for (int i = 0; i < getters.length; i++) {
                 e = ce.begin_method(Constants.ACC_PUBLIC,
                                     TypeUtils.getSignature(getters[i]),
-                                    TypeUtils.getTypes(getters[i].getExceptionTypes()));
+                                    TypeUtils.getTypes(getters[i].getExceptionTypes()),
+                                    null);
                 e.load_this();
                 e.getfield(FIELD_NAME);
                 e.invoke(getters[i]);
@@ -143,6 +144,7 @@ public class ImmutableBean
             for (int i = 0; i < setters.length; i++) {
                 e = ce.begin_method(Constants.ACC_PUBLIC,
                                     TypeUtils.getSignature(setters[i]),
+                                    null,
                                     null);
                 e.throw_exception(ILLEGAL_STATE_EXCEPTION, "Bean is immutable");
                 e.end_method();
