@@ -62,8 +62,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 class EnhancerEmitter extends Emitter {
-    private static final Signature SET_THREAD_CALLBACKS =
-      Signature.parse("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
     private static final Type ILLEGAL_STATE_EXCEPTION =
@@ -72,38 +70,33 @@ class EnhancerEmitter extends Emitter {
       Signature.parseType("IllegalArgumentException");
     private static final Type THREAD_LOCAL =
       Signature.parseType("ThreadLocal");
-    
+    private static final Type FACTORY =
+      Signature.parseType("net.sf.cglib.Factory");
+    private static final Type CALLBACKS =
+      Signature.parseType("net.sf.cglib.Callbacks");
 
-//     private static final Signature NEW_INSTANCE =
-//       Signature.parse("Object newInstance(net.sf.cglib.Callbacks)");
-//     private static final Signature MULTIARG_NEW_INSTANCE =
-//       Signature.parse("Object newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
-//     private static final Signature SINGLE_NEW_INSTANCE =
-//       Signature.parse("Object newInstance(net.sf.cglib.Callback)");
-//     private static final Signature GET_CALLBACK =
-//       Signature.parse("net.sf.cglib.Callback getCallback(int)");
-//     private static final Signature SET_CALLBACK =
-//       Signature.parse("void setCallback(int, net.sf.cglib.Callback)");
-//     private static final Signature SET_CALLBACKS =
-//       Signature.parse("void setCallbacks(net.sf.cglib.Callbacks)");
-//     private static final Signature CALLBACKS_GET =
-//       Signature.parse("net.sf.cglib.Callback get(int)");
-    
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Factory.newInstance(Callbacks)");
-    private static final Method MULTIARG_NEW_INSTANCE = 
-      ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], Callbacks)");
-    private static final Method SINGLE_NEW_INSTANCE =
-      ReflectUtils.findMethod("Factory.newInstance(Callback)");
-    private static final Method GET_CALLBACK =
-      ReflectUtils.findMethod("Factory.getCallback(int)");
-    private static final Method SET_CALLBACK =
-      ReflectUtils.findMethod("Factory.setCallback(int, Callback)");
-    private static final Method SET_CALLBACKS =
-      ReflectUtils.findMethod("Factory.setCallbacks(Callbacks)");
-    private static final Method CALLBACKS_GET =
-      ReflectUtils.findMethod("Callbacks.get(int)");
-    
+    private static final Signature SET_THREAD_CALLBACKS =
+      Signature.parse("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
+    private static final Signature NEW_INSTANCE =
+      Signature.parse("Object newInstance(net.sf.cglib.Callbacks)");
+    private static final Signature MULTIARG_NEW_INSTANCE =
+      Signature.parse("Object newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
+    private static final Signature SINGLE_NEW_INSTANCE =
+      Signature.parse("Object newInstance(net.sf.cglib.Callback)");
+    private static final Signature GET_CALLBACK =
+      Signature.parse("net.sf.cglib.Callback getCallback(int)");
+    private static final Signature SET_CALLBACK =
+      Signature.parse("void setCallback(int, net.sf.cglib.Callback)");
+    private static final Signature SET_CALLBACKS =
+      Signature.parse("void setCallbacks(net.sf.cglib.Callbacks)");
+    private static final Signature CALLBACKS_GET =
+      Signature.parse("net.sf.cglib.Callback get(int)");
+
+    private static final Signature THREAD_LOCAL_GET =
+      Signature.parse("Object get()");
+    private static final Signature THREAD_LOCAL_SET =
+      Signature.parse("void set(Object)");
+        
     private final TinyBitSet usedCallbacks = new TinyBitSet();
 
     public EnhancerEmitter(ClassVisitor v,
@@ -193,7 +186,7 @@ class EnhancerEmitter extends Emitter {
         int[] keys = getCallbackKeys();
 
         // Factory.getCallback(int)
-        ReflectOps.begin_method(this, GET_CALLBACK);
+        begin_method(Constants.ACC_PUBLIC, GET_CALLBACK, null);
         load_this();
         load_arg(0);
         process_switch(keys, new ProcessSwitchCallback() {
@@ -209,7 +202,7 @@ class EnhancerEmitter extends Emitter {
         return_value();
 
         // Factory.setCallback(int, Callback)
-        ReflectOps.begin_method(this, SET_CALLBACK);
+        begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null);
         load_this();
         load_arg(1);
         load_arg(0);
@@ -226,14 +219,14 @@ class EnhancerEmitter extends Emitter {
         return_value();
         
         // Factory.setCallbacks(Callbacks);
-        ReflectOps.begin_method(this, SET_CALLBACKS);
+        begin_method(Constants.ACC_PUBLIC, SET_CALLBACKS, null);
         load_this();
         load_arg(0);
         generateSetCallbacks();
         return_value();
 
         // Factory.newInstance(Callbacks)
-        ReflectOps.begin_method(this, NEW_INSTANCE);
+        begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
         load_arg(0);
         invoke_static_this(SET_THREAD_CALLBACKS);
         new_instance_this();
@@ -245,20 +238,20 @@ class EnhancerEmitter extends Emitter {
         return_value();
 
         // Factory.newInstance(Callback)
-        ReflectOps.begin_method(this, SINGLE_NEW_INSTANCE);
+        begin_method(Constants.ACC_PUBLIC, SINGLE_NEW_INSTANCE, null);
         switch (usedCallbacks.cardinality()) {
         case 1:
             int type = usedCallbacks.length() - 1;
             getfield(getThreadLocal(type));
             load_arg(0);
-            ReflectOps.invoke(this, MethodConstants.THREADLOCAL_SET);
+            invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
             new_instance_this();
             dup();
             invoke_constructor_this();
             dup();
             push(type);
             load_arg(0);
-            ReflectOps.invoke(this, SET_CALLBACK);
+            invoke_virtual_this(SET_CALLBACK);
             break;
         case 0:
             // TODO: make sure Callback is null?
@@ -273,7 +266,7 @@ class EnhancerEmitter extends Emitter {
         
         // Factory.newInstance(Class[], Object[], Callbacks)
         Label skipSetCallbacks = make_label();
-        ReflectOps.begin_method(this, MULTIARG_NEW_INSTANCE);
+        begin_method(Constants.ACC_PUBLIC, MULTIARG_NEW_INSTANCE, null);
         load_arg(2);
         invoke_static_this(SET_THREAD_CALLBACKS);
         new_instance_this();
@@ -314,7 +307,7 @@ class EnhancerEmitter extends Emitter {
                     if (i + 1 < usedCallbacks.length())
                         dup2();
                     push(i);
-                    ReflectOps.invoke(this, CALLBACKS_GET);
+                    invoke_interface(CALLBACKS, CALLBACKS_GET);
                     checkcast(CallbackUtils.getType2(i));
                     putfield(getCallbackField(i));
                 }
@@ -385,7 +378,7 @@ class EnhancerEmitter extends Emitter {
     }
 
     private void generateSetThreadCallbacks() {
-        begin_method(Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL,
+        begin_method(Constants.ACC_PUBLIC | Constants.ACC_STATIC,
                      SET_THREAD_CALLBACKS,
                      null);
         Label end = make_label();
@@ -395,10 +388,10 @@ class EnhancerEmitter extends Emitter {
             if (usedCallbacks.get(i)) {
                 load_arg(0);
                 push(i);
-                ReflectOps.invoke(this, CALLBACKS_GET);
+                invoke_interface(CALLBACKS, CALLBACKS_GET);
                 getfield(getThreadLocal(i));
                 swap();
-                ReflectOps.invoke(this, MethodConstants.THREADLOCAL_SET);
+                invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_SET);
             }
         }
         mark(end);
@@ -417,7 +410,7 @@ class EnhancerEmitter extends Emitter {
         ifne(end);
         pop();
         getfield(getThreadLocal(type));
-        ReflectOps.invoke(this, MethodConstants.THREADLOCAL_GET);
+        invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
         checkcast(CallbackUtils.getType2(type));
         mark(end);
     }
