@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.12 2002/12/06 19:06:16 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.13 2002/12/06 19:06:53 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -227,7 +227,7 @@
   <!-- jvmarg value="-Xrunhprof:cpu=times,file=debug.txt" / -->
   <!-- jvmarg value="-verbose:gc" / --> 
   <!-- jvmarg value="-verbose:class" / --> 
-      <sysproperty key="cglib.debugLocation" value="/tmp"/>
+  <!-- <sysproperty key="cglib.debugLocation" value="/tmp"/> -->
       <arg value="${test.entry}"/>
         <classpath>
           <pathelement path="${build.home}/classes"/>
