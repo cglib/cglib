@@ -58,63 +58,62 @@ import java.util.*;
 abstract class SorterTemplate {
     private static final int MERGESORT_THRESHOLD = 12;
     private static final int QUICKSORT_THRESHOLD = 7;
-    private static final Comparator DEFAULT_COMPARATOR = new DefaultComparator();
-
-    private static class DefaultComparator implements Comparator {
-        public int compare(Object o1, Object o2) {
-            return ((Comparable)o1).compareTo(o2);
-        }
-    }
 
     abstract protected void swap(int i, int j);
+    abstract protected int compare(int i, int j);
 
-    public void quickSort(Object[] a, int lo, int hi) {
-        quickSort(a, lo, hi, DEFAULT_COMPARATOR);
+    public void quickSort(int lo, int hi) {
+        quickSortHelper(lo, hi);
+        insertionSort(lo, hi);
     }
 
-    public void quickSort(Object[] a, int lo, int hi, Comparator cmp) {
-        quickSortHelper(a, lo, hi, cmp);
-        insertionSort(a, lo, hi, cmp);
-    }
-
-
-    private void quickSortHelper(Object[] a, int lo, int hi, Comparator cmp) {
+    private void quickSortHelper(int lo, int hi) {
         for (;;) {
             int diff = hi - lo;
-            if (diff <= QUICKSORT_THRESHOLD)
+            if (diff <= QUICKSORT_THRESHOLD) {
                 break;
+            }
             int i = (hi + lo) / 2;
-            if (cmp.compare(a[lo], a[i]) > 0)
+            if (compare(lo, i) > 0) {
                 swap(lo, i);
-            if (cmp.compare(a[lo], a[hi - 1]) > 0)
+            }
+            if (compare(lo, hi) > 0) {
                 swap(lo, hi);
-            if (cmp.compare(a[i], a[hi - 1]) > 0)
+            }
+            if (compare(i, hi) > 0) {
                 swap(i, hi);
+            }
             int j = hi - 1;
             swap(i, j);
             i = lo;
-            Object v = a[j];
+            int v = j;
             for (;;) {
-                while (cmp.compare(a[++i], v) < 0) /* nothing */;
-                while (cmp.compare(a[--j], v) > 0) /* nothing */;
-                if (j < i) break;
+                while (compare(++i, v) < 0) {
+                    /* nothing */;
+                }
+                while (compare(--j, v) > 0) {
+                    /* nothing */;
+                }
+                if (j < i) {
+                    break;
+                }
                 swap(i, j);
             }
             swap(i, hi - 1);
             if (j - lo <= hi - i + 1) {
-                quickSortHelper(a, lo, j, cmp);
+                quickSortHelper(lo, j);
                 lo = i + 1;
             } else {
-                quickSortHelper(a, i + 1, hi, cmp);
+                quickSortHelper(i + 1, hi);
                 hi = j;
             }
         }
     }
     
-    private void insertionSort(Object[] a, int lo, int hi, Comparator cmp) {
+    private void insertionSort(int lo, int hi) {
         for (int i = lo + 1 ; i <= hi; i++) {
             for (int j = i; j > lo; j--) {
-                if (cmp.compare(a[j - 1], a[j]) > 0) {
+                if (compare(j - 1, j) > 0) {
                     swap(j - 1, j);
                 } else {
                     break;
@@ -123,28 +122,24 @@ abstract class SorterTemplate {
         }
     }
 
-    public void mergeSort(Object[] a, int lo, int hi) {
-        mergeSort(a, lo, hi, DEFAULT_COMPARATOR);
-    }
-
-    public void mergeSort(Object[] a, int lo, int hi, Comparator cmp) {
+    public void mergeSort(int lo, int hi) {
         int diff = hi - lo;
         if (diff <= MERGESORT_THRESHOLD) {
-            insertionSort(a, lo, hi, cmp);
+            insertionSort(lo, hi);
             return;
         }
         int mid = lo + diff / 2;
-        mergeSort(a, lo, mid, cmp);
-        mergeSort(a, mid, hi, cmp);
-        merge(a, cmp, lo, mid, hi, mid - lo, hi - mid);
+        mergeSort(lo, mid);
+        mergeSort(mid, hi);
+        merge(lo, mid, hi, mid - lo, hi - mid);
     }
 
-    private void merge(Object[] a, Comparator cmp, int lo, int pivot, int hi, int len1, int len2) {
+    private void merge(int lo, int pivot, int hi, int len1, int len2) {
         if (len1 == 0 || len2 == 0) {
             return;
         }
         if (len1 + len2 == 2) {
-            if (cmp.compare(a[pivot], a[lo]) < 0) {
+            if (compare(pivot, lo) < 0) {
                 swap(pivot, lo);
             }
             return;
@@ -154,36 +149,42 @@ abstract class SorterTemplate {
         if (len1 > len2) {
             len11 = len1 / 2;
             first_cut = lo + len11;
-            second_cut = lower(a, cmp, pivot, hi, first_cut);
+            second_cut = lower(pivot, hi, first_cut);
             len22 = second_cut - pivot;
         } else {
             len22 = len2 / 2;
             second_cut = pivot + len22;
-            first_cut = upper(a, cmp, lo, pivot, second_cut);
+            first_cut = upper(lo, pivot, second_cut);
             len11 = first_cut - lo;
         }
-        rotate(a, first_cut, pivot, second_cut);
+        rotate(first_cut, pivot, second_cut);
         int new_mid = first_cut + len22;
-        merge(a, cmp, lo, first_cut, new_mid, len11, len22);
-        merge(a, cmp, new_mid, second_cut, hi, len1 - len11, len2 - len22);
+        merge(lo, first_cut, new_mid, len11, len22);
+        merge(new_mid, second_cut, hi, len1 - len11, len2 - len22);
     }
 
-    private void rotate(Object[] a, int lo, int mid, int hi) {
-        int lot, hit;
-        lot = lo; hit = mid - 1;
-        while (lot < hit) swap(lot++, hit--);
+    private void rotate(int lo, int mid, int hi) {
+        int lot = lo;
+        int hit = mid - 1;
+        while (lot < hit) {
+            swap(lot++, hit--);
+        }
         lot = mid; hit = hi - 1;
-        while (lot < hit) swap(lot++, hit--);
+        while (lot < hit) {
+            swap(lot++, hit--);
+        }
         lot = lo; hit = hi - 1;
-        while (lot < hit) swap(lot++, hit--);
+        while (lot < hit) {
+            swap(lot++, hit--);
+        }
     }
 
-    private int lower(Object[] a, Comparator cmp, int lo, int hi, int val) {
+    private int lower(int lo, int hi, int val) {
         int len = hi - lo;
         while (len > 0) {
             int half = len / 2;
             int mid= lo + half;
-            if (cmp.compare(a[mid], a[val]) < 0) {
+            if (compare(mid, val) < 0) {
                 lo = mid + 1;
                 len = len - half -1;
             } else {
@@ -193,12 +194,12 @@ abstract class SorterTemplate {
         return lo;
     }
 
-    private int upper(Object[] a, Comparator cmp, int lo, int hi, int val) {
+    private int upper(int lo, int hi, int val) {
         int len = hi - lo;
         while (len > 0) {
             int half = len / 2;
             int mid = lo + half;
-            if (cmp.compare(a[val], a[mid]) < 0) {
+            if (compare(val, mid) < 0) {
                 len = half;
             } else {
                 lo = mid + 1;

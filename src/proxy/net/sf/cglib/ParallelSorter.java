@@ -68,8 +68,11 @@ abstract public class ParallelSorter extends SorterTemplate {
       ReflectUtils.findMethod("ParallelSorter.cglib_newInstance(Object[])");
     private static final Method SWAP_METHOD =
       ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
+    private static final Method COMPARE_METHOD =
+      ReflectUtils.findMethod("SorterTemplate.compare(int, int)");
 
     protected Object[] a;
+    private Comparer comparer;
 
     // should be package-protected but causes problems on jdk1.2
     public interface ParallelSorterKey {
@@ -108,43 +111,47 @@ abstract public class ParallelSorter extends SorterTemplate {
         return factory.cglib_newInstance(arrays);
     }
 
+    private int len() {
+        return ((Object[])a[0]).length;
+    }
+
     public void quickSort(int index) {
-        super.quickSort((Object[])a[index], 0, ((Object[])a[index]).length - 1);
+        quickSort(index, 0, len(), null);
     }
 
     public void quickSort(int index, int lo, int hi) {
-        super.quickSort((Object[])a[index], lo, hi - 1);
+        quickSort(index, lo, hi, null);
     }
 
     public void quickSort(int index, Comparator cmp) {
-        super.quickSort((Object[])a[index], 0, ((Object[])a[index]).length - 1, cmp);
+        quickSort(index, 0, len(), cmp);
     }
 
     public void quickSort(int index, int lo, int hi, Comparator cmp) {
-        super.quickSort((Object[])a[index], lo, hi - 1, cmp);
+        chooseComparer(index, cmp);
+        super.quickSort(lo, hi - 1);
     }
 
     public void mergeSort(int index) {
-        super.mergeSort((Object[])a[index], 0, ((Object[])a[index]).length - 1);
+        mergeSort(index, 0, len(), null);
     }
 
     public void mergeSort(int index, int lo, int hi) {
-        super.mergeSort((Object[])a[index], lo, hi);
+        mergeSort(index, lo, hi, null);
     }
 
     public void mergeSort(int index, Comparator cmp) {
-        super.mergeSort((Object[])a[index], 0, ((Object[])a[index]).length - 1, cmp);
+        mergeSort(index, 0, len(), cmp);
     }
 
     public void mergeSort(int index, int lo, int hi, Comparator cmp) {
-        super.mergeSort((Object[])a[index], lo, hi - 1, cmp);
+        chooseComparer(index, cmp);
+        super.mergeSort(lo, hi - 1);
     }
     
     private static void validate(Class[] classes) {
-        if (classes.length == 0 ||
-            !classes[0].isArray() ||
-            classes[0].getComponentType().isPrimitive()) {
-            throw new IllegalArgumentException("First argument must be a non-primitive array");
+        if (classes.length == 0) {
+            throw new IllegalArgumentException("No arrays specified to sort");
         }
         for (int i = 0; i < classes.length; i++) {
             if (!classes[i].isArray()) {
@@ -222,5 +229,93 @@ abstract public class ParallelSorter extends SorterTemplate {
             return_value();
             end_method();
         }
+    }
+
+    private void chooseComparer(int index, Comparator cmp) {
+        Object array = a[index];
+        Class type = array.getClass().getComponentType();
+        if (type.equals(Integer.TYPE)) {
+            comparer = new IntComparer((int[])array);
+        } else if (type.equals(Long.TYPE)) {
+            comparer = new LongComparer((long[])array);
+        } else if (type.equals(Double.TYPE)) {
+            comparer = new DoubleComparer((double[])array);
+        } else if (type.equals(Float.TYPE)) {
+            comparer = new FloatComparer((float[])array);
+        } else if (type.equals(Short.TYPE)) {
+            comparer = new ShortComparer((short[])array);
+        } else if (type.equals(Byte.TYPE)) {
+            comparer = new ByteComparer((byte[])array);
+        } else if (cmp != null) {
+            comparer = new ComparatorComparer((Object[])array, cmp);
+        } else {
+            comparer = new ObjectComparer((Object[])array);
+        } 
+    }
+
+    protected int compare(int i, int j) {
+        return comparer.compare(i, j);
+    }
+
+    public interface Comparer {
+        int compare(int i, int j);
+    }
+
+    public static class ComparatorComparer implements Comparer {
+        private Object[] a;
+        private Comparator cmp;
+
+        public ComparatorComparer(Object[] a, Comparator cmp) {
+            this.a = a;
+            this.cmp = cmp;
+        }
+
+        public int compare(int i, int j) {
+            return cmp.compare(a[i], a[j]);
+        }
+    }
+    
+    public static class ObjectComparer implements Comparer {
+        private Object[] a;
+        public ObjectComparer(Object[] a) { this.a = a; }
+        public int compare(int i, int j) {
+            return ((Comparable)a[i]).compareTo(a[j]);
+        }
+    }
+
+    public static class IntComparer implements Comparer {
+        private int[] a;
+        public IntComparer(int[] a) { this.a = a; }
+        public int compare(int i, int j) { return a[i] - a[j]; }
+    }
+
+    public static class LongComparer implements Comparer {
+        private long[] a;
+        public LongComparer(long[] a) { this.a = a; }
+        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+    }
+
+    public static class FloatComparer implements Comparer {
+        private float[] a;
+        public FloatComparer(float[] a) { this.a = a; }
+        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+    }
+    
+    public static class DoubleComparer implements Comparer {
+        private double[] a;
+        public DoubleComparer(double[] a) { this.a = a; }
+        public int compare(int i, int j) { return (int)(a[i] - a[j]); }
+    }
+
+    public static class ShortComparer implements Comparer {
+        private short[] a;
+        public ShortComparer(short[] a) { this.a = a; }
+        public int compare(int i, int j) { return a[i] - a[j]; }
+    }
+
+    public static class ByteComparer implements Comparer {
+        private byte[] a;
+        public ByteComparer(byte[] a) { this.a = a; }
+        public int compare(int i, int j) { return a[i] - a[j]; }
     }
 }
