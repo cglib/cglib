@@ -55,7 +55,6 @@ package net.sf.cglib.beans;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.util.*;
 import junit.framework.*;
 
 public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {

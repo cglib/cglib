@@ -56,7 +56,6 @@ package net.sf.cglib;
 import java.lang.reflect.*;
 import java.util.*;
 import junit.framework.*;
-import net.sf.cglib.util.*;
 
 public class TestNoOp extends CodeGenTestCase {
     private static class Foo {

@@ -56,7 +56,6 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
-import net.sf.cglib.util.*;
 import junit.framework.*;
 
 public class TestFastClass extends net.sf.cglib.CodeGenTestCase {

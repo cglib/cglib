@@ -54,7 +54,6 @@
 package net.sf.cglib;
 
 import java.lang.reflect.*;
-import net.sf.cglib.util.*;
 import net.sf.cglib.reflect.*;
 
 /**
@@ -64,7 +63,7 @@ import net.sf.cglib.reflect.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.26 2003/09/10 20:15:30 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.27 2003/09/14 17:44:22 herbyderby Exp $
  */
 public class MethodProxy {
     private String m1;
