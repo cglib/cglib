@@ -56,32 +56,33 @@ package net.sf.cglib;
 import java.util.*;
 
 abstract class SorterTemplate {
+    private static final int MERGESORT_THRESHOLD = 12;
     private static final int QUICKSORT_THRESHOLD = 7;
+    private static final Comparator DEFAULT_COMPARATOR = new DefaultComparator();
+
+    private static class DefaultComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+            System.err.println("comparing " + o1 + " with " + o2);
+            return ((Comparable)o1).compareTo(o2);
+        }
+    }
 
     abstract protected void swap(int i, int j);
+
+    public void quickSort(Comparable[] a, int lo, int hi) {
+        quickSort(a, lo, hi, DEFAULT_COMPARATOR);
+    }
 
     public void quickSort(Object[] a, int lo, int hi, Comparator cmp) {
         quickSortHelper(a, lo, hi, cmp);
         insertionSort(a, lo, hi, cmp);
     }
 
-    public void quickSort(Comparable[] a, int lo, int hi) {
-        quickSortHelper(a, lo, hi);
-        insertionSort(a, lo, hi);
-    }
-    
-    public void mergeSort(Object[] a, int lo, int hi, Comparator cmp) {
-        // TODO
-    }
 
-    public void mergeSort(Comparable[] a, int lo, int hi) {
-        // TODO
-    }
-    
     private void quickSortHelper(Object[] a, int lo, int hi, Comparator cmp) {
         for (;;) {
             int diff = hi - lo;
-            if (diff < QUICKSORT_THRESHOLD)
+            if (diff <= QUICKSORT_THRESHOLD)
                 break;
             int i = (hi + lo) / 2;
             if (cmp.compare(a[lo], a[i]) > 0)
@@ -110,42 +111,9 @@ abstract class SorterTemplate {
             }
         }
     }
-
-    private void quickSortHelper(Comparable[] a, int lo, int hi) {
-        for (;;) {
-            int diff = hi - lo;
-            if (diff < QUICKSORT_THRESHOLD)
-                break;
-            int i = (hi + lo) / 2;
-            if (a[lo].compareTo(a[i]) > 0)
-                swap(lo, i);
-            if (a[lo].compareTo(a[hi]) > 0)
-                swap(lo, hi);
-            if (a[i].compareTo(a[hi]) > 0)
-                swap(i, hi);
-            int j = hi - 1;
-            swap(i, j);
-            i = lo;
-            Object v = a[j];
-            for (;;) {
-                while (a[++i].compareTo(v) < 0) /* nothing */;
-                while (a[--j].compareTo(v) > 0) /* nothing */;
-                if (j < i) break;
-                swap(i, j);
-            }
-            swap(i, hi - 1);
-            if (j - lo <= hi - i + 1) {
-                quickSortHelper(a, lo, j);
-                lo = i + 1;
-            } else {
-                quickSortHelper(a, i + 1, hi);
-                hi = j;
-            }
-        }
-    }
     
     private void insertionSort(Object[] a, int lo, int hi, Comparator cmp) {
-        for (int i = lo + 1 ; i <= hi; i++) {
+        for (int i = lo + 1 ; i < hi; i++) {
             for (int j = i; j > lo; j--) {
                 if (cmp.compare(a[j - 1], a[j]) > 0) {
                     swap(j - 1, j);
@@ -156,15 +124,88 @@ abstract class SorterTemplate {
         }
     }
 
-    private void insertionSort(Comparable[] a, int lo, int hi) {
-        for (int i = lo + 1 ; i <= hi; i++) {
-            for (int j = i; j > lo; j--) {
-                if (a[j - 1].compareTo(a[j]) > 0) {
-                    swap(j - 1, j);
-                } else {
-                    break;
-                }
+    public void mergeSort(Comparable[] a, int lo, int hi) {
+        mergeSort(a, lo, hi, DEFAULT_COMPARATOR);
+    }
+
+    public void mergeSort(Object[] a, int lo, int hi, Comparator cmp) {
+        int diff = hi - lo;
+        if (diff <= MERGESORT_THRESHOLD) {
+            insertionSort(a, lo, hi, cmp);
+            return;
+        }
+        int mid = diff / 2;
+        mergeSort(a, lo, mid, cmp);
+        mergeSort(a, mid, hi, cmp);
+        merge(a, cmp, lo, mid, hi, mid - lo, hi - mid);
+    }
+
+    private void merge(Object[] a, Comparator cmp, int lo, int pivot, int hi, int len1, int len2) {
+        if (len1 == 0 || len2 == 0) {
+            return;
+        }
+        if (len1 + len2 == 2) {
+            if (cmp.compare(a[pivot], a[lo]) < 0) {
+                swap(pivot, lo);
+            }
+            return;
+        }
+        int first_cut, second_cut;
+        int len11, len22;
+        if (len1 > len2) {
+            len11 = len1 / 2;
+            first_cut = lo + len11;
+            second_cut = lower(a, cmp, pivot, hi, first_cut);
+            len22 = second_cut - pivot;
+        } else {
+            len22 = len2 / 2;
+            second_cut = pivot + len22;
+            first_cut = upper(a, cmp, lo, pivot, second_cut);
+            len11 = first_cut - lo;
+        }
+        rotate(a, first_cut, pivot, second_cut);
+        int new_mid = first_cut + len22;
+        merge(a, cmp, lo, first_cut, new_mid, len11, len22);
+        merge(a, cmp, new_mid, second_cut, hi, len1 - len11, len2 - len22);
+    }
+
+    private void rotate(Object[] a, int lo, int mid, int hi) {
+        int lot, hit;
+        lot = lo; hit = mid - t;
+        while (lot < hit) swap(lot++, hit--);
+        lot = mid; hit = hi - t;
+        while (lot < hit) swap(lot++, hit--);
+        lot = lo; hit = hi - t;
+        while (lot < hit) swap(lot++, hit--);
+    }
+
+    private int lower(Object[] a, Comparator cmp, int lo, int hi, int val) {
+        int len = hi - lo;
+        while (len > 0) {
+            int half = len / 2;
+            int mid= lo + half;
+            if (cmp.compare(a[mid], a[val]) < 0) {
+                lo = mid + 1;
+                len = len - half -1;
+            } else {
+                len = half;
             }
         }
+        return lo;
+    }
+
+    private int upper(Object[] a, Comparator cmp, int lo, int hi, int val) {
+        int len = hi - lo;
+        while (len > 0) {
+            int half = len / 2;
+            int mid = lo + half;
+            if (cmp.compare(a[val], a[mid]) < 0) {
+                len = half;
+            } else {
+                lo = mid + 1;
+                len = len - half -1;
+            }
+        }
+        return lo;
     }
 }
