@@ -859,4 +859,39 @@ public class EmitUtils {
         e.invoke_constructor(wrapper, CSTRUCT_THROWABLE);
         e.athrow();
     }
+
+    public static void add_properties(ClassEmitter ce, String[] names, Type[] types) {
+        for (int i = 0; i < names.length; i++) {
+            String fieldName = "$cglib_prop_" + names[i];
+            ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null, null);
+            EmitUtils.add_property(ce, names[i], types[i], fieldName);
+        }
+    }
+
+    public static void add_property(ClassEmitter ce, String name, Type type, String fieldName) {
+        String property = TypeUtils.upperFirst(name);
+        CodeEmitter e;
+        e = ce.begin_method(Constants.ACC_PUBLIC,
+                         new Signature("get" + property,
+                                       type,
+                                       Constants.TYPES_EMPTY),
+                         null,
+                         null);
+        e.load_this();
+        e.getfield(fieldName);
+        e.return_value();
+        e.end_method();
+
+        e = ce.begin_method(Constants.ACC_PUBLIC,
+                         new Signature("set" + property,
+                                       Type.VOID_TYPE,
+                                       new Type[]{ type }),
+                         null,
+                         null);
+        e.load_this();
+        e.load_arg(0);
+        e.putfield(fieldName);
+        e.return_value();
+        e.end_method();
+    }
 }
