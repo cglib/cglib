@@ -229,7 +229,7 @@ abstract public class BasicCodeGenerator {
 
     private static Class defineClass(String className, byte b[],  ClassLoader loader)
     throws Exception {
-        
+
         Method m = MethodConstants.DEFINE_CLASS;
         // protected method invocaton
         boolean flag = m.isAccessible();
@@ -287,12 +287,11 @@ abstract public class BasicCodeGenerator {
     }
     
     public static int getDefaultModifiers(Method method) {
-        int modifiers = method.getModifiers();
         return Modifier.FINAL
-        | (modifiers
-        & ~Modifier.ABSTRACT
-        & ~Modifier.NATIVE
-        & ~Modifier.SYNCHRONIZED);
+            | (method.getModifiers()
+               & ~Modifier.ABSTRACT
+               & ~Modifier.NATIVE
+               & ~Modifier.SYNCHRONIZED);
     }
     
     public void begin_method(Method method) {
@@ -398,6 +397,9 @@ abstract public class BasicCodeGenerator {
     public void dup_x2() { backend.emit(Opcodes.DUP_X2); }
     public void swap() { backend.emit(Opcodes.SWAP); }
     public void aconst_null() { backend.emit(Opcodes.ACONST_NULL); }
+
+    public void monitorenter() { backend.emit(Opcodes.MONITORENTER); }
+    public void monitorexit() { backend.emit(Opcodes.MONITOREXIT); }
 
     public void if_cmpeq(Class type, Label label) {
         cmpHelper(type, label, Opcodes.IF_ICMPEQ, Opcodes.IFEQ);
@@ -929,8 +931,10 @@ abstract public class BasicCodeGenerator {
 
     private static int getStackSize(Class[] classes) {
         int size = 0;
-        for (int i = 0; i < classes.length; i++) {
-            size += getStackSize(classes[i]);
+        if (classes != null) {
+            for (int i = 0; i < classes.length; i++) {
+                size += getStackSize(classes[i]);
+            }
         }
         return size;
     }
@@ -1015,5 +1019,72 @@ abstract public class BasicCodeGenerator {
 
     public void mark(Label label) {
         backend.emit(label);
+    }
+
+    public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
+        float density;
+        if (keys.length == 0) {
+            density = 0;
+        } else {
+            density = (float)keys.length / (keys[keys.length - 1] - keys[0] + 1);
+        }
+        process_switch(keys, callback, density >= 0.5f);
+    }
+
+    public void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
+        if (!isSorted(keys))
+            throw new IllegalArgumentException("keys to switch must be sorted ascending");
+        Label def = make_label();
+        Label end = make_label();
+
+        if (keys.length > 0) {
+            int len = keys.length;
+            int min = keys[0];
+            int max = keys[len - 1];
+            int range = max - min + 1;
+
+            if (useTable) {
+                Label[] labels = new Label[range];
+                Arrays.fill(labels, def);
+                for (int i = 0; i < len; i++) {
+                    labels[keys[i] - min] = make_label();
+                }
+                backend.emit_switch(min, max, labels, def);
+                for (int i = 0; i < range; i++) {
+                    Label label = labels[i];
+                    if (label != def) {
+                        mark(label);
+                        callback.processCase(i + min, end);
+                    }
+                }
+            } else {
+                Label[] labels = new Label[len];
+                for (int i = 0; i < len; i++) {
+                    labels[i] = make_label();
+                }
+                backend.emit_switch(keys, labels, def);
+                for (int i = 0; i < len; i++) {
+                    mark(labels[i]);
+                    callback.processCase(keys[i], end);
+                }
+            }
+        }
+
+        mark(def);
+        callback.processDefault();
+        mark(end);
+    }
+
+    public interface ProcessSwitchCallback {
+        void processCase(int key, Label end) throws Exception;
+        void processDefault() throws Exception;
+    }
+
+    private static boolean isSorted(int[] keys) {
+        for (int i = 1; i < keys.length; i++) {
+            if (keys[i] < keys[i - 1])
+                return false;
+        }
+        return true;
     }
 }

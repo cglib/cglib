@@ -53,77 +53,38 @@
  */
 package net.sf.cglib;
 
-import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.Member;
-import net.sf.cglib.util.CodeGenerationException;
+import java.lang.reflect.*;
+import java.util.*;
+import junit.framework.*;
+import net.sf.cglib.util.*;
 
-/**
- * This class is meant to be used as a implementation of
- * <code>java.lang.reflect.Proxy</code> under JDK 1.2. There are some known
- * subtle differences:
- * <ul>
- * <li>The exceptions returned by invoking <code>getExceptionTypes</code>
- * on the <code>Method</code> passed to the <code>invoke</code> method
- * <b>are</b> the exact set that can be thrown without resulting in an
- * <code>UndeclaredThrowableException</code> being thrown.
- * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
- * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
- * </ul> 
- * 
- * @version $Id: Proxy.java,v 1.9 2003/08/27 16:51:53 herbyderby Exp $
- */
-public class Proxy implements Serializable {
-    private static final Class IMPL_TYPE = ProxyImpl.class;
-
-    private static class HandlerAdapter implements MethodInterceptor {
-        private InvocationHandler handler;
-
-        public HandlerAdapter(InvocationHandler handler) {
-            this.handler = handler;
-        }
-
-        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
-            return handler.invoke(obj, method, args);
+public class TestNoOp extends CodeGenTestCase {
+    private static class Foo {
+        public Foo() { }
+        public String toString() {
+            return "foo";
         }
     }
-
-    protected Proxy(InvocationHandler h) {
-        ((Factory)this).callback(Callbacks.JDK_PROXY, new HandlerAdapter(h));
-    }
-
-    // private for security of isProxyClass
-    private static class ProxyImpl extends Proxy {
-        protected ProxyImpl(InvocationHandler h) {
-            super(h);
-        }
-    }
-
-    public static InvocationHandler getInvocationHandler(Object proxy) {
-        return ((HandlerAdapter)((Factory)proxy).callback(Callbacks.JDK_PROXY)).handler;
-    }
-
-    public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhanceClass(IMPL_TYPE, interfaces, loader, new CallbackFilter() {
+    
+    public void testNoOp() {
+        CallbackFilter filter = new CallbackFilter() {
                 public int accept(Member member) {
-                    return Callbacks.JDK_PROXY;
+                    return Callbacks.NO_OP;
                 }
-            });
+            };
+        Object obj = Enhancer.enhance(Foo.class, null, null, null, null, filter);
+        assertTrue("foo".equals(obj.toString()));
     }
 
-    public static boolean isProxyClass(Class cl) {
-        return cl.getSuperclass().equals(IMPL_TYPE);
+    public TestNoOp(String testName) {
+        super(testName);
     }
-
-    // TODO: optimize away reflection via ConstructorProxy? (maybe not necessary)
-    public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
-        try {
-            Class clazz = getProxyClass(loader, interfaces);
-            return clazz.getConstructor(new Class[]{ InvocationHandler.class }).newInstance(new Object[]{ h });
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodeGenerationException(e);
-        }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestNoOp.class);
     }
 }

@@ -53,45 +53,40 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.*;
+import java.util.*;
 import junit.framework.*;
+import net.sf.cglib.util.*;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.20 2003/08/27 16:51:52 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
+public class TestLazyLoader extends CodeGenTestCase {
+    public void testLazyLoader() {
+        LazyLoader loader = new LazyLoader() {
+                public Object loadObject() {
+                    System.err.println("loading object");
+                    return "foo";
+                }
+            };
+        CallbackFilter filter = new CallbackFilter() {
+                public int accept(Member member) {
+                    return Callbacks.LAZY_LOAD;
+                }
+            };
+        Callbacks callbacks = new Callbacks();
+        callbacks.set(Callbacks.LAZY_LOAD, loader);
+
+        Object obj = Enhancer.enhance(Object.class, null, callbacks, null, null, filter);
+        assertTrue("foo".equals(obj.toString()));
+    }
+
+    public TestLazyLoader(String testName) {
         super(testName);
     }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestMethodProxy.suite());
-        suite.addTest(TestParallelSorter.suite());
-        suite.addTest(TestInterface.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestBeanMap.suite());
-        suite.addTest(TestLookupDelegator.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-           
-        return suite;
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    
+    public static Test suite() {
+        return new TestSuite(TestLazyLoader.class);
     }
 }
-

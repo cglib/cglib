@@ -505,59 +505,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         end_method();
     }
 
-    public interface ProcessSwitchCallback {
-        void processCase(int key, Label end) throws Exception;
-        void processDefault() throws Exception;
-    }
-
-    // TODO: verify sorted
-    // TODO: provide switch capabilities in BasicCodeGenerator?
-    public void process_switch(int[] keys, ProcessSwitchCallback callback) throws Exception {
-        float density = (float)keys.length / (keys[keys.length - 1] - keys[0] + 1);
-        process_switch(keys, callback, density >= 0.5f);
-    }
-
-    public void process_switch(int[] keys, ProcessSwitchCallback callback, boolean useTable) throws Exception {
-        int len = keys.length;
-        int min = keys[0];
-        int max = keys[len - 1];
-        int range = max - min + 1;
-
-        Label def = make_label();
-        Label end = make_label();
-
-        Label[] labels;
-        if (useTable) {
-            labels = new Label[range];
-            Arrays.fill(labels, def);
-            for (int i = 0; i < len; i++) {
-                labels[keys[i] - min] = make_label();
-            }
-            getBackend().emit_switch(min, max, labels, def);
-            for (int i = 0; i < range; i++) {
-                Label label = labels[i];
-                if (label != def) {
-                    mark(label);
-                    callback.processCase(i + min, end);
-                }
-            }
-        } else {
-            labels = new Label[len];
-            for (int i = 0; i < len; i++) {
-                labels[i] = make_label();
-            }
-            getBackend().emit_switch(keys, labels, def);
-            for (int i = 0; i < len; i++) {
-                mark(labels[i]);
-                callback.processCase(keys[i], end);
-            }
-        }
-
-        mark(def);
-        callback.processDefault();
-        mark(end);
-    }
-
     public interface StringSwitchCallback {
         void processCase(String key, Label end) throws Exception;
         void processDefault() throws Exception;

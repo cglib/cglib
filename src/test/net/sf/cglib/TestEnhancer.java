@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.31 2003/07/15 01:05:04 wbiggs Exp $
+ *@version    $Id: TestEnhancer.java,v 1.32 2003/08/27 16:51:52 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -204,7 +204,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
-    
+
     public void testModifiers()throws Throwable{
         
         Source source =  (Source)Enhancer.enhance(
@@ -415,8 +415,7 @@ public class TestEnhancer extends CodeGenTestCase {
          return super.clone();
      }
     }
-    
-    
+
     public void testClone() throws Throwable{
     
       TestClone testClone = (TestClone)Enhancer.enhance( TestCloneImpl.class,
@@ -434,9 +433,8 @@ public class TestEnhancer extends CodeGenTestCase {
   
       
       } );
-    
+
       assertTrue( testClone.clone() != null );  
-      
       
       
     }
@@ -476,7 +474,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
      public void testArgInit() throws Throwable{
     
-         Class f = Enhancer.enhanceClass(ArgInit.class, null, null, null );
+         Class f = Enhancer.enhanceClass(ArgInit.class, null, null, (MethodFilter)null );
          ArgInit a = (ArgInit)ReflectUtils.newInstance(f,
                                                        new Class[]{ String.class },
                                                        new Object[]{ "test" });
