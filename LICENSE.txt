@@ -1,7 +1,7 @@
 /*
- * $Header: /home/sameb/migrate/cglib/cglib/cglib/Attic/LICENSE.TXT,v 1.1 2002/12/25 22:13:05 baliuka Exp $
+ * $Header: /home/sameb/migrate/cglib/cglib/cglib/Attic/LICENSE.txt,v 1.1 2003/09/22 23:48:48 herbyderby Exp $
  * $Revision: 1.1 $
- * $Date: 2002/12/25 22:13:05 $
+ * $Date: 2003/09/22 23:48:48 $
  *
  * ====================================================================
  * 
