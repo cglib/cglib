@@ -108,6 +108,7 @@ public class CodeEmitter extends CodeAdapter {
         int firstLocal;
         int nextLocal;
         Map remap;
+        boolean staticHook;
 
         State(int access, Signature sig, Type[] exceptions) {
             this.access = access;
@@ -118,19 +119,28 @@ public class CodeEmitter extends CodeAdapter {
         }
     }
 
-    CodeEmitter(ClassEmitter ce, int access, Signature sig, Type[] exceptions) {
-        super(ce.getTarget().visitMethod(access,
-                                         sig.getName(),
-                                         sig.getDescriptor(),
-                                         TypeUtils.toInternalNames(exceptions)));
+    CodeEmitter(ClassEmitter ce, CodeVisitor cv, int access, Signature sig, Type[] exceptions) {
+        super(cv);
         this.ce = ce;
         state = new State(access, sig, exceptions);
+    }
+
+    void setStaticHook(boolean staticHook) {
+        state.staticHook = staticHook;
+    }
+
+    public boolean isStaticHook() {
+        return state.staticHook;
     }
 
     public CodeEmitter(CodeEmitter wrap) {
         super(wrap.cv);
         this.ce = wrap.ce;
         this.state = wrap.state;
+    }
+
+    public Signature getSignature() {
+        return state.sig;
     }
 
     public Type getReturnType() {
@@ -453,13 +463,13 @@ public class CodeEmitter extends CodeAdapter {
 
     public void getfield(String name) {
         ClassEmitter.FieldInfo info = ce.getFieldInfo(name);
-        int opcode = info.isStatic ? Constants.GETSTATIC : Constants.GETFIELD;
+        int opcode = TypeUtils.isStatic(info.access) ? Constants.GETSTATIC : Constants.GETFIELD;
         emit_field(opcode, ce.getClassType(), name, info.type);
     }
     
     public void putfield(String name) {
         ClassEmitter.FieldInfo info = ce.getFieldInfo(name);
-        int opcode = info.isStatic ? Constants.PUTSTATIC : Constants.PUTFIELD;
+        int opcode = TypeUtils.isStatic(info.access) ? Constants.PUTSTATIC : Constants.PUTFIELD;
         emit_field(opcode, ce.getClassType(), name, info.type);
     }
 

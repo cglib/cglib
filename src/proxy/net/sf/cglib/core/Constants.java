@@ -57,11 +57,14 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.14 2003/10/05 03:57:20 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.15 2003/10/06 00:58:44 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
     public static final Type[] TYPES_EMPTY = {};
+
+    public static final Signature SIG_STATIC =
+      TypeUtils.parseSignature("void <clinit>()");
     
     public static final Type TYPE_OBJECT_ARRAY = TypeUtils.parseType("Object[]");
     public static final Type TYPE_CLASS_ARRAY = TypeUtils.parseType("Class[]");
