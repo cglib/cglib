@@ -57,7 +57,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.13 2003/10/01 06:15:56 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.14 2003/10/05 03:57:20 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
@@ -83,6 +83,8 @@ public interface Constants extends org.objectweb.asm.Constants {
     public static final Type TYPE_BIG_INTEGER = TypeUtils.parseType("java.math.BigInteger");
     public static final Type TYPE_BIG_DECIMAL = TypeUtils.parseType("java.math.BigDecimal");
     public static final Type TYPE_STRING_BUFFER = TypeUtils.parseType("StringBuffer");
+    public static final Type TYPE_RUNTIME_EXCEPTION = TypeUtils.parseType("RuntimeException");
+    public static final Type TYPE_ERROR = TypeUtils.parseType("Error");
     
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";

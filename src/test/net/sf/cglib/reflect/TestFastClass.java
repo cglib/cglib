@@ -54,16 +54,44 @@
 package net.sf.cglib.reflect;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import junit.framework.*;
+import java.io.IOException;
 
 public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public static class Simple {
     }
+
+    public static class ThrowsSomething {
+        public void foo() throws IOException {
+            throw new IOException("hello");
+        }
+    }
     
     public void testSimple() throws Throwable {
         FastClass.create(Simple.class).newInstance();
+    }
+
+    public void testException() throws Throwable {
+        FastClass fc = FastClass.create(ThrowsSomething.class);
+        ThrowsSomething ts = new ThrowsSomething();
+        try {
+            fc.invoke("foo", new Class[0], ts, new Object[0]);
+            fail("expected exception");
+        } catch (InvocationTargetException e) {
+            assertTrue(e.getCause() instanceof IOException);
+        }
+    }
+
+    public void testTypeMismatch() throws Throwable {
+        FastClass fc = FastClass.create(ThrowsSomething.class);
+        ThrowsSomething ts = new ThrowsSomething();
+        try {
+            fc.invoke("foo", new Class[]{ Integer.TYPE }, ts, new Object[0]);
+            fail("expected exception");
+        } catch (IllegalArgumentException ignore) { }
     }
 
     public void testComplex() throws Throwable {

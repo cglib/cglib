@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.17 2003/10/04 21:59:17 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.18 2003/10/05 03:57:20 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -250,10 +250,10 @@ abstract public class MethodDelegate {
             ClassEmitter ce = new ClassEmitter(v);
             CodeEmitter e;
             ce.begin_class(Constants.ACC_PUBLIC,
-                        getClassName(),
-                        METHOD_DELEGATE,
-                        new Type[]{ Type.getType(iface) },
-                        Constants.SOURCE_FILE);
+                           getClassName(),
+                           METHOD_DELEGATE,
+                           new Type[]{ Type.getType(iface) },
+                           Constants.SOURCE_FILE);
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
             ComplexOps.null_constructor(ce);
 

@@ -55,6 +55,7 @@ package net.sf.cglib.reflect;
 
 import net.sf.cglib.core.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.objectweb.asm.ClassVisitor;
 
@@ -108,18 +109,15 @@ abstract public class FastClass
         }
     }
     
-    // TODO: change throws clause
-    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws Throwable {
+    public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws InvocationTargetException {
         return invoke(getIndex(name, parameterTypes), obj, args);
     }
 
-    // TODO: change throws clause
-    public Object newInstance() throws Throwable {
+    public Object newInstance() throws InvocationTargetException {
         return newInstance(getIndex(Constants.EMPTY_CLASS_ARRAY), null);
     }
 
-    // TODO: change throws clause
-    public Object newInstance(Class[] parameterTypes, Object[] args) throws Throwable {
+    public Object newInstance(Class[] parameterTypes, Object[] args) throws InvocationTargetException {
         return newInstance(getIndex(parameterTypes), args);
     }
     
@@ -172,8 +170,8 @@ abstract public class FastClass
     
     abstract public int getIndex(String name, Class[] parameterTypes);
     abstract public int getIndex(Class[] parameterTypes);
-    abstract public Object invoke(int index, Object obj, Object[] args) throws Throwable;
-    abstract public Object newInstance(int index, Object[] args) throws Throwable;
+    abstract public Object invoke(int index, Object obj, Object[] args) throws InvocationTargetException;
+    abstract public Object newInstance(int index, Object[] args) throws InvocationTargetException;
 
     abstract public int getIndex(String methodSignature);
 }

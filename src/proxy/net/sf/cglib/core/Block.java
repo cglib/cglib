@@ -57,28 +57,28 @@ import org.objectweb.asm.Label;
 
 public class Block
 {
-    private Block parent;
+    private CodeEmitter e;
     private Label start;
     private Label end;
+
+    public Block(CodeEmitter e) {
+        this.e = e;
+        start = e.mark();
+    }
+
+    public CodeEmitter getCodeEmitter() {
+        return e;
+    }
+
+    public void end() {
+        end = e.mark();
+    }
     
-    public Block(Block parent, Label start) {
-        this.parent = parent;
-        this.start = start;
-    }
-
-    public Block getParent() {
-        return parent;
-    }
-
     public Label getStart() {
         return start;
     }
 
     public Label getEnd() {
         return end;
-    }
-
-    public void setEnd(Label end) {
-        this.end = end;
     }
 }
