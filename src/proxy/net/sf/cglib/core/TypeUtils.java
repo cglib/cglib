@@ -190,6 +190,28 @@ public class TypeUtils {
         }
     }
 
+    public static Type getUnboxedType(Type type) {
+        if (Constants.TYPE_INTEGER.equals(type)) {
+            return Type.INT_TYPE;
+        } else if (Constants.TYPE_BOOLEAN.equals(type)) {
+            return Type.BOOLEAN_TYPE;
+        } else if (Constants.TYPE_DOUBLE.equals(type)) {
+            return Type.DOUBLE_TYPE;
+        } else if (Constants.TYPE_LONG.equals(type)) {
+            return Type.LONG_TYPE;
+        } else if (Constants.TYPE_CHARACTER.equals(type)) {
+            return Type.CHAR_TYPE;
+        } else if (Constants.TYPE_BYTE.equals(type)) {
+            return Type.BYTE_TYPE;
+        } else if (Constants.TYPE_FLOAT.equals(type)) {
+            return Type.FLOAT_TYPE;
+        } else if (Constants.TYPE_SHORT.equals(type)) {
+            return Type.SHORT_TYPE;
+        } else {
+            return type;
+        }
+    }
+
     public static boolean isArray(Type type) {
         return type.getSort() == Type.ARRAY;
     }
