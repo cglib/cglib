@@ -95,6 +95,25 @@ public class TypeUtils {
         return types;
     }
 
+    public static int getStackSize(Type[] types) {
+        int size = 0;
+        for (int i = 0; i < types.length; i++) {
+            size += types[i].getSize();
+        }
+        return size;
+    }
+
+    public static String[] toInternalNames(Type[] types) {
+        if (types == null) {
+            return null;
+        }
+        String[] names = new String[types.length];
+        for (int i = 0; i < types.length; i++) {
+            names[i] = types[i].getInternalName();
+        }
+        return names;
+    }
+
     public static Signature parseSignature(String s) {
         int space = s.indexOf(' ');
         int lparen = s.indexOf('(', space);

@@ -106,17 +106,8 @@ public class Emitter {
     private Map fieldInfo = new HashMap();    
 
     // current method
-    private Signature currentSig;
+    private EmitterMethod curMethod;
     private CodeVisitor codev;
-    private CodeVisitor wrapped;
-    private int methodAccess;
-    private String methodName;
-    private Type returnType;
-    private Type[] argumentTypes;
-    private int localOffset;
-    private int firstLocal;
-    private int nextLocal;
-    private Map remap = new HashMap();
 
     // current block
     private Block curBlock;
@@ -134,7 +125,7 @@ public class Emitter {
     }
 
     public Type getReturnType() {
-        return returnType;
+        return curMethod.getReturnType();
     }
 
     protected void init() {
@@ -149,7 +140,7 @@ public class Emitter {
         classv.visit(access,
                      this.classType.getInternalName(),
                      this.superType.getInternalName(),
-                     toInternalNames(interfaces),
+                     TypeUtils.toInternalNames(interfaces),
                      sourceFile);
     }
 
@@ -165,113 +156,20 @@ public class Emitter {
     
     public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
         closeMethod();
-        currentSig = sig;
-        methodAccess = access;
-        methodName = sig.getName();
-        returnType = sig.getReturnType();
-        argumentTypes = sig.getArgumentTypes();
-        localOffset = TypeUtils.isStatic(access) ? 0 : 1;
-        remap.clear();
-        
-        firstLocal = nextLocal = localOffset + getStackSize(argumentTypes);
-        codev = classv.visitMethod(access,
-                                   methodName,
-                                   sig.getDescriptor(),
-                                   toInternalNames(exceptions));
-
-        wrapped = new CodeAdapter(codev) {
-            public void visitMaxs(int maxStack, int maxLocals) {
-                // ignore
-            }
-
-            public void visitVarInsn(int opcode, int var) {
-                Type type;
-                switch (opcode) {
-                case Constants.RET: // is this correct?
-                case Constants.ILOAD:
-                case Constants.ISTORE:
-                    type = Type.INT_TYPE;
-                    break;
-                case Constants.FLOAD:
-                case Constants.FSTORE:
-                    type = Type.FLOAT_TYPE;
-                    break;
-                case Constants.LLOAD:
-                case Constants.LSTORE:
-                    type = Type.LONG_TYPE;
-                    break;
-                case Constants.DLOAD:
-                case Constants.DSTORE:
-                    type = Type.DOUBLE_TYPE;
-                    break;
-                default:
-                    type = Constants.TYPE_OBJECT;
-                }
-                cv.visitVarInsn(opcode, remapLocal(this, var, type));
-            }
-
-            public void visitIincInsn(int var, int increment) {
-                cv.visitIincInsn(remapLocal(this, var, Type.INT_TYPE), increment);
-            }
-
-            public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
-                cv.visitLocalVariable(name, desc, start, end, remapLocal(this, index, null));
-            }
-        };
-        return wrapped;
-    }
-
-    private int remapLocal(CodeVisitor check, int index, Type type) {
-        if (check != wrapped) {
-            throw new IllegalStateException("out of order method generation");
-        }
-        if (index < firstLocal) {
-            // System.err.println("remap keeping " + index + " (type=" + type.getDescriptor() + ")");
-            return index;
-        }
-        Integer key = new Integer((type.getSize() == 2) ? ~index : index);
-        Local local = (Local)remap.get(key);
-        if (local == null) {
-            remap.put(key, local = make_local(type));
-        }
-
-        // System.err.println("remapping " + index + " --> " + local.getIndex()  + " (type=" + type.getDescriptor() + ")");
-        if (local.getType().getSize() != type.getSize()) {
-            throw new IllegalStateException("Remapped local (" + index + "->" + local.getIndex() + ") in method " + currentSig + ", class " + classType.getClassName() + " requires different opcode sizes: old=" + local.getType().getDescriptor() + " new=" + type.getDescriptor());
-        }
-        return local.getIndex();
+        curMethod = new EmitterMethod(classv, access, sig, exceptions);
+        codev = curMethod.getRaw();
+        return curMethod;
     }
 
     private void closeMethod() {
-        if (codev != null) {
-            if (!TypeUtils.isAbstract(methodAccess)) {
-                codev.visitMaxs(0, 0);
-            }
-            
-            if (curBlock != null) {
-                throw new IllegalStateException("unclosed exception block");
-            }
+        if (curBlock != null) {
+            throw new IllegalStateException("unclosed exception block");
+        }
+        if (curMethod != null) {
+            curMethod.close();
+            curMethod = null;
             codev = null;
         }
-    }
-
-    private static int getStackSize(Type[] types) {
-        int size = 0;
-        for (int i = 0; i < types.length; i++) {
-            size += types[i].getSize();
-        }
-        return size;
-    }
-
-    private static String[] toInternalNames(Type[] types) {
-        if (types == null) {
-            return null;
-        }
-        String[] names = new String[types.length];
-        for (int i = 0; i < types.length; i++) {
-            names[i] = types[i].getInternalName();
-        }
-        return names;
     }
 
     public CodeVisitor begin_static() {
@@ -480,7 +378,7 @@ public class Emitter {
     }
     
     public void load_this() {
-        if (TypeUtils.isStatic(methodAccess)) {
+        if (TypeUtils.isStatic(curMethod.getAccess())) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
         codev.visitVarInsn(Constants.ALOAD, 0);
@@ -490,7 +388,7 @@ public class Emitter {
      * Pushes all of the arguments of the current method onto the stack.
      */
     public void load_args() {
-        load_args(0, argumentTypes.length);
+        load_args(0, curMethod.getArgumentTypes().length);
     }
 
     /**
@@ -498,34 +396,37 @@ public class Emitter {
      * @param index the zero-based index into the argument list
      */
     public void load_arg(int index) {
-        load_local(argumentTypes[index], localOffset + skipArgs(index));
+        load_local(curMethod.getArgumentTypes()[index],
+                   curMethod.getLocalOffset() + skipArgs(index));
     }
 
     // zero-based (see load_this)
     public void load_args(int fromArg, int count) {
-        int pos = localOffset + skipArgs(fromArg);
+        Type[] args = curMethod.getArgumentTypes();
+        int pos = curMethod.getLocalOffset() + skipArgs(fromArg);
         for (int i = 0; i < count; i++) {
-            Type t = argumentTypes[fromArg + i];
+            Type t = args[fromArg + i];
             load_local(t, pos);
             pos += t.getSize();
         }
     }
     
     private int skipArgs(int numArgs) {
+        Type[] args = curMethod.getArgumentTypes();
         int amount = 0;
         for (int i = 0; i < numArgs; i++) {
-            amount += argumentTypes[i].getSize();
+            amount += args[i].getSize();
         }
         return amount;
     }
 
     private void load_local(Type t, int pos) {
-        // TODO: t == null ok?
+        // TODO: make t == null ok?
         codev.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
     }
 
     private void store_local(Type t, int pos) {
-        // TODO: t == null ok?
+        // TODO: make t == null ok?
         codev.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
     }
     
@@ -542,7 +443,7 @@ public class Emitter {
     }
 
     public void return_value() {
-        codev.visitInsn(returnType.getOpcode(Constants.IRETURN));
+        codev.visitInsn(getReturnType().getOpcode(Constants.IRETURN));
     }
 
     public void declare_field(int access, String name, Type type, Object value) {
@@ -624,7 +525,7 @@ public class Emitter {
     }
 
     public void super_invoke() {
-        super_invoke(currentSig);
+        super_invoke(curMethod.getSignature());
     }
 
     public void super_invoke(Signature sig) {
@@ -723,9 +624,7 @@ public class Emitter {
     }
     
     public Local make_local(Type type) {
-        Local local = new Local(nextLocal, type);
-        nextLocal += type.getSize();
-        return local;
+        return curMethod.make_local(type);
     }
 
     public void checkcast_this() {
@@ -800,10 +699,6 @@ public class Emitter {
         mark(end);
     }
 
-//     public interface EndClassCallback {
-//         void process();
-//     }
-
     private static boolean isSorted(int[] keys) {
         for (int i = 1; i < keys.length; i++) {
             if (keys[i] < keys[i - 1])
@@ -821,8 +716,6 @@ public class Emitter {
         codev.visitLabel(label);
         return label;
     }
-
-    ////// MOVED FROM OPS //////
 
     public void push(boolean value) {
         push(value ? 1 : 0);
@@ -869,13 +762,15 @@ public class Emitter {
         /* generates:
            Object[] args = new Object[]{ arg1, new Integer(arg2) };
          */
-        push(argumentTypes.length);
+
+        Type[] args = curMethod.getArgumentTypes();
+        push(args.length);
         newarray();
-        for (int i = 0; i < argumentTypes.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             dup();
             push(i);
             load_arg(i);
-            box(argumentTypes[i]);
+            box(args[i]);
             aastore();
         }
     }
