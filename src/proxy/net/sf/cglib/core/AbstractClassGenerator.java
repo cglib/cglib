@@ -175,15 +175,13 @@ implements ClassGenerator
             synchronized (source) {
                 ClassLoader loader = getClassLoader();
                 Map cache2 = null;
-                if (useCache) {
-                    cache2 = (Map)source.cache.get(loader);
-                    if (cache2 != null) {
-                        instance = cache2.get(key);
-                    } else {
-                        cache2 = new HashMap();
-                        cache2.put(NAME_KEY, new HashSet());
-                        source.cache.put(loader, cache2);
-                    }
+                cache2 = (Map)source.cache.get(loader);
+                if (cache2 == null) {
+                    cache2 = new HashMap();
+                    cache2.put(NAME_KEY, new HashSet());
+                    source.cache.put(loader, cache2);
+                } else if (useCache) {
+                    instance = cache2.get(key);
                 }
                 if (instance == null) {
                     this.key = key;
