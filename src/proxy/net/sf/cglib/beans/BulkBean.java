@@ -66,7 +66,7 @@ import org.objectweb.asm.ClassVisitor;
 abstract public class BulkBean
 {
     private static final BulkBeanKey KEY_FACTORY =
-      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class);
+      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class, KeyFactory.CLASS_BY_NAME);
     
     interface BulkBeanKey {
         public Object newInstance(Class target, String[] getters, String[] setters, Class[] types);
@@ -140,12 +140,12 @@ abstract public class BulkBean
         }
 
         public BulkBean create() {
+            setNamePrefix(target.getName());
             Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
             return (BulkBean)super.create(key);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            setNamePrefix(target.getName());
             new BulkBeanEmitter(v, getClassName(), target, getters, setters, types);
         }
 

@@ -58,7 +58,7 @@ import java.util.*;
 
 public class MethodWrapper {
     private static final MethodWrapperKey KEY_FACTORY =
-      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class);
+      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, KeyFactory.CLASS_BY_NAME);
 
     interface MethodWrapperKey {
         public Object newInstance(String name, Class[] parameterTypes, Class returnType);

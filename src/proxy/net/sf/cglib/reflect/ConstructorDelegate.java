@@ -60,11 +60,11 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.11 2003/09/22 01:02:10 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.12 2003/09/29 22:56:27 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
-      (ConstructorKey)KeyFactory.create(ConstructorKey.class);
+      (ConstructorKey)KeyFactory.create(ConstructorKey.class, KeyFactory.CLASS_BY_NAME);
     
     interface ConstructorKey {
         public Object newInstance(Class declaring, Class iface);
@@ -101,6 +101,7 @@ abstract public class ConstructorDelegate {
         }
 
         public ConstructorDelegate create() {
+            setNamePrefix(targetClass.getName());
             Object key = KEY_FACTORY.newInstance(iface, targetClass);
             return (ConstructorDelegate)super.create(key);
         }

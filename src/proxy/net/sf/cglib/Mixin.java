@@ -65,11 +65,11 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.10 2003/09/22 02:03:33 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.11 2003/09/29 22:56:28 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
-      (MixinKey)KeyFactory.create(MixinKey.class);
+      (MixinKey)KeyFactory.create(MixinKey.class, KeyFactory.CLASS_BY_NAME);
     private static final Map ROUTE_CACHE = Collections.synchronizedMap(new HashMap());
 
     interface MixinKey {
@@ -141,11 +141,11 @@ abstract public class Mixin {
                     route = r.route;
                 }
             }
+            setNamePrefix(classes[findPackageProtected(classes)].getName());
             return (Mixin)super.create(KEY_FACTORY.newInstance(classes, route));
         }
 
         public void generateClass(ClassVisitor v) {
-            setNamePrefix(classes[findPackageProtected(classes)].getName());
             if (asBeans) {
                 new MixinBeanEmitter(v, getClassName(), classes);
             } else {

@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.2 2003/09/20 09:01:25 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.3 2003/09/29 22:56:26 herbyderby Exp $
  */
 public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public interface MyKey {
@@ -77,6 +77,10 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
         public Object newInstance(boolean[] a);
     }    
 
+    public interface ClassArrayKey {
+        public Object newInstance(Class[] a);
+    }    
+
     public interface MethodKey {
         public Object newInstance(Class returnType, Class[] parameterTypes);
     }
@@ -90,11 +94,7 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public void testNested() throws Exception {
         MyKey2 mykey2 = (MyKey2)KeyFactory.create(MyKey2.class);
         Object instance = mykey2.newInstance(new int[][]{ { 1, 2 }, { 3, 4 } });
-        int code1 = instance.hashCode();
-        int result = ((KeyFactory)instance).getHashConstant();
-        int mult = ((KeyFactory)instance).getHashMultiplier();
-        int code2 = ((((result + 1) * mult + 2) * mult + 3) * mult + 4) * mult;
-        assertTrue(code1 == code2);
+        assertTrue(instance.hashCode() == -1836783069);
     }
 
     public void testCharArray() throws Exception {

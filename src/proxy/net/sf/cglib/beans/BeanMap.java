@@ -62,7 +62,7 @@ import org.objectweb.asm.ClassVisitor;
 
 abstract public class BeanMap implements Map {
     private static final BeanMapKey KEY_FACTORY =
-      (BeanMapKey)KeyFactory.create(BeanMapKey.class);
+      (BeanMapKey)KeyFactory.create(BeanMapKey.class, KeyFactory.CLASS_BY_NAME);
     interface BeanMapKey {
         public Object newInstance(Class type, int switchStyle);
     }
@@ -96,12 +96,12 @@ abstract public class BeanMap implements Map {
         }
 
         public BeanMap create() {
+            setNamePrefix(BeanMap.class.getName());
             Object key = KEY_FACTORY.newInstance(bean.getClass(), switchStyle);
             return (BeanMap)super.create(key);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            setNamePrefix(BeanMap.class.getName());
             new BeanMapEmitter(v, getClassName(), bean.getClass(), switchStyle);
         }
 
