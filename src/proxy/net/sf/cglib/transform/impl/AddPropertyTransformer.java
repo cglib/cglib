@@ -25,37 +25,7 @@ public class AddPropertyTransformer extends EmittingTransformer {
 
     public void end_class() {
         if (!TypeUtils.isAbstract(getAccess())) {
-            Type[] T = new Type[1];
-            CodeEmitter e;
-            for (int i = 0; i < names.length; i++) {
-                String fieldName = "$cglib_prop_" + names[i];
-                declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null, null);
-
-                String property = TypeUtils.upperFirst(names[i]);
-                e = begin_method(Constants.ACC_PUBLIC,
-                                 new Signature("get" + property,
-                                               types[i],
-                                               Constants.TYPES_EMPTY),
-                                 null,
-                                 null);
-                e.load_this();
-                e.getfield(fieldName);
-                e.return_value();
-                e.end_method();
-
-                T[0] = types[i];
-                e = begin_method(Constants.ACC_PUBLIC,
-                                 new Signature("set" + property,
-                                               Type.VOID_TYPE,
-                                               T),
-                                 null,
-                                 null);
-                e.load_this();
-                e.load_arg(0);
-                e.putfield(fieldName);
-                e.return_value();
-                e.end_method();
-            }
+            EmitUtils.add_properties(this, names, types);
         }
         super.end_class();
     }
