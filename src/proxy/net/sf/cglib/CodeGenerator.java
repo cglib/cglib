@@ -1355,6 +1355,16 @@ public abstract class CodeGenerator implements Constants, ClassFileConstants {
             nop(end);
         }
     }
+    
+  protected void throwException(Class type, String msg){
+      
+        new_instance(type);
+        dup();
+        push(msg);
+        invoke_constructor(type, new Class[]{ String.class });
+        athrow();
+  
+  }  
 
     /**
      * If both objects on the top of the stack are non-null, does nothing.

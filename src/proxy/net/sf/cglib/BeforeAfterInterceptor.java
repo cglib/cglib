@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: BeforeAfterInterceptor.java,v 1.5 2002/11/30 12:41:29 baliuka Exp $
+ * @version $Id: BeforeAfterInterceptor.java,v 1.6 2002/12/01 19:05:22 baliuka Exp $
  */
 abstract public class BeforeAfterInterceptor implements MethodInterceptor {
 
@@ -66,7 +66,8 @@ abstract public class BeforeAfterInterceptor implements MethodInterceptor {
         Throwable e = null;                                                                            
         boolean invokedSuper = false;                                                                  
         Object retValFromSuper = null;
-        if (invokeSuper(obj, method, args)) {
+        if ( !java.lang.reflect.Modifier.isAbstract( method.getModifiers() ) && 
+              invokeSuper(obj, method, args)) {
             invokedSuper = true;                                                                        
             try {
                 retValFromSuper = proxy.invokeSuper(obj, args);

@@ -28,5 +28,9 @@ public class EA {
     
     protected void finalTest(){}
     
+    public int compareTo(Object obj) {
+        return -1;
+    }
+    
 }
 

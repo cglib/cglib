@@ -278,11 +278,10 @@ import java.util.*;
     }
 
     private void throwWrongType() {
-        new_instance(UnsupportedOperationException.class);
-        dup();
-        push("Using a delegating enhanced class as non-delegating, or the reverse");
-        invoke_constructor(UnsupportedOperationException.class, new Class[]{ String.class });
-        athrow();
+        
+        throwException(UnsupportedOperationException.class,
+        "Using a delegating enhanced class as non-delegating, or the reverse");
+        
     }
 
     // TODO: need to ensure that MethodInterceptor type is compatible
@@ -334,7 +333,8 @@ import java.util.*;
                      method.getParameterTypes(),
                      method.getExceptionTypes());
         if (Modifier.isAbstract(method.getModifiers())) {
-            zero_or_null(method.getReturnType());
+           // zero_or_null(method.getReturnType());
+            throwException(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
             if (delegating) {

@@ -84,6 +84,10 @@ public class Obj extends ObjS implements Serializable{
      abstract public void setS(String i);
      
    }
+   
+   void throwexeption(){
+     throw new RuntimeException("");
+   }
    public void method1( Object bean, Object[] values ){
          
         Bean src = ( Bean)bean;
@@ -102,9 +106,9 @@ public class Obj extends ObjS implements Serializable{
         
       Class cls = ClassLoader.class;
       
-      ClassLoader loader = (ClassLoader) Trace.newInstance(cls);
+//      ClassLoader loader = (ClassLoader) Trace.newInstance(cls);
         
-      loader.loadClass(Obj.class.getName());
+//      loader.loadClass(Obj.class.getName());
         
       JavaClass jc =  Repository.lookupClass( Obj.class.getName() );
       

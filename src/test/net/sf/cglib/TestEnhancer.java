@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.6 2002/12/01 08:40:09 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.7 2002/12/01 19:05:22 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -176,6 +176,7 @@ public class TestEnhancer extends TestCase {
         ((Factory)proxy).setDelegate(obj);
         assertTrue(proxy.getName().equals("herby"));
     }
+    
     
     public void testTypes()throws Throwable{
         
@@ -340,9 +341,11 @@ public class TestEnhancer extends TestCase {
     }
     
    public void testABC() throws Throwable{
-       Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR).toString();
+       Enhancer.enhance(EA.class, null, TEST_INTERCEPTOR);
        Enhancer.enhance(EC1.class, null, TEST_INTERCEPTOR).toString();
        ((EB)Enhancer.enhance(EB.class, null, TEST_INTERCEPTOR)).finalTest();
+       assertTrue("abstract method",( (EC1)Enhancer.enhance(EC1.class,
+                     null, TEST_INTERCEPTOR) ).compareTo( new EC1() ) == -1 );
        Enhancer.enhance(ED.class, null, TEST_INTERCEPTOR).toString();
        Enhancer.enhance(ClassLoader.class, null, TEST_INTERCEPTOR).toString();
    }
