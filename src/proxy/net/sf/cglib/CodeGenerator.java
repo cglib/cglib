@@ -149,7 +149,7 @@ public abstract class CodeGenerator implements Constants {
                 byte[] bytes = cg.getJavaClass().getBytes();
 
                 if (debugLocation != null) {
-                    OutputStream out = new FileOutputStream(debugLocation + name + ".cglib");
+                    OutputStream out = new FileOutputStream(new File(new File(debugLocation), name + ".cglib"));
                     out.write(bytes);
                     out.close();
                 }
@@ -262,7 +262,7 @@ public abstract class CodeGenerator implements Constants {
         setNextLocal();
     }
 
-    protected void begin_method(java.lang.reflect.Method method) {
+    protected void begin_method(Method method) {
         int modifiers = method.getModifiers();
         modifiers = Modifier.FINAL
             | (modifiers
@@ -272,12 +272,12 @@ public abstract class CodeGenerator implements Constants {
         begin_method(method, modifiers);
     }
 
-    protected void begin_method(java.lang.reflect.Method method, int modifiers) {
+    protected void begin_method(Method method, int modifiers) {
         begin_method(modifiers, method.getReturnType(), method.getName(),
                      method.getParameterTypes(), method.getExceptionTypes());
     }
     
-    protected void begin_constructor(java.lang.reflect.Constructor constructor) {
+    protected void begin_constructor(Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
     }
 
@@ -1160,6 +1160,10 @@ public abstract class CodeGenerator implements Constants {
         append(new INSTANCEOF(cp.addClass(clazz.getName())));
     }
 
+    protected void instance_of_this() {
+        append(new INSTANCEOF(cp.addClass(cg.getClassName())));
+    }
+    
     private static int javaModifiersToBcel(int modifiers) {
         int result = 0;
         if (Modifier.isAbstract(modifiers))

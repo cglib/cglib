@@ -55,42 +55,75 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.beans.*;
 import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: DelegatorGenerator.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.4 2002/12/04 00:41:13 herbyderby Exp $
  */
 /* package */ class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
 
-    private Class[] interfaces;
+    private Class[] classes;
+    private boolean bean;
         
-    /* package */ DelegatorGenerator(String className, Class[] interfaces, ClassLoader loader) {
+    /* package */ DelegatorGenerator(String className, Class[] classes, ClassLoader loader, boolean bean) {
         super(className, TYPE_OBJECT, loader);
-        this.interfaces = interfaces;
+        this.classes = classes;
+        this.bean = bean;
     }
 
     protected void generate() throws NoSuchMethodException {
-        declare_interfaces(interfaces);
-        declare_interface(Delegator.Factory.TYPE);
         generateConstructor();
         generateFactory();
+        declare_interface(Delegator.Factory.TYPE);
 
         Set methodSet = new HashSet();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class iface = interfaces[i];
-            if (!iface.isInterface()) {
-                throw new IllegalArgumentException(iface + " is not an interface");
+        for (int i = 0; i < classes.length; i++) {
+            Class clazz = classes[i];
+            Method[] methods;
+            if (bean) {
+                methods = getBeanMethods(clazz);
+            } else {
+                if (!clazz.isInterface()) {
+                    throw new IllegalArgumentException(clazz + " is not an interface");
+                }
+                declare_interface(clazz);
+                methods = clazz.getMethods();
             }
-            Method[] methods = iface.getMethods();
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
                 Object methodKey = MethodWrapper.newInstance(method);
                 if (!methodSet.contains(methodKey)) {
                     methodSet.add(methodKey);
-                    generateProxy(iface, method, i);
+                    generateProxy(clazz, method, i);
                 }
+            }
+        }
+    }
+
+    private static Method[] getBeanMethods(Class clazz) {
+        try {
+            BeanInfo info = Introspector.getBeanInfo(clazz, Introspector.IGNORE_ALL_BEANINFO);
+            PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
+            List methods = new ArrayList(descriptors.length * 2);
+            for (int i = 0; i < descriptors.length; i++) {
+                PropertyDescriptor pd = descriptors[i];
+                addBeanMethod(methods, pd.getReadMethod());
+                addBeanMethod(methods, pd.getWriteMethod());
+            }
+            return (Method[])methods.toArray(new Method[methods.size()]);
+        } catch (IntrospectionException e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+
+    private static void addBeanMethod(List methods, Method method) {
+        if (method != null) {
+            int mod = method.getModifiers();
+            if (!(Modifier.isFinal(mod) || Modifier.isAbstract(mod))) {
+                methods.add(method);
             }
         }
     }
@@ -119,12 +152,12 @@ import java.util.*;
         end_method();
     }
 
-    private void generateProxy(Class iface, Method method, int arrayref) {
+    private void generateProxy(Class clazz, Method method, int arrayref) {
         begin_method(method);
         load_this();
         getfield(FIELD_NAME);
         aaload(arrayref);
-        checkcast(iface);
+        checkcast(clazz);
         load_args();
         invoke(method);
         return_value();

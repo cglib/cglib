@@ -58,15 +58,15 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.4 2002/12/03 07:08:11 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.5 2002/12/04 00:41:13 herbyderby Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;
 
     private static final String CLASS_NAME = "net.sf.cglib.Delegator$$CreatedByCGLIB$$";
     private static int index = 0;
+    private static final FactoryCache cache = new FactoryCache();
     private static final ClassLoader defaultLoader = TYPE.getClassLoader();
-    private static final Map loaders = new WeakHashMap();
     private static final Map infoCache = new HashMap();
 
     private static final DelegatorKey keyFactory =
@@ -104,7 +104,7 @@ public class Delegator {
      * @return the dynamically created object
      */
     public static Object makeDelegator(Class[] interfaces, Object[] delegates, ClassLoader loader) {
-        return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader);
+        return makeDelegatorHelper(keyFactory.newInstance(interfaces), interfaces, delegates, loader, false);
     }
     
     /**
@@ -127,7 +127,7 @@ public class Delegator {
         for (int i = 0; i < remapped.length; i++) {
             remapped[i] = delegates[info.indexes[i]];
         }
-        return makeDelegatorHelper(info.key, info.interfaces, remapped, loader);
+        return makeDelegatorHelper(info.key, info.interfaces, remapped, loader, false);
     }
 
     /**
@@ -149,46 +149,55 @@ public class Delegator {
         return map;
     }
 
-    synchronized private static Info getInfo(Object[] delegates) {
-        // TODO: optimize object->class conversion?
-        Class[] classes = new Class[delegates.length];
-        for (int i = 0; i < delegates.length; i++) {
-            classes[i] = delegates[i].getClass();
-        }
+    /**
+     * Combines an array of JavaBeans into a single "super" bean.
+     * Calls to the super bean will delegate to the underlying beans.
+     * In the case of a property name conflicts, the last bean in the list
+     * that has the troublesome property will be chosen as the delegate.
+     * @param beans the list of beans to delegate to
+     * @param loader The ClassLoader to use. If null uses the one that loaded this class.
+     * @return the dynamically created bean
+     */
+    public static Object makeSuperBean(Object[] beans, ClassLoader loader) {
+        Class[] classes = getClasses(beans);
         Object key = keyFactory.newInstance(classes);
+        return makeDelegatorHelper(key, classes, beans, loader, true);
+    }
+
+    synchronized private static Info getInfo(Object[] delegates) {
+        Object key = keyFactory.newInstance(getClasses(delegates));
         Info info = (Info)infoCache.get(key);
         if (info == null)
             infoCache.put(key, info = new Info(delegates));
         return info;
     }
 
-    synchronized private static Object makeDelegatorHelper(Object key,
-                                                           Class[] interfaces,
-                                                           Object[] delegates,
-                                                           ClassLoader loader) {
-        if (loader == null) {
-            loader = defaultLoader;
+    private static Class[] getClasses(Object[] delegates) {
+        Class[] classes = new Class[delegates.length];
+        for (int i = 0; i < delegates.length; i++) {
+            classes[i] = delegates[i].getClass();
         }
-        Map factories = (Map)loaders.get(loader);
-        if (factories == null) {
-            loaders.put(loader, factories = new HashMap());
-        }
-        Factory factory = (Factory)factories.get(key);
-        if (factory == null) {
-            Class clazz = new DelegatorGenerator(getNextName(), interfaces, loader).define();
-            try {
-                factory = (Factory)clazz.getConstructor(Constants.TYPES_OBJECT_ARRAY).
-                    newInstance(new Object[]{ delegates });
-                factories.put(key, factory);
-                return factory;
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new CodeGenerationException(e);
+        return classes;
+    }
+
+    private static Object makeDelegatorHelper(Object key,
+                                              Class[] classes,
+                                              Object[] delegates,
+                                              ClassLoader loader,
+                                              boolean bean) {
+        Factory factory;
+        synchronized (cache) {
+            if (loader == null) {
+                loader = defaultLoader;
             }
-        } else {
-            return factory.cglib_newInstance(delegates);
+            factory = (Factory)cache.get(loader, key);
+            if (factory == null) {
+                Class result = new DelegatorGenerator(getNextName(), classes, loader, bean).define();
+                factory = (Factory)FactoryCache.newInstance(result, Constants.TYPES_OBJECT_ARRAY, new Object[1]);
+                cache.put(loader, key, factory);
+            }
         }
+        return factory.cglib_newInstance(delegates);
     }
 
     private static class Info {

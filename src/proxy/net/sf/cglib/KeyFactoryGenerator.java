@@ -58,19 +58,19 @@ import java.lang.reflect.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactoryGenerator.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
+ * @version $Id: KeyFactoryGenerator.java,v 1.5 2002/12/04 00:41:13 herbyderby Exp $
  */
 class KeyFactoryGenerator extends CodeGenerator {
-    private static final Method hashCode;
-    private static final Method floatToIntBits;
-    private static final Method doubleToLongBits;
+    private static final Method HASH_CODE;
+    private static final Method FLOAT_TO_INT_BITS;
+    private static final Method DOUBLE_TO_LONG_BITS;
     private static final Class TYPE_KEY_FACTORY = KeyFactory.class;
     
     static {
         try {
-            hashCode = Object.class.getDeclaredMethod("hashCode", new Class[]{});
-            floatToIntBits = Float.class.getDeclaredMethod("floatToIntBits", new Class[]{ float.class });
-            doubleToLongBits = Double.class.getDeclaredMethod("doubleToLongBits", new Class[]{ double.class });
+            HASH_CODE = Object.class.getDeclaredMethod("hashCode", null);
+            FLOAT_TO_INT_BITS = Float.class.getDeclaredMethod("floatToIntBits", new Class[]{ float.class });
+            DOUBLE_TO_LONG_BITS = Double.class.getDeclaredMethod("doubleToLongBits", new Class[]{ double.class });
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
@@ -182,12 +182,12 @@ class KeyFactoryGenerator extends CodeGenerator {
     }
 
     private void hash_object() {
-        // (f == null) ? 0 : f.hashCode()
+        // (f == null) ? 0 : f.hashCode();
         String isNull = newLabel();
         String end = newLabel();
         dup();
         ifnull(isNull);
-        invoke(hashCode);
+        invoke(HASH_CODE);
         goTo(end);
         nop(isNull);
         pop();
@@ -202,11 +202,11 @@ class KeyFactoryGenerator extends CodeGenerator {
             ixor();
         } else if (clazz.equals(Double.TYPE)) {
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            invoke(doubleToLongBits);
+            invoke(DOUBLE_TO_LONG_BITS);
             hash_long();
         } else if (clazz.equals(Float.TYPE)) {
             // Float.floatToIntBits(f)
-            invoke(floatToIntBits);
+            invoke(FLOAT_TO_INT_BITS);
         } else if (clazz.equals(Long.TYPE)) {
             hash_long();
         } else { // byte, char, short, int
@@ -239,6 +239,9 @@ class KeyFactoryGenerator extends CodeGenerator {
 
     private void generateEquals() {
         begin_method(EQUALS_METHOD);
+        load_arg(0);
+        instance_of_this();
+        ifeq("failure");
         for (int i = 0; i < numArgs; i++) {
             String fieldName = "FIELD_" + i;
             load_this();

@@ -53,77 +53,54 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
-import java.beans.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestDelegator.java,v 1.4 2002/12/04 00:41:12 herbyderby Exp $
+ * @version $Id: FactoryCache.java,v 1.1 2002/12/04 00:41:13 herbyderby Exp $
  */
-public class TestDelegator extends CodeGenTestCase {
-    public void testSimple() throws Exception {
-        Object obj = Delegator.makeDelegator(new Class[]{ DI1.class, DI2.class },
-                                             new Object[]{ new D1(), new D2() },
-                                             null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
+/* package */ class FactoryCache {
+    private final Map cache = new WeakHashMap();
+
+    public FactoryCache() {
     }
 
-    public void testDetermineInterfaces() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D2() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
-    }
- 
-    public void testOverride() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D1(), new D4() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D4"));
+    public Object get(ClassLoader loader, Object key) {
+        return getFactoryMap(loader).get(key);
     }
 
-    public void testNonOverride() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D4(), new D1() }, null);
-        assertTrue(((DI1)obj).herby().equals("D4"));
-        assertTrue(((DI2)obj).derby().equals("D4"));
+    public void put(ClassLoader loader, Object key, Object factory) {
+        getFactoryMap(loader).put(key, factory);
     }
 
-    public void testSubclass() throws Exception {
-        Object obj = Delegator.makeDelegator(new Object[]{ new D3(), new D1() }, null);
-        assertTrue(((DI1)obj).herby().equals("D1"));
-        assertTrue(((DI2)obj).derby().equals("D2"));
-        assertTrue(((DI3)obj).extra().equals("D3"));
-    }
-
-    public void testBeans() throws Exception {
-        Object obj = Delegator.makeSuperBean(new Object[]{ new DBean1(), new DBean2() }, null);
-        Set getters = getGetters(obj.getClass());
-        assertTrue(getters.size() == 3); // name, age, class
-        assertTrue(getters.contains("name"));
-        assertTrue(getters.contains("age"));
-    }
-
-    private static Set getGetters(Class beanClass) throws Exception {
-        Set getters = new HashSet();
-        PropertyDescriptor[] descriptors =
-            Introspector.getBeanInfo(beanClass).getPropertyDescriptors();
-        for (int i = 0; i < descriptors.length; i++) {
-            if (descriptors[i].getReadMethod() != null) {
-                getters.add(descriptors[i].getName());
-            }
+    private Map getFactoryMap(ClassLoader loader) {
+        Map factories = (Map)cache.get(loader);
+        if (factories == null) {
+            cache.put(loader, factories = new HashMap());
         }
-        return getters;
+        return factories;
     }
 
-    public TestDelegator(String testName) {
-        super(testName);
+    public static Class forName(String name, ClassLoader loader) {
+        try {
+            return Class.forName(name, true, loader);
+        } catch (ClassNotFoundException e) {
+            throw new CodeGenerationException(e);
+        }
     }
-    
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-    
-    public static Test suite() {
-        return new TestSuite(TestDelegator.class);
+
+    public static Object newInstance(Class clazz, Class[] parameterTypes, Object[] args) {
+        try {
+            return clazz.getConstructor(parameterTypes).newInstance(args);
+        } catch (NoSuchMethodException e) {
+            throw new CodeGenerationException(e);
+        } catch (InstantiationException e) {
+            throw new CodeGenerationException(e);
+        } catch (IllegalAccessException e) {
+            throw new CodeGenerationException(e);
+        } catch (InvocationTargetException e) {
+            throw new CodeGenerationException(e.getTargetException());
+        }
     }
 }

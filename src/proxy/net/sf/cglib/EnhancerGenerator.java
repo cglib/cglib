@@ -342,19 +342,17 @@ import java.util.*;
                      accessName,
                      method.getParameterTypes(),
                      method.getExceptionTypes());
-        if (Modifier.isAbstract(method.getModifiers())) {
-           // zero_or_null(method.getReturnType());
+        if (delegating) {
+            load_this();
+            getfield(DELEGATE_FIELD);
+            load_args();
+            invoke(method);
+        } else if (Modifier.isAbstract(method.getModifiers())) {
             throwException(AbstractMethodError.class, method.toString() + " is abstract" );
         } else {
             load_this();
-            if (delegating) {
-                getfield(DELEGATE_FIELD);
-                load_args();
-                invoke(method);
-            } else {
-                load_args();
-                super_invoke(method);
-            }
+            load_args();
+            super_invoke(method);
         }
         return_value();
         end_method();

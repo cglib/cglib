@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.5 2002/12/03 08:02:40 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.6 2002/12/04 00:41:12 herbyderby Exp $
  */
 public class TestKeyFactory extends CodeGenTestCase {
     public interface MyKey {
@@ -119,6 +119,11 @@ public class TestKeyFactory extends CodeGenTestCase {
         assertTrue(!methodSet.contains(factory.newInstance(Number.class, new Class[]{ Integer.class })));
     }
 
+    public void testEqualOtherClass() throws Exception {
+        MyKey mykey = (MyKey)KeyFactory.makeFactory(MyKey.class, null);
+        assertTrue(!mykey.newInstance(5, new int[]{ 6, 7 }, false).equals(new Object()));
+    }
+    
     public TestKeyFactory(String testName) {
         super(testName);
     }

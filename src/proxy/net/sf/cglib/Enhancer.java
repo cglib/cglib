@@ -78,17 +78,17 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.7 2002/12/03 19:24:26 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.8 2002/12/04 00:41:13 herbyderby Exp $
  */
 public class Enhancer {
     private static final String CLASS_PREFIX = "net.sf.cglib";
     private static final String CLASS_SUFFIX = "$$EnhancedByCGLIB$$";
+    private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
     private static int index = 0;
-    private static final Map cache = new WeakHashMap();
+    private static final FactoryCache cache = new FactoryCache();
+    private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
     private static final EnhancerKey keyFactory =
       (EnhancerKey)KeyFactory.makeFactory(EnhancerKey.class, null);
-    private static final ClassLoader defaultLoader = Enhancer.class.getClassLoader();
-    private static final String methodInterceptorName = MethodInterceptor.class.getName();
 
     /* package */ interface EnhancerKey {
         public Object newInstance(Class cls, Class[] interfaces, Method wreplace,
@@ -208,10 +208,6 @@ public class Enhancer {
             throw new IllegalArgumentException("MethodInterceptor is null");
         }
 
-        if (cls != null && obj != null && !cls.isAssignableFrom(obj.getClass())) {
-            throw new IllegalArgumentException("Class must be same class or superclass of delegate");
-        }
-
         if (cls == null) {
             if (obj == null) {
                 cls = Constants.TYPE_OBJECT;
@@ -220,40 +216,22 @@ public class Enhancer {
             }
         }
 
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-
+        Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
         Factory factory;
         synchronized (cache) {
-            Map factories = (Map)cache.get(loader);
-            if (factories == null) {
-                cache.put(loader, factories = new HashMap());
+            if (loader == null) {
+                loader = defaultLoader;
             }
-            Object key = keyFactory.newInstance(cls, interfaces, wreplace, ih.getClass(), delegating);
-            factory = (Factory)factories.get(key);
+            factory = (Factory)cache.get(loader, key);
             if (factory == null) {
+                Class mi = FactoryCache.forName(INTERCEPTOR_NAME, loader);
                 Class result = new EnhancerGenerator(getNextName(cls), cls, interfaces,
-                                                     ih, loader, wreplace,
-                                                     delegating, filter ).define();
-                try {
-                    Class mi = Class.forName(methodInterceptorName, true, loader);
-                    if (delegating) {
-                        factory = (Factory)result.getConstructor(new Class[]{ mi, Constants.TYPE_OBJECT })
-                            .newInstance(new Object[]{ null, null });
-                    } else {
-                        factory = (Factory)result.getConstructor(new Class[]{ mi })
-                            .newInstance(new Object[]{ null });
-                    }
-                    factories.put(key, factory);
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new CodeGenerationException(e);
-                }
+                                                     ih, loader, wreplace, delegating, filter).define();
+                Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };
+                factory = (Factory)FactoryCache.newInstance(result, types, new Object[delegating ? 2 : 1]);
+                cache.put(loader, key, factory);
             }
         }
-
         if (delegating) {
             return factory.newInstance(ih, obj);
         } else {
