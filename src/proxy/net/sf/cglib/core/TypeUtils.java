@@ -37,6 +37,10 @@ public class TypeUtils {
         return (Constants.ACC_INTERFACE & access) != 0;
     }
 
+    public static boolean isPrivate(int access) {
+        return (Constants.ACC_PRIVATE & access) != 0;
+    }
+    
 
     // getPackage returns null on JDK 1.2
     public static String getPackageName(Type type) {
