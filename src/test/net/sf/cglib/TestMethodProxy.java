@@ -54,12 +54,11 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.util.*;
 import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestMethodProxy.java,v 1.7 2002/12/30 00:06:15 herbyderby Exp $
+ * @version $Id: TestMethodProxy.java,v 1.8 2003/01/23 11:19:02 nemecec Exp $
  */
 public class TestMethodProxy extends CodeGenTestCase {
 

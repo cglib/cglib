@@ -54,8 +54,6 @@
 
 package net.sf.cglib;
 
-import java.util.*;
-
 /**
  * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
  * Code for <code>equals</code> and <code>hashCode</code> methods follow the
@@ -94,7 +92,7 @@ import java.util.*;
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.10 2003/01/05 23:55:43 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.11 2003/01/23 11:16:29 nemecec Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;

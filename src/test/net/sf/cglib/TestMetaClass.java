@@ -54,7 +54,6 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.util.*;
 import junit.framework.*;
 
 /**

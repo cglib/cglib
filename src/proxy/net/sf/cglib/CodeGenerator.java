@@ -55,7 +55,6 @@ package net.sf.cglib;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.security.PrivilegedAction;
 import java.util.*;
 import org.apache.bcel.generic.*;
 
@@ -63,7 +62,7 @@ import org.apache.bcel.generic.*;
  * Abstract base class for code generators
  * @author  baliuka
  */
-public abstract class CodeGenerator implements Constants {
+/*package*/ abstract class CodeGenerator implements Constants {
     private static final String CONSTRUCTOR_NAME = "<init>";
     private static final String SOURCE_FILE = "<generated>";
     private static final String STATIC_NAME = "<clinit>";
