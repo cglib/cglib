@@ -8,16 +8,15 @@ import java.util.*;
 public class Trace implements MethodInterceptor{
     
     int ident = 1;
+    static Trace callback = new Trace();
     
-    
-    static Trace instance = new Trace();
     /** Creates a new instance of Trace */
-    public Trace() {
+    private Trace() {
     }
     
     public static  Object newInstance( Class clazz ){
       try{  
-        return Enhancer.enhance( clazz, null, instance );
+        return Enhancer.enhance( clazz, null, callback );
       }catch( Throwable e ){
          e.printStackTrace(); 
          throw new Error(e.getMessage());
@@ -37,6 +36,8 @@ public class Trace implements MethodInterceptor{
         }catch( ArrayIndexOutOfBoundsException ignore ){
         
         }
+       list.add(value + "1");
+       list.add(value + "2");
        list.toString(); 
        list.set( 0, null ); 
        list.toString();
@@ -44,6 +45,9 @@ public class Trace implements MethodInterceptor{
        list.get(1);
        list.toArray();
        list.remove(list);
+       list.remove("");
+       list.containsAll(list);
+       list.lastIndexOf(value);
     }
     
     /** this method is invoked after execution
@@ -60,6 +64,7 @@ public class Trace implements MethodInterceptor{
     public Object afterReturn(Object obj, java.lang.reflect.Method method, Object[] args, boolean invokedSuper, Object retValFromSuper, java.lang.Throwable e) throws java.lang.Throwable {
         ident--;
          if(e != null){
+           printIdent(ident);   
            System.out.println("throw " + e );  
            System.out.println();
            throw e.fillInStackTrace();
@@ -102,11 +107,12 @@ public class Trace implements MethodInterceptor{
     }
     
    void printIdent( int ident ){
-   
+       
+    
        while( --ident > 0 ){
-         System.out.print("-----");
+         System.out.print(".......");
        }
-      
+      System.out.print("  ");
    }
     
 }
