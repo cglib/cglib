@@ -68,7 +68,7 @@ class BeanMapEmitter extends Emitter {
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
         setClassVisitor(v);
 
-        begin_class(Modifier.PUBLIC, className, BeanMap.class, null);
+        begin_class(Modifier.PUBLIC, className, BeanMap.class, null, Constants.SOURCE_FILE);
         Virt.null_constructor(this);
         Virt.factory_method(this, NEW_INSTANCE);
         generateConstructor();

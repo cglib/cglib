@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.27 2003/09/11 17:40:49 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.28 2003/09/17 20:44:27 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -27,6 +27,7 @@
     <property name="source.test" value="src/test"/>
 
     <property name="asm.jar" value="lib/asm.jar"/>    
+    <property name="source.asm" value="../asm-src"/>    
   
     <property name="compile.debug" value="true"/>
     <property name="compile.deprecation" value="true"/>
@@ -40,8 +41,11 @@
 		<include name="*.jar"/>
        </fileset>
     </path>
-  
-  
+
+    <path id="javadoc.path">
+      <pathelement path="${source.home}"/>
+      <pathelement path="${source.asm}"/>
+    </path>
 
     <!-- ========== Test Execution Defaults =================================== -->
     <property name="cp" value=""/>
@@ -94,7 +98,7 @@
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
              packagenames="net.sf.cglib.*"
              access="public"
-             sourcepath="${source.home}" version="true" 
+             sourcepathref="javadoc.path" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
   </target>
 

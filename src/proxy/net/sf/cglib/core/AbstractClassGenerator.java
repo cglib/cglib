@@ -62,20 +62,27 @@ import org.objectweb.asm.ClassWriter;
 abstract public class AbstractClassGenerator
 implements ClassGenerator
 {
-    private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
       new RuntimePermission("defineCGLIBClassInJavaPackage");
 
+    private static final NamingPolicy DEFAULT_NAMING_POLICY = new NamingPolicy() {
+        public String getClassName(String prefix, Class source, int counter) {
+            StringBuffer sb = new StringBuffer();
+            sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
+            sb.append("$$");
+            sb.append(ReflectUtils.getNameWithoutPackage(source));
+            sb.append("ByCGLIB$$");
+            sb.append(counter);
+            return sb.toString();
+        }
+    };
+
+    private NamingPolicy namingPolicy;
     private Source source;
     private ClassLoader classLoader;
-
     private String className;
     private String namePrefix;
     private int counter;
-
-    static {
-        debugLocation = System.getProperty("cglib.debugLocation");
-    }
 
     protected static class Source {
         Class type;
@@ -96,31 +103,26 @@ implements ClassGenerator
         this.source = source;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     protected void setNamePrefix(String namePrefix) {
         this.namePrefix = namePrefix;
     }
 
-    // TODO: pluggable policy?
     protected String getClassName() {
-        if (className != null) {
-            return className;
-        } else {
-            StringBuffer sb = new StringBuffer();
-            sb.append((namePrefix != null) ? namePrefix : "net.sf.cglib.empty.Object");
-            sb.append("$$");
-            sb.append(ReflectUtils.getNameWithoutPackage(source.type));
-            sb.append("ByCGLIB$$");
-            sb.append(counter);
-            return sb.toString();
+        if (className == null) {
+            if (namingPolicy == null) {
+                namingPolicy = DEFAULT_NAMING_POLICY;
+            }
+            return namingPolicy.getClassName(namePrefix, source.type, counter);
         }
+        return className;
     }
 
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+    }
+
+    public void setNamingPolicy(NamingPolicy namingPolicy) {
+        this.namingPolicy = namingPolicy;
     }
 
     // TODO: pluggable policy?
@@ -156,11 +158,8 @@ implements ClassGenerator
                     }
                 }
                 if (instance == null) {
-                    ClassWriter cw = new ClassWriter(true);
-                    generateClass(cw);
-                    byte[] b = cw.toByteArray();
+                    byte[] b = DebuggingLoader.getBytes(this);
                     Class gen = defineClass(source.defineClass, getClassName(), b, loader);
-
                     instance = firstInstance(gen);
 
                     if (cache2 != null) {
@@ -179,18 +178,14 @@ implements ClassGenerator
         }
     }
 
+//     protected ClassVisitor transform(ClassWriter cw) {
+//         return cw;
+//     }
+
     abstract protected Object firstInstance(Class type) throws Exception;
     abstract protected Object nextInstance(Object instance) throws Exception;
 
     private static Class defineClass(Method m, String className, byte[] b, ClassLoader loader) throws Exception {
-        if (debugLocation != null) {
-            File file = new File(new File(debugLocation), className + ".class");
-            // System.err.println("CGLIB writing " + file);
-            OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-            out.write(b);
-            out.close();
-        }
-        
         m.setAccessible(true);
         SecurityManager sm = System.getSecurityManager();
         if (className != null && className.startsWith("java.") && sm != null) {

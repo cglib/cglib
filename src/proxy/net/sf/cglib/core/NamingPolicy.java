@@ -51,66 +51,8 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.core;
 
-import junit.framework.*;
-import net.sf.cglib.beans.*;
-import net.sf.cglib.core.*;
-import net.sf.cglib.reflect.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.transform.*;
-
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.35 2003/09/17 20:44:27 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
-
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-
-        // root
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-        suite.addTest(TestMixin.suite());
-
-        // beans
-        suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestBeanMap.suite());
-
-        // reflect
-        suite.addTest(TestDelegates.suite());
-        suite.addTest(TestFastClass.suite());
-
-        // core
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
-
-        // util
-        suite.addTest(TestParallelSorter.suite());
-
-        // transform
-        suite.addTest(TestTransformingLoader.suite());
-
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-    }
+public interface NamingPolicy {
+    String getClassName(String prefix, Class source, int counter);
 }
-

@@ -79,7 +79,7 @@ class BulkBeanEmitter extends Emitter {
         validate(target, getterNames, setterNames, types, getters, setters);
 
         setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, BulkBean.class, null);
+        begin_class(Modifier.PUBLIC, className, BulkBean.class, null, Constants.SOURCE_FILE);
         Virt.null_constructor(this);
         generateGet(target, getters);
         generateSet(target, setters);

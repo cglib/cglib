@@ -114,7 +114,7 @@ public class TestStringSwitch extends CodeGenTestCase {
 
         public void generateClass(ClassVisitor v) throws Exception {
             final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class });
+            e.begin_class(Modifier.PUBLIC, getClassName(), null, new Class[]{ Indexed.class }, Constants.SOURCE_FILE);
             Virt.null_constructor(e);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
             e.begin_method(method);

@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2003 The Apache Software Foundation.  All rights
+ * Copyright (c) 2002 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,84 +51,47 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib.util;
+package net.sf.cglib.transform;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.core.*;
-import org.objectweb.asm.ClassVisitor;
+import net.sf.cglib.beans.*;
+import java.util.Arrays;
+import java.util.Map;
+import junit.framework.*;
 
-class ParallelSorterEmitter extends Emitter {
-    private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
-    private static final Method SWAP_METHOD =
-      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
-    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
+/**
+ * @version $Id: TestTransformingLoader.java,v 1.1 2003/09/17 20:44:24 herbyderby Exp $
+ */
+public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
-    public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, ParallelSorter.class, null, Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
-        Virt.factory_method(this, NEW_INSTANCE);
-        generateConstructor(arrays);
-        generateSwap(arrays);
-        end_class();
-    }
-
-    private String getFieldName(int index) {
-        return "FIELD_" + index;
-    }
-
-    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
-        begin_constructor(TYPES_OBJECT_ARRAY);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        super_putfield("a");
-        for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            declare_field(Modifier.PRIVATE, type, getFieldName(i));
-            load_this();
-            load_arg(0);
-            push(i);
-            aaload();
-            checkcast(type);
-            putfield(getFieldName(i));
+    private static final ClassFilter TEST_FILTER = new ClassFilter() {
+        public boolean accept(String name) {
+            System.err.println("Loading " + name);
+            return name.startsWith("net.sf.cglib.");
         }
-        return_value();
-        end_method();
+    };
+
+    public void testExample() throws Exception {
+        ClassLoader parent = TestTransformingLoader.class.getClassLoader();
+        ClassTransformer t = new ExampleTransformer(new String[]{ "herby" },
+                                                    new Class[]{ String.class });
+        TransformingLoader loader = new TransformingLoader(parent, TEST_FILTER, t);
+        Class loaded = loader.loadClass(Example.class.getName());
+        Object obj = loaded.newInstance();
+        String value = "HELLO";
+        loaded.getMethod("setHerby", new Class[]{ String.class }).invoke(obj, new Object[]{ value });
+        assertTrue(value.equals(loaded.getMethod("getHerby", null).invoke(obj, null)));
     }
 
-    private void generateSwap(Object[] arrays) {
-        begin_method(SWAP_METHOD);
-        for (int i = 0; i < arrays.length; i++) {
-            Class type = arrays[i].getClass();
-            Class component = type.getComponentType();
-            Local T = make_local(type);
-
-            load_this();
-            getfield(getFieldName(i));
-            store_local(T);
-
-            load_local(T);
-            load_arg(0);
-
-            load_local(T);
-            load_arg(1);
-            array_load(component);
-                
-            load_local(T);
-            load_arg(1);
-
-            load_local(T);
-            load_arg(0);
-            array_load(component);
-
-            array_store(component);
-            array_store(component);
-        }
-        return_value();
-        end_method();
+    public TestTransformingLoader(String testName) {
+        super(testName);
     }
+    
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(TestTransformingLoader.class);
+    }
+
 }
