@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.15 2003/02/02 07:00:41 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.16 2003/02/03 22:35:27 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -92,7 +92,7 @@
              destdir="docs/api" 
              doctitle="&lt;h1&gt;${component.title}&lt;/h1&gt;" 
              packagenames="net.sf.cglib.*" 
-             private="false" 
+             access="public"
              sourcepath="${source.home}" version="true" 
              windowtitle="${component.title} (Version ${component.version})"/>
   </target>
