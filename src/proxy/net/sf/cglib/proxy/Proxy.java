@@ -59,7 +59,7 @@ import java.lang.reflect.Member;
 import net.sf.cglib.core.CodeGenerationException;
 
 /**
- * This class is meant to be used as a implementation of
+ * This class is meant to be used as replacement for
  * <code>java.lang.reflect.Proxy</code> under JDK 1.2. There are some known
  * subtle differences:
  * <ul>
@@ -67,11 +67,11 @@ import net.sf.cglib.core.CodeGenerationException;
  * on the <code>Method</code> passed to the <code>invoke</code> method
  * <b>are</b> the exact set that can be thrown without resulting in an
  * <code>UndeclaredThrowableException</code> being thrown.
- * <li><code>net.sf.cglib.UndeclaredThrowableException</code> is used instead
+ * <li>{@link UndeclaredThrowableException} is used instead
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
- * </ul> 
- * 
- * @version $Id: Proxy.java,v 1.3 2003/12/02 21:59:05 herbyderby Exp $
+ * </ul>
+ * <p>
+ * @version $Id: Proxy.java,v 1.4 2003/12/07 00:54:36 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     protected InvocationHandler h;

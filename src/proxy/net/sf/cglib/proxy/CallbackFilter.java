@@ -74,7 +74,7 @@ public interface CallbackFilter {
     /**
      * Map a method to a callback.
      * @param method the intercepted method
-     * @return the index of the callback to use for the method, as specified by {@link Enhancer#setCallbacks}
+     * @return the index into the array of callbacks (as specified by {@link Enhancer#setCallbacks}) to use for the method, 
      */
     int accept(Method method);
 

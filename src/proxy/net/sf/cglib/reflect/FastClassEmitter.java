@@ -143,6 +143,7 @@ class FastClassEmitter extends ClassEmitter {
         end_class();
     }
 
+    // TODO: support constructor indices ("<init>")
     private void emitIndexBySignature(Method[] methods) {
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
         List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
