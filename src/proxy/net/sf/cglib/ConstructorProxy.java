@@ -57,14 +57,14 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.8 2003/01/25 00:44:01 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.9 2003/01/25 08:22:33 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
 
-    private static final Method NEW_INSTANCE_HACK = 
-      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[], Object)");
+//     private static final Method NEW_INSTANCE_HACK = 
+//       ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[], Object)");
     
     private static final ClassNameFactory NAME_FACTORY = 
       new ClassNameFactory("ConstructorProxiedByCGLIB");
@@ -122,7 +122,6 @@ public abstract class ConstructorProxy {
     }
 
     public abstract Object newInstance(Object[] args);
-    public abstract Object newInstance(Object[] args, Object hack);
     
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
@@ -137,7 +136,6 @@ public abstract class ConstructorProxy {
         protected void generate() {
             generateNullConstructor();
             generateNewInstanceHelper(NEW_INSTANCE, false);
-            generateNewInstanceHelper(NEW_INSTANCE_HACK, true);
 
             if (newInstance != null) {
                 declare_interface(newInstance.getDeclaringClass());
@@ -156,16 +154,11 @@ public abstract class ConstructorProxy {
             new_instance(constructor.getDeclaringClass());
             dup();
             Class types[] = constructor.getParameterTypes();
-            int stop = isHack ? types.length - 1 : types.length;
-            for (int i = 0; i < stop; i++) {
+            for (int i = 0; i < types.length; i++) {
                 load_arg(0);
                 push(i);
                 aaload();
                 unbox(types[i]);
-            }
-            if (isHack) {
-                load_arg(1);
-                unbox(types[stop]);
             }
             invoke(constructor);
             return_value();
