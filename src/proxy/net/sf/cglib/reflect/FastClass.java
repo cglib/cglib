@@ -27,10 +27,7 @@ abstract public class FastClass
     private Class type;
 
     protected FastClass() {
-        // track the bug down
-        Error e = new Error("Using the FastClass empty constructor--please report to the cglib-devel mailing list");
-        e.printStackTrace();
-        throw e;
+        throw new Error("Using the FastClass empty constructor--please report to the cglib-devel mailing list");
     }
 
     protected FastClass(Class type) {
