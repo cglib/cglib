@@ -64,7 +64,7 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.3 2003/11/08 19:18:44 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.4 2003/11/08 20:08:05 herbyderby Exp $
  */
 public class MethodProxy {
     private static final Class[] METHOD_ARRAY = { Method.class };
@@ -127,6 +127,7 @@ public class MethodProxy {
         for (int i = 0; i < methods.length; i++) {
             String name = methods[i].getName();
             if (name.startsWith(MethodInterceptorGenerator.ACCESS_PREFIX) &&
+                name.substring(MethodInterceptorGenerator.ACCESS_PREFIX.length(), name.lastIndexOf('_')).equals(method.getName()) &&
                 Arrays.asList(methods[i].getParameterTypes()).equals(params)) {
                 return name;
             }
