@@ -69,7 +69,7 @@ import java.lang.reflect.Method;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.6 2003/02/01 19:44:50 baliuka Exp $
+ * @version $Id: Proxy.java,v 1.7 2003/02/02 07:00:48 baliuka Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;
@@ -81,8 +81,7 @@ public class Proxy implements Serializable {
         }
 
 
-        public Object aroundAdvice(Object obj, Method method, Object[] args,
-                                   MethodProxy proxy) throws Throwable {
+        public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
             return handler.invoke(obj, method, args);
         }
     }

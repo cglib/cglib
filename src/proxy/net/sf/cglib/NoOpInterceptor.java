@@ -56,11 +56,13 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @version $Id: NoOpInterceptor.java,v 1.4 2003/01/24 19:53:43 herbyderby Exp $
+ * @version $Id: NoOpInterceptor.java,v 1.5 2003/02/02 07:00:48 baliuka Exp $
  */
 public class NoOpInterceptor implements MethodInterceptor {
-    public Object aroundAdvice(Object obj, Method method, Object[] args,
+    public Object intercept(Object obj, Method method, Object[] args,
                                MethodProxy proxy) throws Throwable {
         return proxy.invokeSuper(obj, args);
     }
+    
+    
 }
