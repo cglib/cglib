@@ -53,33 +53,100 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
+import junit.framework.TestCase;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+public abstract class Source implements java.io.Serializable{
+    
+    public static class CheckedException extends Exception{}
+    public static class UndeclaredException extends Exception{}
+
+
+    public Source() {
+    }
+    
+    public void callAll(){
+     protectedMethod();
+     packageMethod();
+     abstractMethod();
+     synchronizedMethod();
+     finalMethod();
+     intType(1);
+     longType(1L);
+     floatType(1f);
+     doubleType(1.0);
+     objectType("1") ;
+     voidType();
+     multiArg(1,1,1,1,"","","");
+    }
+    
+    protected void protectedMethod(){}
+    
+    void packageMethod(){} 
+    
+    abstract void abstractMethod();
+    
+    public void throwChecked()throws CheckedException{
+      throw new CheckedException();
+    }
+    
+     
+    
+     public void throwIndexOutOfBoundsException(){
+       throw new IndexOutOfBoundsException();
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
+     public void throwAbstractMethodError(){
+       throw new AbstractMethodError();
     }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+ 
+    
+    public synchronized void synchronizedMethod(){}
+    
+    public final void finalMethod(){ }
+    
+    public int intType(int val){
+      return val;
     }
+    public long longType(long val){
+      return val;
+    }
+    public double doubleType(double val){
+      return val;
+    }
+    public float floatType(float val){
+      return val;
+    }
+    
+    public boolean booleanType(boolean val){
+      return val;
+    }
+    
+    public short shortType(short val){
+      return val;
+    }
+    
+    public char charType(char val){
+      return val;
+    }
+    
+    public byte byteType(byte val){
+      return val;
+    }
+    
+    public int [] arrayType(int val[]){
+      return val;
+    }
+    
+    
+    public Object objectType(Object val){
+      return val;
+    }
+    public void voidType(){
+    
+    } 
+    public void multiArg( int arg1, long arg2, 
+                           double arg3, float arg4, Object arg5, Object arg6, Object arg7  ){
+    
+    }
+    
 }
-

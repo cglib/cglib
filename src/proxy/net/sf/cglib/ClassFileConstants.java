@@ -53,33 +53,13 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
-
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
-
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-    }
+/* package */ interface ClassFileConstants {
+    public static final String INTERCEPTOR_CLASS_NAME = MethodInterceptor.class.getName();
+    public static final Class OBJECT_CLASS = Object.class;
+    public static final Class[] OBJECT_CLASS_ARRAY = { Object.class };
+    public static final Class[] EMPTY_CLASS_ARRAY = {};
+    public static final Class OBJECT_ARRAY_CLASS = Object[].class;
+    public static final Class[] OBJECT_ARRAY_CLASS_ARRAY = { Object[].class };
+    public static final Class[] STRING_CLASS_ARRAY = { String.class };
+    public static final Object[] EMPTY_OBJECT_ARRAY = {};
 }
-

@@ -51,35 +51,18 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
+
 package net.sf.cglib;
 
-import junit.framework.*;
+public class CodeGenerationException extends RuntimeException {
+    private Throwable cause;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+    public CodeGenerationException(Throwable cause) {
+        super(cause.getMessage());
+        this.cause = cause;
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public Throwable getCause() {
+        return cause;
     }
 }
-

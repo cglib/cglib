@@ -53,33 +53,20 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
+import java.lang.reflect.Method;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+/* package */ class MethodWrapper {
+    private static final MethodWrapperKey keyFactory =
+      (MethodWrapperKey)KeyFactory.makeFactory(MethodWrapperKey.class, null);
+
+    /* package */ interface MethodWrapperKey {
+        public Object newInstance(String name, Class[] parameterTypes);
+    }
+    
+    private MethodWrapper() {
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
-    }
-
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public static Object newInstance(Method method) {
+        return keyFactory.newInstance(method.getName(), method.getParameterTypes());
     }
 }
-

@@ -51,35 +51,29 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
+
 package net.sf.cglib;
 
-import junit.framework.*;
-
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
+/** All enhanced instances implemet this interface
+ * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
+ *      baliuka@mwm.lt</a>
+ * @version $Id: Factory.java,v 1.1 2002/11/27 03:05:33 herbyderby Exp $
  */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
-    }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
-    }
+public interface Factory {
+    /**
+     * Creates new instance of the same type as factory
+     * @param ih interceptor
+     * @return instance
+     */     
+    public Object newInstance(MethodInterceptor ih);
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
-    }
+    public MethodInterceptor getInterceptor();
+
+    public Object newInstance(MethodInterceptor ih, Object delegate);
+    public Object getDelegate();
+    public void setDelegate(Object delegate);
 }
+   
+    
 

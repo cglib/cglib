@@ -51,35 +51,51 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
+
 package net.sf.cglib;
 
-import junit.framework.*;
+import java.util.*;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.8 2002/11/27 03:05:45 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+abstract public class KeyFactory {
+    private static final String CLASS_SUFFIX = ".KeyFactory$$CreatedByCGLIB$$";
+    private static int index = 0;
+
+    protected int hashConstant;
+    protected int hashMultiplier;
+    protected int hash;
+
+    protected KeyFactory() { }
+
+    public static KeyFactory makeFactory(Class keyInterface, ClassLoader loader) {
+        // TODO: caching
+        if (loader == null) {
+            loader = KeyFactory.class.getClassLoader();
+        }
+        try {
+            Class clazz = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
+                                                  keyInterface,
+                                                  loader).define();
+            return (KeyFactory)clazz.getConstructor(new Class[]{}).newInstance(new Object[]{});
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        }
+    }
+    
+    private static String getNextName(Package pkg) {
+        return pkg.getName() + CLASS_SUFFIX + index++;
     }
 
-    public static Test suite() {
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestMetaClass.suite());
-        suite.addTest(TestDelegator.suite());
-        suite.addTest(TestKeyFactory.suite());
-           
-        return suite;
+    public int hashCode() {
+        return hash;
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    public int getHashConstant() {
+        return hashConstant;
+    }
+
+    public int getHashMultiplier() {
+        return hashMultiplier;
     }
 }
-
