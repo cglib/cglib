@@ -56,10 +56,11 @@ package net.sf.cglib;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
+import samples.JdkCompatibleProxy;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: BeanMapProxy.java,v 1.1 2002/12/06 17:48:02 herbyderby Exp $
+ * @version $Id: BeanMapProxy.java,v 1.2 2002/12/16 18:51:16 baliuka Exp $
  */
 public class BeanMapProxy implements InvocationHandler {
     private Map map;

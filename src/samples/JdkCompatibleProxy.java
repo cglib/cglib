@@ -51,6 +51,7 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
+package samples;
 import net.sf.cglib.*;
 import java.io.Serializable;
 import java.util.*;
@@ -72,7 +73,7 @@ import java.lang.reflect.*;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.1 2002/12/14 02:56:16 herbyderby Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.2 2002/12/16 18:51:15 baliuka Exp $
  */
 public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
