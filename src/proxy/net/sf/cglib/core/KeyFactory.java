@@ -86,7 +86,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is only guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.20 2004/05/08 06:29:01 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.21 2004/05/08 07:30:29 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -145,14 +145,14 @@ abstract public class KeyFactory {
     public static KeyFactory create(Class keyInterface, Customizer customizer) {
         return create(keyInterface.getClassLoader(), keyInterface,  customizer);
     }
+
+    // TODO: add another constructor that includes attemptLoad
     
     public static KeyFactory create(ClassLoader loader, Class keyInterface, Customizer customizer) {
         Generator gen = new Generator();
         gen.setInterface(keyInterface);
         gen.setCustomizer(customizer);
         gen.setClassLoader(loader);
-        if (keyInterface.getName().startsWith("net.sf.cglib."))
-            gen.setAttemptLoad(true);
         return gen.create();
     }
 
