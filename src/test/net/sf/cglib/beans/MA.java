@@ -2,7 +2,7 @@ package net.sf.cglib.beans;
 
 import java.io.ObjectStreamException;
 
-public class MA {
+class MA {
     private Long id;
     private String name;
     private String privateName;

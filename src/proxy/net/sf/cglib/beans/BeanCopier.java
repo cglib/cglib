@@ -54,7 +54,7 @@
 package net.sf.cglib.beans;
 
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
@@ -101,10 +101,17 @@ abstract public class BeanCopier
         }
 
         public void setSource(Class source) {
+            if(!Modifier.isPublic(source.getModifiers())){ 
+               setNamePrefix(source.getName());
+            }
             this.source = source;
         }
-
+        
         public void setTarget(Class target) {
+            if(!Modifier.isPublic(target.getModifiers())){ 
+               setNamePrefix(target.getName());
+            }
+          
             this.target = target;
         }
 

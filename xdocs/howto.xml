@@ -72,6 +72,7 @@
   </section>
   
   <section name="Avoiding StackOverflowError">
+  <p>
    Common mistake is to cause recursion in MethodInterceptor implementation:
    <source>
      Object intercept( Object proxy, Method method,
@@ -85,7 +86,7 @@
    <i>invokeSuper</i> method must be used to invoke super class method. It
    will throw AbstarctMethodError if super method is abstract. See trace sample
    how to solve recursion problem caused by "this" parameter in  "args[]" array.
-  
+   </p> 
   </section>
   
   <section name="Optimizing Proxies" >
