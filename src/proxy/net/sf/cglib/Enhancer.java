@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.22 2003/01/23 14:09:46 nemecec Exp $
+ *@version    $Id: Enhancer.java,v 1.23 2003/01/23 14:33:21 nemecec Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -265,13 +265,15 @@ public class Enhancer {
             if (result == null) {
                 if (factory == null) factory = (Factory) cache.get(loader, key);
                 if( factory != null ){
-                    return factory.getClass();
+                    result = factory.getClass();
                 }
-                String className = nameFactory.getNextName(cls);
-                result = new EnhancerGenerator(className, cls, interfaces,
-                                                      loader, wreplace, 
-                                                     delegating, filter).define();
-                cache.put(loader, classKey, result);
+                if (result == null) {
+                    String className = nameFactory.getNextName(cls);
+                    result = new EnhancerGenerator(className, cls, interfaces,
+                                                          loader, wreplace, 
+                                                         delegating, filter).define();
+                }
+                if (result != null) cache.put(loader, classKey, result);
             }
         }
         return result;
