@@ -57,11 +57,49 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.4 2003/09/15 19:10:03 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.5 2004/04/25 16:15:20 baliuka Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
     public CodeGenTestCase(String testName) {
         super(testName);
     }
+    
+    public   abstract void perform(ClassLoader loader)throws Throwable;
+    
+    
+    public boolean leaks()throws Throwable{
+        
+        ClassLoader loader = new ClassLoader(this.getClass().getClassLoader()){};
+        
+        perform(loader);
+        
+        java.lang.ref.Reference ref = new java.lang.ref.WeakReference(loader);
+        
+        loader = null;
+        java.util.List list = new  java.util.ArrayList();
+        
+        for(int i = 0; i < 512; i++  ){
+            
+            System.gc();
+            
+            if(ref.get() == null ){
+             
+                return false;
+                
+            }
+            
+          byte[] garbage  =  new byte[ (i + 1)*1004 ];
+          list.add(garbage);  
+        
+          
+        }
+        
+        return true;
+        
+        
+    }
+    
+    
+    
 }
 

@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- * @version $Id: TestDelegates.java,v 1.2 2003/09/14 21:10:37 herbyderby Exp $
+ * @version $Id: TestDelegates.java,v 1.3 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
 
@@ -198,4 +198,10 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
         return new TestSuite(TestDelegates.class);
     }
 
+    public void perform(ClassLoader loader) throws Throwable {
+    }    
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

@@ -139,4 +139,11 @@ public class TestReflectPerf extends net.sf.cglib.CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestReflectPerf.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

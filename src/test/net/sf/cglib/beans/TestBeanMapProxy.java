@@ -58,7 +58,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestBeanMapProxy.java,v 1.1 2003/09/14 17:14:04 herbyderby Exp $
+ * @version $Id: TestBeanMapProxy.java,v 1.2 2004/04/25 16:15:20 baliuka Exp $
  */
 public class TestBeanMapProxy extends net.sf.cglib.CodeGenTestCase {
     public void testBeanMap() throws Exception {
@@ -85,4 +85,12 @@ public class TestBeanMapProxy extends net.sf.cglib.CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestBeanMapProxy.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+      //nothing to test at this time
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

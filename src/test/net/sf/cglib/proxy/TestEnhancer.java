@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.43 2004/04/18 06:34:20 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.44 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -704,4 +704,17 @@ public class TestEnhancer extends CodeGenTestCase {
          Enhancer.registerCallbacks(clazz, new Callback[]{ null });
          assertEquals("test", newArgInit(clazz, "test").toString());
     }
+    
+   public void perform(ClassLoader loader) throws Exception{
+    
+           enhance( Source.class , null, TEST_INTERCEPTOR, loader);
+    
+    }
+    
+   public void testFailOnMemoryLeak() throws Throwable{
+         if( leaks() ){ 
+           fail("Memory leak caused by Enhancer");
+         }
+    }
+    
 }

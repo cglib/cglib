@@ -61,7 +61,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.2 2003/09/18 17:23:29 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.3 2004/04/25 16:15:21 baliuka Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
     public void testSorts() throws Throwable {
@@ -134,4 +134,11 @@ public class TestParallelSorter extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestParallelSorter.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }

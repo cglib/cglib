@@ -58,7 +58,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import junit.framework.*;
 
-public class TestLazyLoader extends CodeGenTestCase {
+public class TestLazyLoader extends CodeGenTestCase  {
     public void testLazyLoader() {
         LazyLoader loader = new LazyLoader() {
                 public Object loadObject() {
@@ -81,4 +81,11 @@ public class TestLazyLoader extends CodeGenTestCase {
     public static Test suite() {
         return new TestSuite(TestLazyLoader.class);
     }
+    
+    public void perform(ClassLoader loader) throws Throwable {
+    }
+    
+    public void testFailOnMemoryLeak() throws Throwable {
+    }
+    
 }
