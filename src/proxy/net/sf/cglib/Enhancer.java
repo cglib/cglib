@@ -121,7 +121,7 @@ public class Enhancer extends AbstractClassGenerator
         if (superclass != null) {
             setNamePrefix(superclass.getName());
         } else if (interfaces != null) {
-            setNamePrefix(interfaces[0].getName());
+            setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
         Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, classOnly);
         return super.create(key);
