@@ -56,6 +56,7 @@ package net.sf.cglib.reflect;
 import net.sf.cglib.core.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import org.objectweb.asm.ClassVisitor;
 
 abstract public class FastClass
 {
@@ -70,13 +71,14 @@ abstract public class FastClass
         return gen.create();
     }
 
-    public static class Generator extends CodeGenerator
+    public static class Generator extends AbstractClassGenerator
     {
         private static final Source SOURCE = new Source(FastClass.class, true);
         private Class type;
         
         public Generator() {
             super(SOURCE);
+            setSuperclass(FastClass.class);
         }
 
         public void setType(Class type) {
@@ -92,8 +94,8 @@ abstract public class FastClass
             return type.getClassLoader();
         }
 
-        protected byte[] getBytes() throws Exception {
-            return new FastClassEmitter(getClassName(), type).getBytes();
+        public void generateClass(ClassVisitor v) throws Exception {
+            new FastClassEmitter(v, getClassName(), type);
         }
 
         protected Object firstInstance(Class type) {
