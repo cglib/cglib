@@ -371,39 +371,40 @@ public class ComplexOps {
     }
 
     private static void load_class_helper(final Emitter e, Type type) {
-        e.register(FIND_CLASS, new Emitter.EndClassCallback() {
-            public void process() {
-                generateFindClass(e);
-            }
-        });
+//         e.register(FIND_CLASS, new Emitter.EndClassCallback() {
+//             public void process() {
+//                 generateFindClass(e);
+//             }
+//         });
         e.push(TypeUtils.emulateClassGetName(type));
-        e.invoke_static_this(FIND_CLASS);
+        e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
+//         e.invoke_static_this(FIND_CLASS);
     }
 
-    private static void generateFindClass(Emitter e) {
-        /* generates:
-           static private Class findClass(String name) throws Exception {
-               try {
-                   return Class.forName(name);
-               } catch (java.lang.ClassNotFoundException cne) {
-                   throw new java.lang.NoClassDefFoundError(cne.getMessage());
-               }
-           }
-         */
-        e.begin_method(Constants.PRIVATE_FINAL_STATIC, FIND_CLASS, null);
-        Block block = e.begin_block();
-        e.load_arg(0);
-        e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
-        e.return_value();
-        e.end_block();
-        e.catch_exception(block, CLASS_NOT_FOUND_EXCEPTION);
-        e.invoke_virtual(Constants.TYPE_THROWABLE, GET_MESSAGE);
-        e.new_instance(NO_CLASS_DEF_FOUND_ERROR);
-        e.dup_x1();
-        e.swap();
-        e.invoke_constructor(NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
-        e.athrow();
-    }
+//     private static void generateFindClass(Emitter e) {
+//         /* generates:
+//            static private Class findClass(String name) throws Exception {
+//                try {
+//                    return Class.forName(name);
+//                } catch (java.lang.ClassNotFoundException cne) {
+//                    throw new java.lang.NoClassDefFoundError(cne.getMessage());
+//                }
+//            }
+//          */
+//         e.begin_method(Constants.PRIVATE_FINAL_STATIC, FIND_CLASS, null);
+//         Block block = e.begin_block();
+//         e.load_arg(0);
+//         e.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
+//         e.return_value();
+//         e.end_block();
+//         e.catch_exception(block, CLASS_NOT_FOUND_EXCEPTION);
+//         e.invoke_virtual(Constants.TYPE_THROWABLE, GET_MESSAGE);
+//         e.new_instance(NO_CLASS_DEF_FOUND_ERROR);
+//         e.dup_x1();
+//         e.swap();
+//         e.invoke_constructor(NO_CLASS_DEF_FOUND_ERROR, CSTRUCT_STRING);
+//         e.athrow();
+//     }
 
     public static void push(Emitter e, Object[] array) {
         e.push(array.length);
