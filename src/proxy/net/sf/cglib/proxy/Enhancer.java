@@ -88,7 +88,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.17 2002/09/30 18:36:16 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.18 2002/10/01 17:42:43 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     
@@ -237,6 +237,21 @@ public class Enhancer implements org.apache.bcel.Constants {
         
         
         if ( result == null ) {
+            
+            try{
+            
+              java.lang.reflect.Constructor construct =  cls.getConstructor( new Class[0] );
+              int mod = construct.getModifiers();
+              
+              if( !( java.lang.reflect.Modifier.isPublic( mod ) ||  
+                     java.lang.reflect.Modifier.isProtected( mod ) )  ){
+              
+                 throw new IllegalArgumentException( cls.getName() );
+              }
+            
+            }catch( NoSuchMethodException nsme){
+               throw new IllegalArgumentException(nsme.getMessage());
+            }
             
             try{
                 
