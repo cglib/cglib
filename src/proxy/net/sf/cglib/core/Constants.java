@@ -57,7 +57,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.10 2003/09/21 21:26:19 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.11 2003/09/29 16:25:29 herbyderby Exp $
  */
 public class Constants implements org.objectweb.asm.Constants {
     private Constants() { }
@@ -79,7 +79,9 @@ public class Constants implements org.objectweb.asm.Constants {
     public static final Type TYPE_NUMBER = TypeUtils.parseType("Number");
     public static final Type TYPE_STRING = TypeUtils.parseType("String");
     public static final Type TYPE_THROWABLE = TypeUtils.parseType("Throwable");
-
+    public static final Type TYPE_BIG_INTEGER = TypeUtils.parseType("java.math.BigInteger");
+    public static final Type TYPE_BIG_DECIMAL = TypeUtils.parseType("java.math.BigDecimal");
+    
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";
     public static final String SOURCE_FILE = "<generated>";
