@@ -78,7 +78,7 @@ import java.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.18 2003/01/19 11:30:11 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.19 2003/01/21 17:38:14 baliuka Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -217,14 +217,10 @@ public class Enhancer {
      */
    //TODO: dublicated code 
    public static Class enhanceClass( Class cls, Class[] interfaces, 
-                                      MethodInterceptor ih,
                                       ClassLoader loader,
                                       MethodFilter filter) {
          
-      if (ih == null) {
-            throw new IllegalArgumentException("MethodInterceptor is null");
-        }
-
+      
         if (cls == null) {
                 cls = Object.class;
         }
@@ -234,15 +230,21 @@ public class Enhancer {
         }
         
         Object classKey = classKeyFactory.newInstance(cls, interfaces, null,
-                                         false , filter, 0 );
+                                          false, filter, 0 );
+        Object key = keyFactory.newInstance(cls, interfaces, null ,
+                                          false, filter );
         Class result;
         synchronized (cache) {
             result = (Class)cache.get(loader, classKey);
             if (result == null) {
-                
+               Object factory = (Class)cache.get(loader, key);
+               if( factory != null ){
+                 return factory.getClass();
+               }
+               
                 String className = nameFactory.getNextName(cls);
                 result = new EnhancerGenerator(className, cls, interfaces,
-                                                     ih, loader, null, 
+                                                      loader, null, 
                                                      false, filter).define();
                 cache.put( loader, classKey, result );
                 
@@ -282,7 +284,7 @@ public class Enhancer {
                 Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
                 String className = nameFactory.getNextName(cls);
                 Class result = new EnhancerGenerator(className, cls, interfaces,
-                                                     ih, loader, wreplace, 
+                                                      loader, wreplace, 
                                                      delegating, filter).define();
                 cache.put( loader, classKey, result );
                 Class[] types = delegating ? new Class[]{ mi, Constants.TYPE_OBJECT } : new Class[]{ mi };

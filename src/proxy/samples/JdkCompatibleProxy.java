@@ -73,11 +73,12 @@ import java.lang.reflect.*;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: JdkCompatibleProxy.java,v 1.1 2002/12/26 10:34:25 baliuka Exp $
+ * @version $Id: JdkCompatibleProxy.java,v 1.2 2003/01/21 17:38:23 baliuka Exp $
  */
 public class JdkCompatibleProxy implements Serializable {
     private static final Class thisClass = JdkCompatibleProxy.class;
     private static final HandlerAdapter nullInterceptor = new HandlerAdapter(null);
+    private static Map generatedClasses = Collections.synchronizedMap( new WeakHashMap() );
 
     private static class HandlerAdapter implements MethodInterceptor {
         private InvocationHandler handler;
@@ -104,14 +105,18 @@ public class JdkCompatibleProxy implements Serializable {
     }
 
     public static Class getProxyClass(ClassLoader loader, Class[] interfaces) {
-        return Enhancer.enhance(thisClass, interfaces, nullInterceptor, loader).getClass();
+        Class cls = Enhancer.enhance(thisClass, interfaces, nullInterceptor, loader).getClass();
+        generatedClasses.put(cls, null);
+        return cls;
     }
 
     public static boolean isProxyClass(Class cl) {
-        return cl.getSuperclass().getName().equals(thisClass.getName());
+        return generatedClasses.containsKey(cl);
     }
 
     public static Object newProxyInstance(ClassLoader loader, Class[] interfaces, InvocationHandler h) {
-        return Enhancer.enhance(thisClass, interfaces, new HandlerAdapter(h), loader);
+        Object obj = Enhancer.enhance(thisClass, interfaces, new HandlerAdapter(h), loader);
+        generatedClasses.put(obj.getClass(), null);
+        return obj;
     }        
 }
