@@ -63,7 +63,7 @@ import net.sf.cglib.reflect.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.28 2003/09/25 18:30:16 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.29 2003/10/05 17:05:46 herbyderby Exp $
  */
 public class MethodProxy {
     private String m1;
@@ -110,7 +110,11 @@ public class MethodProxy {
         if (i1 == -1) {
             throw new IllegalAccessException("Protected method: " + m1);
         } else {
-            return f1.invoke(i1, obj, args);
+            try {
+                return f1.invoke(i1, obj, args);
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            }
         }
     }
 
@@ -126,7 +130,11 @@ public class MethodProxy {
         if (i2 == -1) {
             throw new IllegalAccessException("Protected method: " + m2);
         } else {
-            return f2.invoke(i2, obj, args);
+            try {
+                return f2.invoke(i2, obj, args);
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            }
         }
     }
 }

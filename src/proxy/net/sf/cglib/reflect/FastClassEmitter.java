@@ -117,24 +117,18 @@ class FastClassEmitter extends ClassEmitter {
 
         // invoke(int, Object, Object[])
         e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY);
-        Block block = e.begin_block();
         e.load_arg(1);
         e.checkcast(Type.getType(type));
         e.load_arg(0);
         invokeSwitchHelper(e, methods, 2);
-        block.end();
-        ComplexOps.wrap_checked_exception(block, INVOCATION_TARGET_EXCEPTION);
         e.end_method();
 
         // newInstance(int, Object[])
         e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY);
-        block = e.begin_block();
         e.new_instance(Type.getType(type));
         e.dup();
         e.load_arg(0);
         invokeSwitchHelper(e, constructors, 1);
-        block.end();
-        ComplexOps.wrap_checked_exception(block, INVOCATION_TARGET_EXCEPTION);
         e.end_method();
 
         end_class();
@@ -168,6 +162,8 @@ class FastClassEmitter extends ClassEmitter {
     }
 
     private static void invokeSwitchHelper(final CodeEmitter e, final Object[] members, final int arg) {
+        final Label illegalArg = e.make_label();
+        Block block = e.begin_block();
         e.process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
                 Member member = (Member)members[key];
@@ -188,9 +184,13 @@ class FastClassEmitter extends ClassEmitter {
             }
 
             public void processDefault() {
-                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Cannot find matching method/constructor");
+                e.goTo(illegalArg);
             }
         });
+        block.end();
+        ComplexOps.wrap_throwable(block, INVOCATION_TARGET_EXCEPTION);
+        e.mark(illegalArg);
+        e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Cannot find matching method/constructor");
     }
 
     private static class GetIndexCallback implements ObjectSwitchCallback {
