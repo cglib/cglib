@@ -60,16 +60,16 @@ import java.io.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.4 2003/02/02 03:51:28 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.5 2003/02/02 03:53:52 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
     public void testSorts() throws Throwable {
         Object[] data1 = getTestData();
         Object[] data2 = copy(data1);
         Object[] data3 = copy(data1);
-        Object[] idx1 = getIndexes(data1.length);
-        Object[] idx2 = copy(idx1);
-        Object[] idx3 = copy(idx1);
+        int[] idx1 = getIndexes(data1.length);
+        int[] idx2 = getIndexes(data1.length);
+        int[] idx3 = getIndexes(data1.length);
         ParallelSorter p1 = ParallelSorter.create(new Object[]{ data1, idx1 });
         ParallelSorter p2 = ParallelSorter.create(new Object[]{ data2, idx2 });
         p1.quickSort(0);
@@ -88,10 +88,17 @@ public class TestParallelSorter extends CodeGenTestCase {
         }
     }
 
-    private Object[] getIndexes(int len) {
-        Object[] idx = new Object[len];
+    private void compare(int[] data1, int[] data2) {
+        assertTrue(data1.length == data2.length);
+        for (int i = 0; i < data1.length; i++) {
+            assertTrue(data1[i] == data2[i]);
+        }
+    }
+    
+    private int[] getIndexes(int len) {
+        int[] idx = new int[len];
         for (int i = 0; i < len; i++) {
-            idx[i] = new Integer(i);
+            idx[i] = i;
         }
         return idx;
     }
