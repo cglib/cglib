@@ -89,7 +89,7 @@ import net.sf.cglib.util.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.31 2002/11/16 19:20:10 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.32 2002/11/18 21:40:21 herbyderby Exp $
  */
 public class Enhancer implements ClassFileConstants {
     private static final String CLASS_PREFIX = "net.sf.cglib.proxy";
@@ -243,7 +243,7 @@ public class Enhancer implements ClassFileConstants {
     }
 
 
-    static public class InternalReplace implements Serializable {
+    public static class InternalReplace implements Serializable {
         private String parentClassName;
         private String [] interfaceNames;
         private MethodInterceptor mi;
@@ -285,10 +285,24 @@ public class Enhancer implements ClassFileConstants {
                     }
                 }
                 return Enhancer.enhance(parent, interfaces, mi, loader);
-            } catch (Throwable t) { // TODO
-                // throw new ObjectStreamException(t.getMessage());
-                throw new RuntimeException("TODO");
+            } catch (ClassNotFoundException e) {
+                throw new ReadResolveException(e);
+            } catch (CodeGenerationException e) {
+                throw new ReadResolveException(e.getCause());
             }
+        }
+    }
+
+    public static class ReadResolveException extends ObjectStreamException {
+        private Throwable cause;
+
+        public ReadResolveException(Throwable cause) {
+            super(cause.getMessage());
+            this.cause = cause;
+        }
+
+        public Throwable getCause() {
+            return cause;
         }
     }
 }
