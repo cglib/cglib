@@ -58,7 +58,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodClosure.java,v 1.3 2002/12/21 21:26:47 herbyderby Exp $
+ * @version $Id: MethodClosure.java,v 1.4 2002/12/21 21:44:25 herbyderby Exp $
  */
 abstract public class MethodClosure {
     /* package */ static final Class TYPE = MethodClosure.class;
@@ -162,8 +162,6 @@ abstract public class MethodClosure {
         }
 
         protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            Class delegateClass = method.getDeclaringClass();
-            declare_field(Modifier.PRIVATE, delegateClass, "delegate");
             declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
             declare_interface(iface);
             generateNullConstructor();
@@ -172,7 +170,7 @@ abstract public class MethodClosure {
             begin_method(iface.getDeclaredMethods()[0]);
             load_this();
             super_getfield("delegate");
-            checkcast(delegateClass);
+            checkcast(method.getDeclaringClass());
             load_args();
             invoke(method);
             return_value();
@@ -185,11 +183,10 @@ abstract public class MethodClosure {
             dup();
             dup2();
             invoke_constructor_this();
-            load_arg(0);
-            checkcast(delegateClass);
-            super_putfield("delegate");
             getstatic("eqMethod");
             super_putfield("eqMethod");
+            load_arg(0);
+            super_putfield("delegate");
             return_value();
             end_method();
 
