@@ -54,11 +54,10 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodConstants.java,v 1.5 2003/01/13 18:07:12 baliuka Exp $
+ * @version $Id: MethodConstants.java,v 1.6 2003/01/23 11:16:29 nemecec Exp $
  */
 abstract /* package */ class MethodConstants {
     public static final Method EQUALS =

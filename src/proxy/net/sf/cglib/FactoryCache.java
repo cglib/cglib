@@ -53,12 +53,11 @@
  */
 package net.sf.cglib;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: FactoryCache.java,v 1.4 2002/12/29 21:38:21 herbyderby Exp $
+ * @version $Id: FactoryCache.java,v 1.5 2003/01/23 11:16:29 nemecec Exp $
  */
 /* package */ class FactoryCache {
     private final Map cache = new WeakHashMap();

@@ -53,13 +53,11 @@
  */
 package net.sf.cglib;
 
-import junit.framework.*;
 import java.io.Serializable;
-import java.lang.reflect.*;
 
 /**
  *@author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- *@version $Id: TestInterceptor.java,v 1.1 2002/11/29 23:24:00 herbyderby Exp $
+ *@version $Id: TestInterceptor.java,v 1.2 2003/01/23 11:19:02 nemecec Exp $
  */
 public class TestInterceptor extends BeforeAfterAdapter implements Serializable {
     String value;

@@ -52,7 +52,6 @@
  * <http://www.apache.org/>.
  */
 package net.sf.cglib;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -61,7 +60,7 @@ import java.util.*;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.12 2002/12/29 21:37:41 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.13 2003/01/23 11:16:29 nemecec Exp $
  */
 public class Delegator {
     /* package */ static final Class TYPE = Delegator.class;

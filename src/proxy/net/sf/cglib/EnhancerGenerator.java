@@ -54,7 +54,6 @@
 package net.sf.cglib;
 
 import java.io.ObjectStreamException;
-import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
 

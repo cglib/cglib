@@ -54,12 +54,11 @@
 package net.sf.cglib;
 
 import junit.framework.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestJdkCompatibleProxy.java,v 1.2 2002/12/16 18:51:18 baliuka Exp $
+ * @version $Id: TestJdkCompatibleProxy.java,v 1.3 2003/01/23 11:19:02 nemecec Exp $
  */
 public class TestJdkCompatibleProxy extends CodeGenTestCase {
     public void testBeanMap() throws Exception {

@@ -54,11 +54,10 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.9 2003/01/06 21:34:40 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.10 2003/01/23 11:16:29 nemecec Exp $
  */
 abstract public class MethodProxy {
     private static final ClassNameFactory nameFactory = new ClassNameFactory("ProxiedByCGLIB");

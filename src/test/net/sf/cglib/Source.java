@@ -53,8 +53,6 @@
  */
 package net.sf.cglib;
 
-import junit.framework.TestCase;
-
 public abstract class Source implements java.io.Serializable{
     
     public static class CheckedException extends Exception{}

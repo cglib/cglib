@@ -4,7 +4,6 @@ package samples;
 
 import java.beans.*;
 import net.sf.cglib.*;
-import java.util.*;
 
 /**
  *
