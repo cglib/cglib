@@ -64,8 +64,6 @@ import net.sf.cglib.util.*;
  */
 abstract public class MetaClass  {
     private static final FactoryCache cache = new FactoryCache(MetaClass.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("MetaClassGenerator(Class, String[], String[], Class[])");
     private static final MetaClassKey KEY_FACTORY =
       (MetaClassKey)KeyFactory.create(MetaClassKey.class, null);
     private static final MemberKey MEMBER_KEY_FACTORY =
@@ -133,35 +131,34 @@ abstract public class MetaClass  {
     }
         
     public static MetaClass getInstance(ClassLoader loader,
-                                        Class target,
-                                        String[] getters,
-                                        String[] setters,
-                                        Class[] types) {
-        synchronized (cache) {
-            MetaClass singleton =
-                (MetaClass)cache.getFactory(loader,
-                                            KEY_FACTORY.newInstance(target, getters, setters, types),
-                                            GENERATOR,
-                                            target,
-                                            getters,
-                                            setters,
-                                            types);
-            if (singleton.target == null) {
-                singleton.target = target;
+                                        final Class target,
+                                        final String[] getters,
+                                        final String[] setters,
+                                        final Class[] types) {
+        Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
+        return (MetaClass)cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new MetaClassGenerator(target, getters, setters, types);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    if (isNew) {
+                        MetaClass singleton = (MetaClass)factory;
+                        singleton.target = target;
 
-                int length = getters.length;
-                singleton.getters = new String[length];
-                System.arraycopy(getters, 0, singleton.getters, 0, length);
+                        int length = getters.length;
+                        singleton.getters = new String[length];
+                        System.arraycopy(getters, 0, singleton.getters, 0, length);
 
-                singleton.setters = new String[length];
-                System.arraycopy(setters, 0, singleton.setters, 0, length);
+                        singleton.setters = new String[length];
+                        System.arraycopy(setters, 0, singleton.setters, 0, length);
                                                
-                singleton.types = new Class[types.length];
-                System.arraycopy(types, 0, singleton.types, 0, types.length);
+                        singleton.types = new Class[types.length];
+                        System.arraycopy(types, 0, singleton.types, 0, types.length);
 
-                singleton.addMembers();
-            }
-            return singleton;
-        }
+                        singleton.addMembers();
+                    }
+                    return factory;
+                }
+            });
     }
 }

@@ -61,12 +61,10 @@ import net.sf.cglib.util.*;
  * Similar to Delegator, but dynamically looks up the interface
  * implementation for every method call.
  * @author Chris Nokleberg
- * @version $Id: LookupDelegator.java,v 1.2 2003/07/10 00:05:30 herbyderby Exp $
+ * @version $Id: LookupDelegator.java,v 1.3 2003/07/15 16:38:46 herbyderby Exp $
  */
 abstract public class LookupDelegator {
     private static final FactoryCache cache = new FactoryCache(LookupDelegator.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("LookupDelegator$Generator(Class[])");
     private static final Method NEW_INSTANCE =
       ReflectUtils.findMethod("LookupDelegator.newInstance(LookupDelegator$Callback)");
     private static final Method LOOKUP_DELEGATE =
@@ -93,13 +91,18 @@ abstract public class LookupDelegator {
      * @param callback used to lookup implementing objects during each method call
      * @param loader ClassLoader for enhanced class, uses "current" if null
      */
-    public static Object create(Class[] interfaces, Callback callback, ClassLoader loader) {
-        LookupDelegator factory =
-            (LookupDelegator)cache.getFactory(loader,
-                                              ConstructorProxy.newClassKey(interfaces),
-                                              GENERATOR,
-                                              interfaces);
-        return factory.newInstance(callback);
+    public static Object create(final Class[] interfaces,
+                                final Callback callback,
+                                ClassLoader loader) {
+        Object key = ConstructorProxy.newClassKey(interfaces);
+        return cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(interfaces);
+                }
+                public Object newInstance(Object factory, boolean isNew) {
+                    return ((LookupDelegator)factory).newInstance(callback);
+                }
+            });
     }
 
     private static class Generator extends CodeGenerator {

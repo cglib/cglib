@@ -63,12 +63,10 @@ import net.sf.cglib.util.*;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.5 2003/06/24 21:00:10 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.6 2003/07/15 16:38:46 herbyderby Exp $
  */
 public class InterfaceMaker {
     private static final FactoryCache cache = new FactoryCache(InterfaceMaker.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("InterfaceMaker$Generator(Method[])");
                         
     private InterfaceMaker() { }
 
@@ -120,8 +118,12 @@ public class InterfaceMaker {
      * @param methods the methods to generate
      * @param loader ClassLoader for enhanced class, uses "current" if null
      */
-    public static Class create(Method[] methods, ClassLoader loader) {
-        return cache.getClass(loader, null, GENERATOR, methods);
+    public static Class create(final Method[] methods, ClassLoader loader) {
+        return (Class)cache.get(loader, null, new FactoryCache.ClassOnlyCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(methods);
+                }
+            });
     }
 
     private static class Generator extends CodeGenerator {

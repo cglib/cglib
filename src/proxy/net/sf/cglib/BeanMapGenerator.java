@@ -66,10 +66,10 @@ class BeanMapGenerator extends CodeGenerator {
     private Class type;
     private int switchStyle;
 
-    public BeanMapGenerator(Class type, Integer switchStyle) {
+    public BeanMapGenerator(Class type, int switchStyle) {
         setSuperclass(BeanMap.class);
         this.type = type;
-        this.switchStyle = switchStyle.intValue();
+        this.switchStyle = switchStyle;
     }
 
     private Map makePropertyMap(PropertyDescriptor[] props) {

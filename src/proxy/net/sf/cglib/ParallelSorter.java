@@ -84,8 +84,6 @@ import net.sf.cglib.util.*;
  */
 abstract public class ParallelSorter extends SorterTemplate {
     private static final FactoryCache cache = new FactoryCache(ParallelSorter.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("ParallelSorterGenerator(Object[])");
 
     protected Object[] a;
     private Comparer comparer;
@@ -111,13 +109,16 @@ abstract public class ParallelSorter extends SorterTemplate {
      * length.
      * @param loader ClassLoader for generated class, uses "current" if null
      */
-    public static ParallelSorter create(Object[] arrays, ClassLoader loader) {
-        ParallelSorter factory = 
-            (ParallelSorter)cache.getFactory(loader,
-                                             new ClassesKey(arrays),
-                                             GENERATOR,
-                                             arrays);
-        return factory.newInstance(arrays);
+    public static ParallelSorter create(final Object[] arrays, ClassLoader loader) {
+        return (ParallelSorter)
+            cache.get(loader, new ClassesKey(arrays), new FactoryCache.AbstractCallback() {
+                    public BasicCodeGenerator newGenerator() {
+                        return new ParallelSorterGenerator(arrays);
+                    }
+                    public Object newInstance(Object factory, boolean isNew) {
+                        return ((ParallelSorter)factory).newInstance(arrays);
+                    }
+                });
     }
 
     private int len() {

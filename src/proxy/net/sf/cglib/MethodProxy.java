@@ -63,12 +63,10 @@ import net.sf.cglib.util.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.22 2003/06/24 21:33:11 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.23 2003/07/15 16:38:46 herbyderby Exp $
  */
 abstract public class MethodProxy {
     private static final FactoryCache cache = new FactoryCache(MethodProxy.class);
-    private static final Constructor GENERATOR =
-      ReflectUtils.findConstructor("MethodProxy$Generator(Method, Method)");
     private static final MethodProxyKey KEY_FACTORY =
       (MethodProxyKey)KeyFactory.create(MethodProxyKey.class, null);
     private static final Method INVOKE_SUPER =
@@ -112,12 +110,18 @@ abstract public class MethodProxy {
     /**
      * Create a new MethodProxy. Used internally by Enhancer.
      */
-    public static MethodProxy create(Method method, Method superMethod, ClassLoader loader) {
+    public static MethodProxy create(final Method method,
+                                     final Method superMethod,
+                                     ClassLoader loader) {
         if (loader == null) {
             loader = superMethod.getDeclaringClass().getClassLoader();
         }
         Object key = KEY_FACTORY.newInstance(method, superMethod);
-        return (MethodProxy)cache.getFactory(loader, key, GENERATOR, method, superMethod);
+        return (MethodProxy)cache.get(loader, key, new FactoryCache.AbstractCallback() {
+                public BasicCodeGenerator newGenerator() {
+                    return new Generator(method, superMethod);
+                }
+            });
     }
 
     static class Generator extends CodeGenerator {
