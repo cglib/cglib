@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.6 2003/09/13 19:00:40 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.7 2003/09/14 17:39:40 herbyderby Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -145,7 +145,8 @@ public class TestTransformVisistor extends TestCase {
        Callback clb = new Callback();
        t.setReadWriteFieldCallback( clb );
        Object value = "TEST";
-       BeanMap map = BeanMap.create( t, t.getClass().getClassLoader() );
+
+       BeanMap map = BeanMap.create(t);
        map.put("name", value );
        
        assertEquals(clb.getValue(),value);

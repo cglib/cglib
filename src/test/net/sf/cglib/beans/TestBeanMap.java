@@ -102,7 +102,7 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
 
     public void testBeanMap() {
         TestBean bean = new TestBean();
-        Map map = BeanMap.create(bean, null);
+        Map map = BeanMap.create(bean);
         assertTrue(map.get("foo") == null);
         map.put("foo", "FOO");
         assertTrue("FOO".equals(map.get("foo")));
@@ -113,6 +113,13 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(bean.getQuud() == 13);
     }
 
+    public static Map create(Object bean, int switchStyle) {
+        BeanMap.Generator gen = new BeanMap.Generator();
+        gen.setBean(bean);
+        gen.setSwitchStyle(switchStyle);
+        return gen.create();
+    }
+
     public void testPerformance() throws Throwable {
         int iter = 100000;
         System.out.println();
@@ -121,8 +128,8 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         TestBean b1 = makePerfBean();
         TestBean b2 = makePerfBean();
 
-        Map hash = BeanMap.create(b2, BeanMap.SWITCH_STYLE_HASH, null);
-        Map trie = BeanMap.create(b1, BeanMap.SWITCH_STYLE_TRIE, null);
+        Map hash = create(b2, BeanMap.SWITCH_STYLE_HASH);
+        Map trie = create(b1, BeanMap.SWITCH_STYLE_TRIE);
 
         System.out.println("\nHash\n----");
         perfHelper(hash, iter);
