@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * Copyright (c) 2003 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,87 +51,55 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-import net.sf.cglib.algorithm.*;
-import java.lang.reflect.Method;
 import java.util.*;
-import junit.framework.*;
-import java.io.*;
 
-/**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.6 2003/09/04 18:53:45 herbyderby Exp $
- */
-public class TestParallelSorter extends CodeGenTestCase {
-    public void testSorts() throws Throwable {
-        Object[] data1 = getTestData();
-        Object[] data2 = copy(data1);
-        Object[] data3 = copy(data1);
-        int[] idx1 = getIndexes(data1.length);
-        int[] idx2 = getIndexes(data1.length);
-        int[] idx3 = getIndexes(data1.length);
-        ParallelSorter p1 = ParallelSorter.create(new Object[]{ data1, idx1 });
-        ParallelSorter p2 = ParallelSorter.create(new Object[]{ data2, idx2 });
-        p1.quickSort(0);
-        p2.mergeSort(0);
-        compare(data1, data2);
-        compare(idx1, idx2);
-        p1.quickSort(1);
-        compare(idx1, idx3);
-        compare(data1, data3);
+abstract public class PrimitiveMap
+{
+    private int size;
+    
+    public static PrimitiveMap create(Class key, Class value) {
+        return null;
     }
 
-    private void compare(Object[] data1, Object[] data2) {
-        assertTrue(data1.length == data2.length);
-        for (int i = 0; i < data1.length; i++) {
-            assertTrue(data1[i].equals(data2[i]));
-        }
-    }
-
-    private void compare(int[] data1, int[] data2) {
-        assertTrue(data1.length == data2.length);
-        for (int i = 0; i < data1.length; i++) {
-            assertTrue(data1[i] == data2[i]);
-        }
+    public void get(Primitive key, Primitive value) {
     }
     
-    private int[] getIndexes(int len) {
-        int[] idx = new int[len];
-        for (int i = 0; i < len; i++) {
-            idx[i] = i;
-        }
-        return idx;
-    }
-
-    private Object[] getTestData() throws IOException {
-        InputStream in = getClass().getResource("words.txt").openStream();
-        BufferedReader r = new BufferedReader(new InputStreamReader(in));
-        List list = new ArrayList();
-        String line;
-        int c = 0;
-        while ((line = r.readLine()) != null) {
-            list.add(line);
-            if (c++ == 20) break;
-        }
-        return list.toArray();
-    }
-
-    private Object[] copy(Object[] data) {
-        Object[] copy = new Object[data.length];
-        System.arraycopy(data, 0, copy, 0, data.length);
-        return copy;
-    }
-
-    public TestParallelSorter(String testName) {
-        super(testName);
+    public void put(Primitive key, Primitive value) {
     }
     
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+    public void remove(Primitive key) {
     }
-    
-    public static Test suite() {
-        return new TestSuite(TestParallelSorter.class);
+
+    public PrimitiveIterator keys() {
+        return null;
+    }
+
+    public PrimitiveIterator values() {
+        return null;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    public void clear() {
+        size = 0;
+    }
+
+    public void putAll(PrimitiveMap t) {
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public boolean containsKey(Primitive key) {
+        return false;
+    }
+
+    public boolean containsValue(Primitive value) {
+        return false;
     }
 }

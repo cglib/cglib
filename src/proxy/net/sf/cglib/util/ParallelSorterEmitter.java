@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * Copyright (c) 2003 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,59 +51,84 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-import junit.framework.*;
-import net.sf.cglib.beans.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import net.sf.cglib.core.*;
-import net.sf.cglib.reflect.*;
-import net.sf.cglib.util.*;
-import net.sf.cglib.transform.*;
+import org.objectweb.asm.ClassVisitor;
 
-/**
- *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
- *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.34 2003/09/15 19:31:22 herbyderby Exp $
- */
-public class TestAll extends TestCase {
-    public TestAll(String testName) {
-        super(testName);
+class ParallelSorterEmitter extends Emitter {
+    private static final Method NEW_INSTANCE =
+      ReflectUtils.findMethod("ParallelSorter.newInstance(Object[])");
+    private static final Method SWAP_METHOD =
+      ReflectUtils.findMethod("SorterTemplate.swap(int, int)");
+    private static final Class[] TYPES_OBJECT_ARRAY = { Object[].class };
+
+    public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
+        setClassVisitor(v);
+        begin_class(Modifier.PUBLIC, className, ParallelSorter.class, null);
+        Virt.null_constructor(this);
+        Virt.factory_method(this, NEW_INSTANCE);
+        generateConstructor(arrays);
+        generateSwap(arrays);
+        end_class();
     }
 
-    public static Test suite() {
-       
-        // System.setSecurityManager( new java.rmi.RMISecurityManager());
-        
-        System.getProperties().list(System.out);
-        TestSuite suite = new TestSuite();
-
-        suite.addTest(TestEnhancer.suite());
-        suite.addTest(TestProxy.suite());
-        suite.addTest(TestDispatcher.suite());
-        suite.addTest(TestLazyLoader.suite());
-        suite.addTest(TestNoOp.suite());
-
-        suite.addTest(TestMixin.suite());
-
-        suite.addTest(TestBulkBean.suite());
-        suite.addTest(TestBeanMap.suite());
-        
-        suite.addTest(TestDelegates.suite());
-        suite.addTest(TestFastClass.suite());
-
-        suite.addTest(TestKeyFactory.suite());
-        suite.addTest(TestSwitch.suite());
-        suite.addTest(TestStringSwitch.suite());
-        suite.addTest(TestMemberSwitch.suite());
-
-        suite.addTest(TestParallelSorter.suite());
-
-        return suite;
+    private String getFieldName(int index) {
+        return "FIELD_" + index;
     }
 
-    public static void main(String args[]) {
-        String[] testCaseName = {TestAll.class.getName()};
-        junit.textui.TestRunner.main(testCaseName);
+    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
+        begin_constructor(TYPES_OBJECT_ARRAY);
+        load_this();
+        super_invoke_constructor();
+        load_this();
+        load_arg(0);
+        super_putfield("a");
+        for (int i = 0; i < arrays.length; i++) {
+            Class type = arrays[i].getClass();
+            declare_field(Modifier.PRIVATE, type, getFieldName(i));
+            load_this();
+            load_arg(0);
+            push(i);
+            aaload();
+            checkcast(type);
+            putfield(getFieldName(i));
+        }
+        return_value();
+        end_method();
+    }
+
+    private void generateSwap(Object[] arrays) {
+        begin_method(SWAP_METHOD);
+        for (int i = 0; i < arrays.length; i++) {
+            Class type = arrays[i].getClass();
+            Class component = type.getComponentType();
+            Local T = make_local(type);
+
+            load_this();
+            getfield(getFieldName(i));
+            store_local(T);
+
+            load_local(T);
+            load_arg(0);
+
+            load_local(T);
+            load_arg(1);
+            array_load(component);
+                
+            load_local(T);
+            load_arg(1);
+
+            load_local(T);
+            load_arg(0);
+            array_load(component);
+
+            array_store(component);
+            array_store(component);
+        }
+        return_value();
+        end_method();
     }
 }
-
