@@ -60,23 +60,24 @@ import java.util.*;
 import net.sf.cglib.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.13 2003/06/16 17:06:59 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.14 2003/06/24 20:59:05 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Method NEW_INSTANCE =
-      ReflectUtils.findMethod("Delegator$Factory.cglib_newInstance(Object[])");
+      ReflectUtils.findMethod("Delegator$Factory.newInstance(Object[])");
 
     private Class[] classes;
-    private boolean multicast;
+    private int[] routing;
     private boolean bean;
         
-    public DelegatorGenerator(Class cls, boolean multicast, String className, Class[] classes, ClassLoader loader, boolean bean) {
-        super(className, cls, loader);
-        this.multicast = multicast;
+    public DelegatorGenerator(Class type, Class[] classes, int[] routing) {
+        setSuperclass(type);
+        setNamePrefix(Delegator.class.getName());
         this.classes = classes;
-        this.bean = bean;
-
+        this.routing = routing;
+        bean = !classes[0].isInterface();
+        
         addInterface(Delegator.Factory.TYPE);
         if (!bean) {
             addInterfaces(classes);
@@ -84,7 +85,11 @@ class DelegatorGenerator extends CodeGenerator {
     }
 
     protected void generate() throws NoSuchMethodException {
-        Map methodMap = new HashMap();
+        null_constructor();
+        generateConstructor();
+        factory_method(NEW_INSTANCE);
+
+        Set methodSet = new HashSet();
         for (int i = 0; i < classes.length; i++) {
             Class type = classes[i];
             Method[] methods;
@@ -96,42 +101,13 @@ class DelegatorGenerator extends CodeGenerator {
             for (int j = 0; j < methods.length; j++) {
                 Method method = methods[j];
                 Object key = MethodWrapper.create(method);
-                List list = (List)methodMap.get(key);
-                if (list == null) {
-                    list = new LinkedList();
-                    methodMap.put(key, list);
-                }
-                if (multicast || list.size() == 0) {
-                    list.add(new MethodInfo(method, i));
+                if (!methodSet.contains(key)) {
+                    methodSet.add(key);
+                    generateProxy(method, (routing != null) ? routing[i] : i);
                 }
             }
         }
 
-        generateConstructor();
-        for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
-            generateProxy((List)it.next());
-        }
-
-        factory_method(NEW_INSTANCE);
-    }
-
-    private static class MethodInfo
-    {
-        private Method method;
-        private int arrayref;
-        
-        public MethodInfo(Method method, int arrayref) {
-            this.method = method;
-            this.arrayref = arrayref;
-        }
-        
-        public Method getMethod() {
-            return method;
-        }
-
-        public int getArrayRef() {
-            return arrayref;
-        }
     }
 
     private void generateConstructor() {
@@ -146,17 +122,14 @@ class DelegatorGenerator extends CodeGenerator {
         end_method();
     }
 
-    private void generateProxy(List methods) {
-        begin_method(((MethodInfo)methods.get(0)).getMethod());
-        for (Iterator it = methods.iterator(); it.hasNext();) {
-            MethodInfo info = (MethodInfo)it.next();
-            load_this();
-            getfield(FIELD_NAME);
-            aaload(info.getArrayRef());
-            checkcast(info.getMethod().getDeclaringClass());
-            load_args();
-            invoke(info.getMethod());
-        }
+    private void generateProxy(Method method, int index) {
+        begin_method(method);
+        load_this();
+        getfield(FIELD_NAME);
+        aaload(index);
+        checkcast(method.getDeclaringClass());
+        load_args();
+        invoke(method);
         return_value();
         end_method();
     }
