@@ -72,7 +72,9 @@ class DispatcherGenerator implements CallbackGenerator {
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                ReflectOps.begin_method(e, method, context.getModifiers(method));
+                e.begin_method(context.getModifiers(method),
+                               ReflectUtils.getSignature(method),
+                               ReflectUtils.getExceptionTypes(method));
                 context.emitCallback();
                 e.checkcast(DISPATCHER);
                 e.push(method.getDeclaringClass().getName());

@@ -36,7 +36,9 @@ implements CallbackGenerator
             String fieldName = getFieldName(context, method);
             e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
 
-            ReflectOps.begin_method(e, method, context.getModifiers(method));
+            e.begin_method(context.getModifiers(method),
+                           ReflectUtils.getSignature(method),
+                           ReflectUtils.getExceptionTypes(method));
             Block handler = e.begin_block();
             context.emitCallback();
             e.load_this();

@@ -142,7 +142,9 @@ abstract public class MulticastDelegate implements Cloneable {
             e.null_constructor();
 
             // generate proxied method
-            ReflectOps.begin_method(e, method);
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(method),
+                           ReflectUtils.getExceptionTypes(method));
             Type returnType = e.getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
             Local result = null;

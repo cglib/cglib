@@ -103,7 +103,9 @@ public class TestSwitch extends CodeGenTestCase {
             e.begin_class(Constants.ACC_PUBLIC, getClassName(), null, new Type[]{ Type.getType(Alphabet.class) }, Constants.SOURCE_FILE);
             e.null_constructor();
             Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
-            ReflectOps.begin_method(e, method);
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(method),
+                           ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
             e.process_switch(keys, new ProcessSwitchCallback() {
                     public void processCase(int index, Label end) {

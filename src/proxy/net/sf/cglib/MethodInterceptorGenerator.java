@@ -101,18 +101,16 @@ implements CallbackGenerator
     }
 
     private void generateAccessMethod(Emitter e, Context context, Method method) {
-        ReflectOps.begin_method(e,
-                                Constants.ACC_FINAL,
-                                getAccessName(context, method),
-                                method.getReturnType(),
-                                method.getParameterTypes(),
-                                method.getExceptionTypes());
+        e.begin_method(Constants.ACC_FINAL,
+                       new Signature(getAccessName(context, method),
+                                     ReflectUtils.getSignature(method).getDescriptor()),
+                       ReflectUtils.getExceptionTypes(method));
         if (Modifier.isAbstract(method.getModifiers())) {
             e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
             e.load_args();
-            ReflectOps.super_invoke(e, method);
+            e.super_invoke(ReflectUtils.getSignature(method));
         }
         e.return_value();
     }
@@ -120,7 +118,9 @@ implements CallbackGenerator
     private void generateAroundMethod(Emitter e,
                                       Context context,
                                       Method method) {
-        ReflectOps.begin_method(e, method, context.getModifiers(method));
+        e.begin_method(context.getModifiers(method),
+                       ReflectUtils.getSignature(method),
+                       ReflectUtils.getExceptionTypes(method));
         Label nullInterceptor = e.make_label();
         context.emitCallback();
         e.dup();
@@ -137,7 +137,7 @@ implements CallbackGenerator
         e.mark(nullInterceptor);
         e.load_this();
         e.load_args();
-        ReflectOps.super_invoke(e, method);
+        e.super_invoke(ReflectUtils.getSignature(method));
         e.return_value();
     }
 

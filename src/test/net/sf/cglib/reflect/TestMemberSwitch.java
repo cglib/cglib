@@ -112,7 +112,9 @@ public class TestMemberSwitch extends CodeGenTestCase {
             e.begin_class(Constants.ACC_PUBLIC, getClassName(), null, new Type[]{ Type.getType(Indexed.class) }, Constants.SOURCE_FILE);
             e.null_constructor();
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ Class[].class });
-            ReflectOps.begin_method(e, method);
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(method),
+                           ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
             ReflectOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {

@@ -1,7 +1,5 @@
 package net.sf.cglib.core;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 import java.lang.reflect.*;
 import org.objectweb.asm.Label;
@@ -14,66 +12,8 @@ public class ReflectOps {
       TypeUtils.parseSignature("String getName()");
     private static final Signature EQUALS =
       TypeUtils.parseSignature("boolean equals(Object)");
-    private static final Type BIG_INTEGER =
-      TypeUtils.parseType("java.math.BigInteger");
-    private static final Type BIG_DECIMAL =
-      TypeUtils.parseType("java.math.BigDecimal");
-    
 
     private ReflectOps() {
-    }
-
-    public static void load_method(Emitter e, Method method) {
-        ComplexOps.load_class(e, Type.getType(method.getDeclaringClass()));
-        e.push(method.getName());
-        push_object(e, method.getParameterTypes());
-        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
-    }
-
-    public static void begin_constructor(Emitter e, Constructor constructor) {
-        e.begin_method(Constants.ACC_PUBLIC, // constructor.getModifiers(),
-                       ReflectUtils.getSignature(constructor),
-                       TypeUtils.getTypes(constructor.getExceptionTypes()));
-    }
-
-    public static void begin_method(Emitter e,
-                                    int access,
-                                    String name,
-                                    Class returnType,
-                                    Class[] parameterTypes,
-                                    Class[] exceptionTypes) {
-        e.begin_method(access,
-                       new Signature(name, 
-                                     Type.getType(returnType),
-                                     TypeUtils.getTypes(parameterTypes)),
-                       TypeUtils.getTypes(exceptionTypes));
-    }
-
-    public static void begin_method(Emitter e, Method method) {
-        begin_method(e, method, getDefaultModifiers(method.getModifiers()));
-    }
-
-    public static void begin_method(Emitter e, Method method, int modifiers) {
-        e.begin_method(modifiers,
-                       ReflectUtils.getSignature(method),
-                       TypeUtils.getTypes(method.getExceptionTypes()));
-    }
-
-    public static void getfield(Emitter e,Field field) {
-        int opcode = Modifier.isStatic(field.getModifiers()) ? Constants.GETSTATIC : Constants.GETFIELD;
-        fieldHelper(e, opcode, field);
-    }
-    
-    public static void putfield(Emitter e, Field field) {
-        int opcode = Modifier.isStatic(field.getModifiers()) ? Constants.PUTSTATIC : Constants.PUTFIELD;
-        fieldHelper(e, opcode, field);
-    }
-
-    private static void fieldHelper(Emitter e, int opcode, Field field) {
-        e.emit_field(opcode,
-                     Type.getType(field.getDeclaringClass()),
-                     field.getName(),
-                     Type.getType(field.getType()));
     }
 
     public static void invoke(Emitter e, Method method) {
@@ -88,27 +28,13 @@ public class ReflectOps {
         }
     }
 
-    public static void invoke(Emitter e, Constructor constructor) {
-        e.invoke_constructor(Type.getType(constructor.getDeclaringClass()),
-                             ReflectUtils.getSignature(constructor));
+    public static void load_method(Emitter e, Method method) {
+        ComplexOps.load_class(e, Type.getType(method.getDeclaringClass()));
+        e.push(method.getName());
+        ComplexOps.push_object(e, method.getParameterTypes());
+        e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHOD);
     }
 
-     public static void super_invoke(Emitter e, Method method) {
-         e.super_invoke(ReflectUtils.getSignature(method));
-     }
-
-    public static void super_invoke(Emitter e, Constructor constructor) {
-        e.super_invoke_constructor(ReflectUtils.getSignature(constructor));
-    }
-    
-    public static int getDefaultModifiers(int modifiers) {
-        return Constants.ACC_FINAL
-            | (modifiers
-               & ~Constants.ACC_ABSTRACT
-               & ~Constants.ACC_NATIVE
-               & ~Constants.ACC_SYNCHRONIZED);
-    }
-    
     private interface ParameterTyper {
         Class[] getParameterTypes(Object member);
     }
@@ -261,44 +187,6 @@ public class ReflectOps {
                         e.goTo(def);
                     }
                 });
-            }
-        }
-    }
-
-    public static void push(Emitter e, Object[] array) {
-        e.push(array.length);
-        e.newarray(Type.getType(array.getClass().getComponentType()));
-        for (int i = 0; i < array.length; i++) {
-            e.dup();
-            e.push(i);
-            push_object(e, array[i]);
-            e.aastore();
-        }
-    }
-    
-    public static void push_object(Emitter e, Object obj) {
-        if (obj == null) {
-            e.aconst_null();
-        } else {
-            Class type = obj.getClass();
-            if (type.isArray()) {
-                push(e, (Object[])obj);
-            } else if (obj instanceof String) {
-                e.push((String)obj);
-            } else if (obj instanceof Class) {
-                ComplexOps.load_class(e, Type.getType((Class)obj));
-            } else if (obj instanceof BigInteger) {
-                e.new_instance(BIG_INTEGER);
-                e.dup();
-                e.push(obj.toString());
-                e.invoke_constructor(BIG_INTEGER);
-            } else if (obj instanceof BigDecimal) {
-                e.new_instance(BIG_DECIMAL);
-                e.dup();
-                e.push(obj.toString());
-                e.invoke_constructor(BIG_DECIMAL);
-            } else {
-                throw new IllegalArgumentException("unknown type: " + obj.getClass());
             }
         }
     }

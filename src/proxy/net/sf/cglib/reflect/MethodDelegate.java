@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.10 2003/09/21 01:49:48 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.11 2003/09/21 02:33:10 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -263,7 +263,10 @@ abstract public class MethodDelegate {
             e.null_constructor();
 
             // generate proxied method
-            ReflectOps.begin_method(e, iface.getDeclaredMethods()[0]);
+            Method proxied = iface.getDeclaredMethods()[0];
+            e.begin_method(Constants.ACC_PUBLIC,
+                           ReflectUtils.getSignature(proxied),
+                           ReflectUtils.getExceptionTypes(proxied));
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(Type.getType(method.getDeclaringClass()));

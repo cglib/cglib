@@ -151,17 +151,18 @@ class FastClassEmitter extends Emitter {
         process_switch(getIntRange(members.length), new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
                 Member member = (Member)members[key];
-                Class[] types = ReflectUtils.getParameterTypes(member);
+                Signature sig = ReflectUtils.getSignature(member);
+                Type[] types = sig.getArgumentTypes();
                 for (int i = 0; i < types.length; i++) {
                     load_arg(arg);
                     aaload(i);
-                    unbox(Type.getType(types[i]));
+                    unbox(types[i]);
                 }
                 if (member instanceof Method) {
                     ReflectOps.invoke(FastClassEmitter.this, (Method)member);
                     box(Type.getType(((Method)member).getReturnType()));
                 } else {
-                    ReflectOps.invoke(FastClassEmitter.this, (Constructor)member);
+                    invoke_constructor(Type.getType(member.getDeclaringClass()), sig);
                 }
                 return_value();
             }
