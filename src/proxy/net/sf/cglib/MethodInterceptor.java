@@ -57,7 +57,20 @@ package net.sf.cglib;
  * Empty parent interface for all callbacks that can be registered
  * with an enhanced class.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: MethodInterceptor.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
  */
 public interface MethodInterceptor {
+    
+    /**
+     * Generated code calls this method before invoking super
+     * @param obj "this", the enhanced object
+     * @param method intercepted Method
+     * @param args argument array; primitive types are wrapped
+     * @param proxy used to invoke super (non-intercepted method); may be called
+     * as many times as needed.
+     * @throws Throwable any exception may be thrown; super method will not be invoked
+     */    
+    public Object aroundAdvice(Object obj, java.lang.reflect.Method method, Object[] args,
+                               MethodProxy proxy) throws Throwable;
+
 }

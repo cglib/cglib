@@ -69,7 +69,7 @@ import java.util.*;
     static {
         try {
             Class[] types = new Class[]{ Object.class, Method.class, Object[].class, MethodProxy.class };
-            AROUND_ADVICE = AroundInterceptor.class.getDeclaredMethod("aroundAdvice", types);
+            AROUND_ADVICE = MethodInterceptor.class.getDeclaredMethod("aroundAdvice", types);
 
             types = new Class[]{ Method.class };
             MAKE_PROXY = MethodProxy.class.getDeclaredMethod("generate", types);
@@ -91,10 +91,7 @@ import java.util.*;
         this.wreplace = wreplace;
         this.delegating = delegating;
 
-        if (!(ih instanceof AroundInterceptor)) {
-            throw new IllegalArgumentException("Unknown interceptor type: " + ih);
-        }
-
+     
         if (wreplace != null && 
             (!Modifier.isStatic(wreplace.getModifiers()) ||
              !Modifier.isPublic(wreplace.getModifiers()) ||

@@ -60,7 +60,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.4 2002/11/29 23:24:00 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.5 2002/11/30 12:41:30 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     public void setUp() {
@@ -357,7 +357,7 @@ public class TestEnhancer extends TestCase {
     }
 
     public void testAround() throws Throwable {
-        AroundDemo demo = (AroundDemo)Enhancer.enhance(AroundDemo.class, null, new AroundInterceptor() {
+        AroundDemo demo = (AroundDemo)Enhancer.enhance(AroundDemo.class, null, new MethodInterceptor() {
                 public Object aroundAdvice(Object obj, Method method, Object[] args,
                                            MethodProxy proxy) throws Throwable {
                     if (method.getName().equals("getFirstName"))
