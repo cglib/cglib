@@ -59,7 +59,7 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.13 2003/10/01 06:05:13 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.14 2004/01/18 13:29:39 baliuka Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -67,13 +67,14 @@ public class ReflectUtils {
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
-    private static final RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
-      new RuntimePermission("defineCGLIBClassInJavaPackage");
     private static final Method DEFINE_CLASS;
 
     static {
         try {
-            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ byte[].class, int.class, int.class });
+            
+            DEFINE_CLASS = ClassLoader.class.getDeclaredMethod("defineClass", new Class[]{ String.class ,byte[].class, int.class, int.class });
+            DEFINE_CLASS.setAccessible(true);
+            
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
@@ -362,14 +363,7 @@ public class ReflectUtils {
     }
 
     public static Class defineClass(String className, byte[] b, ClassLoader loader) throws Exception {
-        SecurityManager sm = System.getSecurityManager();
-        if (className != null && className.startsWith("java.") && sm != null) {
-            sm.checkPermission(DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION);
-        }
-        // deprecated method in jdk to define classes, used because it
-        // does not throw SecurityException if class name starts with "java."
-        Object[] args = new Object[]{ b, new Integer(0), new Integer(b.length) };
-        DEFINE_CLASS.setAccessible(true);
+        Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length) };
         return (Class)DEFINE_CLASS.invoke(loader, args);
     }
 
