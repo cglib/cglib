@@ -61,15 +61,26 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 
 /**
- * A <code>Map</code>-based view of a JavaBean.  The set of keys is the
- * union of all property names (getters or setters).  An attempt to set
+ * A <code>Map</code>-based view of a JavaBean.  The default set of keys is the
+ * union of all property names (getters or setters). An attempt to set
  * a read-only property will be ignored, and write-only properties will
  * be returned as <code>null</code>. Removal of objects is not a
  * supported (the key set is fixed).
  * @author Chris Nokleberg
  */
 abstract public class BeanMap implements Map {
+    /**
+     * Limit the properties reflected in the key set of the map
+     * to readable properties.
+     * @see BeanMap.Generator#setRequire
+     */
     public static final int REQUIRE_GETTER = 1;
+
+    /**
+     * Limit the properties reflected in the key set of the map
+     * to writable properties.
+     * @see BeanMap.Generator#setRequire
+     */
     public static final int REQUIRE_SETTER = 2;
     
     /**
@@ -103,16 +114,33 @@ abstract public class BeanMap implements Map {
             super(SOURCE);
         }
 
+        /**
+         * Set the bean that the generated map should reflect. The bean may be swapped
+         * out for another bean of the same type using {@link #setBean}.
+         * Calling this method overrides any value previously set using {@link #setBeanClass}.
+         * You must call either this method or {@link #setBeanClass} before {@link #create}.
+         * @param bean the initial bean
+         */
         public void setBean(Object bean) {
             this.bean = bean;
             if (bean != null)
                 beanClass = bean.getClass();
         }
 
+        /**
+         * Set the class of the bean that the generated map should support.
+         * You must call either this method or {@link #setBeanClass} before {@link #create}.
+         * @param beanClass the class of the bean
+         */
         public void setBeanClass(Class beanClass) {
             this.beanClass = beanClass;
         }
 
+        /**
+         * Limit the properties reflected by the generated map.
+         * @param require any combination of {@link #REQUIRE_GETTER} and
+         * {@link #REQUIRE_SETTER}; default is zero (any property allowed)
+         */
         public void setRequire(int require) {
             this.require = require;
         }
@@ -121,6 +149,10 @@ abstract public class BeanMap implements Map {
             return beanClass.getClassLoader();
         }
 
+        /**
+         * Create a new instance of the <code>BeanMap</code>. An existing
+         * generated class will be reused if possible.
+         */
         public BeanMap create() {
             if (beanClass == null)
                 throw new IllegalArgumentException("Class of bean unknown");
@@ -174,18 +206,29 @@ abstract public class BeanMap implements Map {
     }
 
     /**
-     * TODO
+     * Get the property of a bean. This allows a <code>BeanMap</code>
+     * to be used statically for multiple beans--the bean instance tied to the
+     * map is ignored and the bean passed to this method is used instead.
+     * @param bean the bean to query; must be compatible with the type of
+     * this <code>BeanMap</code>
+     * @param key must be a String
+     * @return the current value, or null if there is no matching property
      */
     abstract public Object get(Object bean, Object key);
 
     /**
-     * TODO
+     * Set the property of a bean. This allows a <code>BeanMap</code>
+     * to be used statically for multiple beans--the bean instance tied to the
+     * map is ignored and the bean passed to this method is used instead.
+     * @param key must be a String
+     * @return the old value, if there was one, or null
      */
     abstract public Object put(Object bean, Object key, Object value);
 
     /**
      * Change the underlying bean this map should use.
      * @param bean the new JavaBean
+     * @see #getBean
      */
     public void setBean(Object bean) {
         this.bean = bean;
@@ -194,6 +237,7 @@ abstract public class BeanMap implements Map {
     /**
      * Return the bean currently in use by this map.
      * @return the current JavaBean
+     * @see #setBean
      */
     public Object getBean() {
         return bean;
