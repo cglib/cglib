@@ -61,7 +61,7 @@ import net.sf.cglib.util.*;
  * Similar to Delegator, but dynamically looks up the interface
  * implementation for every method call.
  * @author Chris Nokleberg
- * @version $Id: LookupDelegator.java,v 1.1 2003/07/08 05:56:46 herbyderby Exp $
+ * @version $Id: LookupDelegator.java,v 1.2 2003/07/10 00:05:30 herbyderby Exp $
  */
 abstract public class LookupDelegator {
     private static final FactoryCache cache = new FactoryCache(LookupDelegator.class);
@@ -133,17 +133,17 @@ abstract public class LookupDelegator {
                     Method method = methods[j];
                     if (!methodSet.contains(method)) {
                         methodSet.add(method);
-                        generateProxy(method);
+                        generateProxy(method, interfaces[i]);
                     }
                 }
             }
         }
 
-        protected void generateProxy(Method method) throws NoSuchFieldException {
+        protected void generateProxy(Method method, Class source) throws NoSuchFieldException {
             begin_method(method);
             load_this();
             super_getfield("callback");
-            push(method.getDeclaringClass().getName());
+            push(source.getName());
             invoke(LOOKUP_DELEGATE);
             checkcast(method.getDeclaringClass());
             load_args();
