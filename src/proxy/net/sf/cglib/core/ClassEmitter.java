@@ -141,7 +141,7 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public void end_class() {
-        if (useHook) {
+        if (useHook && !TypeUtils.isInterface(access)) {
             if (hook != null && !seenStatic) {
                 CodeEmitter e = begin_static();
                 e.return_value();
@@ -164,12 +164,9 @@ public class ClassEmitter extends ClassAdapter {
                                        sig.getDescriptor(),
                                        TypeUtils.toInternalNames(exceptions));
         CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
-        if (useHook) {
-            if (sig.equals(Constants.SIG_STATIC)) {
-                seenStatic = true;
-                e.invoke_static_this(STATIC_HOOK);
-                return e;
-            }
+        if (useHook && sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(access)) {
+            seenStatic = true;
+            e.invoke_static_this(STATIC_HOOK);
         }
         return e;
     }
