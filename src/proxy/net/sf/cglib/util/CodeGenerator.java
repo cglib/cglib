@@ -66,19 +66,33 @@ import org.apache.bcel.generic.*;
  * @author  baliuka
  */
 public abstract class CodeGenerator implements ClassFileConstants {
+    protected static final String CONSTRUCTOR_NAME = "<init>";
+    protected static final String SOURCE_FILE = "<generated>";
+    protected static final String FIND_CLASS = "CGLIB$findClass";
+    protected static final String STATIC_NAME = "<clinit>";
+    protected static final Method equalsMethod;
+
+    private static final String PRIVATE_PREFIX = "PRIVATE_";
+    private static final Type[] EMPTY_TYPE_ARRAY = {};
+    private static final Map primitiveMethods = new HashMap();
+    private static final Map primitiveToWrapper = new HashMap();
+    private static final Method forName;
+    private static final Method getMessage;
+    private static String debugLocation;
 	
 	protected final ClassGen cg;
 	protected final InstructionList il = new InstructionList();
 	protected final ConstantPoolGen cp;
-	protected MethodGen mg;
     protected final ClassLoader loader;
-	
+	protected MethodGen mg;
 	private Class returnType;
+    private Class superclass;
+    
 	private Map branches;  
 	private Map labels;
     private int nextPrivateLabel;
-    private static final String PRIVATE_LABEL_PREFIX = "PRIVATE_LABEL_";
-
+    private int nextPrivateLocal;
+	
 	private Map locals = new HashMap();
     private Map localTypes = new HashMap();
     private int nextLocal;
@@ -90,31 +104,49 @@ public abstract class CodeGenerator implements ClassFileConstants {
     private Map fields = new HashMap();
     private Set staticFields = new HashSet();
 
-    private static final Map primitiveMethods = new HashMap();
-    private static final Map primitiveToWrapper = new HashMap();
-	
-	protected CodeGenerator(String className, Class parent, ClassLoader loader) {
+    static {
+        try {
+            forName = Class.class.getDeclaredMethod("forName", STRING_CLASS_ARRAY);
+            getMessage = Throwable.class.getDeclaredMethod("getMessage", EMPTY_CLASS_ARRAY);
+    } catch (Exception e) {
+            throw new ImpossibleError(e);
+        }
+    }
+
+	protected CodeGenerator(String className, Class superclass, ClassLoader loader) {
         if (loader == null) {
             throw new IllegalArgumentException("ClassLoader is required");
         }
         this.loader = loader;
-        cg = new ClassGen(className, parent.getName(), SOURCE_FILE, ACC_PUBLIC, null); 
+        cg = new ClassGen(className, superclass.getName(), SOURCE_FILE, ACC_PUBLIC, null); 
         cp = cg.getConstantPool();
+        this.superclass = superclass;
 	}
+
+    public static void setDebugLocation(String debugLocation) {
+        CodeGenerator.debugLocation = debugLocation;
+    }
 
 	/**
 	 * method used to generate code  
      */
 	abstract protected void generate() throws Exception;
-	
+
     protected Class define() throws CodeGenerationException {
         try {
             try {
                 try {
                     generate();
                     String name = cg.getClassName();
-                    byte[] b = cg.getJavaClass().getBytes();
-                    PrivilegedAction action = getDefineClassAction(name, b, loader);
+                    byte[] bytes = cg.getJavaClass().getBytes();
+
+                    if (debugLocation != null) {
+                        OutputStream out = new FileOutputStream(debugLocation + name + ".cglib");
+                        out.write(bytes);
+                        out.close();
+                    }
+                    
+                    PrivilegedAction action = getDefineClassAction(name, bytes, loader);
                     return (Class)java.security.AccessController.doPrivileged(action);
                 } catch (WrappedException e) {
                     throw e.getCause();
@@ -186,8 +218,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
             primitiveMethods.put(Short.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
             primitiveMethods.put(Integer.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
             primitiveMethods.put(Byte.TYPE, Number.class.getDeclaredMethod("intValue", EMPTY_CLASS_ARRAY));
+
+            equalsMethod = Object.class.getDeclaredMethod("equals", new Class[]{ Object.class });
         } catch (NoSuchMethodException e) {
-            throw new Error(e.getMessage()); // should be impossible
+            throw new ImpossibleError(e);
         }
 
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
@@ -259,6 +293,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
     
     protected void begin_constructor(java.lang.reflect.Constructor constructor) {
         begin_constructor(constructor.getParameterTypes());
+    }
+
+    protected void begin_constructor() {
+        begin_constructor(EMPTY_CLASS_ARRAY);
     }
 
     protected void begin_constructor(Class[] parameterTypes) {
@@ -438,9 +476,27 @@ public abstract class CodeGenerator implements ClassFileConstants {
     protected    void jsr(String label ){ append( new JSR(null), label ); }
     protected    void ifnull(String label){ append( new IFNULL(null), label ); }
     protected    void ifnonnull(String label){ append( new IFNONNULL(null), label ); }
-  
 
-    //----------------- TODO: frontend for exeption handlers ------------------------
+    protected void if_icmplt(String label) {
+        append(new IF_ICMPLT(null), label);
+    }
+
+    protected void if_icmpne(String label) {
+        append(new IF_ICMPNE(null), label);
+    }
+    
+
+    // math
+    protected void imul()  { append(new IMUL());  }
+    protected void iadd()  { append(new IADD());  }
+    protected void lushr() { append(new LUSHR()); }
+    protected void lxor()  { append(new LXOR());  }
+    protected void ixor()  { append(new IXOR());  }
+    protected void l2i()   { append(new L2I());   }
+    protected void dcmpg() { append(new DCMPG()); }
+    protected void fcmpg() { append(new FCMPG()); }
+    protected void lcmp()  { append(new LCMP()); }
+  
 
     protected  void nop(){ append( new NOP()); }
     protected  void nop(String label){ append( label, new NOP() ); }
@@ -497,7 +553,43 @@ public abstract class CodeGenerator implements ClassFileConstants {
         } else {
             append(new ANEWARRAY(cp.addClass(clazz.getName())));
         }
-    } 
+    }
+
+    protected void arraylength() {
+        append(new ARRAYLENGTH());
+    }
+
+    protected void array_load(Class clazz) {
+        if (clazz.isPrimitive()) {
+            if (clazz.equals(Long.TYPE)) {
+                append(new LALOAD());
+            } else if (clazz.equals(Double.TYPE)) {
+                append(new DALOAD());
+            } else if (clazz.equals(Float.TYPE)) {
+                append(new FALOAD());
+            } else {
+                append(new IALOAD());
+            }
+        } else {
+            append(new AALOAD());
+        }
+    }
+
+    protected void array_store(Class clazz) {
+        if (clazz.isPrimitive()) {
+            if (clazz.equals(Long.TYPE)) {
+                append(new LASTORE());
+            } else if (clazz.equals(Double.TYPE)) {
+                append(new DASTORE());
+            } else if (clazz.equals(Float.TYPE)) {
+                append(new FASTORE());
+            } else {
+                append(new IASTORE());
+            }
+        } else {
+            append(new AASTORE());
+        }
+    }
     
     protected void load_this() {
         append(new ALOAD(0));
@@ -505,7 +597,11 @@ public abstract class CodeGenerator implements ClassFileConstants {
 
     protected void load_class(Class clazz) {
         if (clazz.isPrimitive()) {
-            getstatic((Class)primitiveToWrapper.get(clazz), "TYPE", Class.class);
+            try {
+                getfield(((Class)primitiveToWrapper.get(clazz)).getDeclaredField("TYPE"));
+            } catch (NoSuchFieldException e) {
+                throw new ImpossibleError(e);
+            }
         } else {
             push(clazz.getName());
             int ref = cp.addMethodref(cg.getClassName(),
@@ -581,6 +677,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
         }
     }
 
+    protected void iinc(String local, int amount) {
+        append(new IINC(getLocal(local), amount));
+    }
+
     protected void local_type(String name, Class type) {
         localTypes.put(name, getType(type));
     }
@@ -597,11 +697,15 @@ public abstract class CodeGenerator implements ClassFileConstants {
     }
 
     protected void load_local(String name) {
+        load_local((Type)localTypes.get(name), getLocal(name));
+    }
+
+    private int getLocal(String name) {
         Integer position = (Integer)locals.get(name);
         if (position == null) {
             throw new IllegalArgumentException("unknown local " + name);
         }
-        load_local((Type)localTypes.get(name), position.intValue());
+        return position.intValue();
     }
 
     protected    void pop() { append( new POP() ); }
@@ -634,6 +738,12 @@ public abstract class CodeGenerator implements ClassFileConstants {
     }
   
     // --------------- Field access ----------------
+
+    private int getFieldref(Field field) {
+        return cp.addFieldref(field.getDeclaringClass().getName(),
+                              field.getName(),
+                              getType(field.getType()).getSignature());
+    }
 
     private int getFieldref(String name) {
         Integer ref = (Integer)fields.get(name);
@@ -675,20 +785,28 @@ public abstract class CodeGenerator implements ClassFileConstants {
         append(new PUTSTATIC(getStaticField(name)));
     }
 
-    protected void super_getfield(String name) {
-        TODO();
+    protected void super_getfield(String name) throws NoSuchFieldException {
+        getfield(superclass.getField(name));
     }
 
-    protected void super_putfield(String name) {
-        TODO();
+    protected void super_putfield(String name) throws NoSuchFieldException {
+        putfield(superclass.getDeclaredField(name));
     }
 
-    protected void getstatic(Field field) {
-        getstatic(field.getDeclaringClass(), field.getName(), field.getType());
+    protected void getfield(Field field) {
+        if (Modifier.isStatic(field.getModifiers())) {
+            append(new GETSTATIC(getFieldref(field)));
+        } else {
+            append(new GETFIELD(getFieldref(field)));
+        }
     }
 
-    private void getstatic(Class clazz, String fieldName, Class fieldType) {
-        append(new GETSTATIC(cp.addFieldref(clazz.getName(), fieldName, getType(fieldType).getSignature())));
+    protected void putfield(Field field) {
+        if (Modifier.isStatic(field.getModifiers())) {
+            append(new PUTSTATIC(getFieldref(field)));
+        } else {
+            append(new PUTFIELD(getFieldref(field)));
+        }
     }
 
     // --------------- Invoke method ----------------
@@ -872,15 +990,28 @@ public abstract class CodeGenerator implements ClassFileConstants {
     protected   void athrow(){ append( new ATHROW() ); }
     protected   void athrow(String label){ append(label,new ATHROW() ); }
   
-    private String getPrivateLabel() {
-        return PRIVATE_LABEL_PREFIX + nextPrivateLabel++;
+    protected String newLabel() {
+        initLabels();
+        String label;
+        do {
+            label = PRIVATE_PREFIX + nextPrivateLabel++;
+        } while (labels.containsKey(label));
+        return label;
     }
 
+    protected String newLocal() {
+        String local;
+        do {
+            local = PRIVATE_PREFIX + nextPrivateLocal++;
+        } while (locals.containsKey(local));
+        return local;
+    }
+    
     protected void return_zero_if_null() {
         if (!returnType.equals(Void.TYPE)) {
             if (returnType.isPrimitive()) {
                 dup();
-                String nonNull = getPrivateLabel();
+                String nonNull = newLabel();
                 ifnonnull(nonNull);
                 if (returnType.equals(Double.TYPE)) {
                     push(0d);
@@ -922,7 +1053,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
         case T_VOID:
             return Void.TYPE;
         default:
-            throw new Error("unknown type: " + type); // impossible
+            throw new ImpossibleError("unknown type: " + type);
         }
     }
 
@@ -984,6 +1115,10 @@ public abstract class CodeGenerator implements ClassFileConstants {
             checkcast(clazz);
     }
 
+    protected void checkcast_this() {
+        append(new CHECKCAST(cp.addClass(cg.getClassName())));
+    }
+
     protected void checkcast(Class clazz) {
         Type type = getType(clazz);
         if (clazz.isArray()) {
@@ -1028,7 +1163,7 @@ public abstract class CodeGenerator implements ClassFileConstants {
         return result;
     }
 
-    protected void generateFindClass() throws CodeGenerationException {
+    protected void generateFindClass() {
         /* generates:
            static private Class findClass(String name) throws Exception {
                try {
@@ -1038,30 +1173,25 @@ public abstract class CodeGenerator implements ClassFileConstants {
                }
            }
         */
-        try {
-            Method forName = Class.class.getDeclaredMethod("forName", STRING_CLASS_ARRAY);
-            begin_method(Modifier.PRIVATE | Modifier.STATIC,
-                         Class.class,
-                         FIND_CLASS,
-                         STRING_CLASS_ARRAY,
-                         null);
-            int eh = begin_handler();
-            load_this();
-            invoke(forName);
-            return_value();
-            end_handler();
+        begin_method(Modifier.PRIVATE | Modifier.STATIC,
+                     Class.class,
+                     FIND_CLASS,
+                     STRING_CLASS_ARRAY,
+                     null);
+        int eh = begin_handler();
+        load_this();
+        invoke(forName);
+        return_value();
+        end_handler();
 
-            handle_exception(eh, ClassNotFoundException.class);
-            invoke(Throwable.class.getDeclaredMethod("getMessage", EMPTY_CLASS_ARRAY));
-            new_instance(NoClassDefFoundError.class);
-            dup_x1();
-            swap();
-            invoke_constructor(NoClassDefFoundError.class, STRING_CLASS_ARRAY);
-            athrow();
-            end_method();
-        } catch (NoSuchMethodException e) {
-            throw new CodeGenerationException(e);
-        }
+        handle_exception(eh, ClassNotFoundException.class);
+        invoke(getMessage);
+        new_instance(NoClassDefFoundError.class);
+        dup_x1();
+        swap();
+        invoke_constructor(NoClassDefFoundError.class, STRING_CLASS_ARRAY);
+        athrow();
+        end_method();
     }
 
     protected boolean isVisible(Member member, String packageName) {
@@ -1073,5 +1203,75 @@ public abstract class CodeGenerator implements ClassFileConstants {
             return true;
         }
         return member.getDeclaringClass().getPackage().getName().equals(packageName);
+    }
+
+    protected interface ProcessArrayCallback {
+        public void processElement(Class type);
+    }
+
+    protected void process_array(Class type, ProcessArrayCallback callback) {
+        Class compType = type.getComponentType();
+        String array = newLocal();
+        String loopvar = newLocal();
+        String loopbody = newLabel();
+        String checkloop = newLabel();
+        local_type(loopvar, Integer.TYPE);
+        store_local(array);
+        push(0);
+        store_local(loopvar);
+        goTo(checkloop);
+
+        nop(loopbody);
+        load_local(array);
+        load_local(loopvar);
+        array_load(compType);
+        callback.processElement(compType);
+        iinc(loopvar, 1);
+
+        nop(checkloop);
+        load_local(loopvar);
+        load_local(array);
+        arraylength();
+        if_icmplt(loopbody);
+    }
+
+    protected void not_equals(Class clazz, final String label) {
+        (new ProcessArrayCallback() {
+                public void processElement(Class type) {
+                    not_equals_helper(type, label, this);
+                }
+            }).processElement(clazz);
+    }
+
+    private void not_equals_helper(Class clazz, String label, ProcessArrayCallback callback) {
+        if (clazz.isArray()) {
+            process_array(clazz, callback);
+        } else if (clazz.isPrimitive()) {
+            if (returnType.equals(Double.TYPE)) {
+                dcmpg();
+                ifne(label);
+            } else if (returnType.equals(Long.TYPE)) {
+                lcmp();
+                ifne(label);
+            } else if (returnType.equals(Float.TYPE)) {
+                fcmpg();
+                ifne(label);
+            } else {
+                if_icmpne(label);
+            }
+        } else {
+            String oneIsNull = newLabel();
+            String end = newLabel();
+            dup();
+            ifnull(oneIsNull);
+            swap();
+            invoke(equalsMethod);
+            ifne(label);
+            goTo(end);
+            nop(oneIsNull);
+            pop();
+            ifnonnull(label);
+            nop(end);
+        }
     }
 }
