@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.31 2003/11/11 17:43:17 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.32 2003/11/13 23:39:02 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -517,5 +517,26 @@ public class TestEnhancer extends CodeGenTestCase {
         AroundDemo obj = (AroundDemo)enhancer.create();
         assertTrue(obj.getFirstName().equals("Foo"));
         assertTrue(!(obj instanceof Factory));
+    }
+
+    interface MethDec {
+        void foo();
+    }
+    
+    abstract static class MethDecImpl implements MethDec {
+    }
+
+    public void testMethodDeclarer() {
+        final boolean[] result = new boolean[]{ false };
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(MethDecImpl.class);
+        enhancer.setCallback(new MethodInterceptor() {
+            public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+                result[0] = method.getDeclaringClass().getName().equals(MethDec.class.getName());
+                return null;
+            }
+        });
+        ((MethDecImpl)enhancer.create()).foo();
+        assertTrue(result[0]);
     }
 }
