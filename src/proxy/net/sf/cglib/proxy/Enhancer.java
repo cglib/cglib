@@ -72,6 +72,7 @@ public class Enhancer extends AbstractClassGenerator
     private static final String BOUND_FIELD = "CGLIB$BOUND";
     private static final String THREAD_CALLBACKS_FIELD = "CGLIB$THREAD_CALLBACKS";
     private static final String SET_THREAD_CALLBACKS_NAME = "CGLIB$SET_THREAD_CALLBACKS";
+    private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
     private static final Type FACTORY =
       TypeUtils.parseType("net.sf.cglib.proxy.Factory");
@@ -119,6 +120,7 @@ public class Enhancer extends AbstractClassGenerator
                                   CallbackFilter filter,
                                   Type[] callbackTypes,
                                   boolean useFactory,
+                                  boolean interceptDuringConstruction,
                                   Long serialVersionUID);
     }
 
@@ -131,7 +133,6 @@ public class Enhancer extends AbstractClassGenerator
     private Class[] argumentTypes;
     private Object[] arguments;
     private boolean useFactory = true;
-    private int depth;
     private Long serialVersionUID;
     private boolean interceptDuringConstruction = true;
 
@@ -229,7 +230,10 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     /**
-     * TODO
+     * Set whether methods called from within the proxy's constructer
+     * will be intercepted. The default value is true. Unintercepted methods
+     * will call the method of the proxy's base class, if it exists.
+     * @param interceptDuringConstruction whether to intercept methods called from the constructor
      */
     public void setInterceptDuringConstruction(boolean interceptDuringConstruction) {
         this.interceptDuringConstruction = interceptDuringConstruction;
@@ -364,8 +368,13 @@ public class Enhancer extends AbstractClassGenerator
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
-        Object key = KEY_FACTORY.newInstance(superclass, interfaces, filter, callbackTypes, useFactory, serialVersionUID);
-        return super.create(key);
+        return super.create(KEY_FACTORY.newInstance(superclass,
+                                                    interfaces,
+                                                    filter,
+                                                    callbackTypes,
+                                                    useFactory,
+                                                    interceptDuringConstruction,
+                                                    serialVersionUID));
     }
 
     protected ClassLoader getDefaultClassLoader() {
@@ -379,7 +388,7 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     private Signature rename(Signature sig, int index) {
-        return new Signature("CGLIB$" + sig.getName() + "$" + depth + "$" + index,
+        return new Signature("CGLIB$" + sig.getName() + "$" + index,
                              sig.getDescriptor());
     }
     
@@ -430,8 +439,6 @@ public class Enhancer extends AbstractClassGenerator
         if (TypeUtils.isFinal(sc.getModifiers()))
             throw new IllegalArgumentException("Cannot subclass final class " + sc);
 
-        depth = calculateDepth(sc);
-        
         List constructors = new ArrayList(Arrays.asList(sc.getDeclaredConstructors()));
         CollectionUtils.filter(constructors, new VisibilityPredicate(sc, true));
         if (constructors.size() == 0) {
@@ -473,6 +480,9 @@ public class Enhancer extends AbstractClassGenerator
         List constructorInfo = CollectionUtils.transform(constructors, MethodInfoTransformer.getInstance());
 
         e.declare_field(Constants.ACC_PRIVATE, BOUND_FIELD, Type.BOOLEAN_TYPE, null, null);
+        if (!interceptDuringConstruction) {
+            e.declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null, null);
+        }
         e.declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL, null, null);
         if (serialVersionUID != null) {
             e.declare_field(Constants.PRIVATE_FINAL_STATIC, Constants.SUID_FIELD_NAME, Type.LONG_TYPE, serialVersionUID, null);
@@ -642,6 +652,11 @@ public class Enhancer extends AbstractClassGenerator
             seenNull = seenNull || sig.getDescriptor().equals("()V");
             e.super_invoke_constructor(sig);
             e.invoke_static_this(BIND_CALLBACKS);
+            if (!interceptDuringConstruction) {
+                e.load_this();
+                e.push(1);
+                e.putfield(CONSTRUCTED_FIELD);
+            }
             e.return_value();
             e.end_method();
         }
@@ -843,8 +858,20 @@ public class Enhancer extends AbstractClassGenerator
                 return rename(method.getSignature(), ((Integer)positions.get(method)).intValue());
             }
             public CodeEmitter beginMethod(ClassEmitter ce, MethodInfo method) {
-                // TODO: interceptDuringConstruction check here
-                return EmitUtils.begin_method(ce, method);
+                CodeEmitter e = EmitUtils.begin_method(ce, method);
+                if (!interceptDuringConstruction &&
+                    !TypeUtils.isAbstract(method.getModifiers())) {
+                    Label constructed = e.make_label();
+                    e.load_this();
+                    e.getfield(CONSTRUCTED_FIELD);
+                    e.if_jump(e.NE, constructed);
+                    e.load_this();
+                    e.load_args();
+                    e.super_invoke();
+                    e.return_value();
+                    e.mark(constructed);
+                }
+                return e;
             }
         };
         for (int i = 0; i < callbackTypes.length; i++) {
@@ -948,16 +975,5 @@ public class Enhancer extends AbstractClassGenerator
 
     private static String getCallbackField(int index) {
         return "CGLIB$CALLBACK_" + index;
-    }
-
-    private static int calculateDepth(Class type) {
-        int depth = 0;
-        while (type != null) {
-            if (Enhancer.isEnhanced(type)) {
-                depth++;
-            }
-            type = type.getSuperclass();
-        }
-        return depth;
     }
 }
