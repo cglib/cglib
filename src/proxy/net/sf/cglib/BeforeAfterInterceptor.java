@@ -53,13 +53,12 @@
  */
 package net.sf.cglib;
 
+import java.lang.reflect.Method;
+
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: BeforeAfterInterceptor.java,v 1.3 2002/11/29 23:45:26 herbyderby Exp $
+ * @version $Id: BeforeAfterInterceptor.java,v 1.4 2002/11/29 23:50:48 herbyderby Exp $
  */
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
 abstract public class BeforeAfterInterceptor implements AroundInterceptor {
 
     public Object aroundAdvice(Object obj, Method method, Object[] args,
@@ -67,14 +66,12 @@ abstract public class BeforeAfterInterceptor implements AroundInterceptor {
         Throwable e = null;                                                                            
         boolean invokedSuper = false;                                                                  
         Object retValFromSuper = null;
-        if ((method.getModifiers() & Modifier.ABSTRACT) == 0) { 
-            if (invokeSuper(obj, method, args)) {
-                invokedSuper = true;                                                                        
-                try {
-                    retValFromSuper = proxy.invokeSuper(obj, args);
-                } catch (Throwable t) {
-                    e = t;
-                }
+        if (invokeSuper(obj, method, args)) {
+            invokedSuper = true;                                                                        
+            try {
+                retValFromSuper = proxy.invokeSuper(obj, args);
+            } catch (Throwable t) {
+                e = t;
             }
         }
         return afterReturn(obj, method, args, invokedSuper, retValFromSuper, e);

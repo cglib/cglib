@@ -54,20 +54,14 @@
 package net.sf.cglib;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: NoOpInterceptor.java,v 1.1 2002/11/29 23:23:36 herbyderby Exp $
+ * @version $Id: NoOpInterceptor.java,v 1.2 2002/11/29 23:50:48 herbyderby Exp $
  */
 public class NoOpInterceptor implements AroundInterceptor {
     public Object aroundAdvice(Object obj, Method method, Object[] args,
                                MethodProxy proxy) throws Throwable {
-        // is abstract checking necessary?
-        if ((method.getModifiers() & Modifier.ABSTRACT) != 0) { 
-            return null;
-        } else {
-            return proxy.invokeSuper(obj, args);
-        }
+        return proxy.invokeSuper(obj, args);
     }
 }
