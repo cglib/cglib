@@ -21,6 +21,7 @@ public class AccessFieldTransformer extends EmittingTransformer {
             public void declare_field(int access, String name, Type type, Object value) {
                 super.declare_field(access, name, type, value);
 
+                // TODO: what if we're inside another method already?
                 String property = TypeUtils.upperFirst(callback.getPropertyName(getClassType(), name));
                 if (property != null) {
                     begin_method(Constants.ACC_PUBLIC,

@@ -103,7 +103,6 @@ public class Emitter {
     private int classAccess;
     private Type classType;
     private Type superType;
-//     private Map endClassCallbacks = new HashMap();
     private Map fieldInfo = new HashMap();    
 
     // current method
@@ -143,7 +142,6 @@ public class Emitter {
     }
     
     public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-        // System.err.println("----begin class " + className + "-----");
         init();
         this.classAccess = access;
         this.classType = Type.getType("L" + className.replace('.', '/') + ";");
@@ -161,16 +159,9 @@ public class Emitter {
 
     public void end_class() {
         closeMethod();
-//         for (Iterator it = endClassCallbacks.values().iterator(); it.hasNext();) {
-//             ((EndClassCallback)it.next()).process();
-//         }
         classv.visitEnd();
         classv = null; // for safety
     }
-
-//     public void register(Object key, EndClassCallback callback) {
-//         endClassCallbacks.put(key, callback);
-//     }
     
     public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
         closeMethod();
@@ -184,14 +175,13 @@ public class Emitter {
         
         firstLocal = nextLocal = localOffset + getStackSize(argumentTypes);
         codev = classv.visitMethod(access,
-                                      methodName,
-                                      sig.getDescriptor(),
-                                      toInternalNames(exceptions));
+                                   methodName,
+                                   sig.getDescriptor(),
+                                   toInternalNames(exceptions));
 
         wrapped = new CodeAdapter(codev) {
             public void visitMaxs(int maxStack, int maxLocals) {
                 // ignore
-                // System.err.println("Ignoring visitMaxs(" + maxStack + ", " + maxLocals + ")");
             }
 
             public void visitVarInsn(int opcode, int var) {
@@ -217,22 +207,24 @@ public class Emitter {
                 default:
                     type = Constants.TYPE_OBJECT;
                 }
-                // System.err.println("VISIT op=" + opcode + " var=" + var + " type=" + type.getDescriptor());
-                cv.visitVarInsn(opcode, remapLocal(var, type));
+                cv.visitVarInsn(opcode, remapLocal(this, var, type));
             }
 
             public void visitIincInsn(int var, int increment) {
-                cv.visitIincInsn(remapLocal(var, Type.INT_TYPE), increment);
+                cv.visitIincInsn(remapLocal(this, var, Type.INT_TYPE), increment);
             }
 
             public void visitLocalVariable(String name, String desc, Label start, Label end, int index) {
-                cv.visitLocalVariable(name, desc, start, end, remapLocal(index, null));
+                cv.visitLocalVariable(name, desc, start, end, remapLocal(this, index, null));
             }
         };
         return wrapped;
     }
 
-    private int remapLocal(int index, Type type) {
+    private int remapLocal(CodeVisitor check, int index, Type type) {
+        if (check != wrapped) {
+            throw new IllegalStateException("out of order method generation");
+        }
         if (index < firstLocal) {
             // System.err.println("remap keeping " + index + " (type=" + type.getDescriptor() + ")");
             return index;
@@ -253,7 +245,6 @@ public class Emitter {
     private void closeMethod() {
         if (codev != null) {
             if (!TypeUtils.isAbstract(methodAccess)) {
-                // System.err.println("Calling visitMaxs(0, 0) for method " + currentSig);
                 codev.visitMaxs(0, 0);
             }
             
