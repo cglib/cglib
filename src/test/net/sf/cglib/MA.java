@@ -15,6 +15,7 @@ public class MA {
     private float floatP;
     private double doubleP;
     private String stringP;
+    public  String publicField;
 
     public Long getId() {
         return id;

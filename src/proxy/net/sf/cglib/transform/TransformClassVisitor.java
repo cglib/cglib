@@ -18,7 +18,7 @@ import java.lang.reflect.*;
  *
  * @author  baliuka
  */
-public class TransformClassVisitor implements ClassVisitor{
+class TransformClassVisitor implements ClassVisitor{
     
     ReadWriteFieldFilter filter;
     ClassWriter cw     = new ClassWriter(true);
@@ -67,6 +67,9 @@ public class TransformClassVisitor implements ClassVisitor{
     
     
     public void visit(int access, String name, String superName, String[] ifaces, String sourceFile) {
+        if( Modifier.isInterface(access) ){
+         throw new IllegalArgumentException("can not transform interface " + name);
+        }
         try{
             className = name;
             interfaces.addAll(Arrays.asList(ifaces));
