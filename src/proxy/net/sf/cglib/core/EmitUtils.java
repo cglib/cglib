@@ -776,6 +776,7 @@ public class EmitUtils {
         }
     }
 
+    // TODO: use of TinyBitSet limits methods to 32 arguments
     private static void member_helper_size(final CodeEmitter e,
                                            List members,
                                            final ObjectSwitchCallback callback,

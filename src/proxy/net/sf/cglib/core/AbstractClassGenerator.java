@@ -136,7 +136,8 @@ implements ClassGenerator
     }
 
     /**
-     * TODO
+     * Set the strategy to use to create the bytecode from this generator.
+     * By default an instance of {@see DefaultGeneratorStrategy} is used.
      */
     public void setStrategy(GeneratorStrategy strategy) {
         this.strategy = strategy;
