@@ -540,7 +540,20 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         void processDefault() throws Exception;
     }
 
-    protected void string_switch(String[] strings, final StringSwitchCallback callback) throws Exception {
+    protected void string_switch(String[] strings, StringSwitchCallback callback) throws Exception {
+        string_switch(strings, false, callback);
+    }
+
+    protected void string_switch(String[] strings, boolean useHash, StringSwitchCallback callback)
+    throws Exception {
+        if (useHash) {
+            string_switch_trie(strings, callback);
+        } else {
+            string_switch_hash(strings, callback);
+        }
+    }
+
+    private void string_switch_trie(String[] strings, final StringSwitchCallback callback) throws Exception {
         final Label def = make_label();
         final Label end = make_label();
         final Map buckets = bucketByLength(Arrays.asList(strings));
@@ -556,6 +569,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 }
             });
         mark(def);
+        pop();
         callback.processDefault();
         mark(end);
     }
@@ -574,6 +588,7 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
                 public void processCase(int key, Label ignore_end) throws Exception {
                     List bucket = (List)buckets.get(new Integer(key));
                     if (index + 1 == len) {
+                        pop();
                         callback.processCase((String)bucket.get(0), end);
                     } else {
                         stringSwitchHelper(bucket, callback, def, end, index + 1);
@@ -627,5 +642,42 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         }
         Arrays.sort(keys);
         return keys;
+    }
+
+    private void string_switch_hash(final String[] strings,
+                                    final StringSwitchCallback callback) throws Exception {
+        final Label def = make_label();
+        final Label end = make_label();
+        int[] hashCodes = new int[strings.length];
+        final Map indexes = new HashMap();
+        for (int i = 0; i < strings.length; i++) {
+            hashCodes[i] = strings[i].hashCode();
+            Integer key = new Integer(hashCodes[i]);
+            if (indexes.containsKey(key)) {
+                // TODO: allow duplicate hash codes, differentiate using == in leaves
+                throw new IllegalArgumentException("strings have duplicate hash codes");
+            }
+            indexes.put(key, new Integer(i));
+        }
+        Arrays.sort(hashCodes);
+
+        dup();
+        invoke(MethodConstants.HASH_CODE);
+        process_switch(hashCodes, new ProcessSwitchCallback() {
+                public void processCase(int key, Label ignore_end) throws Exception {
+                    int index = ((Integer)indexes.get(new Integer(key))).intValue();
+                    String string = strings[index];
+                    push(string);
+                    invoke(MethodConstants.EQUALS);
+                    ifeq(def);
+                    callback.processCase(string, end);
+                }
+                public void processDefault() {
+                    pop();
+                }
+            });
+        mark(def);
+        callback.processDefault();
+        mark(end);
     }
 }

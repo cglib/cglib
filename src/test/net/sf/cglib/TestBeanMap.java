@@ -113,84 +113,55 @@ public class TestBeanMap extends CodeGenTestCase {
         assertTrue(bean.getQuud() == 13);
     }
 
-    /*
     public void testPerformance() throws Throwable {
-        int iterations = 500000;
+        int iter = 100000;
         System.out.println();
-        System.out.println("iteration count: " + iterations);
+        System.out.println("iteration count: " + iter);
 
+        TestBean b1 = makePerfBean();
+        TestBean b2 = makePerfBean();
+
+        Map normal = BeanMap.create(b1, false, null);
+        Map hash = BeanMap.create(b2, true, null);
+
+        System.out.println("\nHash\n----");
+        perfHelper(hash, iter);
+        System.out.println("\nNormal\n------");
+        perfHelper(normal, iter);
+    }
+
+    public void perfHelper(Map map, int iter) {
+        Integer wrapped = new Integer(30);
+        long t1  = System.currentTimeMillis();
+        for (int i = 0; i < iter; i++) {
+            map.get("foo");
+        }
+        long t2  = System.currentTimeMillis();
+        for (int i = 0; i < iter; i++) {
+            map.get("quud");
+        }
+        long t3  = System.currentTimeMillis();
+        for (int i = 0; i < iter; i++) {
+            map.put("foo", "derby");
+        }
+        long t4  = System.currentTimeMillis();
+        for (int i = 0; i < iter; i++) {
+            map.put("quud", wrapped);
+        }
+        long t5  = System.currentTimeMillis();
+
+        System.out.println("get object    = " + (t2 - t1) 
+                           + "\n" + "get primitive = " + (t3 - t2)
+                           + "\n" + "put object    = " + (t4 - t3)
+                           + "\n" + "put primitive = " + (t5 - t4));
+    }
+
+    private TestBean makePerfBean() {
         TestBean bean = new TestBean();
         bean.setFoo("herby");
         bean.setQuud(20);
-
-        Map m1 = BeanMap.create(bean, null);
-        Map m2 = new org.apache.commons.collections.BeanMap(bean);
-        Integer wrapped = new Integer(30);
-        
-        long t1  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            bean.getFoo();
-        }
-        long t2  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m1.get("foo");
-        }
-        long t3  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m2.get("foo");
-        }
-        long t4  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            bean.getQuud();
-        }
-        long t5  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m1.get("quud");
-        }
-        long t6  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m2.get("quud");
-        }
-        long t7  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            bean.setFoo("derby");
-        }
-        long t8  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m1.put("foo", "derby");
-        }
-        long t9  = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m2.put("foo", "derby");
-        }
-        long t10 = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            bean.setQuud(30);
-        }
-        long t11 = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m1.put("quud", wrapped);
-        }
-        long t12 = System.currentTimeMillis();
-        for (int i = 0; i < iterations; i++) {
-            m2.put("quud", wrapped);
-        }
-        long t13 = System.currentTimeMillis();
-
-        System.out.println("raw  get object    = " + (t2 - t1) 
-                           + "\n" + "fast get object    = " + (t3 - t2) 
-                           + "\n" + "slow get object = " + (t4 - t3)
-                           + "\n" + "raw  get primitive = " + (t5 - t4)
-                           + "\n" + "fast get primitive = " + (t6 - t5)
-                           + "\n" + "slow get primitive = " + (t7 - t6)
-                           + "\n" + "raw  put object    = " + (t8 - t7)
-                           + "\n" + "fast put object    = " + (t9 - t8)
-                           + "\n" + "slow put object    = " + (t10 - t9)
-                           + "\n" + "raw  put primitive = " + (t11 - t10)
-                           + "\n" + "fast put primitive = " + (t12 - t11)
-                           + "\n" + "slow put primitive = " + (t13 - t12));
+        return bean;
     }
-    */
 
     public TestBeanMap(String testName) {
         super(testName);
