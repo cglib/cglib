@@ -64,6 +64,7 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
+    static final String EMPTY_ARGS_NAME = "CGLIB$emptyArgs";
     static final String FIND_PROXY_NAME = "CGLIB$findMethodProxy";
     static final Class[] FIND_PROXY_TYPES = { Signature.class };
 
@@ -101,6 +102,7 @@ implements CallbackGenerator
 
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null, null);
             ce.declare_field(Constants.PRIVATE_FINAL_STATIC, accessName, METHOD_PROXY, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY, null, null);
             CodeEmitter e;
 
             // access method
@@ -131,7 +133,13 @@ implements CallbackGenerator
 
             e.load_this();
             e.getfield(fieldName);
-            e.create_arg_array();
+
+            if (method.getParameterTypes().length == 0) {
+                e.getfield(EMPTY_ARGS_NAME);
+            } else {
+                e.create_arg_array();
+            }
+            
             e.getfield(accessName);
             e.invoke_interface(METHOD_INTERCEPTOR, INTERCEPT);
             e.unbox_or_zero(Type.getType(method.getReturnType()));
@@ -171,6 +179,10 @@ implements CallbackGenerator
         e.dup();
         e.store_local(thisclass);
         e.invoke_virtual(Constants.TYPE_CLASS, GET_CLASS_LOADER);
+
+        e.push(0);
+        e.newarray();
+        e.putfield(EMPTY_ARGS_NAME);
         
         for (Iterator it = context.getMethods(); it.hasNext();) {
             e.dup();
