@@ -76,28 +76,30 @@ public class FieldProviderTransformer extends EmittingTransformer {
 
     private void generate() throws Exception {
         final String[] names = (String[])fields.keySet().toArray(new String[fields.size()]);
-        final int indexes[] = new int[names.length];
+
+        int indexes[] = new int[names.length];
         for (int i = 0; i < indexes.length; i++) {
             indexes[i] = i;
         }
-                    
+        
         super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null);
         super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null);
 
-        CodeEmitter e;
+        // use separate methods here because each process switch inner class needs a final CodeEmitter
+        initFieldProvider(names);
+        getNames();
+        getTypes();
+        getField(names);
+        setField(names);
+        setByIndex(names, indexes);
+        getByIndex(names, indexes);
+    }
 
-        // init field provider
-        e = super.begin_method(Constants.ACC_STATIC, INIT_FIELD_PROVIDER, null);
-        e.push(names.length);
-        e.newarray(Constants.TYPE_STRING);
-        e.dup();
-        for(int i = 0; i < names.length; i++ ){ 
-            e.dup();
-            e.push(i);
-            e.push(names[i]);
-            e.aastore();
-        }
+    private void initFieldProvider(String[] names) {
+        CodeEmitter e = super.begin_method(Constants.ACC_STATIC, INIT_FIELD_PROVIDER, null);
+        ComplexOps.push_object(e, names);
         e.putstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
+        
         e.push(names.length);
         e.newarray(Constants.TYPE_CLASS);
         e.dup();
@@ -111,95 +113,95 @@ public class FieldProviderTransformer extends EmittingTransformer {
         e.putstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
         e.return_value();
         e.end_method();
+    }
 
-        // get names
-        e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
+    private void getNames() {
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
         e.getstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
         e.return_value();
         e.end_method();
+    }
 
-        // get types
-        e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
+    private void getTypes() {
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
         e.getstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
         e.return_value();
         e.end_method();
+    }
 
-        // set by index
-        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null)) {{
-            load_this();
-            load_arg(1);
-            load_arg(0);
-            process_switch(indexes, new ProcessSwitchCallback() {
-                public void processCase(int key, Label end) throws Exception {
-                    Type type = (Type)fields.get(names[key]);
-                    unbox(type);
-                    putfield(names[key]);
-                    return_value();
-                }
-                public void processDefault() throws Exception {
-                    throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
-                }
-            });
-            end_method();
-        }};
-                    
-        // get by index
-        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null)) {{
-            load_this();
-            load_arg(0);
-            process_switch(indexes, new ProcessSwitchCallback() {
-                public void processCase(int key, Label end) throws Exception {
-                    Type type = (Type)fields.get(names[key]);
-                    getfield(names[key]);
-                    box(type);
-                    return_value();
-                }
-                public void processDefault() throws Exception {
-                    throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
-                }
-            });
-            end_method();
-        }};
+    private void setByIndex(final String[] names, final int[] indexes) throws Exception {
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null);
+        e.load_this();
+        e.load_arg(1);
+        e.load_arg(0);
+        e.process_switch(indexes, new ProcessSwitchCallback() {
+            public void processCase(int key, Label end) throws Exception {
+                Type type = (Type)fields.get(names[key]);
+                e.unbox(type);
+                e.putfield(names[key]);
+                e.return_value();
+            }
+            public void processDefault() throws Exception {
+                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+            }
+        });
+        e.end_method();
+    }
 
+    private void getByIndex(final String[] names, final int[] indexes) throws Exception {
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null);
+        e.load_this();
+        e.load_arg(0);
+        e.process_switch(indexes, new ProcessSwitchCallback() {
+            public void processCase(int key, Label end) throws Exception {
+                Type type = (Type)fields.get(names[key]);
+                e.getfield(names[key]);
+                e.box(type);
+                e.return_value();
+            }
+            public void processDefault() throws Exception {
+                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+            }
+        });
+        e.end_method();
+    }
 
-        // TODO: if this is used to enhance class files SWITCH_STYLE_TRIE should be used
-        // to avoid JVM hashcode implementation incompatibilities
+    // TODO: if this is used to enhance class files SWITCH_STYLE_TRIE should be used
+    // to avoid JVM hashcode implementation incompatibilities
+    private void getField(String[] names) throws Exception {
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null);
+        e.load_this();
+        e.load_arg(0);
+        ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                Type type = (Type)fields.get(key);
+                e.getfield((String)key);
+                e.box(type);
+                e.return_value();
+            }
+            public void processDefault() {
+                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
+            }
+        });
+        e.end_method();
+    }
 
-        // get field
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null)) {{
-            load_this();
-            load_arg(0);
-            ComplexOps.string_switch(this, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    Type type = (Type)fields.get(key);
-                    getfield((String)key);
-                    box(type);
-                    return_value();
-                }
-                public void processDefault() {
-                    throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
-                }
-            });
-            end_method();
-        }};
-
-        // set field
-        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null)) {{
-            load_this();
-            load_arg(1);
-            load_arg(0);
-            ComplexOps.string_switch(this, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
-                public void processCase(Object key, Label end) {
-                    Type type = (Type)fields.get(key);
-                    unbox(type);
-                    putfield((String)key);
-                    return_value();
-                }
-                public void processDefault() {
-                    throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
-                }
-            });
-            end_method();
-        }};
+    private void setField(String[] names) throws Exception {
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null);
+        e.load_this();
+        e.load_arg(1);
+        e.load_arg(0);
+        ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+            public void processCase(Object key, Label end) {
+                Type type = (Type)fields.get(key);
+                e.unbox(type);
+                e.putfield((String)key);
+                e.return_value();
+            }
+            public void processDefault() {
+                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
+            }
+        });
+        e.end_method();
     }
 }
