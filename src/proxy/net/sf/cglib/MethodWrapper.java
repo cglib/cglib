@@ -60,8 +60,8 @@ class MethodWrapper {
     private static final MethodWrapperKey keyFactory =
       (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, null);
 
-    // should be package-protected but causes problems on jdk1.2
-    public interface MethodWrapperKey {
+    
+    interface MethodWrapperKey {
         public Object newInstance(String name, Class[] parameterTypes);
     }
     

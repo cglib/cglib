@@ -71,8 +71,8 @@ abstract public class MulticastDelegate implements Cloneable {
     private static final Method ADD_HELPER =
       ReflectUtils.findMethod("MulticastDelegate.cglib_addHelper(Object)");
 
-    // should be package-protected but causes problems on jdk1.2
-    public interface MulticastDelegateKey {
+    
+    interface MulticastDelegateKey {
         public Object newInstance(Class iface);
     }
 

@@ -59,7 +59,7 @@ import java.util.*;
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
- * @version $Id: Delegator.java,v 1.15 2003/01/31 01:18:51 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.16 2003/02/03 17:47:16 baliuka Exp $
  */
 public class Delegator {
     static final Class TYPE = Delegator.class;
@@ -72,7 +72,7 @@ public class Delegator {
       (DelegatorKey)KeyFactory.create(DelegatorKey.class, null);
 
     // should be package-protected but causes problems on jdk1.2
-    public interface DelegatorKey {
+     interface DelegatorKey {
         public Object newInstance(Class[] classes);
     }
 

@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.33 2003/02/02 17:43:57 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.34 2003/02/03 17:47:18 baliuka Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -90,8 +90,8 @@ public class Enhancer {
 
     private static final ClassNameFactory nameFactory = new ClassNameFactory("EnhancedByCGLIB");
 
-    // should be package-protected but causes problems on jdk1.2
-    public interface EnhancerKey {
+   
+     interface EnhancerKey {
         public Object newInstance( Class cls, Class[] interfaces, 
                                    Method wreplace,Object filter);
     }
