@@ -2,7 +2,7 @@ package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
 
-abstract public class AbstractFilterTransformer extends ClassTransformer {
+abstract public class AbstractFilterTransformer extends AbstractTransformer {
     protected ClassTransformer pass;
     
     protected AbstractFilterTransformer(ClassTransformer pass) {

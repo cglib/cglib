@@ -115,13 +115,17 @@ public class TestStringSwitch extends CodeGenTestCase {
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
-            final Emitter e = new Emitter(v);
-            e.begin_class(Constants.ACC_PUBLIC, getClassName(), null, new Type[]{ Type.getType(Indexed.class) }, Constants.SOURCE_FILE);
-            e.null_constructor();
+            ClassEmitter ce = new ClassEmitter(v);
+            ce.begin_class(Constants.ACC_PUBLIC,
+                           getClassName(),
+                           null,
+                           new Type[]{ Type.getType(Indexed.class) },
+                           Constants.SOURCE_FILE);
+            ComplexOps.null_constructor(ce);
             Method method = Indexed.class.getMethod("getIndex", new Class[]{ String.class });
-            e.begin_method(Constants.ACC_PUBLIC,
-                           ReflectUtils.getSignature(method),
-                           ReflectUtils.getExceptionTypes(method));
+            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
+                                                  ReflectUtils.getSignature(method),
+                                                  ReflectUtils.getExceptionTypes(method));
             e.load_arg(0);
             ComplexOps.string_switch(e, keys, switchStyle, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label end) {
@@ -134,7 +138,8 @@ public class TestStringSwitch extends CodeGenTestCase {
                     }
                 });
             e.return_value();
-            e.end_class();
+            e.end_method();
+            ce.end_class();
         }
     }
 

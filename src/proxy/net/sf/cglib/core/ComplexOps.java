@@ -80,8 +80,28 @@ public class ComplexOps {
       TypeUtils.parseType("NoClassDefFoundError");
     private static final Type CLASS_NOT_FOUND_EXCEPTION =
       TypeUtils.parseType("ClassNotFoundException");
+    private static final Signature CSTRUCT_NULL =
+      TypeUtils.parseConstructor("");
 
     private ComplexOps() {
+    }
+
+    public static void factory_method(ClassEmitter ce, Signature sig) {
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, sig, null);
+        e.new_instance_this();
+        e.dup();
+        e.load_args();
+        e.invoke_constructor_this(TypeUtils.parseConstructor(sig.getArgumentTypes()));
+        e.return_value();
+        e.end_method();
+    }
+
+    public static void null_constructor(ClassEmitter ce) {
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null);
+        e.load_this();
+        e.super_invoke_constructor();
+        e.return_value();
+        e.end_method();
     }
     
     /**
@@ -91,7 +111,7 @@ public class ComplexOps {
      * @param type the type of the array (type.isArray() must be true)
      * @param callback the callback triggered for each element
      */
-    public static void process_array(Emitter e, Type type, ProcessArrayCallback callback) {
+    public static void process_array(CodeEmitter e, Type type, ProcessArrayCallback callback) {
         Type componentType = TypeUtils.getComponentType(type);
         Local array = e.make_local();
         Local loopvar = e.make_local(Type.INT_TYPE);
@@ -123,7 +143,7 @@ public class ComplexOps {
      * @param type the type of the arrays (type.isArray() must be true)
      * @param callback the callback triggered for each pair of elements
      */
-    public static void process_arrays(Emitter e, Type type, ProcessArrayCallback callback) {
+    public static void process_arrays(CodeEmitter e, Type type, ProcessArrayCallback callback) {
         Type componentType = TypeUtils.getComponentType(type);
         Local array1 = e.make_local();
         Local array2 = e.make_local();
@@ -153,7 +173,7 @@ public class ComplexOps {
         e.if_icmp(e.LT, loopbody);
     }
     
-    public static void string_switch(Emitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
+    public static void string_switch(CodeEmitter e, String[] strings, int switchStyle, ObjectSwitchCallback callback)
     throws Exception {
         switch (switchStyle) {
         case Constants.SWITCH_STYLE_TRIE:
@@ -167,7 +187,7 @@ public class ComplexOps {
         }
     }
 
-    static void string_switch_trie(final Emitter e,
+    static void string_switch_trie(final CodeEmitter e,
                                    String[] strings,
                                    final ObjectSwitchCallback callback) throws Exception {
         final Label def = e.make_label();
@@ -194,7 +214,7 @@ public class ComplexOps {
         e.mark(end);
     }
 
-    private static void stringSwitchHelper(final Emitter e,
+    private static void stringSwitchHelper(final CodeEmitter e,
                                            List strings,
                                            final ObjectSwitchCallback callback,
                                            final Label def,
@@ -235,7 +255,7 @@ public class ComplexOps {
         return keys;
     }
 
-    static void string_switch_hash(final Emitter e,
+    static void string_switch_hash(final CodeEmitter e,
                                    final String[] strings,
                                    final ObjectSwitchCallback callback) throws Exception {
         final Map buckets = CollectionUtils.bucket(Arrays.asList(strings), new Transformer() {
@@ -279,11 +299,11 @@ public class ComplexOps {
         e.mark(end);
     }
 
-    public static void load_class_this(Emitter e) {
-        load_class_helper(e, e.getClassType());
+    public static void load_class_this(CodeEmitter e) {
+        load_class_helper(e, e.getClassEmitter().getClassType());
     }
     
-    public static void load_class(Emitter e, Type type) {
+    public static void load_class(CodeEmitter e, Type type) {
         if (TypeUtils.isPrimitive(type)) {
             if (type == Type.VOID_TYPE) {
                 throw new IllegalArgumentException("cannot load void type");
@@ -294,7 +314,7 @@ public class ComplexOps {
         }
     }
 
-    private static void load_class_helper(final Emitter e, Type type) {
+    private static void load_class_helper(final CodeEmitter e, Type type) {
 //         e.register(FIND_CLASS, new Emitter.EndClassCallback() {
 //             public void process() {
 //                 generateFindClass(e);
@@ -330,7 +350,7 @@ public class ComplexOps {
 //         e.athrow();
 //     }
 
-    public static void push(Emitter e, Object[] array) {
+    public static void push(CodeEmitter e, Object[] array) {
         e.push(array.length);
         e.newarray(Type.getType(array.getClass().getComponentType()));
         for (int i = 0; i < array.length; i++) {
@@ -341,7 +361,7 @@ public class ComplexOps {
         }
     }
     
-    public static void push_object(Emitter e, Object obj) {
+    public static void push_object(CodeEmitter e, Object obj) {
         if (obj == null) {
             e.aconst_null();
         } else {

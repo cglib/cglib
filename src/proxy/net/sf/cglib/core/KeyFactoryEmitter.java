@@ -60,10 +60,10 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.10 2003/10/01 06:05:37 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.11 2003/10/03 19:25:07 herbyderby Exp $
  * @author Chris Nokleberg
  */
-class KeyFactoryEmitter extends Emitter {
+class KeyFactoryEmitter extends ClassEmitter {
     private static final Signature HASH_CODE =
       TypeUtils.parseSignature("int hashCode()");
     private static final Signature EQUALS =
@@ -141,8 +141,8 @@ class KeyFactoryEmitter extends Emitter {
                     KEY_FACTORY,
                     new Type[]{ Type.getType(keyInterface) },
                     Constants.SOURCE_FILE);
-        null_constructor();
-        factory_method(ReflectUtils.getSignature(newInstance));
+        ComplexOps.null_constructor(this);
+        ComplexOps.factory_method(this, ReflectUtils.getSignature(newInstance));
         generateConstructor();
         generateHashCode();
         generateEquals();
@@ -152,113 +152,117 @@ class KeyFactoryEmitter extends Emitter {
 
     // TODO: change to exactly follow Effective Java recommendations
     private void generateConstructor() {
-        begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(parameterTypes), null);
-        load_this();
-        super_invoke_constructor();
-        load_this();
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC,
+                                     TypeUtils.parseConstructor(parameterTypes),
+                                     null);
+        e.load_this();
+        e.super_invoke_constructor();
+        e.load_this();
         for (int i = 0; i < parameterTypes.length; i++) {
             seed += parameterTypes[i].hashCode();
             declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
                           getFieldName(i),
                           parameterTypes[i],
                           null);
-            dup();
-            load_arg(i);
-            putfield(getFieldName(i));
+            e.dup();
+            e.load_arg(i);
+            e.putfield(getFieldName(i));
         }
-        return_value();
+        e.return_value();
+        e.end_method();
     }
 
     private void generateHashCode() {
-        begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
-        push(PRIMES[(int)(seed % PRIMES.length)]);
-        push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
+        e.push(PRIMES[(int)(seed % PRIMES.length)]);
+        e.push(PRIMES[(int)((seed * 13) % PRIMES.length)]);
         for (int i = 0; i < parameterTypes.length; i++) {
-            load_this();
-            getfield(getFieldName(i));
-            hash_code(parameterTypes[i]);
+            e.load_this();
+            e.getfield(getFieldName(i));
+            hash_code(e, parameterTypes[i]);
         }
-        swap();
-        pop();
-        return_value();
+        e.swap();
+        e.pop();
+        e.return_value();
+        e.end_method();
     }
 
-    private void hash_code(Type type) {
+    private void hash_code(CodeEmitter e, Type type) {
         if (TypeUtils.isArray(type)) {
-            hash_array(type);
+            hash_array(e, type);
         } else {
             if (TypeUtils.isPrimitive(type)) {
-                hash_primitive(type);
+                hash_primitive(e, type);
             } else {
-                hash_object(type);
+                hash_object(e, type);
             }
-            math(ADD, Type.INT_TYPE);
-            swap();
-            dup_x1();
-            math(MUL, Type.INT_TYPE);
+            e.math(e.ADD, Type.INT_TYPE);
+            e.swap();
+            e.dup_x1();
+            e.math(e.MUL, Type.INT_TYPE);
         }
     }
 
-    private void hash_array(Type type) {
-        Label isNull = make_label();
-        Label end = make_label();
-        dup();
-        ifnull(isNull);
-        ComplexOps.process_array(this, type, new ProcessArrayCallback() {
+    private void hash_array(final CodeEmitter e, Type type) {
+        Label isNull = e.make_label();
+        Label end = e.make_label();
+        e.dup();
+        e.ifnull(isNull);
+        ComplexOps.process_array(e, type, new ProcessArrayCallback() {
             public void processElement(Type type) {
-                hash_code(type);
+                hash_code(e, type);
             }
         });
-        goTo(end);
-        mark(isNull);
-        pop();
-        mark(end);
+        e.goTo(end);
+        e.mark(isNull);
+        e.pop();
+        e.mark(end);
     }
 
-    private void hash_object(Type type) {
+    private void hash_object(CodeEmitter e, Type type) {
         // (f == null) ? 0 : f.hashCode();
-        Label isNull = make_label();
-        Label end = make_label();
-        dup();
-        ifnull(isNull);
+        Label isNull = e.make_label();
+        Label end = e.make_label();
+        e.dup();
+        e.ifnull(isNull);
         if (customizer != null) {
-            customizer.customize(this, type);
+            customizer.customize(e, type);
         }
-        invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
-        goTo(end);
-        mark(isNull);
-        pop();
-        push(0);
-        mark(end);
+        e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        e.goTo(end);
+        e.mark(isNull);
+        e.pop();
+        e.push(0);
+        e.mark(end);
     }
 
-    private void hash_primitive(Type type) {
+    private void hash_primitive(CodeEmitter e, Type type) {
         switch (type.getSort()) {
         case Type.BOOLEAN:
             // f ? 0 : 1
-            push(1);
-            math(XOR, Type.INT_TYPE);
+            e.push(1);
+            e.math(e.XOR, Type.INT_TYPE);
             break;
         case Type.DOUBLE:
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
-            invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
-            hash_long();
+            e.invoke_static(Constants.TYPE_DOUBLE, DOUBLE_TO_LONG_BITS);
+            hash_long(e);
         case Type.FLOAT:
             // Float.floatToIntBits(f)
-            invoke_static(Constants.TYPE_FLOAT, FLOAT_TO_INT_BITS);
+            e.invoke_static(Constants.TYPE_FLOAT, FLOAT_TO_INT_BITS);
         case Type.LONG:
-            hash_long();
+            hash_long(e);
         default:
             // (int)f
         }
     }
 
-    private void hash_long() {
+    private void hash_long(CodeEmitter e) {
         // (int)(f ^ (f >>> 32))
-        push(32);
-        math(USHR, Type.LONG_TYPE);
-        math(XOR, Type.LONG_TYPE);
-        cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
+        e.push(32);
+        e.math(e.USHR, Type.LONG_TYPE);
+        e.math(e.XOR, Type.LONG_TYPE);
+        e.cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
     }
 
     private String getFieldName(int arg) {
@@ -266,24 +270,25 @@ class KeyFactoryEmitter extends Emitter {
     }
 
     private void generateEquals() {
-        Label fail = make_label();
-        begin_method(Constants.ACC_PUBLIC, EQUALS, null);
-        load_arg(0);
-        instance_of_this();
-        if_jump(EQ, fail);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, EQUALS, null);
+        Label fail = e.make_label();
+        e.load_arg(0);
+        e.instance_of_this();
+        e.if_jump(e.EQ, fail);
         for (int i = 0; i < parameterTypes.length; i++) {
-            load_this();
-            getfield(getFieldName(i));
-            load_arg(0);
-            checkcast_this();
-            getfield(getFieldName(i));
-            not_equals(parameterTypes[i], fail);
+            e.load_this();
+            e.getfield(getFieldName(i));
+            e.load_arg(0);
+            e.checkcast_this();
+            e.getfield(getFieldName(i));
+            not_equals(e, parameterTypes[i], fail);
         }
-        push(1);
-        return_value();
-        mark(fail);
-        push(0);
-        return_value();
+        e.push(1);
+        e.return_value();
+        e.mark(fail);
+        e.push(0);
+        e.return_value();
+        e.end_method();
     }
 
     /**
@@ -293,41 +298,41 @@ class KeyFactoryEmitter extends Emitter {
      * directly and by invoking the <code>equals</code> method for
      * Objects. Arrays are recursively processed in the same manner.
      */
-    private void not_equals(Type type, final Label notEquals) {
+    private void not_equals(final CodeEmitter e, Type type, final Label notEquals) {
         (new ProcessArrayCallback() {
             public void processElement(Type type) {
-                not_equals_helper(type, notEquals, this);
+                not_equals_helper(e, type, notEquals, this);
             }
         }).processElement(type);
     }
     
-    private void not_equals_helper(Type type, Label notEquals, ProcessArrayCallback callback) {
+    private void not_equals_helper(CodeEmitter e, Type type, Label notEquals, ProcessArrayCallback callback) {
         if (TypeUtils.isPrimitive(type)) {
-            if_cmp(type, NE, notEquals);
+            e.if_cmp(type, e.NE, notEquals);
         } else {
-            Label end = make_label();
-            nullcmp(notEquals, end);
+            Label end = e.make_label();
+            nullcmp(e, notEquals, end);
             if (TypeUtils.isArray(type)) {
-                Label checkContents = make_label();
-                dup2();
-                arraylength();
-                swap();
-                arraylength();
-                if_icmp(EQ, checkContents);
-                pop2();
-                goTo(notEquals);
-                mark(checkContents);
-                ComplexOps.process_arrays(this, type, callback);
+                Label checkContents = e.make_label();
+                e.dup2();
+                e.arraylength();
+                e.swap();
+                e.arraylength();
+                e.if_icmp(e.EQ, checkContents);
+                e.pop2();
+                e.goTo(notEquals);
+                e.mark(checkContents);
+                ComplexOps.process_arrays(e, type, callback);
             } else {
                 if (customizer != null) {
-                    customizer.customize(this, type);
-                    swap();
-                    customizer.customize(this, type);
+                    customizer.customize(e, type);
+                    e.swap();
+                    customizer.customize(e, type);
                 }
-                invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
-                if_jump(EQ, notEquals);
+                e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
+                e.if_jump(e.EQ, notEquals);
             }
-            mark(end);
+            e.mark(end);
         }
     }
 
@@ -338,111 +343,112 @@ class KeyFactoryEmitter extends Emitter {
      * @param oneNull label to branch to if only one of the objects is null
      * @param bothNull label to branch to if both of the objects are null
      */
-    private void nullcmp(Label oneNull, Label bothNull) {
-        dup2();
-        Label nonNull = make_label();
-        Label oneNullHelper = make_label();
-        Label end = make_label();
-        ifnonnull(nonNull);
-        ifnonnull(oneNullHelper);
-        pop2();
-        goTo(bothNull);
+    private void nullcmp(CodeEmitter e, Label oneNull, Label bothNull) {
+        e.dup2();
+        Label nonNull = e.make_label();
+        Label oneNullHelper = e.make_label();
+        Label end = e.make_label();
+        e.ifnonnull(nonNull);
+        e.ifnonnull(oneNullHelper);
+        e.pop2();
+        e.goTo(bothNull);
         
-        mark(nonNull);
-        ifnull(oneNullHelper);
-        goTo(end);
+        e.mark(nonNull);
+        e.ifnull(oneNullHelper);
+        e.goTo(end);
         
-        mark(oneNullHelper);
-        pop2();
-        goTo(oneNull);
+        e.mark(oneNullHelper);
+        e.pop2();
+        e.goTo(oneNull);
         
-        mark(end);
+        e.mark(end);
     }
 
     private void generateToString() {
-        Label fail = make_label();
-        begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
-        new_instance(Constants.TYPE_STRING_BUFFER);
-        dup();
-        invoke_constructor(Constants.TYPE_STRING_BUFFER);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
+        Label fail = e.make_label();
+        e.new_instance(Constants.TYPE_STRING_BUFFER);
+        e.dup();
+        e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
         for (int i = 0; i < parameterTypes.length; i++) {
-            load_this();
-            getfield(getFieldName(i));
+            e.load_this();
+            e.getfield(getFieldName(i));
             (new ProcessArrayCallback() {
                 public void processElement(Type type) {
-                    toStringHelper(type, this);
+                    toStringHelper(e, type, this);
                 }
             }).processElement(parameterTypes[i]);
         }
         if (parameterTypes.length > 0) {
-            shrinkStringBuffer(2);
+            shrinkStringBuffer(e, 2);
         }
-        invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
-        return_value();
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
+        e.return_value();
+        e.end_method();
     }
 
-    private void toStringHelper(Type type, ProcessArrayCallback callback) {
-        Label skip = make_label();
-        Label end = make_label();
+    private void toStringHelper(CodeEmitter e, Type type, ProcessArrayCallback callback) {
+        Label skip = e.make_label();
+        Label end = e.make_label();
         if (TypeUtils.isPrimitive(type)) {
             switch (type.getSort()) {
             case Type.INT:
             case Type.SHORT:
             case Type.BYTE:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_INT);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_INT);
                 break;
             case Type.DOUBLE:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
                 break;
             case Type.FLOAT:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_DOUBLE);
                 break;
             case Type.LONG:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_LONG);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_LONG);
                 break;
             case Type.BOOLEAN:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_BOOLEAN);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_BOOLEAN);
                 break;
             case Type.CHAR:
-                invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_CHAR);
+                e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_CHAR);
                 break;
             }
         } else if (TypeUtils.isArray(type)) {
-            dup();
-            ifnull(skip);
-            swap();
-            push("{");
-            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
-            swap();
-            ComplexOps.process_array(this, type, callback);
-            shrinkStringBuffer(2);
-            push("}");
-            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            e.dup();
+            e.ifnull(skip);
+            e.swap();
+            e.push("{");
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            e.swap();
+            ComplexOps.process_array(e, type, callback);
+            shrinkStringBuffer(e, 2);
+            e.push("}");
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
         } else {
-            dup();
-            ifnull(skip);
+            e.dup();
+            e.ifnull(skip);
             if (customizer != null) {
-                customizer.customize(this, type);
+                customizer.customize(e, type);
             }
-            invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
-            invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+            e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);
+            e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
         }
-        goTo(end);
-        mark(skip);
-        pop();
-        push("null");
-        invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
-        mark(end);
-        push(", ");
-        invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        e.goTo(end);
+        e.mark(skip);
+        e.pop();
+        e.push("null");
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
+        e.mark(end);
+        e.push(", ");
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
     }
 
-    private void shrinkStringBuffer(int amt) {
-        dup();
-        dup();
-        invoke_virtual(Constants.TYPE_STRING_BUFFER, LENGTH);
-        push(amt);
-        math(SUB, Type.INT_TYPE);
-        invoke_virtual(Constants.TYPE_STRING_BUFFER, SET_LENGTH);
+    private void shrinkStringBuffer(CodeEmitter e, int amt) {
+        e.dup();
+        e.dup();
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, LENGTH);
+        e.push(amt);
+        e.math(e.SUB, Type.INT_TYPE);
+        e.invoke_virtual(Constants.TYPE_STRING_BUFFER, SET_LENGTH);
     }
 }

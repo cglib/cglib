@@ -29,18 +29,18 @@ implements CallbackGenerator
         return "CGLIB$$METHOD_" + context.getUniqueName(method);
     }
 
-    public void generate(Emitter e, Context context) {
+    public void generate(ClassEmitter ce, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
 
             String fieldName = getFieldName(context, method);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, METHOD, null);
 
-            e.begin_method(context.getModifiers(method),
-                           ReflectUtils.getSignature(method),
-                           ReflectUtils.getExceptionTypes(method));
+            CodeEmitter e = ce.begin_method(context.getModifiers(method),
+                                            ReflectUtils.getSignature(method),
+                                            ReflectUtils.getExceptionTypes(method));
             Block handler = e.begin_block();
-            context.emitCallback();
+            context.emitCallback(e);
             e.load_this();
             e.getfield(fieldName);
             e.create_arg_array();
@@ -48,52 +48,51 @@ implements CallbackGenerator
             e.unbox(Type.getType(method.getReturnType()));
             e.return_value();
             e.end_block();
-            handle_undeclared(e, method.getExceptionTypes(), handler);
+
+            /* generates:
+               } catch (RuntimeException e) {
+               throw e;
+               } catch (Error e) {
+               throw e;
+               } catch (<DeclaredException> e) {
+               throw e;
+               } catch (Throwable e) {
+               throw new UndeclaredThrowableException(e);
+               }
+            */
+            Class[] exceptionTypes = method.getExceptionTypes();
+            Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
+            if (!(exceptionSet.contains(Exception.class) ||
+                  exceptionSet.contains(Throwable.class))) {
+                if (!exceptionSet.contains(RuntimeException.class)) {
+                    e.catch_exception(handler, RUNTIME_EXCEPTION);
+                    e.athrow();
+                }
+                if (!exceptionSet.contains(Error.class)) {
+                    e.catch_exception(handler, ERROR);
+                    e.athrow();
+                }
+                for (int i = 0; i < exceptionTypes.length; i++) {
+                    e.catch_exception(handler, Type.getType(exceptionTypes[i]));
+                    e.athrow();
+                }
+                // e -> eo -> oeo -> ooe -> o
+                e.catch_exception(handler, Constants.TYPE_THROWABLE);
+                e.new_instance(UNDECLARED_THROWABLE_EXCEPTION);
+                e.dup_x1();
+                e.swap();
+                e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, CSTRUCT_THROWABLE);
+                e.athrow();
+            }
+            e.end_method();
         }
     }
 
-    public void generateStatic(Emitter e, Context context) {
+    public void generateStatic(CodeEmitter e, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             ReflectOps.load_method(e, method);
             e.putfield(getFieldName(context, method));
-        }
-    }
-
-    private static void handle_undeclared(Emitter e, Class[] exceptionTypes, Block handler) {
-        /* generates:
-           } catch (RuntimeException e) {
-               throw e;
-           } catch (Error e) {
-               throw e;
-           } catch (<DeclaredException> e) {
-               throw e;
-           } catch (Throwable e) {
-               throw new UndeclaredThrowableException(e);
-           }
-        */
-        Set exceptionSet = new HashSet(Arrays.asList(exceptionTypes));
-        if (!(exceptionSet.contains(Exception.class) ||
-              exceptionSet.contains(Throwable.class))) {
-            if (!exceptionSet.contains(RuntimeException.class)) {
-                e.catch_exception(handler, RUNTIME_EXCEPTION);
-                e.athrow();
-            }
-            if (!exceptionSet.contains(Error.class)) {
-                e.catch_exception(handler, ERROR);
-                e.athrow();
-            }
-            for (int i = 0; i < exceptionTypes.length; i++) {
-                e.catch_exception(handler, Type.getType(exceptionTypes[i]));
-                e.athrow();
-            }
-            // e -> eo -> oeo -> ooe -> o
-            e.catch_exception(handler, Constants.TYPE_THROWABLE);
-            e.new_instance(UNDECLARED_THROWABLE_EXCEPTION);
-            e.dup_x1();
-            e.swap();
-            e.invoke_constructor(UNDECLARED_THROWABLE_EXCEPTION, CSTRUCT_THROWABLE);
-            e.athrow();
         }
     }
 }

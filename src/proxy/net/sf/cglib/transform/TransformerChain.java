@@ -2,7 +2,7 @@ package net.sf.cglib.transform;
 
 import org.objectweb.asm.*;
 
-public class TransformerChain extends ClassTransformer {
+public class TransformerChain extends AbstractTransformer {
     private ClassTransformer[] chain;
     
     public TransformerChain(ClassTransformer[] chain) {

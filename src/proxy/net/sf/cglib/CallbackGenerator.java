@@ -55,17 +55,18 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.util.Iterator;
-import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.ClassEmitter;
+import net.sf.cglib.core.CodeEmitter;
 
 interface CallbackGenerator
 {
-    void generate(Emitter cg, Context context) throws Exception;
-    void generateStatic(Emitter cg, Context context) throws Exception;
+    void generate(ClassEmitter e, Context context) throws Exception;
+    void generateStatic(CodeEmitter e, Context context) throws Exception;
 
     interface Context
     {
         Iterator getMethods();
-        void emitCallback();
+        void emitCallback(CodeEmitter e);
         int getModifiers(Method method);
         String getUniqueName(Method method);
     }

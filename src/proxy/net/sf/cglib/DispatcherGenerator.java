@@ -57,6 +57,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Type;
 
 class DispatcherGenerator implements CallbackGenerator {
@@ -66,25 +68,26 @@ class DispatcherGenerator implements CallbackGenerator {
     private static final Signature LOAD_OBJECT =
       TypeUtils.parseSignature("Object loadObject(String)");
 
-    public void generate(Emitter e, Context context) {
+    public void generate(ClassEmitter ce, final Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
             Method method = (Method)it.next();
             if (Modifier.isProtected(method.getModifiers())) {
                 // ignore protected methods
             } else {
-                e.begin_method(context.getModifiers(method),
-                               ReflectUtils.getSignature(method),
-                               ReflectUtils.getExceptionTypes(method));
-                context.emitCallback();
+                CodeEmitter e = ce.begin_method(context.getModifiers(method),
+                                                ReflectUtils.getSignature(method),
+                                                ReflectUtils.getExceptionTypes(method));
+                context.emitCallback(e);
                 e.push(method.getDeclaringClass().getName());
                 e.invoke_interface(DISPATCHER, LOAD_OBJECT);
                 e.checkcast(Type.getType(method.getDeclaringClass()));
                 e.load_args();
                 ReflectOps.invoke(e, method);
                 e.return_value();
+                e.end_method();
             }
         }
     }
 
-    public void generateStatic(Emitter e, Context context) { }
+    public void generateStatic(CodeEmitter e, Context context) { }
 }

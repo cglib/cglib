@@ -61,7 +61,7 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
     
-class BulkBeanEmitter extends Emitter {
+class BulkBeanEmitter extends ClassEmitter {
     private static final Signature GET_PROPERTY_VALUES =
       TypeUtils.parseSignature("void getPropertyValues(Object, Object[])");
     private static final Signature SET_PROPERTY_VALUES =
@@ -88,64 +88,68 @@ class BulkBeanEmitter extends Emitter {
         validate(target, getterNames, setterNames, types, getters, setters);
 
         begin_class(Constants.ACC_PUBLIC, className, BULK_BEAN, null, Constants.SOURCE_FILE);
-        null_constructor();
+        ComplexOps.null_constructor(this);
         generateGet(target, getters);
         generateSet(target, setters);
         end_class();
     }
 
-    private void generateGet(Class target, Method[] getters) {
-        begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
-        load_arg(0);
-        checkcast(Type.getType(target));
-        Local bean = make_local();
-        store_local(bean);
-        for (int i = 0; i < getters.length; i++) {
-            if (getters[i] != null) {
-                load_arg(1);
-                push(i);
-                load_local(bean);
-                ReflectOps.invoke(this, getters[i]);
-                box(Type.getType(getters[i].getReturnType()));
-                aastore();
+    private void generateGet(final Class target, final Method[] getters) {
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null)) {{
+            load_arg(0);
+            checkcast(Type.getType(target));
+            Local bean = make_local();
+            store_local(bean);
+            for (int i = 0; i < getters.length; i++) {
+                if (getters[i] != null) {
+                    load_arg(1);
+                    push(i);
+                    load_local(bean);
+                    ReflectOps.invoke(this, getters[i]);
+                    box(Type.getType(getters[i].getReturnType()));
+                    aastore();
+                }
             }
-        }
-        return_value();
+            return_value();
+            end_method();
+        }};
     }
 
-    private void generateSet(Class target, Method[] setters) {
+    private void generateSet(final Class target, final Method[] setters) {
         // setPropertyValues
-        begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
-        Local index = make_local(Type.INT_TYPE);
-        push(0);
-        store_local(index);
-        load_arg(0);
-        checkcast(Type.getType(target));
-        load_arg(1);
-        Block handler = begin_block();
-        int lastIndex = 0;
-        for (int i = 0; i < setters.length; i++) {
-            if (setters[i] != null) {
-                int diff = i - lastIndex;
-                if (diff > 0) {
-                    iinc(index, diff);
-                    lastIndex = i;
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null)) {{
+            Local index = make_local(Type.INT_TYPE);
+            push(0);
+            store_local(index);
+            load_arg(0);
+            checkcast(Type.getType(target));
+            load_arg(1);
+            Block handler = begin_block();
+            int lastIndex = 0;
+            for (int i = 0; i < setters.length; i++) {
+                if (setters[i] != null) {
+                    int diff = i - lastIndex;
+                    if (diff > 0) {
+                        iinc(index, diff);
+                        lastIndex = i;
+                    }
+                    dup2();
+                    aaload(i);
+                    unbox(Type.getType(setters[i].getParameterTypes()[0]));
+                    ReflectOps.invoke(this, setters[i]);
                 }
-                dup2();
-                aaload(i);
-                unbox(Type.getType(setters[i].getParameterTypes()[0]));
-                ReflectOps.invoke(this, setters[i]);
             }
-        }
-        end_block();
-        return_value();
-        catch_exception(handler, CLASS_CAST_EXCEPTION);
-        new_instance(BULK_BEAN_EXCEPTION);
-        dup_x1();
-        swap();
-        load_local(index);
-        invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
-        athrow();
+            end_block();
+            return_value();
+            catch_exception(handler, CLASS_CAST_EXCEPTION);
+            new_instance(BULK_BEAN_EXCEPTION);
+            dup_x1();
+            swap();
+            load_local(index);
+            invoke_constructor(BULK_BEAN_EXCEPTION, CSTRUCT_EXCEPTION);
+            athrow();
+            end_method();
+        }};
     }
     
     private static void validate(Class target,

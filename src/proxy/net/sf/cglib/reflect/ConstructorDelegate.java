@@ -60,7 +60,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.13 2003/09/29 23:08:52 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.14 2003/10/03 19:25:07 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -113,34 +113,35 @@ abstract public class ConstructorDelegate {
         public void generateClass(ClassVisitor v) {
             setNamePrefix(targetClass.getName());
 
-            Method newInstance = ReflectUtils.findNewInstance(iface);
+            final Method newInstance = ReflectUtils.findNewInstance(iface);
             if (!newInstance.getReturnType().isAssignableFrom(targetClass)) {
                 throw new IllegalArgumentException("incompatible return type");
             }
-            Constructor constructor;
+            final Constructor constructor;
             try {
                 constructor = targetClass.getDeclaredConstructor(newInstance.getParameterTypes());
             } catch (NoSuchMethodException e) {
                 throw new IllegalArgumentException("interface does not match any known constructor");
             }
 
-            Emitter e = new Emitter(v);
-            e.begin_class(Constants.ACC_PUBLIC,
-                          getClassName(),
-                          CONSTRUCTOR_DELEGATE,
-                          new Type[]{ Type.getType(iface) },
-                          Constants.SOURCE_FILE);
+            ClassEmitter ce = new ClassEmitter(v);
+            ce.begin_class(Constants.ACC_PUBLIC,
+                           getClassName(),
+                           CONSTRUCTOR_DELEGATE,
+                           new Type[]{ Type.getType(iface) },
+                           Constants.SOURCE_FILE);
             Type declaring = Type.getType(constructor.getDeclaringClass());
-            e.null_constructor();
-            e.begin_method(Constants.ACC_PUBLIC,
-                           ReflectUtils.getSignature(newInstance),
-                           ReflectUtils.getExceptionTypes(newInstance));
+            ComplexOps.null_constructor(ce);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
+                                            ReflectUtils.getSignature(newInstance),
+                                            ReflectUtils.getExceptionTypes(newInstance));
             e.new_instance(declaring);
             e.dup();
             e.load_args();
             e.invoke_constructor(declaring, ReflectUtils.getSignature(constructor));
             e.return_value();
-            e.end_class();
+            e.end_method();
+            ce.end_class();
         }
 
         protected Object firstInstance(Class type) {

@@ -140,7 +140,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.14 2003/09/29 23:08:52 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.15 2003/10/03 19:25:06 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -236,7 +236,8 @@ abstract public class MethodDelegate {
         }
 
         public void generateClass(ClassVisitor v) throws NoSuchFieldException {
-            Method proxy, method;
+            Method proxy;
+            final Method method;
             try {
                 proxy = ReflectUtils.findInterfaceMethod(iface);
                 method = targetClass.getMethod(methodName, proxy.getParameterTypes());
@@ -252,29 +253,31 @@ abstract public class MethodDelegate {
                 throw new IllegalArgumentException("Static method " + (isStatic ? "not " : "") + "expected");
             }
 
-            Emitter e = new Emitter(v);
-            e.begin_class(Constants.ACC_PUBLIC,
-                          getClassName(),
-                          METHOD_DELEGATE,
-                          new Type[]{ Type.getType(iface) },
-                          Constants.SOURCE_FILE);
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
-            e.null_constructor();
+            ClassEmitter ce = new ClassEmitter(v);
+            CodeEmitter e;
+            ce.begin_class(Constants.ACC_PUBLIC,
+                        getClassName(),
+                        METHOD_DELEGATE,
+                        new Type[]{ Type.getType(iface) },
+                        Constants.SOURCE_FILE);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
+            ComplexOps.null_constructor(ce);
 
             // generate proxied method
             Method proxied = iface.getDeclaredMethods()[0];
-            e.begin_method(Constants.ACC_PUBLIC,
-                           ReflectUtils.getSignature(proxied),
-                           ReflectUtils.getExceptionTypes(proxied));
+            e = ce.begin_method(Constants.ACC_PUBLIC,
+                                ReflectUtils.getSignature(proxied),
+                                ReflectUtils.getExceptionTypes(proxied));
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(Type.getType(method.getDeclaringClass()));
             e.load_args();
             ReflectOps.invoke(e, method);
             e.return_value();
+            e.end_method();
 
             // newInstance
-            e.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.dup2();
@@ -284,15 +287,17 @@ abstract public class MethodDelegate {
             e.load_arg(0);
             e.super_putfield("target", Constants.TYPE_OBJECT);
             e.return_value();
+            e.end_method();
 
             // static initializer
-            e.begin_static();
+            e = ce.begin_static();
             Signature sig = ReflectUtils.getSignature(method);
             e.push(sig.getName() + sig.getDescriptor());
             e.putfield("eqMethod");
             e.return_value();
+            e.end_method();
             
-            e.end_class();
+            ce.end_class();
         }
     }
 }

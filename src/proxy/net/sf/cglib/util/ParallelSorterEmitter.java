@@ -59,7 +59,7 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
-class ParallelSorterEmitter extends Emitter {
+class ParallelSorterEmitter extends ClassEmitter {
     private static final Signature CSTRUCT_OBJECT_ARRAY =
       TypeUtils.parseConstructor("Object[]");
     private static final Signature NEW_INSTANCE =
@@ -72,8 +72,8 @@ class ParallelSorterEmitter extends Emitter {
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
         super(v);
         begin_class(Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
-        null_constructor();
-        factory_method(NEW_INSTANCE);
+        ComplexOps.null_constructor(this);
+        ComplexOps.factory_method(this, NEW_INSTANCE);
         generateConstructor(arrays);
         generateSwap(arrays);
         end_class();
@@ -83,54 +83,58 @@ class ParallelSorterEmitter extends Emitter {
         return "FIELD_" + index;
     }
 
-    private void generateConstructor(Object[] arrays) throws NoSuchFieldException {
-        begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
-        load_this();
-        super_invoke_constructor();
-        load_this();
-        load_arg(0);
-        super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
-        for (int i = 0; i < arrays.length; i++) {
-            Type type = Type.getType(arrays[i].getClass());
-            declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null);
+    private void generateConstructor(final Object[] arrays) throws NoSuchFieldException {
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null)) {{
+            load_this();
+            super_invoke_constructor();
             load_this();
             load_arg(0);
-            push(i);
-            aaload();
-            checkcast(type);
-            putfield(getFieldName(i));
-        }
-        return_value();
+            super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
+            for (int i = 0; i < arrays.length; i++) {
+                Type type = Type.getType(arrays[i].getClass());
+                declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null);
+                load_this();
+                load_arg(0);
+                push(i);
+                aaload();
+                checkcast(type);
+                putfield(getFieldName(i));
+            }
+            return_value();
+            end_method();
+        }};
     }
 
-    private void generateSwap(Object[] arrays) {
-        begin_method(Constants.ACC_PUBLIC, SWAP, null);
-        for (int i = 0; i < arrays.length; i++) {
-            Type type = Type.getType(arrays[i].getClass());
-            Type component = TypeUtils.getComponentType(type);
-            Local T = make_local(type);
+    private void generateSwap(final Object[] arrays) {
+        new CodeEmitter(begin_method(Constants.ACC_PUBLIC, SWAP, null)) {{
+            for (int i = 0; i < arrays.length; i++) {
+                Type type = Type.getType(arrays[i].getClass());
+                Type component = TypeUtils.getComponentType(type);
+                Local T = make_local(type);
 
-            load_this();
-            getfield(getFieldName(i));
-            store_local(T);
+                load_this();
+                getfield(getFieldName(i));
+                store_local(T);
 
-            load_local(T);
-            load_arg(0);
+                load_local(T);
+                load_arg(0);
 
-            load_local(T);
-            load_arg(1);
-            array_load(component);
+                load_local(T);
+                load_arg(1);
+                array_load(component);
                 
-            load_local(T);
-            load_arg(1);
+                load_local(T);
+                load_arg(1);
 
-            load_local(T);
-            load_arg(0);
-            array_load(component);
+                load_local(T);
+                load_arg(0);
+                array_load(component);
 
-            array_store(component);
-            array_store(component);
-        }
-        return_value();
+                array_store(component);
+                array_store(component);
+            }
+            return_value();
+            end_method();
+        }};
     }
 }

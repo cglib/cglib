@@ -28,117 +28,125 @@ public class InterceptFieldTransformer extends EmittingTransformer {
         this.filter = filter;
     }
     
-    protected Emitter getEmitter(ClassVisitor cv) {
-        return new Emitter(cv) {
-            public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
-                if (!TypeUtils.isAbstract(access)) {
-                    super.begin_class(access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
-                    super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
-                                        CALLBACK_FIELD,
-                                        CALLBACK,
-                                        null);
+    public void begin_class(int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+        if (!TypeUtils.isAbstract(access)) {
+            super.begin_class(access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
+                    
+            super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
+                                CALLBACK_FIELD,
+                                CALLBACK,
+                                null);
 
-                    begin_method(Constants.ACC_PUBLIC, ENABLED_GET, null);
-                    load_this();
-                    getfield(CALLBACK_FIELD);
-                    return_value();
+            CodeEmitter e;
+            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_GET, null);
+            e.load_this();
+            e.getfield(CALLBACK_FIELD);
+            e.return_value();
+            e.end_method();
                 
-                    begin_method(Constants.ACC_PUBLIC, ENABLED_SET, null);
-                    load_this();
-                    load_arg(0);
-                    putfield(CALLBACK_FIELD);
-                    return_value();
-                } else {
-                    super.begin_class(access, className, superType, interfaces, sourceFile);
-                }
+            e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_SET, null);
+            e.load_this();
+            e.load_arg(0);
+            e.putfield(CALLBACK_FIELD);
+            e.return_value();
+            e.end_method();
+        } else {
+            super.begin_class(access, className, superType, interfaces, sourceFile);
+        }
+    }
+
+    public void declare_field(int access, String name, Type type, Object value) {
+        super.declare_field(access, name, type, value);
+        if (!TypeUtils.isStatic(access)) {
+            if (filter.acceptRead(getClassType(), name)) {
+                addReadMethod(name, type);
             }
-
-            public void declare_field(int access, String name, Type type, Object value) {
-                super.declare_field(access, name, type, value);
-                if (!TypeUtils.isStatic(access)) {
-                    if (filter.acceptRead(getClassType(), name)) {
-                        addReadMethod(name, type);
-                    }
-                    if (filter.acceptWrite(getClassType(), name)) {
-                        addWriteMethod(name, type);
-                    }
-                }
+            if (filter.acceptWrite(getClassType(), name)) {
+                addWriteMethod(name, type);
             }
+        }
+    }
 
-            private void addReadMethod(String name, Type type) {
-                begin_method(Constants.ACC_PUBLIC, readMethodSig(name, type.getDescriptor()), null);
-                load_this();
-                getfield(name);
-                load_this();
-                getfield(CALLBACK_FIELD);
-                Label intercept = make_label();
-                ifnonnull(intercept);
-                return_value();
+    private void addReadMethod(final String name, final Type type) {
+        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, readMethodSig(name, type.getDescriptor()), null)) {{
+            load_this();
+            getfield(name);
+            load_this();
+            getfield(CALLBACK_FIELD);
+            Label intercept = make_label();
+            ifnonnull(intercept);
+            return_value();
 
-                mark(intercept);
-                Local result = make_local(type);
-                store_local(result);
-                load_this();
-                getfield(CALLBACK_FIELD);
-                load_this();
-                push(name);
-                load_local(result);
-                invoke_interface(CALLBACK, readCallbackSig(type));
-                if (!TypeUtils.isPrimitive(type)) {
-                    checkcast(type);
-                }
-                return_value();
+            mark(intercept);
+            Local result = make_local(type);
+            store_local(result);
+            load_this();
+            getfield(CALLBACK_FIELD);
+            load_this();
+            push(name);
+            load_local(result);
+            invoke_interface(CALLBACK, readCallbackSig(type));
+            if (!TypeUtils.isPrimitive(type)) {
+                checkcast(type);
             }
+            return_value();
+            end_method();
+        }};
+    }
 
-            private void addWriteMethod(String name, Type type) {
-                begin_method(Constants.ACC_PUBLIC, writeMethodSig(name, type.getDescriptor()), null);
-                load_this();
-                dup();
-                getfield(CALLBACK_FIELD);
-                Label skip = make_label();
-                ifnull(skip);
+    private void addWriteMethod(final String name, final Type type) {
+        new CodeEmitter(super.begin_method(Constants.ACC_PUBLIC, writeMethodSig(name, type.getDescriptor()), null)) {{
+            load_this();
+            dup();
+            getfield(CALLBACK_FIELD);
+            Label skip = make_label();
+            ifnull(skip);
 
-                load_this();
-                getfield(CALLBACK_FIELD);
-                load_this();
-                push(name);
-                load_this();
-                getfield(name);
-                load_arg(0);
-                invoke_interface(CALLBACK, writeCallbackSig(type));
-                if (!TypeUtils.isPrimitive(type)) {
-                    checkcast(type);
-                }
-                Label go = make_label();
-                goTo(go);
-                mark(skip);
-                load_arg(0);
-                mark(go);
-                putfield(name);
-                return_value();
+            load_this();
+            getfield(CALLBACK_FIELD);
+            load_this();
+            push(name);
+            load_this();
+            getfield(name);
+            load_arg(0);
+            invoke_interface(CALLBACK, writeCallbackSig(type));
+            if (!TypeUtils.isPrimitive(type)) {
+                checkcast(type);
             }
+            Label go = make_label();
+            goTo(go);
+            mark(skip);
+            load_arg(0);
+            mark(go);
+            putfield(name);
+            return_value();
+            end_method();
+        }};
+    }
                 
-            public CodeVisitor begin_method(int access, Signature sig, Type[] exceptions) {
-                return new CodeAdapter(super.begin_method(access, sig, exceptions)) {
-                    public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-                        Type towner = TypeUtils.fromInternalName(owner);
-                        switch (opcode) {
-                        case Constants.GETFIELD:
-                            if (filter.acceptRead(towner, name)) {
-                                invoke_virtual(towner, readMethodSig(name, desc));
-                                return;
-                            }
-                            break;
-                        case Constants.PUTFIELD:
-                            if (filter.acceptWrite(towner, name)) {
-                                invoke_virtual(towner, writeMethodSig(name, desc));
-                                return;
-                            }
-                            break;
-                        }
-                        super.visitFieldInsn(opcode, owner, name, desc);
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+        return new CodeEmitter(super.begin_method(access, sig, exceptions)) {
+            public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+                Type towner = TypeUtils.fromInternalName(owner);
+                switch (opcode) {
+                case Constants.GETFIELD:
+                    if (filter.acceptRead(towner, name)) {
+                        helper(towner, readMethodSig(name, desc));
+                        return;
                     }
-                };
+                    break;
+                case Constants.PUTFIELD:
+                    if (filter.acceptWrite(towner, name)) {
+                        helper(towner, writeMethodSig(name, desc));
+                        return;
+                    }
+                    break;
+                }
+                super.visitFieldInsn(opcode, owner, name, desc);
+            }
+
+            private void helper(Type owner, Signature sig) {
+                invoke_virtual(owner, sig);
             }
         };
     }
