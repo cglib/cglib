@@ -63,10 +63,20 @@ import junit.framework.TestSuite;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: NoOpInterceptor.java,v 1.3 2002/09/23 21:42:09 baliuka Exp $
+ *@version    $Id: NoOpInterceptor.java,v 1.4 2002/09/25 19:12:50 baliuka Exp $
  */
  public class NoOpInterceptor implements MethodInterceptor , java.io.Serializable{
+ 
+    String value; 
     
+     public String getValue(){
+        return  value;
+     }
+     
+     public NoOpInterceptor( String ser) {
+         value = ser;
+     }
+   
     /** Creates a new instance of NoOpInterceptor */
     public NoOpInterceptor() {
     }
