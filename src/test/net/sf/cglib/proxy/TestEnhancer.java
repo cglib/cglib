@@ -62,7 +62,7 @@ import net.sf.cglib.core.ReflectUtils;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.37 2003/12/19 16:32:17 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.38 2003/12/20 08:47:55 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -169,7 +169,7 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue(proxy.getName().equals("herby"));
 
         Factory factory = (Factory)proxy;
-        assertTrue(((EA)factory.newInstance()).getName().equals("herby"));
+        assertTrue(((EA)factory.newInstance(factory.getCallbacks())).getName().equals("herby"));
     }
 
     class DelegateInterceptor implements MethodInterceptor {
@@ -407,7 +407,7 @@ public class TestEnhancer extends CodeGenTestCase {
         ((ConflictA)foo).foo();
         ((ConflictB)foo).foo();
     }
-    
+
      public void testArgInit() throws Throwable{
 
          Enhancer e = new Enhancer();
