@@ -62,12 +62,14 @@ import java.util.*;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 abstract public class BasicCodeGenerator {
-    private static final Object lock = new Object();
     private static String debugLocation;
     private static RuntimePermission DEFINE_CGLIB_CLASS_IN_JAVA_PACKAGE_PERMISSION =
       new RuntimePermission("defineCGLIBClassInJavaPackage");
 
+    private boolean inited;
     private String className;
+    private String namePrefix;
+    private String nameSuffix = "";
     private Class superclass;
     private ClassLoader classLoader;
     private int modifiers = Modifier.PUBLIC;
@@ -88,8 +90,9 @@ abstract public class BasicCodeGenerator {
         BasicCodeGenerator.debugLocation = debugLocation;
     }
 
+    // get rid of this
     protected BasicCodeGenerator(String className, Class superclass, ClassLoader classLoader) {
-        setClassName(className);
+        setNamePrefix(className);
         setSuperclass(superclass);
         setClassLoader(classLoader);
     }
@@ -97,12 +100,26 @@ abstract public class BasicCodeGenerator {
     protected BasicCodeGenerator() {
     }
 
-    public String getClassName() {
-        return className;
+    public String getNamePrefix() {
+        return namePrefix;
     }
     
-    public void setClassName(String value) {
-        className = value;
+    public void setNamePrefix(String value) {
+        checkInit(false);
+        namePrefix = value;
+    }
+    
+    public String getNameSuffix() {
+        return nameSuffix;
+    }
+    
+    public void setNameSuffix(String value) {
+        checkInit(false);
+        nameSuffix = value;
+    }
+
+    public String getClassName() {
+        return className;
     }
 
     public ClassLoader getClassLoader() {
@@ -118,6 +135,7 @@ abstract public class BasicCodeGenerator {
     }
     
     public void setSuperclass(Class value) {
+        checkInit(false);
         superclass = value;
     }
 
@@ -130,6 +148,7 @@ abstract public class BasicCodeGenerator {
     }
     
     public void setClassModifiers(int modifiers) {
+        checkInit(false);
         this.modifiers = modifiers;
     }
     
@@ -137,9 +156,43 @@ abstract public class BasicCodeGenerator {
         return modifiers;
     }
 
-    private void init() {
+    protected void init() {
+        if (superclass == null) {
+            superclass = Object.class;
+        }
+        if (namePrefix == null) {
+            namePrefix = superclass.getName();
+        }
+        className = namePrefix + nameSuffix;
         backend = new ASMBackend();
         backend.init(this);
+        inited = true;
+    }
+
+    private void checkInit(boolean flag) {
+        if (inited ^ flag) {
+            throw new IllegalStateException("cannot change value after initialization");
+        }
+    }
+
+    protected void ensureLoadable(String className) throws ClassNotFoundException {
+        if (className != null) {
+            classLoader.loadClass(className);
+        }
+    }
+
+    protected void ensureLoadable(Class type) throws ClassNotFoundException {
+        if (type != null) {
+            ensureLoadable(type.getName());
+        }
+    }
+
+    protected void ensureLoadable(Class[] types) throws ClassNotFoundException {
+        if (types != null) {
+            for (int i = 0; i < types.length; i++) {
+                ensureLoadable(types[i]);
+            }
+        }
     }
 
     protected CodeGeneratorBackend getBackend() {
@@ -151,19 +204,16 @@ abstract public class BasicCodeGenerator {
      */
     abstract protected void generate() throws Exception;
     protected void postGenerate() throws Exception { }
-    
+
     public final Class define() {
         try {
-            byte[] bytes;
-            synchronized (lock) {
-                init();
-                generate();
-                postGenerate();
-                bytes = backend.getBytes();                
-            }
+            init();
+            generate();
+            postGenerate();
+            byte[] bytes = backend.getBytes();                
             
             if (debugLocation != null) {
-                OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".cglib"));
+                OutputStream out = new FileOutputStream(new File(new File(debugLocation), className + ".class"));
                 out.write(bytes);
                 out.close();
             }
@@ -179,7 +229,7 @@ abstract public class BasicCodeGenerator {
             throw new CodeGenerationException(t);
         }
     }
-    
+
     private static Class defineClass(String className, byte b[],  ClassLoader loader)
     throws Exception {
         
@@ -209,6 +259,7 @@ abstract public class BasicCodeGenerator {
     }
 
     public void addInterface(Class type) {
+        checkInit(false);
         if (!type.isInterface()) {
             throw new IllegalArgumentException(type + " is not an interface");
         }
@@ -227,7 +278,7 @@ abstract public class BasicCodeGenerator {
         return returnType;
     }
     
-    protected void begin_method(int modifiers, Class returnType, String methodName,
+    public void begin_method(int modifiers, Class returnType, String methodName,
     Class[] parameterTypes, Class[] exceptionTypes) {
         checkInMethod();
         this.methodName = methodName;
@@ -694,7 +745,7 @@ abstract public class BasicCodeGenerator {
         invoke_constructor(type.getName(), parameterTypes);
     }
     
-    public static int getStackSize(Class type) {
+    protected static int getStackSize(Class type) {
         return (type.equals(Double.TYPE) || type.equals(Long.TYPE)) ? 2 : 1;
     }
 
