@@ -57,6 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
 
 abstract public class MulticastDelegate implements Cloneable {
     protected Object[] targets = {};
@@ -101,12 +102,12 @@ abstract public class MulticastDelegate implements Cloneable {
 
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(MulticastDelegate.class, true);
-        private static final Method NEW_INSTANCE =
-          ReflectUtils.findMethod("MulticastDelegate.newInstance()");
-        private static final Method ADD =
-          ReflectUtils.findMethod("MulticastDelegate.add(Object)");
-        private static final Method ADD_HELPER =
-          ReflectUtils.findMethod("MulticastDelegate.addHelper(Object)");
+        private static final Signature NEW_INSTANCE =
+          Signature.parse("net.sf.cglib.reflect.MulticastDelegate newInstance()");
+        private static final Signature ADD =
+          Signature.parse("net.sf.cglib.reflect.MulticastDelegate add(Object)");
+        private static final Signature ADD_HELPER =
+          Signature.parse("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
 
         private Class iface;
 
@@ -130,32 +131,33 @@ abstract public class MulticastDelegate implements Cloneable {
             setNamePrefix(MulticastDelegate.class.getName());
             final Method method = ReflectUtils.findInterfaceMethod(iface);
             
-            final Emitter e = new Emitter(v);
-            e.begin_class(Modifier.PUBLIC,
-                          getClassName(),
-                          MulticastDelegate.class,
-                          new Class[]{ iface },
-                          Constants.SOURCE_FILE);
-            Virt.null_constructor(e);
+            final Emitter2 e = new Emitter2(v);
+            Ops.begin_class(e,
+                            Modifier.PUBLIC,
+                            getClassName(),
+                            MulticastDelegate.class,
+                            new Class[]{ iface },
+                            Constants.SOURCE_FILE);
+            Ops.null_constructor(e);
 
             // generate proxied method
-            e.begin_method(method);
-            Class returnType = method.getReturnType();
-            final boolean returns = returnType != Void.TYPE;
-            Local result = null;
+            Ops.begin_method(e, method);
+            Type returnType = e.getReturnType();
+            final boolean returns = returnType != Type.VOID_TYPE;
+            Local2 result = null;
             if (returns) {
                 result = e.make_local(returnType);
-                Virt.zero_or_null(e, returnType);
+                Ops.zero_or_null(e, returnType);
                 e.store_local(result);
             }
             e.load_this();
-            e.super_getfield("targets");
-            final Local result2 = result;
-            Virt.process_array(e, Object[].class, new Virt.ProcessArrayCallback() {
-                    public void processElement(Class type) {
-                        e.checkcast(iface);
+            e.super_getfield("targets", Types.OBJECT_ARRAY);
+            final Local2 result2 = result;
+            Ops.process_array(e, Types.OBJECT_ARRAY, new ProcessArrayCallback() {
+                    public void processElement(Type type) {
+                        e.checkcast(Type.getType(iface));
                         e.load_args();
-                        e.invoke(method);
+                        Ops.invoke(e, method);
                         if (returns) {
                             e.store_local(result2);
                         }
@@ -165,24 +167,21 @@ abstract public class MulticastDelegate implements Cloneable {
                 e.load_local(result);
             }
             e.return_value();
-            e.end_method();
 
             // newInstance
-            e.begin_method(NEW_INSTANCE);
+            e.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.invoke_constructor_this();
             e.return_value();
-            e.end_method();
 
             // add
-            e.begin_method(ADD);
+            e.begin_method(Constants.ACC_PUBLIC, ADD, null);
             e.load_this();
             e.load_arg(0);
-            e.checkcast(iface);
-            e.invoke(ADD_HELPER);
+            e.checkcast(Type.getType(iface));
+            e.invoke_virtual_this(ADD_HELPER);
             e.return_value();
-            e.end_method();
 
             e.end_class();
         }
