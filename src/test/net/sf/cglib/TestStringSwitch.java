@@ -94,9 +94,9 @@ public class TestStringSwitch extends CodeGenTestCase {
         private int switchStyle;
 
         public Generator(String[] keys, int switchStyle) {
-            super("TestStringSwitch" + index++,
-                  Object.class,
-                  TestStringSwitch.class.getClassLoader());
+            setNamePrefix("TestStringSwitch");
+            setNameSuffix(String.valueOf(index++));
+            setClassLoader(TestStringSwitch.class.getClassLoader());
             this.keys = keys;
             this.switchStyle = switchStyle;
             addInterface(Indexed.class);

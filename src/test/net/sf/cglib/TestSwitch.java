@@ -92,9 +92,9 @@ public class TestSwitch extends CodeGenTestCase {
         private String[] values;
 
         public Generator(int[] keys, String[] values) {
-            super("TestSwitch" + index++,
-                  Object.class,
-                  TestSwitch.class.getClassLoader());
+            setNamePrefix("TestSwitch");
+            setNameSuffix(String.valueOf(index++));
+            setClassLoader(TestSwitch.class.getClassLoader());
             this.keys = keys;
             this.values = values;
             addInterface(Alphabet.class);

@@ -91,10 +91,6 @@ abstract public class CodeGenerator extends BasicCodeGenerator {
         primitiveToWrapper.put(Byte.TYPE, Byte.class);
     }
 
-    protected CodeGenerator(String className, Class superclass, ClassLoader classLoader) {
-        super(className, superclass, classLoader);
-    }
-
     protected CodeGenerator() {
     }
 

@@ -90,13 +90,6 @@ abstract public class BasicCodeGenerator {
         BasicCodeGenerator.debugLocation = debugLocation;
     }
 
-    // get rid of this
-    protected BasicCodeGenerator(String className, Class superclass, ClassLoader classLoader) {
-        setNamePrefix(className);
-        setSuperclass(superclass);
-        setClassLoader(classLoader);
-    }
-
     protected BasicCodeGenerator() {
     }
 
