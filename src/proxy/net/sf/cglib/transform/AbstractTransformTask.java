@@ -84,9 +84,11 @@ abstract public class AbstractTransformTask extends Task implements ClassFilter 
     }
 
     private void processFile(File file) throws Exception {
+
+        boolean modified = false;
+        // if (file.getAbsolutePath().endsWith(".class")) {
         ClassReader r = new ClassReader(new BufferedInputStream(new FileInputStream(file)));
         CaptureNameWriter w = new CaptureNameWriter(true);
-        boolean modified = false;
         ClassTransformer t = getClassTransformer();
         if (t != null) {
             try {
