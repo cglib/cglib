@@ -12,9 +12,6 @@ import org.objectweb.asm.CodeVisitor;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class AddStaticInitTransformer extends EmittingTransformer {
-    private static final Signature FOR_NAME =
-      TypeUtils.parseSignature("Class forName(String)");
-
     private Method classInit;
     private boolean generated;
 

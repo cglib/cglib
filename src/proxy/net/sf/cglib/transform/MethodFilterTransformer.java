@@ -4,7 +4,6 @@ import org.objectweb.asm.*;
 
 public class MethodFilterTransformer extends AbstractFilterTransformer {
     private MethodFilter filter;
-    private boolean accepted;
     
     public MethodFilterTransformer(MethodFilter filter, ClassTransformer pass) {
         super(pass);
