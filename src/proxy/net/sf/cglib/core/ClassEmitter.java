@@ -182,7 +182,7 @@ public class ClassEmitter extends ClassAdapter {
             return hook;
         } else {
             CodeEmitter e = new CodeEmitter(this, v, access, sig, exceptions);
-            if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(access)) {
+            if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(this.access)) {
                 seenStatic = true;
                 e.invoke_static_this(STATIC_HOOK);
             }
