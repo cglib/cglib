@@ -9,11 +9,15 @@
       <!-- item name="Features"              href="/features.html" / --> 
       <item name="Downloads"             href="http://sourceforge.net/project/showfiles.php?group_id=56933" /> 
     </menu>
+    <menu name="Documentation">
+     <item name="How To"              href="/howto.html" /> 
+    </menu>
     <menu name="Samples">
       <item name="Beans"              href="/xref/samples/Beans.html" /> 
       <item name="JdkCompatibleProxy" href="/xref/samples/JdkCompatibleProxy.html" />
       <item name="KeySample"          href="/xref/samples/KeySample.html" />
       <item name="Trace"              href="/xref/samples/Trace.html" /> 
     </menu>
+    
   </body>
 </project>
