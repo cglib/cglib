@@ -59,9 +59,6 @@ import java.util.List;
 import net.sf.cglib.core.Block;
 import net.sf.cglib.core.Emitter;
 import net.sf.cglib.core.CodeGenerationException;
-// import net.sf.cglib.util.Block;
-// import net.sf.cglib.util.CodeGenerator;
-// import net.sf.cglib.util.CodeGenerationException;
 
 interface CallbackGenerator
 {

@@ -53,7 +53,7 @@
  */
 package net.sf.cglib.beans;
 
-import net.sf.cglib.util.CodeGenerationException;
+import net.sf.cglib.core.CodeGenerationException;
 
 public class BulkBeanException extends RuntimeException
 {
