@@ -167,5 +167,4 @@ abstract public class CodeGeneratorBackend {
     abstract public void ireturn();
     abstract public void areturn();
     abstract public void iinc(int index, int amount);
-    abstract public String getMethodSignature(Class returnType, Class[] parameterTypes);
 }

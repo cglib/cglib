@@ -1264,9 +1264,4 @@ import java.util.*;
         return_value();
         end_method();
     }
-
-    protected String getMethodSignature(Class returnType, Class[] parameterTypes) {
-        return backend.getMethodSignature(returnType, parameterTypes);
-    }
-
 }
