@@ -63,11 +63,7 @@ class VisibilityFilter implements MethodFilter {
         pkg = ReflectUtils.getPackageName(source);
     }
     
-    public boolean accept(Member method) {
-        return accept(method, pkg);
-    }
-
-    private static boolean accept(Member member, String pkg) {
+    public boolean accept(Member member) {
         int mod = member.getModifiers();
         if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
             return false;
