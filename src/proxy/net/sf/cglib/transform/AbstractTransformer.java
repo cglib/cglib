@@ -12,16 +12,4 @@ abstract public class AbstractTransformer extends ClassAdapter implements ClassT
     public void setTarget(ClassVisitor target, ClassVisitor outer) {
         cv = target;
     }
-
-    public Object clone() {
-        try {
-            AbstractTransformer t = (AbstractTransformer)super.clone();
-            if (cv instanceof ClassTransformer) {
-                t.cv = (ClassTransformer)((ClassTransformer)cv).clone();
-            }
-            return t;
-        } catch (CloneNotSupportedException e) {
-            throw new CodeGenerationException(e); // should be impossible
-        }
-    }
 }

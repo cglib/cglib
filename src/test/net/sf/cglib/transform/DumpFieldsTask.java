@@ -1,7 +1,6 @@
 package net.sf.cglib.transform;
 
 
-
 import java.io.*;
 
 import org.apache.tools.ant.BuildException;

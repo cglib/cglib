@@ -1,5 +1,6 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
+import net.sf.cglib.transform.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Attribute;
@@ -12,7 +13,7 @@ public class FieldProviderTransformer extends EmittingTransformer {
     private static final String FIELD_TYPES = "CGLIB$FIELD_TYPES";
     
     private static final Type FIELD_PROVIDER =
-      TypeUtils.parseType("net.sf.cglib.transform.FieldProvider");
+      TypeUtils.parseType("net.sf.cglib.transform.impl.FieldProvider");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
       TypeUtils.parseType("IllegalArgumentException");
     private static final Signature PROVIDER_GET =

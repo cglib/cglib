@@ -1,4 +1,4 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
 import org.objectweb.asm.Type;
 

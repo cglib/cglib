@@ -1,7 +1,7 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
+import net.sf.cglib.transform.*;
 import net.sf.cglib.core.*;
-import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeAdapter;
 import org.objectweb.asm.CodeVisitor;
@@ -15,13 +15,13 @@ import org.objectweb.asm.Type;
 public class InterceptFieldTransformer extends EmittingTransformer {
     private static final String CALLBACK_FIELD = "$CGLIB_READ_WRITE_CALLBACK";
     private static final Type CALLBACK =
-      TypeUtils.parseType("net.sf.cglib.transform.InterceptFieldCallback");
+      TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldCallback");
     private static final Type ENABLED =
-      TypeUtils.parseType("net.sf.cglib.transform.InterceptFieldEnabled");
+      TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldEnabled");
     private static final Signature ENABLED_SET =
-      TypeUtils.parseSignature("void setInterceptFieldCallback(net.sf.cglib.transform.InterceptFieldCallback)");
+      TypeUtils.parseSignature("void setInterceptFieldCallback(net.sf.cglib.transform.impl.InterceptFieldCallback)");
     private static final Signature ENABLED_GET =
-      TypeUtils.parseSignature("net.sf.cglib.transform.InterceptFieldCallback getInterceptFieldCallback()");
+      TypeUtils.parseSignature("net.sf.cglib.transform.impl.InterceptFieldCallback getInterceptFieldCallback()");
 
     private InterceptFieldFilter filter;
     

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.35 2003/10/30 08:18:36 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.36 2003/11/18 10:24:05 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -234,7 +234,7 @@
   <!-- <jvmarg value="-verbose:class"/> --> 
   <!-- <jvmarg value="-Xprof"/> -->
   <!-- <jvmarg value="-server"/> -->
-  <!-- <sysproperty key="cglib.debugLocation" value="/tmp"/> -->
+  <!-- <sysproperty key="cglib.debugLocation" value="debug"/> -->
       <arg value="${test.entry}"/>
         <classpath>
           <pathelement path="${build.home}/classes"/>
@@ -255,7 +255,7 @@
     <copy todir="${build.transform}" preservelastmodified="yes">
       <fileset dir="${build.home}/classes"/>
     </copy>
-    <taskdef name="example" classname="net.sf.cglib.transform.ExampleTask">
+    <taskdef name="example" classname="net.sf.cglib.transform.impl.ExampleTask">
       <classpath>
         <pathelement path="${build.home}/classes"/>
         <pathelement path="${test.build.home}/classes"/>

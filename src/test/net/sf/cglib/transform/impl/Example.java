@@ -1,4 +1,4 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
 public class Example {
     private int answer = 42;

@@ -1,5 +1,6 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
+import net.sf.cglib.transform.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import net.sf.cglib.core.*;

@@ -1,4 +1,4 @@
-package net.sf.cglib.transform;
+package net.sf.cglib.transform.impl;
 
 import java.io.ObjectStreamException;
 

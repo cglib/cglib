@@ -59,12 +59,13 @@ import net.sf.cglib.core.*;
 import net.sf.cglib.proxy.*;
 import net.sf.cglib.reflect.*;
 import net.sf.cglib.transform.*;
+import net.sf.cglib.transform.impl.*;
 import net.sf.cglib.util.*;
 
 /**
  *@author     Gerhard Froehlich <a href="mailto:g-froehlich@gmx.de">
  *      g-froehlich@gmx.de</a>
- *@version    $Id: TestAll.java,v 1.54 2003/11/06 05:09:02 herbyderby Exp $
+ *@version    $Id: TestAll.java,v 1.55 2003/11/18 10:23:22 herbyderby Exp $
  */
 public class TestAll extends TestCase {
     
