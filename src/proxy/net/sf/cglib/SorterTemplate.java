@@ -68,7 +68,7 @@ abstract class SorterTemplate {
 
     abstract protected void swap(int i, int j);
 
-    public void quickSort(Comparable[] a, int lo, int hi) {
+    public void quickSort(Object[] a, int lo, int hi) {
         quickSort(a, lo, hi, DEFAULT_COMPARATOR);
     }
 
@@ -86,9 +86,9 @@ abstract class SorterTemplate {
             int i = (hi + lo) / 2;
             if (cmp.compare(a[lo], a[i]) > 0)
                 swap(lo, i);
-            if (cmp.compare(a[lo], a[hi]) > 0)
+            if (cmp.compare(a[lo], a[hi - 1]) > 0)
                 swap(lo, hi);
-            if (cmp.compare(a[i], a[hi]) > 0)
+            if (cmp.compare(a[i], a[hi - 1]) > 0)
                 swap(i, hi);
             int j = hi - 1;
             swap(i, j);
@@ -112,7 +112,7 @@ abstract class SorterTemplate {
     }
     
     private void insertionSort(Object[] a, int lo, int hi, Comparator cmp) {
-        for (int i = lo + 1 ; i < hi; i++) {
+        for (int i = lo + 1 ; i <= hi; i++) {
             for (int j = i; j > lo; j--) {
                 if (cmp.compare(a[j - 1], a[j]) > 0) {
                     swap(j - 1, j);
@@ -123,7 +123,7 @@ abstract class SorterTemplate {
         }
     }
 
-    public void mergeSort(Comparable[] a, int lo, int hi) {
+    public void mergeSort(Object[] a, int lo, int hi) {
         mergeSort(a, lo, hi, DEFAULT_COMPARATOR);
     }
 
@@ -133,7 +133,7 @@ abstract class SorterTemplate {
             insertionSort(a, lo, hi, cmp);
             return;
         }
-        int mid = diff / 2;
+        int mid = lo + diff / 2;
         mergeSort(a, lo, mid, cmp);
         mergeSort(a, mid, hi, cmp);
         merge(a, cmp, lo, mid, hi, mid - lo, hi - mid);

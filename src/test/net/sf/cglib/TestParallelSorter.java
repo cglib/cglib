@@ -56,41 +56,54 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.util.*;
 import junit.framework.*;
+import java.io.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestParallelSorter.java,v 1.2 2003/01/31 22:57:37 herbyderby Exp $
+ * @version $Id: TestParallelSorter.java,v 1.3 2003/02/02 02:27:10 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
-    public void testQuickSort() throws Throwable {
-        Object[] data = getTestData();
-        ParallelSorter.create(data).quickSort(0);
-        verifyTestData(data);
+    public void testSorts() throws Throwable {
+        Object[] data1 = getTestData();
+        Object[] idx1 = getIndexes(data1.length);
+        Object[] data2 = copy(data1);
+        Object[] idx2 = copy(idx1);
+        ParallelSorter.create(new Object[]{ data1, idx1 }).quickSort(0);
+        ParallelSorter.create(new Object[]{ data2, idx2 }).mergeSort(0);
+        compare(data1, data2);
+        compare(idx1, idx2);
     }
 
-    public void testMergeSort() throws Throwable {
-        Object[] data = getTestData();
-        ParallelSorter.create(data).mergeSort(0);
-        verifyTestData(data);
-    }
-    
-    private Object[] getTestData() {
-        String[] sortme = { "foo", "bar", "qux", "baz", "moof" };
-        int[] indexes = { 0, 1, 2, 3, 4 };
-        return new Object[]{ sortme, indexes };
-    }
-    
-    private void verifyTestData(Object[] data) {
-        int[] indexes = (int[])data[1];
-        for (int i = 0; i < indexes.length; i++) {
-            System.err.print(" " + indexes[i]);
+    private void compare(Object[] data1, Object[] data2) {
+        assertTrue(data1.length == data2.length);
+        for (int i = 0; i < data1.length; i++) {
+            assertTrue(data1[i].equals(data2[i]));
         }
-        System.err.println();
-        assertTrue(indexes[0] == 1);
-        assertTrue(indexes[1] == 3);
-        assertTrue(indexes[2] == 0);
-        assertTrue(indexes[3] == 4);
-        assertTrue(indexes[4] == 2);
+    }
+
+    private Object[] getIndexes(int len) {
+        Object[] idx = new Object[len];
+        for (int i = 0; i < len; i++) {
+            idx[i] = new Integer(i);
+        }
+        return idx;
+    }
+
+    private Object[] getTestData() throws IOException {
+        InputStream in = getClass().getResource("words.txt").openStream();
+        BufferedReader r = new BufferedReader(new InputStreamReader(in));
+        List list = new ArrayList();
+        String line;
+        while ((line = r.readLine()) != null) {
+            list.add(line);
+        }
+        return list.toArray();
+    }
+
+    private Object[] copy(Object[] data) {
+        Object[] copy = new Object[data.length];
+        System.arraycopy(data, 0, copy, 0, data.length);
+        return copy;
     }
 
     public TestParallelSorter(String testName) {
