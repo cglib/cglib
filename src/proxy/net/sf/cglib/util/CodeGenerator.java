@@ -1214,6 +1214,13 @@ public abstract class CodeGenerator implements ClassFileConstants {
         public void processElement(Class type);
     }
 
+    /**
+     * Process an array on the stack. Assumes the top item on the stack
+     * is an array of the specified type. For each element in the array,
+     * puts the element on the stack and triggers the callback.
+     * @param type the type of the array (type.isArray() must be true)
+     * @param callback the callback triggered for each element
+     */
     protected void process_array(Class type, ProcessArrayCallback callback) {
         Class compType = type.getComponentType();
         String array = newLocal();
@@ -1240,8 +1247,15 @@ public abstract class CodeGenerator implements ClassFileConstants {
         if_icmplt(loopbody);
     }
 
-    protected void process_arrays(Class type, ProcessArrayCallback callback) {
-        Class compType = type.getComponentType();
+    /**
+     * Process two arrays on the stack in parallel. Assumes the top two items on the stack
+     * are arrays of the specified class. The arrays must be the same length. For each pair
+     * of elements in the arrays, puts the pair on the stack and triggers the callback.
+     * @param clazz the type of the arrays (clazz.isArray() must be true)
+     * @param callback the callback triggered for each pair of elements
+     */
+    protected void process_arrays(Class clazz, ProcessArrayCallback callback) {
+        Class compType = clazz.getComponentType();
         String array1 = newLocal();
         String array2 = newLocal();
         String loopvar = newLocal();
@@ -1270,7 +1284,14 @@ public abstract class CodeGenerator implements ClassFileConstants {
         arraylength();
         if_icmplt(loopbody);
     }
-    
+
+    /**
+     * Branches to the specified label if the top two items on the stack
+     * are not equal. The items must both be of the specified
+     * class. Equality is determined by comparing primitive values
+     * directly and by invoking the <code>equals</code> method for
+     * Objects. Arrays are recursively processed in the same manner.
+     */
     protected void not_equals(Class clazz, final String notEquals) {
         (new ProcessArrayCallback() {
                 public void processElement(Class type) {
@@ -1318,9 +1339,9 @@ public abstract class CodeGenerator implements ClassFileConstants {
     /**
      * If both objects on the top of the stack are non-null, does nothing.
      * If one is null, or both are null, both are popped off and execution
-     * jumps to the respective label.
-     * @param oneNull label to jump to if only one of the objects is null
-     * @param bothNull label to jump to if both of the objects are null
+     * branchess to the respective label.
+     * @param oneNull label to branch to if only one of the objects is null
+     * @param bothNull label to branch to if both of the objects are null
      */
     protected void nullcmp(String oneNull, String bothNull) {
         dup2();
