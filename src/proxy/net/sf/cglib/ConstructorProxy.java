@@ -57,12 +57,11 @@ import java.lang.reflect.*;
 /**
  *
  * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.5 2003/01/24 19:49:48 herbyderby Exp $
+ * @version $Id: ConstructorProxy.java,v 1.6 2003/01/24 21:35:23 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
-    
     private static final Method NEW_INSTANCE = 
-      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
+      ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
     
     private static final ClassNameFactory NAME_FACTORY = 
       new ClassNameFactory("ConstructorProxiedByCGLIB");
@@ -73,7 +72,7 @@ public abstract class ConstructorProxy {
     private static final ClassLoader DEFAULT_LOADER =
       ConstructorProxy.class.getClassLoader();
   
-    public static Object newClassKey(Class[] args){
+    public static Object newClassKey(Class[] args) {
         return CLASS_KEY_FACTORY.newInstance(args);
     }
     
@@ -85,7 +84,7 @@ public abstract class ConstructorProxy {
     protected ConstructorProxy() {
     }
    
-    public static Object create(Constructor constructor) throws Throwable {
+    public static ConstructorProxy create(Constructor constructor) throws Throwable {
         Class declaring = constructor.getDeclaringClass();
         String className = NAME_FACTORY.getNextName(declaring);
         ClassLoader loader = declaring.getClassLoader();
@@ -95,8 +94,8 @@ public abstract class ConstructorProxy {
         Class gen = new Generator(className, constructor, loader).define();
         return (ConstructorProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
     }
-    
-    public abstract Object newInstance(Object args[], MethodInterceptor interceptor) throws Throwable;
+
+    public abstract Object newInstance(Object args[]);
     
     private static class Generator extends CodeGenerator {
         private Constructor constructor;
@@ -112,13 +111,12 @@ public abstract class ConstructorProxy {
             new_instance(constructor.getDeclaringClass());
             dup();
             Class types[] = constructor.getParameterTypes();
-            for (int i = 0; i < types.length - 1; i++) {
+            for (int i = 0; i < types.length; i++) {
                 load_arg(0);
                 push(i);
                 aaload();
                 unbox(types[i]);
             }
-            load_arg(1);
             invoke_constructor(constructor.getDeclaringClass(), types);
             return_value();
             end_method();

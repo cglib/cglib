@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.24 2003/01/24 00:27:48 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.25 2003/01/24 21:35:23 herbyderby Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -227,7 +227,9 @@ public class Enhancer {
                                         Class[] interfaces, MethodInterceptor ih,
                                         ClassLoader loader, Method wreplace,
                                         MethodFilter filter) {
-        if (ih == null) throw new IllegalArgumentException("MethodInterceptor is null");
+        if (ih == null) {
+            throw new IllegalArgumentException("MethodInterceptor is null");
+        }
         if (cls == null) {
             if (obj == null) {
                 cls = Object.class;
@@ -235,16 +237,16 @@ public class Enhancer {
                 cls = obj.getClass();
             }
         }
-        if (loader == null) loader = defaultLoader;
+        if (loader == null) {
+            loader = defaultLoader;
+        }
         Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
         Factory factory;
         synchronized (cache) {
-            factory = (Factory) cache.get(loader, key);
+            factory = (Factory)cache.get(loader, key);
             if (factory == null) {
-                Class generator = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
-                Class mi = ReflectUtils.forName(INTERCEPTOR_NAME, loader);
-                Class[] types = delegating ? new Class[]{ mi, Object.class } : new Class[]{ mi };
-                factory = (Factory)ReflectUtils.newInstance(generator, types, new Object[delegating ? 2 : 1]);
+                Class gen = getEnhancerGenerator(delegating, cls, interfaces, loader, wreplace, filter, key, factory);
+                factory = (Factory)ReflectUtils.newInstance(gen);
                 cache.put(loader, key, factory);
             }
         }

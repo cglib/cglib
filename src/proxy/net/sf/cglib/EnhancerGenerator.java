@@ -79,15 +79,17 @@ import java.util.*;
     private static final Method NEW_CLASS_KEY = 
      ReflectUtils.findMethod("ConstructorProxy.newClassKey(Class[])");
     private static final Method PROXY_NEW_INSTANCE = 
-     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[],MethodInterceptor)");
+     ReflectUtils.findMethod("ConstructorProxy.newInstance(Object[])");
     private static final Method MULTIARG_NEW_INSTANCE = 
-      ReflectUtils.findMethod("Factory.newInstance(Class[],Object[],MethodInterceptor)");
+      ReflectUtils.findMethod("Factory.newInstance(Class[], Object[], MethodInterceptor)");
     private static final Method SET_DELEGATE =
       ReflectUtils.findMethod("Factory.setDelegate(Object)");
     private static final Method GET_DELEGATE =
       ReflectUtils.findMethod("Factory.getDelegate()");
     private static final Method GET_INTERCEPTOR =
       ReflectUtils.findMethod("Factory.getInterceptor()");
+    private static final Method SET_INTERCEPTOR =
+      ReflectUtils.findMethod("Factory.setInterceptor(MethodInterceptor)");
 
     private Class[] interfaces;
     private Method wreplace;
@@ -95,8 +97,6 @@ import java.util.*;
     private MethodFilter filter;
     private Constructor cstruct;
     private List constructorList;
-    private List constructorTypes = new ArrayList();
-   
         
     /* package */ EnhancerGenerator( String className, Class clazz, 
                                      Class[] interfaces,
@@ -235,85 +235,75 @@ import java.util.*;
     }
 
     private void generateConstructors() throws NoSuchMethodException {
-    
-        for( Iterator i = constructorList.iterator(); i.hasNext(); ){
-          Constructor constructor = (Constructor)i.next();
-          
-          Class[] types = constructor.getParameterTypes();
-          Class[] argTypes = new Class[
-                  types.length + 
-                  ( delegating ? 1 : 0 ) + 
-                  ( ( types.length == 0 || 
-                      types[types.length - 1] != MethodInterceptor.class)  ? 1 : 0 )
-           ];
-                      
-          System.arraycopy(types, 0, argTypes, 0, types.length );
-          
-          if(delegating){
-            argTypes[ argTypes.length - 1 ] = Object.class; 
-            argTypes[ argTypes.length - 2 ] = MethodInterceptor.class; 
-          }else{
-             argTypes[ argTypes.length - 1 ] = MethodInterceptor.class; 
-             constructorTypes.add(new Object[]{argTypes,types});//todo: delegating 
-          }
-          
-          
-          
-          begin_constructor(argTypes);
-           load_this();
-           dup();
-           load_args(0,types.length);
-           super_invoke_constructor(types);
-           load_arg(argTypes.length - ( delegating ? 2 : 1 ));
-           putfield(INTERCEPTOR_FIELD);
-         if (delegating) {
+        for (Iterator i = constructorList.iterator(); i.hasNext();) {
+            Constructor constructor = (Constructor)i.next();
+            Class[] types = constructor.getParameterTypes();
+            begin_constructor(types);
             load_this();
-            load_arg(argTypes.length - 1);
-            checkcast(getSuperclass());
-            putfield(DELEGATE_FIELD);
+            dup();
+            load_args();
+            super_invoke_constructor(types);
+            return_value();       
+            end_method();
         }
-         return_value();       
-        
-         end_method();
-        
-      }
-        
     }
     
-    private void generateFactory() throws NoSuchMethodException {
-        generateFactoryHelper(NORMAL_NEW_INSTANCE, !delegating);
-        generateFactoryHelper(DELEGATE_NEW_INSTANCE, delegating);
-
-        begin_method(GET_DELEGATE);
-        if (delegating) {
-            load_this();
-            getfield(DELEGATE_FIELD);
-        } else {
-            aconst_null();
-        }
-        return_value();
-        end_method();
-
-        if (delegating) {
-            begin_method(SET_DELEGATE);
-            load_this();
-            load_arg(0);
-            checkcast(getSuperclass());
-            putfield(DELEGATE_FIELD);
-            return_value();
-            end_method();
-        } else {
-            throwWrongType(SET_DELEGATE);
-        }
-
+    private void generateFactory() {
         begin_method(GET_INTERCEPTOR);
         load_this();
         getfield(INTERCEPTOR_FIELD);
         return_value();
         end_method();
-        
-        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP ); 
-        
+
+        begin_method(SET_INTERCEPTOR);
+        load_this();
+        load_arg(0);
+        putfield(INTERCEPTOR_FIELD);
+        return_value();
+        end_method();
+
+        if (delegating) {
+            throwWrongType(NORMAL_NEW_INSTANCE);
+            throwWrongType(MULTIARG_NEW_INSTANCE);
+            generateFactoryHelper(DELEGATE_NEW_INSTANCE);
+            generateSetDelegate();
+        } else {
+            throwWrongType(DELEGATE_NEW_INSTANCE);
+            throwWrongType(SET_DELEGATE);
+            generateFactoryHelper(NORMAL_NEW_INSTANCE);
+            generateMultiArgFactory();
+        }
+    }
+
+    private void generateFactoryHelper(Method method) {
+        begin_method(method);
+        new_instance_this();
+        dup();
+        invoke_constructor_this();
+        dup();
+        load_arg(0);
+        invoke(SET_INTERCEPTOR);
+        if (delegating) {
+            dup();
+            load_arg(1);
+            invoke(SET_DELEGATE);
+        }
+        return_value();
+        end_method();
+    }
+
+    private void generateSetDelegate() {
+        begin_method(SET_DELEGATE);
+        load_this();
+        load_arg(0);
+        checkcast(getSuperclass());
+        putfield(DELEGATE_FIELD);
+        return_value();
+        end_method();
+    }
+
+    private void generateMultiArgFactory() {
+        declare_field(PRIVATE_FINAL_STATIC, Map.class, CONSTRUCTOR_PROXY_MAP); 
         begin_method(MULTIARG_NEW_INSTANCE);
         getfield(CONSTRUCTOR_PROXY_MAP);
         load_arg(0);// Class[] types
@@ -323,13 +313,15 @@ import java.util.*;
         dup();
         ifnull("fail");
         load_arg(1);
-        load_arg(2);
         invoke(PROXY_NEW_INSTANCE);
+        checkcast_this();
+        dup();
+        load_arg(2);
+        invoke(SET_INTERCEPTOR);
         return_value();
         nop("fail");
         throw_exception(IllegalArgumentException.class, "Constructor not found ");
         end_method();
-        
     }
 
     private void throwWrongType(Method method) {
@@ -338,19 +330,6 @@ import java.util.*;
                         "Using a delegating enhanced class as non-delegating, or the reverse");
         return_value();
         end_method();
-    }
-
-    private void generateFactoryHelper(Method method, boolean enabled) throws NoSuchMethodException {
-        if (cstruct == null) {
-            begin_method(method);
-            throw_exception(IllegalStateException.class, "can't find constructor" );
-            return_value();
-            end_method();
-        } else if (enabled) {
-            generateFactoryMethod(method);
-        } else {
-            throwWrongType(method);
-        }
     }
 
     private void generateWriteReplace() {
@@ -497,26 +476,27 @@ import java.util.*;
             invoke(MAKE_PROXY);
             putfield(accessName);
         }
-        new_instance(HashMap.class);
-        dup();
-        dup();
-        invoke_constructor(HashMap.class);
-        putfield(CONSTRUCTOR_PROXY_MAP);
-        final String LOCAL_MAP = "map";
-        store_local(LOCAL_MAP);
-        for( Iterator i = constructorTypes.iterator(); i.hasNext(); ){
-            Object[] pair    = (Object[])i.next();
-            Class[] cTypes   = (Class[])pair[0]; 
-            Class[] keyTypes = (Class[])pair[1]; 
-            load_local(LOCAL_MAP);
-            push_object(keyTypes);
-            invoke(NEW_CLASS_KEY);//key
-            load_class_this();
-            push_object(cTypes);
-            invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
-            invoke(MAKE_CONSTRUCTOR_PROXY);//value
-            invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
-            
+
+        if (!delegating) {
+            new_instance(HashMap.class);
+            dup();
+            dup();
+            invoke_constructor(HashMap.class);
+            putfield(CONSTRUCTOR_PROXY_MAP);
+            final String LOCAL_MAP = "map";
+            store_local(LOCAL_MAP);
+            for (Iterator i = constructorList.iterator(); i.hasNext();) {
+                Constructor constructor = (Constructor)i.next();
+                Class[] types = constructor.getParameterTypes();
+                load_local(LOCAL_MAP);
+                push(types);
+                invoke(NEW_CLASS_KEY);//key
+                load_class_this();
+                push(types);
+                invoke(MethodConstants.GET_DECLARED_CONSTRUCTOR);
+                invoke(MAKE_CONSTRUCTOR_PROXY);//value
+                invoke(MethodConstants.MAP_PUT);// put( key( agrgTypes[] ), proxy  )
+            }
         }
         
         return_value();
