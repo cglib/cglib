@@ -54,16 +54,23 @@
 package net.sf.cglib.core;
 
 /**
- * Customize the generated class name for {@link AbstractClassGenerator}-based utilities.
+ * The default policy used by {@link AbstractClassGenerator}.
+ * Generates names such as
+ * <p><code>net.sf.cglib.Foo$$EnhancerByCGLIB$$38272841</code><p>
+ * This is composed of a prefix based on the name of the superclass, a fixed
+ * string incorporating the CGLIB class responsible for generation, and a
+ * hashcode derived from the parameters used to create the object.
  */
-public interface NamingPolicy {
-    /**
-     * Choose a name for a generated class.
-     * @param prefix a dotted-name chosen by the generating class (possibly to put the generated class in a particular package)
-     * @param source the fully-qualified class name of the generating class (for example "net.sf.cglib.Enhancer")
-     * @param key A key object representing the state of the parameters; for caching to work properly, equal keys should result
-     * in the same generated class name. The default policy incorporates <code>key.hashCode()</code> into the class name.
-     * @return the fully-qualified class name
-     */
-    String getClassName(String prefix, String source, Object key);
+public class DefaultNamingPolicy implements NamingPolicy {
+    public static final DefaultNamingPolicy INSTANCE = new DefaultNamingPolicy();
+    
+    public String getClassName(String prefix, String source, Object key) {
+        StringBuffer sb = new StringBuffer();
+        sb.append((prefix != null) ? prefix : "net.sf.cglib.empty.Object");
+        sb.append("$$");
+        sb.append(source.substring(source.lastIndexOf('.') + 1));
+        sb.append("ByCGLIB$$");
+        sb.append(Integer.toHexString(key.hashCode()));
+        return sb.toString();
+    }
 }
