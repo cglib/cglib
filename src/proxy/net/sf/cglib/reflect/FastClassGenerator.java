@@ -73,6 +73,7 @@ class FastClassGenerator extends CodeGenerator {
         
     public FastClassGenerator(Class type) {
         setSuperclass(FastClass.class);
+        // setNamePrefix(type.getName());
         this.type = type;
     }
         
@@ -121,9 +122,8 @@ class FastClassGenerator extends CodeGenerator {
                 goTo(end);
             }
             public void processDefault() {
-                // should be impossible
                 pop(); // stack height
-                aconst_null();
+                throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
             }
         });
         return_value();
@@ -147,9 +147,8 @@ class FastClassGenerator extends CodeGenerator {
                 goTo(end);
             }
             public void processDefault() {
-                // should be impossible
                 pop2(); // stack height
-                aconst_null();
+                throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
             }
         });
         return_value();
@@ -172,7 +171,7 @@ class FastClassGenerator extends CodeGenerator {
         
         public void processDefault() {
             // TODO: improve exception
-            throw_exception(IllegalArgumentException.class, "No matching method/constructor found");
+            throw_exception(NoSuchMethodError.class, "Cannot find matching method/constructor");
         }
     }
     

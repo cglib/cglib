@@ -68,18 +68,21 @@ public class TestFastClass extends CodeGenTestCase {
         FastClass.create(Simple.class).newInstance();
     }
 
-    public void testComplex() {
+    public void testComplex() throws NoSuchMethodException {
         FastClass fc = FastClass.create(MemberSwitchBean.class);
         MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
         assertTrue(bean.init == 0);
         assertTrue(fc.getName().equals("net.sf.cglib.MemberSwitchBean"));
         assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
-        
-        FastConstructor c1 = fc.getConstructor(new Class[0]);
-        assertTrue(((MemberSwitchBean)c1.newInstance()).init == 0);
 
-        FastMethod m1 = fc.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
-        assertTrue(m1.invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
+        Constructor c1 = MemberSwitchBean.class.getConstructor(new Class[0]);
+        FastConstructor fc1 = fc.getConstructor(c1);
+        assertTrue(((MemberSwitchBean)fc1.newInstance()).init == 0);
+        assertTrue(fc1.toString().equals("public net.sf.cglib.MemberSwitchBean()"));
+
+        Method m1 = MemberSwitchBean.class.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
+        FastMethod fm1 = fc.getMethod(m1);
+        assertTrue(fm1.invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
     }
     
     public TestFastClass(String testName) {

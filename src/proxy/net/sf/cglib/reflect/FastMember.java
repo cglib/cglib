@@ -53,23 +53,51 @@
  */
 package net.sf.cglib.reflect;
 
+import java.lang.reflect.Member;
+
 abstract public class FastMember
 {
     protected FastClass fc;
-    protected String name;
-    protected Class[] parameterTypes;
+    protected Member member;
+    protected int index;
 
-    protected FastMember(FastClass fc, String name, Class[] parameterTypes) {
+    protected FastMember(FastClass fc, Member member, int index) {
         this.fc = fc;
-        this.name = name;
-        this.parameterTypes = parameterTypes;
+        this.member = member;
+        this.index = index;
+    }
+
+    abstract public Class[] getParameterTypes();
+    abstract public Class[] getExceptionTypes();
+
+    public int getIndex() {
+        return index;
     }
 
     public String getName() {
-        return name;
+        return member.getName();
     }
 
-    public Class[] getParameterTypes() {
-        return FastClass.copyTypes(parameterTypes);
+    public Class getDeclaringClass() {
+        return fc.getJavaClass();
+    }
+
+    public int getModifiers() {
+        return member.getModifiers();
+    }
+
+    public String toString() {
+        return member.toString();
+    }
+
+    public int hashCode() {
+        return member.hashCode();
+    }
+
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof FastMember)) {
+            return false;
+        }
+        return member.equals(((FastMember)o).member);
     }
 }
