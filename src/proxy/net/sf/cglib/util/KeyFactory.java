@@ -58,7 +58,7 @@ package net.sf.cglib.util;
 import java.util.*;
 
 abstract public class KeyFactory {
-    private static final String CLASS_NAME = "net.sf.cglib.util.KeyFactory$$CreatedByCGLIB$$";
+    private static final String CLASS_SUFFIX = ".KeyFactory$$CreatedByCGLIB$$";
     private static int index = 0;
 
     protected int hashConstant;
@@ -74,7 +74,9 @@ abstract public class KeyFactory {
             loader = KeyFactory.class.getClassLoader();
         }
         try {
-            Class clazz = new KeyFactoryGenerator(getNextName(), keyInterface, loader).define();
+            Class clazz = new KeyFactoryGenerator(getNextName(keyInterface.getPackage()),
+                                                  keyInterface,
+                                                  loader).define();
             return (KeyFactory)clazz.getConstructor(new Class[]{}).newInstance(new Object[]{});
         } catch (RuntimeException e) {
             throw e;
@@ -82,9 +84,9 @@ abstract public class KeyFactory {
             throw new CodeGenerationException(e);
         }
     }
-
-    private static String getNextName() {
-        return CLASS_NAME + index++;
+    
+    private static String getNextName(Package pkg) {
+        return pkg.getName() + CLASS_SUFFIX + index++;
     }
 
     public int hashCode() {
