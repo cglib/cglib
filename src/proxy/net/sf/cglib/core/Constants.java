@@ -19,7 +19,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Constants.java,v 1.19 2004/08/20 15:08:47 herbyderby Exp $
+ * @version $Id: Constants.java,v 1.20 2004/12/24 00:08:32 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Constants {
     public static final Class[] EMPTY_CLASS_ARRAY = {};
@@ -34,6 +34,7 @@ public interface Constants extends org.objectweb.asm.Constants {
 
     public static final Type TYPE_OBJECT = TypeUtils.parseType("Object");
     public static final Type TYPE_CLASS = TypeUtils.parseType("Class");
+    public static final Type TYPE_CLASS_LOADER = TypeUtils.parseType("ClassLoader");
     public static final Type TYPE_CHARACTER = TypeUtils.parseType("Character");
     public static final Type TYPE_BOOLEAN = TypeUtils.parseType("Boolean");
     public static final Type TYPE_DOUBLE = TypeUtils.parseType("Double");
@@ -51,6 +52,7 @@ public interface Constants extends org.objectweb.asm.Constants {
     public static final Type TYPE_RUNTIME_EXCEPTION = TypeUtils.parseType("RuntimeException");
     public static final Type TYPE_ERROR = TypeUtils.parseType("Error");
     public static final Type TYPE_SYSTEM = TypeUtils.parseType("System");
+    public static final Type TYPE_SIGNATURE = TypeUtils.parseType("net.sf.cglib.core.Signature");
     
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";

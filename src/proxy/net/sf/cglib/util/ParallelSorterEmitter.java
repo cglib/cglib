@@ -22,14 +22,14 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
 class ParallelSorterEmitter extends ClassEmitter {
+    private static final Type PARALLEL_SORTER =
+      TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
     private static final Signature CSTRUCT_OBJECT_ARRAY =
       TypeUtils.parseConstructor("Object[]");
     private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
+      new Signature("newInstance", PARALLEL_SORTER, new Type[]{ Constants.TYPE_OBJECT_ARRAY });
     private static final Signature SWAP =
       TypeUtils.parseSignature("void swap(int, int)");
-    private static final Type PARALLEL_SORTER =
-      TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) {
         super(v);

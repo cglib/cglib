@@ -29,11 +29,6 @@ implements CallbackGenerator
     static final String FIND_PROXY_NAME = "CGLIB$findMethodProxy";
     static final Class[] FIND_PROXY_TYPES = { Signature.class };
 
-    private static final Signature FIND_PROXY =
-      new Signature(FIND_PROXY_NAME,
-                    TypeUtils.parseType("net.sf.cglib.proxy.MethodProxy"),
-                    TypeUtils.getTypes(FIND_PROXY_TYPES));
-
     private static final Type ABSTRACT_METHOD_ERROR =
       TypeUtils.parseType("AbstractMethodError");
     private static final Type METHOD =
@@ -47,9 +42,23 @@ implements CallbackGenerator
     private static final Signature GET_CLASS_LOADER =
       TypeUtils.parseSignature("ClassLoader getClassLoader()");
     private static final Signature MAKE_PROXY =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.MethodProxy create(ClassLoader, Class, Class, String, String, String)");
+      new Signature("create", METHOD_PROXY, new Type[]{
+          Constants.TYPE_CLASS_LOADER,
+          Constants.TYPE_CLASS,
+          Constants.TYPE_CLASS,
+          Constants.TYPE_STRING,
+          Constants.TYPE_STRING,
+          Constants.TYPE_STRING
+      });
     private static final Signature INTERCEPT =
-      TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.proxy.MethodProxy)");
+      new Signature("intercept", Constants.TYPE_OBJECT, new Type[]{
+          Constants.TYPE_OBJECT,
+          METHOD,
+          Constants.TYPE_OBJECT_ARRAY,
+          METHOD_PROXY
+      });
+    private static final Signature FIND_PROXY =
+      new Signature(FIND_PROXY_NAME, METHOD_PROXY, new Type[]{ Constants.TYPE_SIGNATURE });
     private static final Signature TO_STRING =
       TypeUtils.parseSignature("String toString()");
 

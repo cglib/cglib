@@ -65,14 +65,14 @@ abstract public class MulticastDelegate implements Cloneable {
 
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(MulticastDelegate.class.getName());
-        private static final Signature NEW_INSTANCE =
-          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate newInstance()");
-        private static final Signature ADD_DELEGATE =
-          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate add(Object)");
-        private static final Signature ADD_HELPER =
-          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
         private static final Type MULTICAST_DELEGATE =
           TypeUtils.parseType("net.sf.cglib.reflect.MulticastDelegate");
+        private static final Signature NEW_INSTANCE =
+          new Signature("newInstance", MULTICAST_DELEGATE, new Type[0]);
+        private static final Signature ADD_DELEGATE =
+          new Signature("add", MULTICAST_DELEGATE, new Type[]{ Constants.TYPE_OBJECT });
+        private static final Signature ADD_HELPER =
+          new Signature("addHelper", MULTICAST_DELEGATE, new Type[]{ Constants.TYPE_OBJECT });
 
         private Class iface;
 
