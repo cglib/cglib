@@ -59,13 +59,16 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Type;
     
-class BulkBeanEmitter extends Emitter {
-    private static final Method GET_PROPERTY_VALUES =
-      ReflectUtils.findMethod("BulkBean.getPropertyValues(Object, Object[])");
-    private static final Method SET_PROPERTY_VALUES =
-      ReflectUtils.findMethod("BulkBean.setPropertyValues(Object, Object[])");
-    private static final Class[] EXCEPTION_TYPES = { Throwable.class, Integer.TYPE };
+class BulkBeanEmitter extends Emitter2 {
+    private static final Signature GET_PROPERTY_VALUES =
+      Signature.parse("void getPropertyValues(Object, Object[])");
+    private static final Signature SET_PROPERTY_VALUES =
+      Signature.parse("void setPropertyValues(Object, Object[])");
+    private static final Type BULK_BEAN_EXCEPTION =
+      Signature.parseType("net.sf.cglib.beans.BulkBeanException");
+    private static final Type[] EXCEPTION_TYPES = { Types.THROWABLE, Type.INT_TYPE };
         
     public BulkBeanEmitter(ClassVisitor v,
                            String className,
@@ -73,49 +76,48 @@ class BulkBeanEmitter extends Emitter {
                            String[] getterNames,
                            String[] setterNames,
                            Class[] types) throws Exception {
+        super(v);
 
         Method[] getters = new Method[getterNames.length];
         Method[] setters = new Method[setterNames.length];
         validate(target, getterNames, setterNames, types, getters, setters);
 
-        setClassVisitor(v);
-        begin_class(Modifier.PUBLIC, className, BulkBean.class, null, Constants.SOURCE_FILE);
-        Virt.null_constructor(this);
+        Ops.begin_class(this, Modifier.PUBLIC, className, BulkBean.class, null, Constants.SOURCE_FILE);
+        Ops.null_constructor(this);
         generateGet(target, getters);
         generateSet(target, setters);
         end_class();
     }
 
     private void generateGet(Class target, Method[] getters) {
-        begin_method(GET_PROPERTY_VALUES);
+        begin_method(Constants.ACC_PUBLIC, GET_PROPERTY_VALUES, null);
         load_arg(0);
-        checkcast(target);
-        Local bean = make_local();
+        checkcast(Type.getType(target));
+        Local2 bean = make_local();
         store_local(bean);
         for (int i = 0; i < getters.length; i++) {
             if (getters[i] != null) {
                 load_arg(1);
                 push(i);
                 load_local(bean);
-                invoke(getters[i]);
-                Virt.box(this, getters[i].getReturnType());
+                Ops.invoke(this, getters[i]);
+                Ops.box(this, Type.getType(getters[i].getReturnType()));
                 aastore();
             }
         }
         return_value();
-        end_method();
     }
 
     private void generateSet(Class target, Method[] setters) {
         // setPropertyValues
-        begin_method(SET_PROPERTY_VALUES);
-        Local index = make_local(Integer.TYPE);
+        begin_method(Constants.ACC_PUBLIC, SET_PROPERTY_VALUES, null);
+        Local2 index = make_local(Type.INT_TYPE);
         push(0);
         store_local(index);
         load_arg(0);
-        checkcast(target);
+        checkcast(Type.getType(target));
         load_arg(1);
-        Block handler = begin_block();
+        Block2 handler = begin_block();
         int lastIndex = 0;
         for (int i = 0; i < setters.length; i++) {
             if (setters[i] != null) {
@@ -126,20 +128,19 @@ class BulkBeanEmitter extends Emitter {
                 }
                 dup2();
                 aaload(i);
-                Virt.unbox(this, setters[i].getParameterTypes()[0]);
-                invoke(setters[i]);
+                Ops.unbox(this, Type.getType(setters[i].getParameterTypes()[0]));
+                Ops.invoke(this, setters[i]);
             }
         }
         end_block();
         return_value();
-        catch_exception(handler, ClassCastException.class);
-        new_instance(BulkBeanException.class);
+        catch_exception(handler, Types.CLASS_CAST_EXCEPTION);
+        new_instance(BULK_BEAN_EXCEPTION);
         dup_x1();
         swap();
         load_local(index);
-        invoke_constructor(BulkBeanException.class, EXCEPTION_TYPES);
+        invoke_constructor(BULK_BEAN_EXCEPTION, EXCEPTION_TYPES);
         athrow();
-        end_method();
     }
     
     private static void validate(Class target,
