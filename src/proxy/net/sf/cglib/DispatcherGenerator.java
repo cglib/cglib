@@ -64,7 +64,7 @@ class DispatcherGenerator implements CallbackGenerator {
 
     private static final Type DISPATCHER = Type.getType(Dispatcher.class);
     private static final Signature LOAD_OBJECT =
-      Signature.parse("Object loadObject(String)");
+      TypeUtils.parseSignature("Object loadObject(String)");
 
     public void generate(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {

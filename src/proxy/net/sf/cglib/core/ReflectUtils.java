@@ -59,25 +59,19 @@ import java.util.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.7 2003/09/20 21:20:57 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.8 2003/09/21 01:49:48 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
     
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
-    private static final Map primitiveToWrapper = new HashMap();
-    private static final Map wrapperToPrimitive = new HashMap();
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();
+    
     private static final String[] CGLIB_PACKAGES = {
         "java.lang",
-        "java.lang.reflect",
-        "net.sf.cglib",
-        "net.sf.cglib.beans",
-        "net.sf.cglib.reflect",
-        "net.sf.cglib.util",
-        "net.sf.cglib.transform",
     };
+
     static {
         primitives.put("byte", Byte.TYPE);
         primitives.put("char", Character.TYPE);
@@ -96,24 +90,6 @@ public class ReflectUtils {
         transforms.put("long", "J");
         transforms.put("short", "S");
         transforms.put("boolean", "Z");
-
-        primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
-        primitiveToWrapper.put(Character.TYPE, Character.class);
-        primitiveToWrapper.put(Long.TYPE, Long.class);
-        primitiveToWrapper.put(Double.TYPE, Double.class);
-        primitiveToWrapper.put(Float.TYPE, Float.class);
-        primitiveToWrapper.put(Short.TYPE, Short.class);
-        primitiveToWrapper.put(Integer.TYPE, Integer.class);
-        primitiveToWrapper.put(Byte.TYPE, Byte.class);
-
-        wrapperToPrimitive.put(Boolean.class, Boolean.TYPE);
-        wrapperToPrimitive.put(Character.class, Character.TYPE);
-        wrapperToPrimitive.put(Long.class, Long.TYPE);
-        wrapperToPrimitive.put(Double.class, Double.TYPE);
-        wrapperToPrimitive.put(Float.class, Float.TYPE);
-        wrapperToPrimitive.put(Short.class, Short.TYPE);
-        wrapperToPrimitive.put(Integer.class, Integer.TYPE);
-        wrapperToPrimitive.put(Byte.class, Byte.TYPE);
     }
 
     public static Signature getSignature(Method method) {
@@ -126,18 +102,8 @@ public class ReflectUtils {
                                                       TypeUtils.getTypes(constructor.getParameterTypes())));
     }
 
-    public static Class getBoxedType(Class type) {
-        Class boxed = (Class)primitiveToWrapper.get(type);
-        return (boxed != null) ? boxed : type;
-    }
-
-    public static Class getUnboxedType(Class type) {
-        Class unboxed = (Class)wrapperToPrimitive.get(type);
-        return (unboxed != null) ? unboxed : type;
-    }
-    
     public static Constructor findConstructor(String desc) {
-        return findConstructor(desc, defaultLoader);
+         return findConstructor(desc, defaultLoader);
     }
 
     public static Constructor findConstructor(String desc, ClassLoader loader) {
@@ -380,68 +346,6 @@ public class ReflectUtils {
         throw new NoSuchMethodException(methodName);
     }
 
-    public static String getMethodDescriptor(Method method) {
-        return getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
-    }
-    
-    public static String getMethodDescriptor(Class returnType, Class[] parameterTypes) {
-        StringBuffer buf = new StringBuffer();
-        buf.append('(');
-        if (parameterTypes != null) {
-            for (int i = 0; i < parameterTypes.length; ++i) {
-                getDescriptor(buf, parameterTypes[i]);
-            }
-        }
-        buf.append(')');
-        getDescriptor(buf, returnType);
-        return buf.toString();
-    }
-
-    public static String getDescriptor(Class type) {
-        StringBuffer buf = new StringBuffer();
-        getDescriptor(buf, type);
-        return buf.toString();
-    }
-
-    // adapted from ASM Type class
-    public static void getDescriptor(final StringBuffer buf, final Class c) {
-        Class d = c;
-        while (true) {
-            if (d.isPrimitive()) {
-                char car;
-                if (d == Integer.TYPE) {
-                    car = 'I';
-                } else if (d == Void.TYPE) {
-                    car = 'V';
-                } else if (d == Boolean.TYPE) {
-                    car = 'Z';
-                } else if (d == Byte.TYPE) {
-                    car = 'B';
-                } else if (d == Character.TYPE) {
-                    car = 'C';
-                } else if (d == Short.TYPE) {
-                    car = 'S';
-                } else if (d == Double.TYPE) {
-                    car = 'D';
-                } else if (d == Float.TYPE) {
-                    car = 'F';
-                } else /*if (d == Long.TYPE)*/ {
-                    car = 'J';
-                }
-                buf.append(car);
-                return;
-            } else if (d.isArray()) {
-                buf.append('[');
-                d = d.getComponentType();
-            } else {
-                buf.append('L');
-                buf.append(d.getName());
-                buf.append(';');
-                return;
-            }
-        }
-    }
-
     public static List addAllMethods(Class type, List list) {
         list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
         Class superclass = type.getSuperclass();
@@ -475,11 +379,11 @@ public class ReflectUtils {
     }
 
     public static int getDefaultModifiers(Method method) {
-        return Modifier.FINAL
+        return Constants.ACC_FINAL
             | (method.getModifiers()
-               & ~Modifier.ABSTRACT
-               & ~Modifier.NATIVE
-               & ~Modifier.SYNCHRONIZED);
+               & ~Constants.ACC_ABSTRACT
+               & ~Constants.ACC_NATIVE
+               & ~Constants.ACC_SYNCHRONIZED);
     }
 
     public static Method findInterfaceMethod(Class iface) {

@@ -60,14 +60,14 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
 class ParallelSorterEmitter extends Emitter {
-    private static final Signature NEW_INSTANCE =
-      Signature.parse("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
     private static final Signature CSTRUCT_OBJECT_ARRAY =
-      Signature.parse("void <init>(Object[])");
+      TypeUtils.parseConstructor("Object[]");
+    private static final Signature NEW_INSTANCE =
+      TypeUtils.parseSignature("net.sf.cglib.util.ParallelSorter newInstance(Object[])");
     private static final Signature SWAP =
-      Signature.parse("void swap(int, int)");
+      TypeUtils.parseSignature("void swap(int, int)");
     private static final Type PARALLEL_SORTER =
-      Signature.parseType("net.sf.cglib.util.ParallelSorter");
+      TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) throws Exception {
         super(v);

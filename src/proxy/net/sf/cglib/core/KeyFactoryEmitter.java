@@ -60,20 +60,20 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: KeyFactoryEmitter.java,v 1.6 2003/09/20 20:23:26 herbyderby Exp $
+ * @version $Id: KeyFactoryEmitter.java,v 1.7 2003/09/21 01:49:49 herbyderby Exp $
  * @author Chris Nokleberg
  */
 class KeyFactoryEmitter extends Emitter {
     private static final Signature HASH_CODE =
-      Signature.parse("int hashCode()");
+      TypeUtils.parseSignature("int hashCode()");
     private static final Signature EQUALS =
-      Signature.parse("boolean equals(Object)");
+      TypeUtils.parseSignature("boolean equals(Object)");
     private static final Signature DOUBLE_TO_LONG_BITS =
-      Signature.parse("long doubleToLongBits(double)");
+      TypeUtils.parseSignature("long doubleToLongBits(double)");
     private static final Signature FLOAT_TO_INT_BITS =
-      Signature.parse("int floatToIntBits(float)");
+      TypeUtils.parseSignature("int floatToIntBits(float)");
     private static final Type KEY_FACTORY =
-      Signature.parseType("net.sf.cglib.core.KeyFactory");
+      TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
     
     //generated numbers: 
     private final static int PRIMES[] = {
@@ -115,21 +115,22 @@ class KeyFactoryEmitter extends Emitter {
     // TODO: this doesn't exactly follow Effective Java recommendations
     // TODO: caching hashCode is a bad idea for mutable objects, at least document behavior
     private void generateConstructor(Class[] parameterTypes) throws NoSuchFieldException {
-        begin_constructor(Constants.ACC_PUBLIC, TypeUtils.getTypes(parameterTypes), null);
+        Type[] types = TypeUtils.getTypes(parameterTypes);
+        begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(types), null);
         load_this();
         super_invoke_constructor();
         load_this();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL, getFieldName(i), Type.getType(parameterTypes[i]), null);
+        for (int i = 0; i < types.length; i++) {
+            declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL, getFieldName(i), types[i], null);
             dup();
             load_arg(i);
             putfield(getFieldName(i));
         }
         loadAndStoreConstant("hashMultiplier");
         loadAndStoreConstant("hashConstant");
-        for (int i = 0; i < parameterTypes.length; i++) {
+        for (int i = 0; i < types.length; i++) {
             load_arg(i);
-            hash_code(Type.getType(parameterTypes[i]));
+            hash_code(types[i]);
         }
         swap();
         pop();
@@ -154,10 +155,10 @@ class KeyFactoryEmitter extends Emitter {
             } else {
                 hash_object();
             }
-            math(OP_ADD, Type.INT_TYPE);
+            math(ADD, Type.INT_TYPE);
             swap();
             dup_x1();
-            math(OP_MUL, Type.INT_TYPE);
+            math(MUL, Type.INT_TYPE);
         }
     }
 
@@ -166,7 +167,7 @@ class KeyFactoryEmitter extends Emitter {
         Label end = make_label();
         dup();
         ifnull(isNull);
-        Ops.process_array(this, type, new ProcessArrayCallback() {
+        ComplexOps.process_array(this, type, new ProcessArrayCallback() {
             public void processElement(Type type) {
                 hash_code(type);
             }
@@ -196,7 +197,7 @@ class KeyFactoryEmitter extends Emitter {
         case Type.BOOLEAN:
             // f ? 0 : 1
             push(1);
-            math(OP_XOR, Type.INT_TYPE);
+            math(XOR, Type.INT_TYPE);
             break;
         case Type.DOUBLE:
             // Double.doubleToLongBits(f), hash_code(Long.TYPE)
@@ -215,8 +216,8 @@ class KeyFactoryEmitter extends Emitter {
     private void hash_long() {
         // (int)(f ^ (f >>> 32))
         push(32);
-        math(OP_USHR, Type.LONG_TYPE);
-        math(OP_XOR, Type.LONG_TYPE);
+        math(USHR, Type.LONG_TYPE);
+        math(XOR, Type.LONG_TYPE);
         cast_numeric(Type.LONG_TYPE, Type.INT_TYPE);
     }
 
@@ -234,14 +235,14 @@ class KeyFactoryEmitter extends Emitter {
         begin_method(Constants.ACC_PUBLIC, EQUALS, null);
         load_arg(0);
         instance_of_this();
-        ifeq(fail);
+        if_jump(EQ, fail);
         for (int i = 0; i < parameterTypes.length; i++) {
             load_this();
             getfield(getFieldName(i));
             load_arg(0);
             checkcast_this();
             getfield(getFieldName(i));
-            Ops.not_equals(this, Type.getType(parameterTypes[i]), fail);
+            ComplexOps.not_equals(this, Type.getType(parameterTypes[i]), fail);
         }
         push(1);
         return_value();

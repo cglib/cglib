@@ -65,37 +65,39 @@ class EnhancerEmitter extends Emitter {
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
 
     private static final Type ILLEGAL_STATE_EXCEPTION =
-      Signature.parseType("IllegalStateException");
+      TypeUtils.parseType("IllegalStateException");
     private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
-      Signature.parseType("IllegalArgumentException");
+      TypeUtils.parseType("IllegalArgumentException");
     private static final Type THREAD_LOCAL =
-      Signature.parseType("ThreadLocal");
+      TypeUtils.parseType("ThreadLocal");
     private static final Type FACTORY =
-      Signature.parseType("net.sf.cglib.Factory");
+      TypeUtils.parseType("net.sf.cglib.Factory");
     private static final Type CALLBACKS =
-      Signature.parseType("net.sf.cglib.Callbacks");
+      TypeUtils.parseType("net.sf.cglib.Callbacks");
 
+    private static final Signature CSTRUCT_NULL =
+      TypeUtils.parseConstructor("");
     private static final Signature SET_THREAD_CALLBACKS =
-      Signature.parse("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("void CGLIB$SET_THREAD_CALLBACKS(net.sf.cglib.Callbacks)");
     private static final Signature NEW_INSTANCE =
-      Signature.parse("Object newInstance(net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.Callbacks)");
     private static final Signature MULTIARG_NEW_INSTANCE =
-      Signature.parse("Object newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("Object newInstance(Class[], Object[], net.sf.cglib.Callbacks)");
     private static final Signature SINGLE_NEW_INSTANCE =
-      Signature.parse("Object newInstance(net.sf.cglib.Callback)");
+      TypeUtils.parseSignature("Object newInstance(net.sf.cglib.Callback)");
     private static final Signature GET_CALLBACK =
-      Signature.parse("net.sf.cglib.Callback getCallback(int)");
+      TypeUtils.parseSignature("net.sf.cglib.Callback getCallback(int)");
     private static final Signature SET_CALLBACK =
-      Signature.parse("void setCallback(int, net.sf.cglib.Callback)");
+      TypeUtils.parseSignature("void setCallback(int, net.sf.cglib.Callback)");
     private static final Signature SET_CALLBACKS =
-      Signature.parse("void setCallbacks(net.sf.cglib.Callbacks)");
+      TypeUtils.parseSignature("void setCallbacks(net.sf.cglib.Callbacks)");
     private static final Signature CALLBACKS_GET =
-      Signature.parse("net.sf.cglib.Callback get(int)");
+      TypeUtils.parseSignature("net.sf.cglib.Callback get(int)");
 
     private static final Signature THREAD_LOCAL_GET =
-      Signature.parse("Object get()");
+      TypeUtils.parseSignature("Object get()");
     private static final Signature THREAD_LOCAL_SET =
-      Signature.parse("void set(Object)");
+      TypeUtils.parseSignature("void set(Object)");
         
     private final TinyBitSet usedCallbacks = new TinyBitSet();
 
@@ -282,7 +284,7 @@ class EnhancerEmitter extends Emitter {
                     aaload();
                     unbox(types[i]);
                 }
-                invoke_constructor_this(types);
+                invoke_constructor_this(ReflectUtils.getSignature(constructor));
                 goTo(end);
             }
             public void processDefault() {
@@ -350,7 +352,7 @@ class EnhancerEmitter extends Emitter {
                     public int getModifiers(Method method) {
                         int modifiers = ReflectUtils.getDefaultModifiers(method);
                         if (forcePublic.contains(MethodWrapper.create(method))) {
-                            modifiers = (modifiers & ~Modifier.PROTECTED) | Modifier.PUBLIC;
+                            modifiers = (modifiers & ~Constants.ACC_PROTECTED) | Constants.ACC_PUBLIC;
                         }
                         return modifiers;
                     }
@@ -369,7 +371,7 @@ class EnhancerEmitter extends Emitter {
             if (generators[i] != null) {
                 Type callbackType = CallbackUtils.getType2(i);
                 if (callbackType != null) {
-                    declare_field(Modifier.PRIVATE, getCallbackField(i), callbackType, null);
+                    declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackType, null);
                     declare_field(Constants.PRIVATE_FINAL_STATIC, getThreadLocal(i), THREAD_LOCAL, null);
                 }
                 generators[i].generate(this, contexts[i]);
@@ -407,7 +409,7 @@ class EnhancerEmitter extends Emitter {
         ifnonnull(end);
         load_this();
         getfield(CONSTRUCTED_FIELD);
-        ifne(end);
+        if_jump(NE, end);
         pop();
         getfield(getThreadLocal(type));
         invoke_virtual(THREAD_LOCAL, THREAD_LOCAL_GET);
@@ -430,7 +432,7 @@ class EnhancerEmitter extends Emitter {
             if (usedCallbacks.get(i)) {
                 new_instance(THREAD_LOCAL);
                 dup();
-                invoke_constructor(THREAD_LOCAL, Constants.TYPES_EMPTY);
+                invoke_constructor(THREAD_LOCAL, CSTRUCT_NULL);
                 putfield(getThreadLocal(i));
             }
         }

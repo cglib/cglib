@@ -64,16 +64,20 @@ implements CallbackGenerator
 {
     public static final MethodInterceptorGenerator INSTANCE = new MethodInterceptorGenerator();
 
-    private static final Signature GET_DECLARING_CLASS =
-      Signature.parse("Class getDeclaringClass()");
     private static final Type ABSTRACT_METHOD_ERROR =
-      Signature.parseType("AbstractMethodError");
+      TypeUtils.parseType("AbstractMethodError");
     private static final Type METHOD =
-      Signature.parseType("java.lang.reflect.Method");
-    private static final Method MAKE_PROXY =
-      ReflectUtils.findMethod("MethodProxy.create(Class, String, Class, String)");
-    private static final Method AROUND_ADVICE =
-      ReflectUtils.findMethod("MethodInterceptor.intercept(Object, Method, Object[], MethodProxy)");
+      TypeUtils.parseType("java.lang.reflect.Method");
+    private static final Type METHOD_PROXY =
+      TypeUtils.parseType("net.sf.cglib.MethodProxy");
+    private static final Type METHOD_INTERCEPTOR =
+      TypeUtils.parseType("net.sf.cglib.MethodInterceptor");
+    private static final Signature GET_DECLARING_CLASS =
+      TypeUtils.parseSignature("Class getDeclaringClass()");
+    private static final Signature MAKE_PROXY =
+      TypeUtils.parseSignature("net.sf.cglib.MethodProxy create(Class, String, Class, String)");
+    private static final Signature INTERCEPT =
+      TypeUtils.parseSignature("Object intercept(Object, java.lang.reflect.Method, Object[], net.sf.cglib.MethodProxy)");
 
     public void generate(Emitter e, Context context) {
         for (Iterator it = context.getMethods(); it.hasNext();) {
@@ -126,8 +130,8 @@ implements CallbackGenerator
         e.getfield(getFieldName(context, method));
         e.create_arg_array();
         e.getfield(getAccessName(context, method));
-        ReflectOps.invoke(e, AROUND_ADVICE);
-        Ops.unbox_or_zero(e, Type.getType(method.getReturnType()));
+        e.invoke_interface(METHOD_INTERCEPTOR, INTERCEPT);
+        e.unbox_or_zero(Type.getType(method.getReturnType()));
         e.return_value();
 
         e.mark(nullInterceptor);
@@ -158,12 +162,12 @@ implements CallbackGenerator
             e.putfield(getFieldName(context, method));
 
             String accessName = getAccessName(context, method);
-            String desc = ReflectUtils.getMethodDescriptor(method);
+            Signature sig = ReflectUtils.getSignature(method);
             e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
-            e.push(method.getName() + desc);
-            Ops.load_class_this(e);
-            e.push(accessName + desc);
-            ReflectOps.invoke(e, MAKE_PROXY);
+            e.push(method.getName() + sig.getDescriptor());
+            ComplexOps.load_class_this(e);
+            e.push(accessName + sig.getDescriptor());
+            e.invoke_static(METHOD_PROXY, MAKE_PROXY);
             e.putfield(accessName);
         }
     }

@@ -103,13 +103,13 @@ abstract public class MulticastDelegate implements Cloneable {
     public static class Generator extends AbstractClassGenerator {
         private static final Source SOURCE = new Source(MulticastDelegate.class, true);
         private static final Signature NEW_INSTANCE =
-          Signature.parse("net.sf.cglib.reflect.MulticastDelegate newInstance()");
+          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate newInstance()");
         private static final Signature ADD =
-          Signature.parse("net.sf.cglib.reflect.MulticastDelegate add(Object)");
+          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate add(Object)");
         private static final Signature ADD_HELPER =
-          Signature.parse("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
+          TypeUtils.parseSignature("net.sf.cglib.reflect.MulticastDelegate addHelper(Object)");
         private static final Type MULTICAST_DELEGATE =
-          Signature.parseType("net.sf.cglib.reflect.MulticastDelegate");
+          TypeUtils.parseType("net.sf.cglib.reflect.MulticastDelegate");
 
         private Class iface;
 
@@ -148,13 +148,13 @@ abstract public class MulticastDelegate implements Cloneable {
             Local result = null;
             if (returns) {
                 result = e.make_local(returnType);
-                Ops.zero_or_null(e, returnType);
+                e.zero_or_null(returnType);
                 e.store_local(result);
             }
             e.load_this();
             e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
             final Local result2 = result;
-            Ops.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+            ComplexOps.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
                 public void processElement(Type type) {
                     e.checkcast(Type.getType(iface));
                     e.load_args();

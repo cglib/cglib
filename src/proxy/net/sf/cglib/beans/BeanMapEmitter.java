@@ -64,21 +64,21 @@ import org.objectweb.asm.Type;
 
 class BeanMapEmitter extends Emitter {
     private static final Signature CSTRUCT_OBJECT =
-      Signature.parse("void <init>(Object)");
+      TypeUtils.parseConstructor("Object");
     private static final Signature CSTRUCT_STRING_ARRAY =
-      Signature.parse("void <init>(String[])");
+      TypeUtils.parseConstructor("String[]");
     private static final Signature MAP_GET =
-      Signature.parse("Object get(Object)");
+      TypeUtils.parseSignature("Object get(Object)");
     private static final Signature MAP_PUT =
-      Signature.parse("Object put(Object, Object)");
+      TypeUtils.parseSignature("Object put(Object, Object)");
     private static final Signature KEY_SET =
-      Signature.parse("java.util.Set keySet()");
+      TypeUtils.parseSignature("java.util.Set keySet()");
     private static final Signature NEW_INSTANCE =
-      Signature.parse("net.sf.cglib.beans.BeanMap newInstance(Object)");
+      TypeUtils.parseSignature("net.sf.cglib.beans.BeanMap newInstance(Object)");
     private static final Type BEAN_MAP =
-      Signature.parseType("net.sf.cglib.beans.BeanMap");
+      TypeUtils.parseType("net.sf.cglib.beans.BeanMap");
     private static final Type FIXED_KEY_SET =
-      Signature.parseType("net.sf.cglib.beans.FixedKeySet");
+      TypeUtils.parseType("net.sf.cglib.beans.FixedKeySet");
 
     public BeanMapEmitter(ClassVisitor v, String className, Class type, int switchStyle) throws Exception {
         super(v);
@@ -123,7 +123,7 @@ class BeanMapEmitter extends Emitter {
         checkcast(Type.getType(type));
         load_arg(0);
         checkcast(Constants.TYPE_STRING);
-        Ops.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
+        ComplexOps.string_switch(this, getNames(getters), switchStyle, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)getters.get(key);
                 ReflectOps.invoke(BeanMapEmitter.this, pd.getReadMethod());
@@ -144,7 +144,7 @@ class BeanMapEmitter extends Emitter {
         checkcast(Type.getType(type));
         load_arg(0);
         checkcast(Constants.TYPE_STRING);
-        Ops.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
+        ComplexOps.string_switch(this, getNames(setters), switchStyle, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 PropertyDescriptor pd = (PropertyDescriptor)setters.get(key);
                 if (pd.getReadMethod() == null) {

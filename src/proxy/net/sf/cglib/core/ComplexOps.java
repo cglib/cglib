@@ -57,82 +57,34 @@ import java.util.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-public class Ops {
-    public static final Signature HASH_CODE =
-      Signature.parse("int hashCode()");
-    public static final Signature EQUALS =
-      Signature.parse("boolean equals(Object)");
-    public static final Signature STRING_LENGTH =
-      Signature.parse("int length()");
-    public static final Signature STRING_CHAR_AT =
-      Signature.parse("char charAt(int)");
-    public static final Signature FOR_NAME =
-      Signature.parse("Class forName(String)");
-    public static final Signature GET_MESSAGE =
-      Signature.parse("String getMessage()");
+public class ComplexOps {
+    private static final Signature FIND_CLASS =
+      TypeUtils.parseSignature("Class CGLIB$findClass(String)");
+    private static final Signature HASH_CODE =
+      TypeUtils.parseSignature("int hashCode()");
+    private static final Signature EQUALS =
+      TypeUtils.parseSignature("boolean equals(Object)");
+    private static final Signature STRING_LENGTH =
+      TypeUtils.parseSignature("int length()");
+    private static final Signature STRING_CHAR_AT =
+      TypeUtils.parseSignature("char charAt(int)");
+    private static final Signature FOR_NAME =
+      TypeUtils.parseSignature("Class forName(String)");
+    private static final Signature GET_MESSAGE =
+      TypeUtils.parseSignature("String getMessage()");
     private static final Signature CSTRUCT_STRING =
-      Signature.parse("void <init>(String)");
+      TypeUtils.parseSignature("void <init>(String)");
     private static final Type NO_CLASS_DEF_FOUND_ERROR =
-      Signature.parseType("NoClassDefFoundError");
+      TypeUtils.parseType("NoClassDefFoundError");
     private static final Type CLASS_NOT_FOUND_EXCEPTION =
-      Signature.parseType("ClassNotFoundException");
+      TypeUtils.parseType("ClassNotFoundException");
     
     public static final int SWITCH_STYLE_TRIE = 0;
     public static final int SWITCH_STYLE_HASH = 1;
-    private static final Signature FIND_CLASS =
-      Signature.parse("Class CGLIB$findClass(String)");
 
-    private Ops() {
+    private ComplexOps() {
     }
     
-    /**
-     * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
-     */
-    public static void zero_or_null(Emitter e, Type type) {
-        if (TypeUtils.isPrimitive(type)) {
-            switch (type.getSort()) {
-            case Type.DOUBLE:
-                e.push(0d);
-                break;
-            case Type.LONG:
-                e.push(0L);
-                break;
-            case Type.FLOAT:
-                e.push(0f);
-                break;
-            case Type.VOID:
-                e.aconst_null();
-            default:
-                e.push(0);
-            }
-        } else {
-            e.aconst_null();
-        }
-    }
-
-    /**
-     * Unboxes the object on the top of the stack. If the object is null, the
-     * unboxed primitive value becomes zero.
-     */
-    public static void unbox_or_zero(Emitter e, Type type) {
-        if (TypeUtils.isPrimitive(type)) {
-            if (type != Type.VOID_TYPE) {
-                Label nonNull = e.make_label();
-                Label end = e.make_label();
-                e.dup();
-                e.ifnonnull(nonNull);
-                e.pop();
-                zero_or_null(e, type);
-                e.goTo(end);
-                e.mark(nonNull);
-                e.unbox(type);
-                e.mark(end);
-            }
-        } else {
-            e.checkcast(type);
-        }
-    }
-
     /**
      * Process an array on the stack. Assumes the top item on the stack
      * is an array of the specified type. For each element in the array,
@@ -162,7 +114,7 @@ public class Ops {
         e.load_local(loopvar);
         e.load_local(array);
         e.arraylength();
-        e.if_icmplt(loopbody);
+        e.if_icmp(e.LT, loopbody);
     }
     
     /**
@@ -199,7 +151,7 @@ public class Ops {
         e.load_local(loopvar);
         e.load_local(array1);
         e.arraylength();
-        e.if_icmplt(loopbody);
+        e.if_icmp(e.LT, loopbody);
     }
     
     /**
@@ -219,7 +171,7 @@ public class Ops {
     
     private static void not_equals_helper(Emitter e, Type type, Label notEquals, ProcessArrayCallback callback) {
         if (TypeUtils.isPrimitive(type)) {
-            e.if_cmpne(type, notEquals);
+            e.if_cmp(type, e.NE, notEquals);
         } else {
             Label end = e.make_label();
             nullcmp(e, notEquals, end);
@@ -229,14 +181,14 @@ public class Ops {
                 e.arraylength();
                 e.swap();
                 e.arraylength();
-                e.if_icmpeq(checkContents);
+                e.if_icmp(e.EQ, checkContents);
                 e.pop2();
                 e.goTo(notEquals);
                 e.mark(checkContents);
                 process_arrays(e, type, callback);
             } else {
                 e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
-                e.ifeq(notEquals);
+                e.if_jump(e.EQ, notEquals);
             }
             e.mark(end);
         }
@@ -380,10 +332,10 @@ public class Ops {
                     e.push(string);
                     e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
                     if (it.hasNext()) {
-                        e.ifeq(next = e.make_label());
+                        e.if_jump(e.EQ, next = e.make_label());
                         e.pop();
                     } else {
-                        e.ifeq(def);
+                        e.if_jump(e.EQ, def);
                     }
                     callback.processCase(string, end);
                 }

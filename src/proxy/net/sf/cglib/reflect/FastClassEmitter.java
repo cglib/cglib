@@ -62,21 +62,21 @@ import org.objectweb.asm.Type;
     
 class FastClassEmitter extends Emitter {
     private static final Signature CSTRUCT_CLASS =
-      Signature.parse("void <init>(Class)");
+      TypeUtils.parseConstructor("Class");
     private static final Signature METHOD_GET_INDEX =
-      Signature.parse("int getIndex(String, Class[])");
+      TypeUtils.parseSignature("int getIndex(String, Class[])");
     private static final Signature SIGNATURE_GET_INDEX =
-      Signature.parse("int getIndex(String)");
+      TypeUtils.parseSignature("int getIndex(String)");
     private static final Signature CONSTRUCTOR_GET_INDEX =
-      Signature.parse("int getIndex(Class[])");
+      TypeUtils.parseSignature("int getIndex(Class[])");
     private static final Signature INVOKE =
-      Signature.parse("Object invoke(int, Object, Object[])");
+      TypeUtils.parseSignature("Object invoke(int, Object, Object[])");
     private static final Signature NEW_INSTANCE =
-      Signature.parse("Object newInstance(int, Object[])");
+      TypeUtils.parseSignature("Object newInstance(int, Object[])");
     private static final Type FAST_CLASS =
-      Signature.parseType("net.sf.cglib.reflect.FastClass");
+      TypeUtils.parseType("net.sf.cglib.reflect.FastClass");
     private static final Type NO_SUCH_METHOD_ERROR =
-      Signature.parseType("NoSuchMethodError");
+      TypeUtils.parseType("NoSuchMethodError");
     
     public FastClassEmitter(ClassVisitor v, String className, Class type) throws Exception {
         super(v);
@@ -100,14 +100,14 @@ class FastClassEmitter extends Emitter {
         begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
         final List signatures = CollectionUtils.transform(Arrays.asList(methods), new Transformer() {
             public Object transform(Object obj) {
-                Method m = (Method)obj;
-                return m.getName() + ReflectUtils.getMethodDescriptor((Method)obj);
+                Signature sig = ReflectUtils.getSignature((Method)obj);
+                return sig.getName() + sig.getDescriptor();
             }
         });
         load_arg(0);
-        Ops.string_switch(this,
+        ComplexOps.string_switch(this,
                            (String[])signatures.toArray(new String[0]),
-                           Ops.SWITCH_STYLE_HASH,
+                           ComplexOps.SWITCH_STYLE_HASH,
                            new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 // TODO: remove linear indexOf

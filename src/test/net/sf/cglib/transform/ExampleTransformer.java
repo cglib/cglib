@@ -2,6 +2,7 @@ package net.sf.cglib.transform;
 
 import net.sf.cglib.core.Constants;
 import net.sf.cglib.core.Emitter;
+import net.sf.cglib.core.Signature;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
@@ -29,12 +30,12 @@ public class ExampleTransformer extends EmittingTransformer {
                     String methodName = upfirst(name);
                     declare_field(Constants.ACC_PRIVATE, fieldName, type, null);
 
-                    begin_method(Constants.ACC_PUBLIC, "get" + methodName, type, new Type[0], null);
+                    begin_method(Constants.ACC_PUBLIC, new Signature("get" + methodName, type, new Type[0]), null);
                     load_this();
                     getfield(fieldName);
                     return_value();
 
-                    begin_method(Constants.ACC_PUBLIC, "set" + methodName, Type.VOID_TYPE, new Type[]{ type }, null);
+                    begin_method(Constants.ACC_PUBLIC, new Signature("set" + methodName, Type.VOID_TYPE, new Type[]{ type }), null);
                     load_this();
                     load_arg(0);
                     putfield(fieldName);

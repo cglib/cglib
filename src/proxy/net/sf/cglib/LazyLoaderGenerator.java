@@ -65,9 +65,9 @@ class LazyLoaderGenerator implements CallbackGenerator {
 
     private static final String DELEGATE = "CGLIB$LAZY_LOADER";
     private static final Signature LOAD_PRIVATE =
-      Signature.parse("Object CGLIB$LOAD_PRIVATE()");
+      TypeUtils.parseSignature("Object CGLIB$LOAD_PRIVATE()");
     private static final Signature LOAD_OBJECT = 
-      Signature.parse("Object loadObject()");
+      TypeUtils.parseSignature("Object loadObject()");
     private static final Type LAZY_LOADER = Type.getType(LazyLoader.class);
 
     public void generate(Emitter e, Context context) {
