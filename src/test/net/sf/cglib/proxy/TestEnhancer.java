@@ -66,7 +66,7 @@ import java.io.*;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.14 2002/09/28 16:32:35 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.15 2002/10/29 08:10:54 baliuka Exp $
  */
 public class TestEnhancer extends TestCase {
     
@@ -271,12 +271,12 @@ public class TestEnhancer extends TestCase {
             
         }catch( Exception cnse  ){
             
-            if( !( cnse instanceof java.lang.reflect.UndeclaredThrowableException ) ){
+            if( !( cnse instanceof UndeclaredThrowableException ) ){
                 
                 fail("invalid exception type");
             }
             
-            if( !( ((java.lang.reflect.UndeclaredThrowableException)cnse).getUndeclaredThrowable()
+            if( !( ((UndeclaredThrowableException)cnse).getUndeclaredThrowable()
             instanceof Source.UndeclaredException ) ){
                 
                 fail("invalid exception type");
