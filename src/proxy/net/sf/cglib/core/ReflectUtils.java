@@ -59,10 +59,11 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.*;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.25 2004/04/08 20:58:03 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.26 2004/04/15 22:22:52 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -419,20 +420,50 @@ public class ReflectUtils {
         return 0;
     }
 
-    public static MethodInfo getMethodInfo(Member member) {
-        return new MethodInfo(getClassInfo(member.getDeclaringClass()),
-                              member.getModifiers(),
-                              getSignature(member),
-                              getExceptionTypes(member),
-                              null);
+    public static MethodInfo getMethodInfo(final Member member, final int modifiers) {
+        final Signature sig = getSignature(member);
+        return new MethodInfo() {
+            private ClassInfo ci;
+            public ClassInfo getClassInfo() {
+                if (ci == null)
+                    ci = ReflectUtils.getClassInfo(member.getDeclaringClass());
+                return ci;
+            }
+            public int getModifiers() {
+                return modifiers;
+            }
+            public Signature getSignature() {
+                return sig;
+            }
+            public Type[] getExceptionTypes() {
+                return ReflectUtils.getExceptionTypes(member);
+            }
+            public Attribute getAttribute() {
+                return null;
+            }
+        };
     }
 
-    // TODO: add a cache to improve performance?
-    public static ClassInfo getClassInfo(Class clazz) {
-        Class sc = clazz.getSuperclass();
-        return new ClassInfo(clazz.getModifiers(),
-                             clazz.getName(),
-                             (sc != null) ? Type.getType(sc) : null,
-                             TypeUtils.getTypes(clazz.getInterfaces()));
+    public static MethodInfo getMethodInfo(Member member) {
+        return getMethodInfo(member, member.getModifiers());
+    }
+
+    public static ClassInfo getClassInfo(final Class clazz) {
+        final Type type = Type.getType(clazz);
+        final Type sc = (clazz.getSuperclass() == null) ? null : Type.getType(clazz.getSuperclass());
+        return new ClassInfo() {
+            public Type getType() {
+                return type;
+            }
+            public Type getSuperType() {
+                return sc;
+            }
+            public Type[] getInterfaces() {
+                return TypeUtils.getTypes(clazz.getInterfaces());
+            }
+            public int getModifiers() {
+                return clazz.getModifiers();
+            }
+        };
     }
 }
