@@ -22,18 +22,14 @@ public class TransformClassVisitor extends ClassTransformer{
     ReadWriteFieldFilter filter;
     String className;   
     Set interfaces     = new HashSet();
-    Class delegateIf[] = null ;
-    Class delegateImpl = null ;
     Map fields         = new HashMap();
     Map types          = new HashMap();
-    boolean  generateClinit = false;       
+ 
  
     
     static String callbackDesc = Type.getType( ReadWriteFieldCallback.class ).getDescriptor();
     static String callbackName = ReadWriteFieldCallback.class.getName().replace('.','/');
     
-    /** Holds value of property classInit. */
-    private Method classInit;    
     
     /** Creates a new instance of TransformClassVisitor */
     public TransformClassVisitor( ReadWriteFieldFilter filter)throws java.io.IOException {
@@ -43,15 +39,6 @@ public class TransformClassVisitor extends ClassTransformer{
         
     }
     
-    public void setDelegate(Class delegateIf[], Class delegateImpl ){
-        try{
-         delegateImpl.getConstructor( new Class[]{Object.class});
-         this.delegateIf = delegateIf;
-         this.delegateImpl = delegateImpl;
-        }catch(Exception e){
-          throw new CodeGenerationException(e);
-        }
-    }
     
     
     
@@ -65,13 +52,7 @@ public class TransformClassVisitor extends ClassTransformer{
             className = name;
             interfaces.addAll(Arrays.asList(ifaces));
             
-            if(delegateIf != null){
-                for(int i = 0; i< delegateIf.length; i++){
-                   interfaces.add(Signature.getInternalName(delegateIf[i]));
-                }
-                
-            }
-            getTarget().visit(
+       getTarget().visit(
             access,
             name,
             superName,
@@ -81,11 +62,7 @@ public class TransformClassVisitor extends ClassTransformer{
             addCallbackField();
             implemetTransform();
             
-            if(delegateIf != null){
-                
-                implementDelegate();
-                
-            }
+
         }catch(Exception e){
             throw new CodeGenerationException(e);
         }
@@ -172,14 +149,6 @@ public class TransformClassVisitor extends ClassTransformer{
            cv.visitMaxs(0, 0);          
         }
         
-    
-        if(generateClinit){
-          CodeVisitor cv = getTarget().visitMethod( Modifier.STATIC,
-          "<clinit>", "()V" , new String[]{} );
-            generateClassInit(cv);
-          cv.visitInsn(Constants.RETURN);  
-          cv.visitMaxs(0,0);
-        }
         
         getTarget().visitEnd();
     }
@@ -365,7 +334,7 @@ public class TransformClassVisitor extends ClassTransformer{
         
         cv.visitInsn(Constants.ARETURN);
         cv.visitMaxs(0,0);
-        
+        /*
         cv =  getTarget().visitMethod(Modifier.PUBLIC, "getDelegate",
         
         Type.getMethodDescriptor(
@@ -402,83 +371,10 @@ public class TransformClassVisitor extends ClassTransformer{
         
         cv.visitInsn(Constants.RETURN);
         cv.visitMaxs(0,0);
+         */
         
     }
     
-    private void generateClassInit(CodeVisitor cv){
-     if(generateClinit){
-         cv.visitLdcInsn(className.replace('/','.'));
-         cv.visitMethodInsn(
-             Constants.INVOKESTATIC,
-             Type.getInternalName(Class.class), 
-             "forName", 
-              "(Ljava/lang/String;)Ljava/lang/Class;"
-             );
-         cv.visitMethodInsn(
-             Constants.INVOKESTATIC,
-             Type.getInternalName(classInit.getDeclaringClass()), 
-             classInit.getName(), 
-              "(Ljava/lang/Class;)V"
-             );
-         
-         
-         
-         generateClinit = false;
-     }    
-       
-    }
-    private void addDelegate(Method m)throws Exception{
-        
-        
-        List exeptions = new ArrayList(m.getExceptionTypes().length);
-        for(int i = 0; i< m.getExceptionTypes().length; i++ ){
-            exeptions.add(Signature.getInternalName( m.getExceptionTypes()[i]) );
-        }
-        
-        Method delegate = delegateImpl.getMethod(m.getName(), m.getParameterTypes() );
-        if(!delegate.getReturnType().getName().equals(m.getReturnType().getName())){
-          throw  new IllegalArgumentException( "invalid  delegate signature  " + delegate);
-        }
-        
-        CodeVisitor cv =  getTarget().visitMethod( Modifier.PUBLIC,
-        m.getName(),
-        Type.getMethodDescriptor(m),
-        (String[])exeptions.toArray(new String[]{}) );
-        
-        cv.visitVarInsn(Constants.ALOAD, 0 );
-        cv.visitFieldInsn( Constants.GETFIELD,
-        className,
-        Signature.DELEGATE,
-        Type.getDescriptor(Object.class));
-        cv.visitTypeInsn(Constants.CHECKCAST,Signature.getInternalName(delegateImpl));
-        
-        for(int i = 1; i <= m.getParameterTypes().length; i++){
-            Type type = Type.getType(m.getParameterTypes()[ i - 1]);
-            cv.visitVarInsn(type.getOpcode(Constants.ILOAD), i );
-        }
-        
-        cv.visitMethodInsn(
-        Constants.INVOKEVIRTUAL,
-        Signature.getInternalName(delegateImpl),
-        m.getName(),
-        Type.getMethodDescriptor(delegate)
-        );
-        Type type = Type.getType(m.getReturnType());
-        cv.visitInsn(type.getOpcode(Constants.IRETURN));
-        cv.visitMaxs( 0, 0 );
-        
-    }
-    
-    private void implementDelegate()throws Exception{
-        for( int i = 0; i <  delegateIf.length; i++ ){
-        Method methods[] = delegateIf[i].getMethods();
-        for( int j = 0; j < methods.length; j++  ){
-            if( Modifier.isAbstract(methods[j].getModifiers()) ){
-                addDelegate(methods[j]);
-            }
-        }
-        }
-    }
     
     private void addCallbackField(){
         
@@ -489,15 +385,6 @@ public class TransformClassVisitor extends ClassTransformer{
         callbackDesc ,
         null
         );
-        
-        getTarget().visitField(
-        Modifier.PRIVATE|Modifier.TRANSIENT,
-        Signature.DELEGATE,
-        Type.getDescriptor(Object.class) ,
-        null
-        );
-        
-        
         
     }
     
@@ -551,14 +438,8 @@ public class TransformClassVisitor extends ClassTransformer{
     
     public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions) {
         CodeVisitor cv = getTarget().visitMethod(access, name, desc, exceptions  );
-        if(name.equals("<clinit>")){
-            generateClassInit(cv);
-        }
-        return new TransformCodeVisitor( this, 
-                                         cv,
-                                         filter,
-                                         name.equals( "<init>" ) ? delegateImpl : null
-                                        );
+        
+        return new TransformCodeVisitor( this, cv, filter );
     }
     
     /** Getter for property className.
@@ -577,30 +458,5 @@ public class TransformClassVisitor extends ClassTransformer{
         this.className = className;
     }
     
-    /** Getter for property classInit.
-     * @return Value of property classInit.
-     *
-     */
-    public Method getClassInit() {
-        return this.classInit;
-    }
-    
-    /** Setter for property classInit.
-     * @param classInit New value of property classInit.
-     *
-     */
-    public void setClassInit(Method classInit) {
-        if(!Modifier.isStatic( classInit.getModifiers())) {
-          throw new IllegalArgumentException( classInit + " is not static" );
-        }
-        if( classInit.getParameterTypes().length != 1 || 
-            classInit.getParameterTypes()[0] != Class.class ||
-            classInit.getReturnType() != Void.TYPE   ){
-            throw new IllegalArgumentException( classInit + " illegal signature" );
-        
-        }
-        generateClinit = true;
-        this.classInit = classInit;
-    }
     
 }

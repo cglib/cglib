@@ -64,7 +64,7 @@ import java.util.*;
 
 /**
  * @author baliuka
- * @version $Id: TestTransformVisistor.java,v 1.8 2003/09/18 11:40:10 baliuka Exp $
+ * @version $Id: TestTransformVisistor.java,v 1.9 2003/09/18 15:23:56 baliuka Exp $
  */
 public class TestTransformVisistor extends TestCase {
     
@@ -154,6 +154,8 @@ public class TestTransformVisistor extends TestCase {
        assertEquals(t.getObject("name"),value);
        
        PersistenceCapable capable = (PersistenceCapable)t;
+       
+      
        capable.setPersistenceManager(value);
        
        assertEquals(capable.getPersistenceManager(),value);
@@ -174,11 +176,19 @@ public class TestTransformVisistor extends TestCase {
         try{
             ClassReader cr = new ClassReader(is);
             ClassWriter cw = new ClassWriter(true);
-            TransformClassVisitor tv = new TransformClassVisitor(acceptAll);
-            tv.setTarget( cw );
-            tv.setClassInit(this.getClass().getMethod("clinit",new Class[]{Class.class}));
-            tv.setDelegate(new Class[]{iface}, impl);
-            cr.accept(tv,false);
+            TransformClassVisitor t1 = new TransformClassVisitor(acceptAll);
+            
+            
+            AddClintTransformer t2 = new   AddClintTransformer(
+                        TestTransformVisistor.class.
+                                    getMethod("clinit",new Class[]{Class.class}) 
+                         );                                   
+            AddDelegateTransformer t3 = new AddDelegateTransformer(new Class[]{iface}, impl);
+            
+            TransformerChain transformation = new TransformerChain( new ClassTransformer[]{t1,t2,t3} );
+            transformation.setTarget( cw );
+            
+            cr.accept(transformation,false);
             data = cw.toByteArray();
            // print(data);
             
@@ -187,7 +197,6 @@ public class TestTransformVisistor extends TestCase {
             is.close();
             
         }
-        
         
         TransforClassLoader loader = new TransforClassLoader(data,cls.getName());
         Class transformed = loader.loadClass(cls.getName());
