@@ -63,7 +63,7 @@ import net.sf.cglib.reflect.*;
  * object of the same type.
  * @see Enhancer
  * @see MethodInterceptor
- * @version $Id: MethodProxy.java,v 1.30 2003/10/05 17:17:16 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.31 2003/10/05 17:17:53 herbyderby Exp $
  */
 public class MethodProxy {
     private FastClass f1;
@@ -81,7 +81,7 @@ public class MethodProxy {
         int i1 = f1.getIndex(m1);
         int i2 = f2.getIndex(m2);
         if (i1 < 0) {
-            return new MethodProxy(f2, i2) {
+            return new MethodProxy(f1, i1, f2, i2) {
                 public Object invoke(Object obj, Object[] args) throws Throwable {
                     throw new IllegalArgumentException("Protected method: " + m1);
                 }
@@ -94,11 +94,6 @@ public class MethodProxy {
     private MethodProxy(FastClass f1, int i1, FastClass f2, int i2) {
         this.f1 = f1;
         this.i1 = i1;
-        this.f2 = f2;
-        this.i2 = i2;
-    }
-
-    private MethodProxy(FastClass f2, int i2) {
         this.f2 = f2;
         this.i2 = i2;
     }
