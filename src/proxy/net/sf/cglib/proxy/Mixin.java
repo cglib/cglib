@@ -65,7 +65,7 @@ import org.objectweb.asm.ClassVisitor;
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.3 2004/01/25 22:21:00 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.4 2004/01/25 22:28:02 herbyderby Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -134,7 +134,7 @@ abstract public class Mixin {
         }
 
         protected ClassLoader getDefaultClassLoader() {
-            return delegates[0].getClass().getClassLoader(); // is this right?
+            return classes[0].getClassLoader(); // is this right?
         }
 
         public void setStyle(int style) {
@@ -158,12 +158,12 @@ abstract public class Mixin {
         }
 
         public Mixin create() {
+            if (classes == null && delegates == null) {
+                throw new IllegalStateException("Either classes or delegates must be set");
+            }
             switch (style) {
             case STYLE_INTERFACES:
                 if (classes == null) {
-                    if (delegates == null) {
-                        throw new IllegalStateException("Either classes or delegates must be set");
-                    }
                     Route r = route(delegates);
                     classes = r.classes;
                     route = r.route;
@@ -172,21 +172,20 @@ abstract public class Mixin {
             case STYLE_BEANS:
                 // fall-through
             case STYLE_EVERYTHING:
-                if (delegates == null) {
-                    throw new IllegalStateException("Delegates must be set");
-                }
-                Class[] temp = ReflectUtils.getClasses(delegates);
-                if (classes != null) {
-                    if (classes.length != temp.length) {
-                        throw new IllegalStateException("Specified classes are incompatible with delegates");
-                    }
-                    for (int i = 0; i < classes.length; i++) {
-                        if (!classes[i].isAssignableFrom(temp[i])) {
-                            throw new IllegalStateException("Specified class " + classes[i] + " is incompatible with delegate class " + temp[i] + " (index " + i + ")");
+                if (classes == null) {
+                    classes = ReflectUtils.getClasses(delegates);
+                } else {
+                    if (delegates != null) {
+                        Class[] temp = ReflectUtils.getClasses(delegates);
+                        if (classes.length != temp.length) {
+                            throw new IllegalStateException("Specified classes are incompatible with delegates");
+                        }
+                        for (int i = 0; i < classes.length; i++) {
+                            if (!classes[i].isAssignableFrom(temp[i])) {
+                                throw new IllegalStateException("Specified class " + classes[i] + " is incompatible with delegate class " + temp[i] + " (index " + i + ")");
+                            }
                         }
                     }
-                } else {
-                    classes = temp;
                 }
             }
             setNamePrefix(classes[ReflectUtils.findPackageProtected(classes)].getName());
