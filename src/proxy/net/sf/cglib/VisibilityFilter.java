@@ -57,17 +57,17 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 class VisibilityFilter implements MethodFilter {
-    private Package pkg;
+    private String pkg;
     
     public VisibilityFilter(Class source) {
-        pkg = source.getPackage();
+        pkg = ReflectUtils.getPackageName(source);
     }
     
     public boolean accept(Member method) {
         return accept(method, pkg);
     }
 
-    private static boolean accept(Member member, Package pkg) {
+    private static boolean accept(Member member, String pkg) {
         int mod = member.getModifiers();
         if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
             return false;
@@ -75,22 +75,15 @@ class VisibilityFilter implements MethodFilter {
         if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
             return true;
         }
-        
-        Package other = member.getDeclaringClass().getPackage();
-        return (null == pkg) ? (other == null) : pkg.equals(other);
+        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
     }
     
     public int hashCode() {
-        return (null == pkg) ? 0 : pkg.hashCode(); 
+        return pkg.hashCode();
     }
     
     public boolean equals(Object obj){
-        VisibilityFilter other = (VisibilityFilter)obj;
-        if (pkg == null) {
-            return other.pkg == null;
-        } else {
-            return pkg.equals(other.pkg);
-        }
+        return pkg.equals(((VisibilityFilter)obj).pkg);
     }
 }
 

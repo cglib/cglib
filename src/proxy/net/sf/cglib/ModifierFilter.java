@@ -68,13 +68,13 @@ class ModifierFilter implements MethodFilter {
         return (method.getModifiers() & mask) == value;
     }
 
-    public int hashCode(){
+    public int hashCode() {
        return mask * 37 + value * 37;
     }
 
     public boolean equals(Object obj) {
         ModifierFilter other = (ModifierFilter)obj;
-        return other.mask == make && other.value == value;
+        return other.mask == mask && other.value == value;
     }
 }
 

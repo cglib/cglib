@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.35 2003/02/03 22:45:12 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.36 2003/02/03 22:52:35 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();
@@ -252,8 +252,8 @@ public class Enhancer {
             List interfaceNames = new ArrayList(interfaces.length);
             
             for (int i = 0; i < interfaces.length; i++) {
-                //skip CGLIB interfaces, getPackage returns null on JDK 1.2
-                if (!interfaces[i].getName().startsWith("net.sf.cglib.")) {
+                // skip CGLIB interfaces
+                if (!ReflectUtils.getPackageName(interfaces[i]).equals("net.sf.cglib")) {
                     interfaceNames.add(interfaces[i].getName());
                 }
             }
