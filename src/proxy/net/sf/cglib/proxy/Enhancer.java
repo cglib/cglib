@@ -91,7 +91,7 @@ import org.apache.bcel.generic.*;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.1 2002/07/03 18:25:50 baliuka Exp $
+ *@version    $Id: Enhancer.java,v 1.1.1.1 2002/07/03 18:25:50 baliuka Exp $
  */
 public class Enhancer implements org.apache.bcel.Constants {
     

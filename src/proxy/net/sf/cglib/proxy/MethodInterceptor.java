@@ -103,7 +103,7 @@ package net.sf.cglib.proxy;
 
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: MethodInterceptor.java,v 1.1 2002/07/03 18:25:50 baliuka Exp $
+ *@version    $Id: MethodInterceptor.java,v 1.1.1.1 2002/07/03 18:25:50 baliuka Exp $
  */
 public interface MethodInterceptor {
     
