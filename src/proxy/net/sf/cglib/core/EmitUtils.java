@@ -872,22 +872,22 @@ public class EmitUtils {
         String property = TypeUtils.upperFirst(name);
         CodeEmitter e;
         e = ce.begin_method(Constants.ACC_PUBLIC,
-                         new Signature("get" + property,
-                                       type,
-                                       Constants.TYPES_EMPTY),
-                         null,
-                         null);
+                            new Signature("get" + property,
+                                          type,
+                                          Constants.TYPES_EMPTY),
+                            null,
+                            null);
         e.load_this();
         e.getfield(fieldName);
         e.return_value();
         e.end_method();
 
         e = ce.begin_method(Constants.ACC_PUBLIC,
-                         new Signature("set" + property,
-                                       Type.VOID_TYPE,
-                                       new Type[]{ type }),
-                         null,
-                         null);
+                            new Signature("set" + property,
+                                          Type.VOID_TYPE,
+                                          new Type[]{ type }),
+                            null,
+                            null);
         e.load_this();
         e.load_arg(0);
         e.putfield(fieldName);
