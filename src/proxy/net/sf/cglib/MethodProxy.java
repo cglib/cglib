@@ -57,7 +57,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
- * @version $Id: MethodProxy.java,v 1.13 2003/02/01 19:44:50 baliuka Exp $
+ * @version $Id: MethodProxy.java,v 1.14 2003/02/02 00:57:58 herbyderby Exp $
  */
 abstract public class MethodProxy {
     
@@ -79,13 +79,19 @@ abstract public class MethodProxy {
 
     protected MethodProxy() { }
 
-    public static MethodProxy create( Method method, Method superMethod  ) {
+    public static MethodProxy create(Method method, Method superMethod) {
+        return create(method, superMethod, null);
+    }
+
+    public static MethodProxy create(Method method, Method superMethod, ClassLoader loader) {
         try {
-            Class declaring = method.getDeclaringClass();
+            Class declaring = superMethod.getDeclaringClass();
             String className = NAME_FACTORY.getNextName(declaring);
-            ClassLoader loader = declaring.getClassLoader();
             if (loader == null) {
-                loader = DEFAULT_LOADER;
+                loader = declaring.getClassLoader();
+                if (loader == null) {
+                    loader = DEFAULT_LOADER;
+                }
             }
             Class gen = new Generator(className, superMethod, method , loader).define();
             return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
