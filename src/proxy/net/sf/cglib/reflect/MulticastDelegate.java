@@ -140,7 +140,7 @@ abstract public class MulticastDelegate implements Cloneable {
                            MULTICAST_DELEGATE,
                            new Type[]{ Type.getType(iface) },
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
 
             // generate proxied method
             emitProxy(ce, method);
@@ -180,7 +180,7 @@ abstract public class MulticastDelegate implements Cloneable {
             e.load_this();
             e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
             final Local result2 = result;
-            ComplexOps.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+            EmitUtils.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
                 public void processElement(Type type) {
                     e.checkcast(Type.getType(iface));
                     e.load_args();

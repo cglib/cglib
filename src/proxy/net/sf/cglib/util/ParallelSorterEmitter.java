@@ -72,8 +72,8 @@ class ParallelSorterEmitter extends ClassEmitter {
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) {
         super(v);
         begin_class(Constants.ACC_PUBLIC, className, PARALLEL_SORTER, null, Constants.SOURCE_FILE);
-        ComplexOps.null_constructor(this);
-        ComplexOps.factory_method(this, NEW_INSTANCE);
+        EmitUtils.null_constructor(this);
+        EmitUtils.factory_method(this, NEW_INSTANCE);
         generateConstructor(arrays);
         generateSwap(arrays);
         end_class();

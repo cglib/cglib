@@ -294,7 +294,7 @@ class EnhancerEmitter extends ClassEmitter {
         e.new_instance_this();
         e.dup();
         e.load_arg(0);
-        ComplexOps.constructor_switch(e, constructors, new ObjectSwitchCallback() {
+        EmitUtils.constructor_switch(e, constructors, new ObjectSwitchCallback() {
             public void processCase(Object key, Label end) {
                 Constructor constructor = (Constructor)key;
                 Type types[] = TypeUtils.getTypes(constructor.getParameterTypes());

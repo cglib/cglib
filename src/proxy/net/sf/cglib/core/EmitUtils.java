@@ -62,7 +62,7 @@ import java.util.*;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-public class ComplexOps {
+public class EmitUtils {
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature CSTRUCT_THROWABLE =
@@ -109,7 +109,7 @@ public class ComplexOps {
 
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
-    private ComplexOps() {
+    private EmitUtils() {
     }
 
     public static void factory_method(ClassEmitter ce, Signature sig) {
@@ -434,7 +434,7 @@ public class ComplexOps {
         Label end = e.make_label();
         e.dup();
         e.ifnull(skip);
-        ComplexOps.process_array(e, type, new ProcessArrayCallback() {
+        EmitUtils.process_array(e, type, new ProcessArrayCallback() {
             public void processElement(Type type) {
                 hash_code(e, type, multiplier, customizer);
             }
@@ -530,7 +530,7 @@ public class ComplexOps {
                 e.pop2();
                 e.goTo(notEquals);
                 e.mark(checkContents);
-                ComplexOps.process_arrays(e, type, callback);
+                EmitUtils.process_arrays(e, type, callback);
             } else {
                 if (customizer != null) {
                     customizer.customize(e, type);
@@ -638,7 +638,7 @@ public class ComplexOps {
             e.push(delims.before);
             e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
             e.swap();
-            ComplexOps.process_array(e, type, callback);
+            EmitUtils.process_array(e, type, callback);
             shrinkStringBuffer(e, 2);
             e.push(delims.after);
             e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
@@ -737,7 +737,7 @@ public class ComplexOps {
                         }
                     });
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+                EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
                         public void processCase(Object key, Label dontUseEnd) throws Exception {
                             member_helper_size(e, (List)buckets.get(key), callback, cached, def, end);
                         }
@@ -774,7 +774,7 @@ public class ComplexOps {
         });
         e.dup();
         e.arraylength();
-        e.process_switch(ComplexOps.getSwitchKeys(buckets), new ProcessSwitchCallback() {
+        e.process_switch(EmitUtils.getSwitchKeys(buckets), new ProcessSwitchCallback() {
             public void processCase(int key, Label dontUseEnd) throws Exception {
                 List bucket = (List)buckets.get(new Integer(key));
                 member_helper_type(e, bucket, callback, typer, def, end, new TinyBitSet());
@@ -838,7 +838,7 @@ public class ComplexOps {
 
                 final Map fbuckets = buckets;
                 String[] names = (String[])buckets.keySet().toArray(new String[buckets.size()]);
-                ComplexOps.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+                EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
                     public void processCase(Object key, Label dontUseEnd) throws Exception {
                         member_helper_type(e, (List)fbuckets.get(key), callback, typer, def, end, checked);
                     }

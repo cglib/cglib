@@ -161,12 +161,12 @@ abstract public class StringSwitcher {
                            STRING_SWITCHER,
                            null,
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, INT_VALUE, null);
             e.load_arg(0);
             final List stringList = Arrays.asList(strings);
             int style = fixedInput ? Constants.SWITCH_STYLE_HASHONLY : Constants.SWITCH_STYLE_HASH;
-            ComplexOps.string_switch(e, strings, style, new ObjectSwitchCallback() {
+            EmitUtils.string_switch(e, strings, style, new ObjectSwitchCallback() {
                 public void processCase(Object key, Label end) {
                     e.push(ints[stringList.indexOf(key)]);
                     e.return_value();

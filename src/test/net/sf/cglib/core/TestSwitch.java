@@ -105,7 +105,7 @@ public class TestSwitch extends CodeGenTestCase {
                            null,
                            new Type[]{ Type.getType(Alphabet.class) },
                            Constants.SOURCE_FILE);
-            ComplexOps.null_constructor(ce);
+            EmitUtils.null_constructor(ce);
             Method method = Alphabet.class.getMethod("getLetter", new Class[]{ Integer.TYPE });
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                                   ReflectUtils.getSignature(method),

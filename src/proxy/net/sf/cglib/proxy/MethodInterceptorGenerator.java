@@ -154,7 +154,7 @@ implements CallbackGenerator
         */
 
         Local thisclass = e.make_local();
-        ComplexOps.load_class_this(e);
+        EmitUtils.load_class_this(e);
         e.dup();
         e.store_local(thisclass);
         e.invoke_virtual(Constants.TYPE_CLASS, GET_CLASS_LOADER);
@@ -162,7 +162,7 @@ implements CallbackGenerator
         for (Iterator it = context.getMethods(); it.hasNext();) {
             e.dup();
             Method method = (Method)it.next();
-            ComplexOps.load_method(e, method);
+            EmitUtils.load_method(e, method);
             e.dup();
             e.putfield(getFieldName(context, method));
 

@@ -86,7 +86,7 @@ class BulkBeanEmitter extends ClassEmitter {
         validate(target, getterNames, setterNames, types, getters, setters);
 
         begin_class(Constants.ACC_PUBLIC, className, BULK_BEAN, null, Constants.SOURCE_FILE);
-        ComplexOps.null_constructor(this);
+        EmitUtils.null_constructor(this);
         generateGet(target, getters);
         generateSet(target, setters);
         end_class();
