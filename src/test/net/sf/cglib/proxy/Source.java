@@ -3,7 +3,7 @@ package net.sf.cglib.proxy;
 
 import junit.framework.TestCase;
 
-public abstract class Source {
+public abstract class Source implements java.io.Serializable{
     
     public static class CheckedException1 extends Exception{}
     public static class CheckedException2 extends Exception{}
