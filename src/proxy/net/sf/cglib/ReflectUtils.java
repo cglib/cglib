@@ -57,8 +57,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: ReflectUtils.java,v 1.3 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.4 2003/01/24 19:53:41 herbyderby Exp $
  */
 abstract /* package */ class ReflectUtils {
     private static final Map primitives = new HashMap(8);

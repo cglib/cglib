@@ -59,8 +59,7 @@ import java.beans.*;
 import java.util.*;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: DelegatorGenerator.java,v 1.6 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.7 2003/01/24 19:53:47 herbyderby Exp $
  */
 /* package */ class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";

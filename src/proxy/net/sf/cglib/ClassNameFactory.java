@@ -54,8 +54,7 @@
 package net.sf.cglib;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: ClassNameFactory.java,v 1.2 2003/01/05 09:09:48 baliuka Exp $
+ * @version $Id: ClassNameFactory.java,v 1.3 2003/01/24 19:53:48 herbyderby Exp $
  */
 /* package */ class ClassNameFactory {
     private final String suffix;

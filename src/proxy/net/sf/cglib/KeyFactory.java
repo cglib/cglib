@@ -91,8 +91,7 @@ package net.sf.cglib;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: KeyFactory.java,v 1.12 2003/01/24 00:27:48 herbyderby Exp $
+ * @version $Id: KeyFactory.java,v 1.13 2003/01/24 19:53:45 herbyderby Exp $
  */
 abstract public class KeyFactory {
     /* package */ static final Class TYPE = KeyFactory.class;

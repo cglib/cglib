@@ -56,8 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 
 /**
- * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: NoOpInterceptor.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
+ * @version $Id: NoOpInterceptor.java,v 1.4 2003/01/24 19:53:43 herbyderby Exp $
  */
 public class NoOpInterceptor implements MethodInterceptor {
     public Object aroundAdvice(Object obj, Method method, Object[] args,
