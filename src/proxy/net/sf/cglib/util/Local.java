@@ -51,22 +51,23 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-/**
- * @version $Id: ClassNameFactory.java,v 1.4 2003/01/31 01:18:51 herbyderby Exp $
- */
-class ClassNameFactory {
-    private final String suffix;
-    private int index = 0;
-
-    public ClassNameFactory(String suffix) {
-        this.suffix = suffix;
+public class Local
+{
+    private Class type;
+    private int index;
+    
+    public Local(Class type, int index) {
+        this.type = type;
+        this.index = index;
+    }
+    
+    public int getIndex() {
+        return index;
     }
 
-    public String getNextName(Class cls) {
-        String className = cls.getName() + "$$" + suffix + "$$";
-        className += index++;
-        return className;
+    public Class getType() {
+        return type;
     }
 }

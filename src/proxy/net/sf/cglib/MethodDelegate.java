@@ -55,6 +55,7 @@ package net.sf.cglib;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import net.sf.cglib.util.*;
 
 // TODO: don't require exact match for return type
 
@@ -137,7 +138,7 @@ import java.lang.reflect.Modifier;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.8 2003/06/01 00:00:35 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.9 2003/06/13 21:12:49 herbyderby Exp $
  */
 abstract public class MethodDelegate {
      static final Class TYPE = MethodDelegate.class;
@@ -248,12 +249,12 @@ abstract public class MethodDelegate {
             super(className, MethodDelegate.class, loader);
             this.method = method;
             this.iface = iface;
+            addInterface(iface);
         }
 
         protected void generate() throws NoSuchMethodException, NoSuchFieldException {
-            declare_interface(iface);
             declare_field(Modifier.PRIVATE | Modifier.FINAL | Modifier.STATIC, String.class, "eqMethod");
-            generateNullConstructor();
+            null_constructor();
 
             // generate proxied method
             begin_method(iface.getDeclaredMethods()[0]);

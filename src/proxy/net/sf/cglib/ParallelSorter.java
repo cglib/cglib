@@ -56,6 +56,7 @@ package net.sf.cglib;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Comparator;
+import net.sf.cglib.util.*;
 
 /**
  * For the efficient sorting of multiple arrays in parallel.
@@ -251,7 +252,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
 
         protected void generate() throws NoSuchFieldException {
-            generateFactoryMethod(NEW_INSTANCE);
+            factory_method(NEW_INSTANCE);
             generateConstructor();
             generateSwap();
         }
@@ -281,7 +282,7 @@ abstract public class ParallelSorter extends SorterTemplate {
             for (int i = 0; i < classes.length; i++) {
                 Class type = classes[i];
                 Class component = type.getComponentType();
-                Object T = make_local(type);
+                Local T = make_local(type);
 
                 load_this();
                 getfield(getFieldName(i));

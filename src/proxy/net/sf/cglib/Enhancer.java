@@ -57,6 +57,7 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
+import net.sf.cglib.util.*;
 
 /**
  * Provides methods to create dynamic proxies of any class, not just interfaces.
@@ -90,7 +91,7 @@ import java.util.List;
  * @see MethodInterceptor
  * @see Factory
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: Enhancer.java,v 1.39 2003/05/28 03:56:30 herbyderby Exp $
+ * @version $Id: Enhancer.java,v 1.40 2003/06/13 21:12:49 herbyderby Exp $
  */
 public class Enhancer {
     private static final FactoryCache cache = new FactoryCache();

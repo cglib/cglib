@@ -51,36 +51,48 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-import java.lang.reflect.Member;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.util.ReflectUtils;
+import java.lang.reflect.Method;
 
-public class VisibilityFilter implements MethodFilter {
-    private String pkg;
-    
-    public VisibilityFilter(Class source) {
-        pkg = ReflectUtils.getPackageName(source);
-    }
-    
-    public boolean accept(Member member) {
-        int mod = member.getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-            return false;
-        }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
-        }
-        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
-    }
-    
-    public int hashCode() {
-        return pkg.hashCode();
-    }
-    
-    public boolean equals(Object obj){
-        return pkg.equals(((VisibilityFilter)obj).pkg);
-    }
+/**
+ * @version $Id: MethodConstants.java,v 1.1 2003/06/13 21:12:49 herbyderby Exp $
+ */
+public class MethodConstants {
+    private MethodConstants() { }
+        
+    public static final Method EQUALS =
+      ReflectUtils.findMethod("Object.equals(Object)");
+    public static final Method GET_DECLARED_METHOD =
+      ReflectUtils.findMethod("Class.getDeclaredMethod(String, Class[])");
+    public static final Method GET_DECLARED_CONSTRUCTOR = 
+      ReflectUtils.findMethod("Class.getDeclaredConstructor(Class[])");
+    public static final Method HASH_CODE =
+      ReflectUtils.findMethod("Object.hashCode()");
+    public static final Method FLOAT_TO_INT_BITS =
+      ReflectUtils.findMethod("Float.floatToIntBits(float)");
+    public static final Method DOUBLE_TO_LONG_BITS =
+      ReflectUtils.findMethod("Double.doubleToLongBits(double)");
+    public static final Method FOR_NAME =
+      ReflectUtils.findMethod("Class.forName(String)");
+    public static final Method THROWABLE_GET_MESSAGE =
+      ReflectUtils.findMethod("Throwable.getMessage()");
+    public static final Method DEFINE_CLASS =
+      ReflectUtils.findMethod("ClassLoader.defineClass( byte[], int, int)");
+    public static final Method BOOLEAN_VALUE =
+      ReflectUtils.findMethod("Boolean.booleanValue()");
+    public static final Method CHAR_VALUE =
+      ReflectUtils.findMethod("Character.charValue()");
+    public static final Method LONG_VALUE =
+      ReflectUtils.findMethod("Number.longValue()");
+    public static final Method DOUBLE_VALUE =
+      ReflectUtils.findMethod("Number.doubleValue()");
+    public static final Method FLOAT_VALUE =
+      ReflectUtils.findMethod("Number.floatValue()");
+    public static final Method INT_VALUE =
+      ReflectUtils.findMethod("Number.intValue()");
+    public static final Method MAP_PUT =
+      ReflectUtils.findMethod("java.util.Map.put(Object,Object)");
+    public static final Method MAP_GET =
+      ReflectUtils.findMethod("java.util.Map.get(Object)");
 }
-

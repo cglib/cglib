@@ -55,6 +55,7 @@ package net.sf.cglib;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import net.sf.cglib.util.CodeGenerationException;
 
 /**
  * This class is meant to be used as a implementation of
@@ -69,7 +70,7 @@ import java.lang.reflect.Method;
  * of <code>java.lang.reflect.UndeclaredThrowableException</code>.
  * </ul> 
  * 
- * @version $Id: Proxy.java,v 1.7 2003/02/02 07:00:48 baliuka Exp $
+ * @version $Id: Proxy.java,v 1.8 2003/06/13 21:12:49 herbyderby Exp $
  */
 public class Proxy implements Serializable {
     private static final Class IMPL_TYPE = ProxyImpl.class;

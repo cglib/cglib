@@ -51,15 +51,17 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
 import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.11 2003/06/01 00:00:35 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.1 2003/06/13 21:12:49 herbyderby Exp $
  */
-abstract class ReflectUtils {
+public class ReflectUtils {
+    private ReflectUtils() { }
+    
     private static final Map primitives = new HashMap(8);
     private static final Map transforms = new HashMap(8);
     private static final ClassLoader defaultLoader = ReflectUtils.class.getClassLoader();

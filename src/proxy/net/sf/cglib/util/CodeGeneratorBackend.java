@@ -1,7 +1,7 @@
 /*
  * The Apache Software License, Version 1.1
  *
- * Copyright (c) 2002 The Apache Software Foundation.  All rights
+ * Copyright (c) 2003 The Apache Software Foundation.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,36 +51,33 @@
  * information on the Apache Software Foundation, please see
  * <http://www.apache.org/>.
  */
-package net.sf.cglib;
+package net.sf.cglib.util;
 
-import java.lang.reflect.Member;
-import java.lang.reflect.Modifier;
-import net.sf.cglib.util.ReflectUtils;
+public interface CodeGeneratorBackend {
 
-public class VisibilityFilter implements MethodFilter {
-    private String pkg;
+    void init(BasicCodeGenerator generator);
+    byte[] getBytes();
     
-    public VisibilityFilter(Class source) {
-        pkg = ReflectUtils.getPackageName(source);
-    }
-    
-    public boolean accept(Member member) {
-        int mod = member.getModifiers();
-        if (Modifier.isStatic(mod) || Modifier.isPrivate(mod)) {
-            return false;
-        }
-        if (Modifier.isProtected(mod) || Modifier.isPublic(mod)) {
-            return true;
-        }
-        return pkg.equals(ReflectUtils.getPackageName(member.getDeclaringClass()));
-    }
-    
-    public int hashCode() {
-        return pkg.hashCode();
-    }
-    
-    public boolean equals(Object obj){
-        return pkg.equals(((VisibilityFilter)obj).pkg);
-    }
+    void declare_field(int modifiers, Class type, String name);
+
+    void emit(int opcode);
+    void emit(Label label);
+    void emit(int opcode, Label label);
+    void emit_var(int opcode, int index);
+    void emit_type(int opcode, String className);
+    void emit_int(int opcode, int value);
+    void emit_field(int opcode, String className, String fieldName, Class type);
+    void emit_invoke(int opcode, String className, String methodName, Class returnType, Class[] parameterTypes);
+    void emit_iinc(int index, int amount);
+    void emit_ldc(Object value);
+
+    Label make_label();
+    Label mark();
+    void catch_exception(Block block, Class exceptionType);
+
+    void begin_constructor(Class[] parameterTypes);
+    void begin_method(int modifiers, Class returnType, String name, Class[] parameterTypes, Class[] exceptionTypes);
+    void begin_static();
+    void end_method();
+
 }
-

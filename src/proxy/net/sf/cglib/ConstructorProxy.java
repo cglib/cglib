@@ -54,10 +54,11 @@
 package net.sf.cglib;
 
 import java.lang.reflect.*;
+import net.sf.cglib.util.*;
+
 /**
- *
- * @author  baliuka
- * @version $Id: ConstructorProxy.java,v 1.12 2003/06/01 00:00:36 herbyderby Exp $
+ * @author Juozas Baliuka, Chris Nokleberg
+ * @version $Id: ConstructorProxy.java,v 1.13 2003/06/13 21:12:49 herbyderby Exp $
  */
 public abstract class ConstructorProxy {
     private static final Method NEW_INSTANCE = 
@@ -128,11 +129,13 @@ public abstract class ConstructorProxy {
             super(className, ConstructorProxy.class, loader);
             this.constructor = constructor;
             this.newInstance = newInstance;
+            if (newInstance != null) {
+                addInterface(newInstance.getDeclaringClass());
+            }
         }
 
         protected void generate() {
             if (newInstance != null) {
-                declare_interface(newInstance.getDeclaringClass());
                 begin_method(newInstance);
                 new_instance(constructor.getDeclaringClass());
                 dup();
@@ -141,11 +144,9 @@ public abstract class ConstructorProxy {
                 return_value();
                 end_method();
             }
-            generateNullConstructor();
-            generateNewInstance();
-        }
 
-        private void generateNewInstance() {
+            null_constructor();
+
             begin_method(NEW_INSTANCE);
             new_instance(constructor.getDeclaringClass());
             dup();

@@ -54,6 +54,8 @@
 
 package net.sf.cglib;
 
+import net.sf.cglib.util.CodeGenerationException;
+
 /**
  * @author  baliuka
  */

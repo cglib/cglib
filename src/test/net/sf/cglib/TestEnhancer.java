@@ -56,11 +56,12 @@ package net.sf.cglib;
 import junit.framework.*;
 import java.lang.reflect.*;
 import java.io.*;
+import net.sf.cglib.util.*;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.29 2003/06/01 00:00:32 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.30 2003/06/13 21:12:48 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();

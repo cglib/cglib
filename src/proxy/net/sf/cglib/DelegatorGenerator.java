@@ -57,9 +57,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.beans.*;
 import java.util.*;
+import net.sf.cglib.util.*;
 
 /**
- * @version $Id: DelegatorGenerator.java,v 1.11 2003/06/01 00:00:36 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.12 2003/06/13 21:12:49 herbyderby Exp $
  */
 class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
@@ -75,11 +76,14 @@ class DelegatorGenerator extends CodeGenerator {
         this.multicast = multicast;
         this.classes = classes;
         this.bean = bean;
+
+        addInterface(Delegator.Factory.TYPE);
+        if (!bean) {
+            addInterfaces(classes);
+        }
     }
 
     protected void generate() throws NoSuchMethodException {
-        declare_interface(Delegator.Factory.TYPE);
-
         Map methodMap = new HashMap();
         for (int i = 0; i < classes.length; i++) {
             Class clazz = classes[i];
@@ -87,10 +91,6 @@ class DelegatorGenerator extends CodeGenerator {
             if (bean) {
                 methods = getBeanMethods(clazz);
             } else {
-                if (!clazz.isInterface()) {
-                    throw new IllegalArgumentException(clazz + " is not an interface");
-                }
-                declare_interface(clazz);
                 methods = clazz.getMethods();
             }
             for (int j = 0; j < methods.length; j++) {
@@ -106,11 +106,13 @@ class DelegatorGenerator extends CodeGenerator {
                 }
             }
         }
+
         generateConstructor();
-        generateFactoryMethod(NEW_INSTANCE);
         for (Iterator it = methodMap.values().iterator(); it.hasNext();) {
             generateProxy((List)it.next());
         }
+
+        factory_method(NEW_INSTANCE);
     }
 
     private static class MethodInfo
