@@ -79,7 +79,7 @@ import java.util.List;
  * </pre>
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: Enhancer.java,v 1.28 2003/01/25 08:22:32 herbyderby Exp $
+ *@version    $Id: Enhancer.java,v 1.29 2003/01/29 16:34:06 nemecec Exp $
  */
 public class Enhancer {
     private static final String INTERCEPTOR_NAME = MethodInterceptor.class.getName();
@@ -209,14 +209,15 @@ public class Enhancer {
      *
      */
     public static Class enhanceClass(Class cls, Class[] interfaces, 
+                                     ClassLoader loader, MethodFilter filter, boolean jdkCompatible) {
+        if (cls == null) cls = Object.class;
+        if (loader == null) loader = defaultLoader;
+        return enhanceClassHelper(false, cls, interfaces, loader, null, filter, jdkCompatible);
+    }
+
+    public static Class enhanceClass(Class cls, Class[] interfaces, 
                                      ClassLoader loader, MethodFilter filter) {
-        if (cls == null) {
-            cls = Object.class;
-        }
-        if (loader == null) {
-            loader = defaultLoader;
-        }
-        return enhanceClassHelper(false, cls, interfaces, loader, null, filter);
+        return enhanceClass(cls, interfaces, loader, filter, false);
     }
     
     private static Object enhanceHelper(boolean delegating, Object obj, Class cls,
@@ -256,6 +257,12 @@ public class Enhancer {
     private static Class enhanceClassHelper(boolean delegating, Class cls,
                                             Class[] interfaces, ClassLoader loader, Method wreplace,
                                             MethodFilter filter) {
+        return enhanceClassHelper(delegating, cls, interfaces, loader, wreplace, filter, false);
+    }
+
+    private static Class enhanceClassHelper(boolean delegating, Class cls,
+                                            Class[] interfaces, ClassLoader loader, Method wreplace,
+                                            MethodFilter filter, boolean jdkCompatible) {
         Object key = keyFactory.newInstance(cls, interfaces, wreplace, delegating, filter);
         Class result;
         synchronized (classCache) {
@@ -264,7 +271,7 @@ public class Enhancer {
                 String className = nameFactory.getNextName(cls);
                 result = new EnhancerGenerator(className, cls,
                                                interfaces, loader, wreplace, 
-                                               delegating, filter).define();
+                                               delegating, filter, jdkCompatible).define();
                 classCache.put(loader, key, result);
             }
         }
