@@ -59,21 +59,21 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: DelegatorGenerator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: DelegatorGenerator.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
  */
-/* package */ class DelegatorGenerator extends CodeGenerator implements ClassFileConstants {
+/* package */ class DelegatorGenerator extends CodeGenerator {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
 
     private Class[] interfaces;
         
     /* package */ DelegatorGenerator(String className, Class[] interfaces, ClassLoader loader) {
-        super(className, Object.class, loader);
+        super(className, TYPE_OBJECT, loader);
         this.interfaces = interfaces;
     }
 
     protected void generate() throws NoSuchMethodException {
         declare_interfaces(interfaces);
-        declare_interface(Delegator.Factory.class);
+        declare_interface(Delegator.Factory.TYPE);
         generateConstructor();
         generateFactory();
 
@@ -96,8 +96,8 @@ import java.util.*;
     }
 
     private void generateConstructor() {
-        declare_field(Modifier.PRIVATE, OBJECT_ARRAY_CLASS, FIELD_NAME);
-        begin_constructor(OBJECT_ARRAY_CLASS_ARRAY);
+        declare_field(Modifier.PRIVATE, Object[].class, FIELD_NAME);
+        begin_constructor(TYPES_OBJECT_ARRAY);
         load_this();
         super_invoke_constructor();
         load_this();
@@ -109,12 +109,12 @@ import java.util.*;
 
     private void generateFactory() throws NoSuchMethodException {
         Method newInstance =
-            Delegator.Factory.class.getMethod("cglib_newInstance", OBJECT_ARRAY_CLASS_ARRAY);
+            Delegator.Factory.TYPE.getMethod("cglib_newInstance", TYPES_OBJECT_ARRAY);
         begin_method(newInstance);
         new_instance_this();
         dup();
         load_arg(0);
-        invoke_constructor_this(OBJECT_ARRAY_CLASS_ARRAY);
+        invoke_constructor_this(TYPES_OBJECT_ARRAY);
         return_value();
         end_method();
     }

@@ -54,10 +54,9 @@
 package net.sf.cglib;
 
 /**
- * Empty parent interface for all callbacks that can be registered
- * with an enhanced class.
+ * Callback that can be registered with an enhanced class.
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
- * @version $Id: MethodInterceptor.java,v 1.3 2002/11/30 12:41:29 baliuka Exp $
+ * @version $Id: MethodInterceptor.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
  */
 public interface MethodInterceptor {
     

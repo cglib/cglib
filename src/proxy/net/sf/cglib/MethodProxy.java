@@ -58,9 +58,9 @@ import java.lang.reflect.Modifier;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: MethodProxy.java,v 1.3 2002/11/30 00:34:20 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.4 2002/12/03 06:49:01 herbyderby Exp $
  */
-abstract public class MethodProxy implements ClassFileConstants {
+abstract public class MethodProxy {
     private static final Method INVOKE_SUPER;
     private static final String CLASS_SUFFIX = "$$ProxiedByCGLIB$$";
     private static int index = 0;
@@ -89,7 +89,7 @@ abstract public class MethodProxy implements ClassFileConstants {
             }
             String className = method.getDeclaringClass().getName() + CLASS_SUFFIX + index++;
             Class gen = new Generator(className, method, loader).define();
-            return (MethodProxy)gen.getConstructor(EMPTY_CLASS_ARRAY).newInstance(EMPTY_OBJECT_ARRAY);
+            return (MethodProxy)gen.getConstructor(Constants.TYPES_EMPTY).newInstance(null);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

@@ -58,12 +58,17 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: Delegator.java,v 1.2 2002/11/27 03:38:07 herbyderby Exp $
+ * @version $Id: Delegator.java,v 1.3 2002/12/03 06:49:01 herbyderby Exp $
  */
-public class Delegator implements ClassFileConstants
-{
+public class Delegator {
+    /* package */ static final Class TYPE = Delegator.class;
+
     private static final String CLASS_NAME = "net.sf.cglib.Delegator$$CreatedByCGLIB$$";
     private static int index = 0;
+    private static final ClassLoader defaultLoader = TYPE.getClassLoader();
+    private static final Map loaders = new WeakHashMap();
+    private static final Map infoCache = new HashMap();
+
     private static final DelegatorKey keyFactory =
       (DelegatorKey)KeyFactory.makeFactory(DelegatorKey.class, null);
 
@@ -75,9 +80,6 @@ public class Delegator implements ClassFileConstants
         return CLASS_NAME + index++;
     }
     
-    private static final Map loaders = new WeakHashMap();
-    private static final Map infoCache = new HashMap();
-
     private Delegator() { }
     
     // Inner and private because if the makeDelegator(Object[]) constructor
@@ -85,6 +87,7 @@ public class Delegator implements ClassFileConstants
     // what was originally specified, which would be confusion. There is
     // not much overhead associated with going through the cache, anyway.
     interface Factory {
+        final Class TYPE = Delegator.Factory.class;
         public Object cglib_newInstance(Object[] delegates);
     }
 
@@ -164,7 +167,7 @@ public class Delegator implements ClassFileConstants
                                                            Object[] delegates,
                                                            ClassLoader loader) {
         if (loader == null) {
-            loader = Delegator.class.getClassLoader();
+            loader = defaultLoader;
         }
         Map factories = (Map)loaders.get(loader);
         if (factories == null) {
@@ -174,7 +177,7 @@ public class Delegator implements ClassFileConstants
         if (factory == null) {
             Class clazz = new DelegatorGenerator(getNextName(), interfaces, loader).define();
             try {
-                factory = clazz.getConstructor(OBJECT_ARRAY_CLASS_ARRAY).newInstance(new Object[]{ delegates });
+                factory = clazz.getConstructor(Constants.TYPES_OBJECT_ARRAY).newInstance(new Object[]{ delegates });
                 factories.put(key, factory);
                 return factory;
             } catch (RuntimeException e) {
@@ -225,7 +228,7 @@ public class Delegator implements ClassFileConstants
 
     private static Class[] getAllInterfaces(Class clazz) {
         List interfaces = new ArrayList();
-        while (!clazz.equals(OBJECT_CLASS)) {
+        while (!clazz.equals(Constants.TYPE_OBJECT)) {
             interfaces.addAll(Arrays.asList(clazz.getInterfaces()));
             clazz = clazz.getSuperclass();
         }

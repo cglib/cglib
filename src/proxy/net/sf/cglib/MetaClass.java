@@ -66,10 +66,11 @@ import org.apache.bcel.generic.*;
  */
 
 public abstract class MetaClass  {
-    
-    private static Map cache = new Hashtable();
+
+    private static final Map cache = new Hashtable();
     private static final MetaClassKey keyFactory =
       (MetaClassKey)KeyFactory.makeFactory(MetaClassKey.class, null);
+    private static final ClassLoader defaultLoader = MetaClass.class.getClassLoader();
     
     protected Class target;
     protected String [] getters, setters;
@@ -197,7 +198,7 @@ public abstract class MetaClass  {
                                                             throws Throwable{
 
       if (loader == null) {
-          loader = MetaClass.class.getClassLoader();
+          loader = defaultLoader;
       }
        
       Object key = keyFactory.newInstance(target, getters, setters, types);
