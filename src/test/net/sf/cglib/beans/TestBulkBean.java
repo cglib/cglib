@@ -184,6 +184,14 @@ public class TestBulkBean extends TestCase {
        
        
         System.out.println( "factor: " + b/(float)a );
+        
+        mClass = new BulkBeanPlainImpl();
+        
+        System.out.println( mClass.getClass().getName() + ": " );
+         a = performanceTest( mClass, iterations );
+        System.out.println( a + " ms.   " + ( a/(float)iterations)  + " per iteration" );
+       
+        
     }
     
     public int performanceTest( BulkBean mc, int iterations ) throws Throwable{
@@ -198,6 +206,55 @@ public class TestBulkBean extends TestCase {
         }
        
         return (int)( System.currentTimeMillis() - start );
+    }
+    
+    private static class BulkBeanPlainImpl extends BulkBean {
+        
+        
+        public void getPropertyValues(Object bean, Object[] values) {
+            
+            int i = 0;
+            MA ma = (MA) bean;
+            
+            values[i++] = new Integer(ma.getIntP());
+            values[i++] = new Long(ma.getLongP());
+            values[i++] = new Byte(ma.getByteP());
+            values[i++] = new Short(ma.getShortP());
+            values[i++] = new Float(ma.getFloatP());
+            values[i++] = new Boolean(ma.isBooleanP());
+            values[i++] = new Character( ma.getCharP() );
+            values[i++] = new Double(ma.getDoubleP());
+            values[i++] = ma.getStringP();
+            values[i++] = ma.getId();
+            values[i++] = ma.getName();
+            values[i++] = ma.getPrivateName();
+            
+            
+        }
+        
+        
+        public void setPropertyValues(Object bean, Object[] values) {
+            
+            int i = 0;
+            MA ma = (MA) bean;
+            
+            ma.setIntP(((Number)values[i++]).intValue());
+            ma.setLongP(((Number)values[i++]).longValue());
+            ma.setByteP(((Number)values[i++]).byteValue());
+            ma.setShortP(((Number)values[i++]).shortValue());
+            ma.setFloatP(((Number)values[i++]).floatValue());
+            ma.setBooleanP(((Boolean)values[i++]).booleanValue());
+            ma.setCharP( ((Character)values[i++]).charValue()) ;
+            ma.setDoubleP(((Number)values[i++]).doubleValue());
+            ma.setStringP((String) values[i++]); 
+            ma.setId((Long) values[i++]);
+            ma.setName((String) values[i++]);
+            ma.setPrivateName((String) values[i++]);
+            
+            
+        }
+        
+        
     }
     
     /** Generated implementation of abstract class net.sf.cglib.BulkBean. Please fill dummy bodies of generated methods. */
