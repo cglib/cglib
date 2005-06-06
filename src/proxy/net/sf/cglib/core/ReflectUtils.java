@@ -25,7 +25,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.27 2004/06/24 21:15:21 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.28 2005/06/06 17:11:23 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -247,6 +247,17 @@ public class ReflectUtils {
         } catch (NoSuchMethodException e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    public static String[] getNames(Class[] classes)
+    {
+        if (classes == null)
+            return null;
+        String[] names = new String[classes.length];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = classes[i].getName();
+        }
+        return names;
     }
         
     public static Class[] getClasses(Object[] objects) {

@@ -20,11 +20,11 @@ import java.util.*;
 
 public class MethodWrapper {
     private static final MethodWrapperKey KEY_FACTORY =
-      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class, KeyFactory.CLASS_BY_NAME);
+      (MethodWrapperKey)KeyFactory.create(MethodWrapperKey.class);
 
     /** Internal interface, only public due to ClassLoader issues. */
     public interface MethodWrapperKey {
-        public Object newInstance(String name, Class[] parameterTypes, Class returnType);
+        public Object newInstance(String name, String[] parameterTypes, String returnType);
     }
     
     private MethodWrapper() {
@@ -32,8 +32,8 @@ public class MethodWrapper {
 
     public static Object create(Method method) {
         return KEY_FACTORY.newInstance(method.getName(),
-                                       method.getParameterTypes(),
-                                       method.getReturnType());
+                                       ReflectUtils.getNames(method.getParameterTypes()),
+                                       method.getReturnType().getName());
     }
 
     public static Set createSet(Collection methods) {

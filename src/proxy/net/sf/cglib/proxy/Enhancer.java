@@ -67,7 +67,7 @@ public class Enhancer extends AbstractClassGenerator
 
     private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
-      (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.CLASS_BY_NAME);
+      (EnhancerKey)KeyFactory.create(EnhancerKey.class);
 
     private static final String BOUND_FIELD = "CGLIB$BOUND";
     private static final String THREAD_CALLBACKS_FIELD = "CGLIB$THREAD_CALLBACKS";
@@ -121,8 +121,8 @@ public class Enhancer extends AbstractClassGenerator
 
     /** Internal interface, only public due to ClassLoader issues. */
     public interface EnhancerKey {
-        public Object newInstance(Class type,
-                                  Class[] interfaces,
+        public Object newInstance(String type,
+                                  String[] interfaces,
                                   CallbackFilter filter,
                                   Type[] callbackTypes,
                                   boolean useFactory,
@@ -374,8 +374,8 @@ public class Enhancer extends AbstractClassGenerator
         } else if (interfaces != null) {
             setNamePrefix(interfaces[ReflectUtils.findPackageProtected(interfaces)].getName());
         }
-        return super.create(KEY_FACTORY.newInstance(superclass,
-                                                    interfaces,
+        return super.create(KEY_FACTORY.newInstance((superclass != null) ? superclass.getName() : null,
+                                                    ReflectUtils.getNames(interfaces),
                                                     filter,
                                                     callbackTypes,
                                                     useFactory,
