@@ -15,11 +15,27 @@
  */
 package net.sf.cglib;
 
+import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+
+import net.sf.cglib.core.KeyFactory;
+import net.sf.cglib.core.Signature;
+import net.sf.cglib.proxy.*;
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.reflect.FastClass;
+
 import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.6 2004/06/24 21:15:18 herbyderby Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.7 2005/06/09 10:29:25 baliuka Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
     public CodeGenTestCase(String testName) {
@@ -31,7 +47,68 @@ abstract public class CodeGenTestCase extends TestCase {
     
     public boolean leaks()throws Throwable{
         
-        ClassLoader loader = new ClassLoader(this.getClass().getClassLoader()){};
+        List classPath = new ArrayList();
+        
+        for( StringTokenizer tokenizer = new StringTokenizer(System.getProperty("java.class.path"),File.pathSeparator); tokenizer.hasMoreElements();  ){
+            
+            classPath.add( new File(tokenizer.nextToken()).toURL() );
+            
+        }
+        
+        
+        final Set coreClasses = new HashSet();
+        coreClasses.add(Factory.class.getName());
+        coreClasses.add(Callback.class.getName());
+        coreClasses.add(MethodInterceptor.class.getName());
+        coreClasses.add(Mixin.class.getName());
+        coreClasses.add(KeyFactory.class.getName());
+        coreClasses.add(FastClass.class.getName());
+        coreClasses.add(Signature.class.getName());
+        
+        
+        
+        
+        
+        
+        URLClassLoader loader = new URLClassLoader((URL[]) classPath.toArray(new URL[classPath.size()])){
+            
+            public Class loadClass(String name) throws ClassNotFoundException {
+                
+                String res = name.replace('.','/') + ".class";
+                
+                if(name.startsWith("java") || name.startsWith("org.objectweb.asm")){
+                    return super.loadClass(name);
+                }
+                
+                
+                
+                if( coreClasses.contains(name) ){
+                    return super.loadClass(name);
+                }
+                
+                
+                try{
+                    
+                    
+                    InputStream is = getResourceAsStream(res);
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    try{
+                        int b;
+                        while( (b = is.read()) != -1 ){
+                            bout.write((byte)b);
+                        }
+                        
+                    }finally{
+                        is.close();     
+                    }
+                    byte data [] = bout.toByteArray();
+                    return defineClass(name,data,0,data.length );
+                }catch(Exception e){
+                    throw new ClassNotFoundException( name + ":" + e.toString());
+                }
+            }
+            
+        };
         
         perform(loader);
         
@@ -42,6 +119,7 @@ abstract public class CodeGenTestCase extends TestCase {
         
         for(int i = 0; i < 512; i++  ){
             
+            System.gc();
             System.gc();
             
             if(ref.get() == null ){
