@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.52 2005/03/12 20:41:24 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.53 2005/06/09 09:22:04 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -215,34 +215,7 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
     
-    public void testClassLoaderReference()throws Throwable{
     
-         ClassLoader loader = new ClassLoader(this.getClass().getClassLoader()){};
-        
-          enhance( Source.class , null, TEST_INTERCEPTOR, loader);
-         
-         java.lang.ref.Reference ref = new java.lang.ref.WeakReference(loader);
-        
-         loader = null;
-         
-         for(int i = 0; i < 512; i++  ){
-             
-            System.gc();
-            
-           if(ref.get() == null ){
-               System.out.println("derefenced clasloader on " + i + " iteration");
-               return;
-               
-            }
-            
-           byte[] garbage =  new byte[ (i + 1)*1004 ];
-         
-         }
-         
-         fail("Memory Leak in cache");
-         
-        
-    }
     
     public void testCustomClassLoader()throws Throwable{
         
