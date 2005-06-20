@@ -92,7 +92,7 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         e.load_this();
         e.getfield(name);
         e.load_this();
-        e.getfield(CALLBACK_FIELD);
+        e.invoke_interface(ENABLED,ENABLED_GET);
         Label intercept = e.make_label();
         e.ifnonnull(intercept);
         e.return_value();
@@ -101,7 +101,7 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         Local result = e.make_local(type);
         e.store_local(result);
         e.load_this();
-        e.getfield(CALLBACK_FIELD);
+        e.invoke_interface(ENABLED,ENABLED_GET);
         e.load_this();
         e.push(name);
         e.load_local(result);
@@ -120,12 +120,12 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
                                            null);
         e.load_this();
         e.dup();
-        e.getfield(CALLBACK_FIELD);
+        e.invoke_interface(ENABLED,ENABLED_GET);
         Label skip = e.make_label();
         e.ifnull(skip);
 
         e.load_this();
-        e.getfield(CALLBACK_FIELD);
+        e.invoke_interface(ENABLED,ENABLED_GET);
         e.load_this();
         e.push(name);
         e.load_this();
