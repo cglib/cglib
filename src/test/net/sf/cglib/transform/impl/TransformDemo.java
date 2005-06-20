@@ -44,6 +44,8 @@ public class TransformDemo {
         ma.setName("testName");
         ma.publicField = "set value";
         ma.publicField = ma.publicField + " append value";
+        ma.setBaseTest("base test field");
+        ma.getBaseTest();
     
     }
     
@@ -95,7 +97,8 @@ public class TransformDemo {
           new ClassFilter(){
             public boolean accept(String name){
                 System.out.println("load : "  + name);
-                boolean f = 
+                boolean f =
+                  Base.class.getName().equals(name) ||  
                   MA.class.getName().equals(name) || 
                      TransformDemo.class.getName().equals(name);
                 if(f){

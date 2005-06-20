@@ -2,7 +2,7 @@ package net.sf.cglib.transform.impl;
 
 import java.io.ObjectStreamException;
 
-public class MA {
+public class MA extends Base{
     private Long id;
     private String name;
     private String privateName;
