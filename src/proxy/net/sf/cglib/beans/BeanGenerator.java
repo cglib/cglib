@@ -84,7 +84,8 @@ public class BeanGenerator extends AbstractClassGenerator
         if (superclass != null) {
             setNamePrefix(superclass.getName());
         }
-        Object key = KEY_FACTORY.newInstance(superclass.getName(), props);
+        String superName = (superclass != null) ? superclass.getName() : "java.lang.Object";
+        Object key = KEY_FACTORY.newInstance(superName, props);
         return super.create(key);
     }
 
