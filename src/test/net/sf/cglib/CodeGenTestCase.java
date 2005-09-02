@@ -35,7 +35,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: CodeGenTestCase.java,v 1.7 2005/06/09 10:29:25 baliuka Exp $
+ * @version $Id: CodeGenTestCase.java,v 1.8 2005/09/02 11:23:29 baliuka Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
     public CodeGenTestCase(String testName) {
@@ -63,6 +63,7 @@ abstract public class CodeGenTestCase extends TestCase {
         coreClasses.add(Mixin.class.getName());
         coreClasses.add(KeyFactory.class.getName());
         coreClasses.add(FastClass.class.getName());
+        coreClasses.add(FastClass.Generator.class.getName());
         coreClasses.add(Signature.class.getName());
         
         
