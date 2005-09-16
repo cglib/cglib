@@ -28,10 +28,10 @@ import org.objectweb.asm.ClassVisitor;
 abstract public class BulkBean
 {
     private static final BulkBeanKey KEY_FACTORY =
-      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class, KeyFactory.CLASS_BY_NAME);
+      (BulkBeanKey)KeyFactory.create(BulkBeanKey.class);
     
     interface BulkBeanKey {
-        public Object newInstance(Class target, String[] getters, String[] setters, Class[] types);
+        public Object newInstance(String target, String[] getters, String[] setters, String[] types);
     }
     
     protected Class target;
@@ -103,7 +103,9 @@ abstract public class BulkBean
 
         public BulkBean create() {
             setNamePrefix(target.getName());
-            Object key = KEY_FACTORY.newInstance(target, getters, setters, types);
+            String targetClassName = target.getName();
+            String[] typeClassNames = ReflectUtils.getNames(types);
+            Object key = KEY_FACTORY.newInstance(targetClassName, getters, setters, typeClassNames);
             return (BulkBean)super.create(key);
         }
 
