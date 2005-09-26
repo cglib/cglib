@@ -629,15 +629,21 @@ public class Enhancer extends AbstractClassGenerator
 
     private Object createUsingReflection(Class type) {
         setThreadCallbacks(type, callbacks);
-        Object result;
+        try{
+        
         if (argumentTypes != null) {
-            result = ReflectUtils.newInstance(type, argumentTypes, arguments);
+        	
+             return ReflectUtils.newInstance(type, argumentTypes, arguments);
+             
         } else {
-            result = ReflectUtils.newInstance(type);
+        	
+            return ReflectUtils.newInstance(type);
+            
         }
-        // clear thread callbacks to allow them to be gc'd
-        setThreadCallbacks(type, null);
-        return result;
+        }finally{
+         // clear thread callbacks to allow them to be gc'd
+         setThreadCallbacks(type, null);
+        }
     }
 
     /**
