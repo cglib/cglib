@@ -219,6 +219,9 @@ implements ClassGenerator
                         }
                         instance = firstInstance(gen);
                         if (useCache) {
+                        	instance = nextInstance(instance);
+                        	//store fake instance in cache to
+                        	//avoid callback reference
                             cache2.put(key, new SoftReference(instance));
                         }
                         return instance;
