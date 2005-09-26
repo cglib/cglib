@@ -185,7 +185,8 @@ implements ClassGenerator
 
     protected Object create(Object key) {
         try {
-            Object instance = null;
+        	Class gen = null;
+        	
             synchronized (source) {
                 ClassLoader loader = getClassLoader();
                 Map cache2 = null;
@@ -196,14 +197,14 @@ implements ClassGenerator
                     source.cache.put(loader, cache2);
                 } else if (useCache) {
                     Reference ref = (Reference)cache2.get(key);
-                    instance = ( ref == null ) ? null : ref.get(); 
+                    gen = (Class) (( ref == null ) ? null : ref.get()); 
                 }
-                if (instance == null) {
+                if (gen == null) {
                     Object save = CURRENT.get();
                     CURRENT.set(this);
                     try {
                         this.key = key;
-                        Class gen = null;
+                        
                         if (attemptLoad) {
                             try {
                                 gen = loader.loadClass(getClassName());
@@ -217,20 +218,17 @@ implements ClassGenerator
                             getClassNameCache(loader).add(className);
                             gen = ReflectUtils.defineClass(className, b, loader);
                         }
-                        instance = firstInstance(gen);
+                       
                         if (useCache) {
-                        	instance = nextInstance(instance);
-                        	//store fake instance in cache to
-                        	//avoid callback reference
-                            cache2.put(key, new SoftReference(instance));
+                            cache2.put(key, new WeakReference(gen));
                         }
-                        return instance;
+                        return firstInstance(gen);
                     } finally {
                         CURRENT.set(save);
                     }
                 }
             }
-            return nextInstance(instance);
+            return firstInstance(gen);
         } catch (RuntimeException e) {
             throw e;
         } catch (Error e) {
