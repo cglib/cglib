@@ -21,13 +21,15 @@ import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 
+
+
 /**
  * <code>Mixin</code> allows
  * multiple objects to be combined into a single larger object. The
  * methods in the generated object simply call the original methods in the
  * underlying "delegate" objects.
  * @author Chris Nokleberg
- * @version $Id: Mixin.java,v 1.6 2004/06/24 21:15:20 herbyderby Exp $
+ * @version $Id: Mixin.java,v 1.7 2005/09/27 11:42:27 baliuka Exp $
  */
 abstract public class Mixin {
     private static final MixinKey KEY_FACTORY =
@@ -39,7 +41,7 @@ abstract public class Mixin {
     public static final int STYLE_EVERYTHING = 2;
 
     interface MixinKey {
-        public Object newInstance(int style, Class[] classes, int[] route);
+        public Object newInstance(int style, String[] classes, int[] route);
     }
 
     abstract public Mixin newInstance(Object[] delegates);
@@ -158,7 +160,8 @@ abstract public class Mixin {
                 }
             }
             setNamePrefix(classes[ReflectUtils.findPackageProtected(classes)].getName());
-            return (Mixin)super.create(KEY_FACTORY.newInstance(style, classes, route));
+            
+            return (Mixin)super.create(KEY_FACTORY.newInstance(style, ReflectUtils.getNames( classes ), route));
         }
 
         public void generateClass(ClassVisitor v) {

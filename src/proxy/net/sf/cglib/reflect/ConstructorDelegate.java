@@ -22,14 +22,14 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.18 2004/09/18 21:22:22 herbyderby Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.19 2005/09/27 11:42:27 baliuka Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
       (ConstructorKey)KeyFactory.create(ConstructorKey.class, KeyFactory.CLASS_BY_NAME);
     
     interface ConstructorKey {
-        public Object newInstance(Class declaring, Class iface);
+        public Object newInstance(String declaring, String iface);
     }
 
     protected ConstructorDelegate() {
@@ -64,7 +64,7 @@ abstract public class ConstructorDelegate {
 
         public ConstructorDelegate create() {
             setNamePrefix(targetClass.getName());
-            Object key = KEY_FACTORY.newInstance(iface, targetClass);
+            Object key = KEY_FACTORY.newInstance(iface.getName(), targetClass.getName());
             return (ConstructorDelegate)super.create(key);
         }
 

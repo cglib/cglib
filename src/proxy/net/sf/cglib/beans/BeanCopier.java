@@ -39,7 +39,7 @@ abstract public class BeanCopier
       TypeUtils.parseSignature("Object convert(Object, Class, Object)");
     
     interface BeanCopierKey {
-        public Object newInstance(Class source, Class target, boolean useConverter);
+        public Object newInstance(String source, String target, boolean useConverter);
     }
 
     public static BeanCopier create(Class source, Class target, boolean useConverter) {
@@ -86,7 +86,7 @@ abstract public class BeanCopier
         }
 
         public BeanCopier create() {
-            Object key = KEY_FACTORY.newInstance(source, target, useConverter);
+            Object key = KEY_FACTORY.newInstance(source.getName(), target.getName(), useConverter);
             return (BeanCopier)super.create(key);
         }
 
