@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.53 2005/06/09 09:22:04 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.54 2005/09/27 07:00:01 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -704,6 +704,8 @@ public class TestEnhancer extends CodeGenTestCase {
         assertEquals("You called method derby", ((DI2)proxy).derby());
     }
 
+   
+    
     public void testSerialVersionUID() throws Exception {
         Long suid = new Long(0xABBADABBAD00L);
 
@@ -765,4 +767,44 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setInterceptDuringConstruction(false);
         assertEquals("foo", ((ConstructorCall)e.create()).x);
     }
+    
+    
+    
+   void assertThreadLocalCallbacks(Class cls)throws Exception{
+    	
+    	Field field = cls.getDeclaredField("CGLIB$THREAD_CALLBACKS");
+    	field.setAccessible(true);
+    	
+    	assertNull(((ThreadLocal) field.get(null)).get());
+    }
+    
+    public void testThreadLocalCleanup1()throws Exception{
+    	
+    	Enhancer e = new Enhancer();
+        e.setUseCache(false);    
+        e.setCallbackType(NoOp.class);
+        Class cls = e.createClass();
+        
+        assertThreadLocalCallbacks(cls);
+        
+      
+        
+
+    }
+    
+    
+    public void testThreadLocalCleanup2()throws Exception{
+    	
+    	Enhancer e = new Enhancer();
+        e.setCallback(NoOp.INSTANCE);
+        Object obj = e.create();
+        
+        assertThreadLocalCallbacks(obj.getClass());
+        
+        
+
+    }
+
+    
+    
 }
