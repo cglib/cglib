@@ -44,7 +44,9 @@ public class ClassNameReader {
                                   String[] interfaces,
                                   String sourceFile) {
                     array.add( name.replace('/', '.') );
-                    array.add( superName.replace('/', '.') );
+                    if(superName != null){
+                      array.add( superName.replace('/', '.') );
+                    }
                     for(int i = 0; i < interfaces.length; i++  ){
                        array.add( interfaces[i].replace('/', '.') );
                     }
