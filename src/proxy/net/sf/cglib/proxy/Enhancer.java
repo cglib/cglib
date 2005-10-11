@@ -809,6 +809,8 @@ public class Enhancer extends AbstractClassGenerator
         e.new_instance_this();
         e.dup();
         e.invoke_constructor_this();
+        e.aconst_null();
+        e.invoke_static_this(SET_THREAD_CALLBACKS);
         e.return_value();
         e.end_method();
     }

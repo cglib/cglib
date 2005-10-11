@@ -25,7 +25,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.54 2005/09/27 07:00:01 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.55 2005/10/11 07:13:32 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -804,6 +804,21 @@ public class TestEnhancer extends CodeGenTestCase {
         
 
     }
+    
+    public void testThreadLocalCleanup3()throws Exception{
+    	
+    	Enhancer e = new Enhancer();
+        e.setCallback(NoOp.INSTANCE);
+        Factory obj = (Factory) e.create();
+        obj.newInstance(NoOp.INSTANCE);
+        
+        assertThreadLocalCallbacks(obj.getClass());
+        
+        
+
+    }
+
+    
 
     
     
