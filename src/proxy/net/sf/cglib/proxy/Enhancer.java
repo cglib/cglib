@@ -861,6 +861,8 @@ public class Enhancer extends AbstractClassGenerator
                 e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Constructor not found");
             }
         });
+        e.aconst_null();
+        e.invoke_static_this(SET_THREAD_CALLBACKS);
         e.return_value();
         e.end_method();
     }
