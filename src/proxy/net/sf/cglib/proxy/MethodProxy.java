@@ -26,11 +26,12 @@ import net.sf.cglib.reflect.*;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.12 2004/06/24 21:15:20 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.13 2006/01/11 21:47:43 herbyderby Exp $
  */
 public class MethodProxy {
-    private Signature sig;
-    private String superName;
+    private Signature sig1;
+    private Signature sig2;
+    private CreateInfo createInfo;
     private FastClass f1;
     private FastClass f2;
     private int i1;
@@ -40,44 +41,54 @@ public class MethodProxy {
      * For internal use by {@link Enhancer} only; see the {@link net.sf.cglib.reflect.FastMethod} class
      * for similar functionality.
      */
-    public static MethodProxy create(ClassLoader loader, Class c1, Class c2, String desc, String name1, String name2) {
-        final Signature sig1 = new Signature(name1, desc);
-        Signature sig2 = new Signature(name2, desc);
-        FastClass f1 = helper(loader, c1);
-        FastClass f2 = helper(loader, c2);
-        int i1 = f1.getIndex(sig1);
-        int i2 = f2.getIndex(sig2);
-
-        MethodProxy proxy;
-        if (i1 < 0) {
-            proxy = new MethodProxy() {
-                public Object invoke(Object obj, Object[] args) throws Throwable {
-                    throw new IllegalArgumentException("Protected method: " + sig1);
-                }
-            };
-        } else {
-            proxy = new MethodProxy();
-        }
-
-        proxy.f1 = f1;
-        proxy.f2 = f2;
-        proxy.i1 = i1;
-        proxy.i2 = i2;
-        proxy.sig = sig1;
-        proxy.superName = name2;
+    public static MethodProxy create(Class c1, Class c2, String desc, String name1, String name2) {
+        MethodProxy proxy = new MethodProxy();
+        proxy.sig1 = new Signature(name1, desc);
+        proxy.sig2 = new Signature(name2, desc);
+        proxy.createInfo = new CreateInfo(c1, c2);
         return proxy;
     }
 
-    private static FastClass helper(ClassLoader loader, Class type) {
+    private void init()
+    {
+        CreateInfo ci = createInfo;
+        if (ci != null) {
+            f1 = helper(ci, ci.c1);
+            f2 = helper(ci, ci.c2);
+            i1 = f1.getIndex(sig1);
+            i2 = f2.getIndex(sig2);
+            createInfo = null;
+        }
+    }
+
+    private static class CreateInfo
+    {
+        Class c1;
+        Class c2;
+        NamingPolicy namingPolicy;
+        GeneratorStrategy strategy;
+        boolean attemptLoad;
+        
+        public CreateInfo(Class c1, Class c2)
+        {
+            this.c1 = c1;
+            this.c2 = c2;
+            AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
+            if (fromEnhancer != null) {
+                namingPolicy = fromEnhancer.getNamingPolicy();
+                strategy = fromEnhancer.getStrategy();
+                attemptLoad = fromEnhancer.getAttemptLoad();
+            }
+        }
+    }
+
+    private static FastClass helper(CreateInfo ci, Class type) {
         FastClass.Generator g = new FastClass.Generator();
         g.setType(type);
-        g.setClassLoader(loader);
-        AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
-        if (fromEnhancer != null) {
-            g.setNamingPolicy(fromEnhancer.getNamingPolicy());
-            g.setStrategy(fromEnhancer.getStrategy());
-            g.setAttemptLoad(fromEnhancer.getAttemptLoad());
-        }
+        g.setClassLoader(ci.c2.getClassLoader());
+        g.setNamingPolicy(ci.namingPolicy);
+        g.setStrategy(ci.strategy);
+        g.setAttemptLoad(ci.attemptLoad);
         return g.create();
     }
 
@@ -88,7 +99,7 @@ public class MethodProxy {
      * Return the signature of the proxied method.
      */
     public Signature getSignature() {
-        return sig;
+        return sig1;
     }
 
     /**
@@ -98,7 +109,7 @@ public class MethodProxy {
      * the same as the proxied method.
      */
     public String getSuperName() {
-        return superName;
+        return sig2.getName();
     }
 
     /**
@@ -109,6 +120,7 @@ public class MethodProxy {
      * @see #getSuperName
      */
     public int getSuperIndex() {
+        init();
         return i2;
     }
 
@@ -146,9 +158,15 @@ public class MethodProxy {
      */
     public Object invoke(Object obj, Object[] args) throws Throwable {
         try {
+            if (f1 == null)
+                init();
             return f1.invoke(i1, obj, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
+        } catch (IllegalArgumentException e) {
+            if (i1 < 0)
+                throw new IllegalArgumentException("Protected method: " + sig1);
+            throw e;
         }
     }
 
@@ -164,6 +182,8 @@ public class MethodProxy {
      */
     public Object invokeSuper(Object obj, Object[] args) throws Throwable {
         try {
+            if (f2 == null)
+                init();
             return f2.invoke(i2, obj, args);
         } catch (InvocationTargetException e) {
             throw e.getTargetException();
