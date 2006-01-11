@@ -25,6 +25,7 @@ interface CallbackGenerator
 
     interface Context
     {
+        ClassLoader getClassLoader();
         CodeEmitter beginMethod(ClassEmitter ce, MethodInfo method);
         int getOriginalModifiers(MethodInfo method);
         int getIndex(MethodInfo method);

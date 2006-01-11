@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.proxy;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Label;
@@ -37,13 +38,12 @@ implements CallbackGenerator
       TypeUtils.parseType("net.sf.cglib.proxy.MethodProxy");
     private static final Type METHOD_INTERCEPTOR =
       TypeUtils.parseType("net.sf.cglib.proxy.MethodInterceptor");
+    private static final Signature GET_DECLARED_METHODS =
+      TypeUtils.parseSignature("java.lang.reflect.Method[] getDeclaredMethods()");
     private static final Signature GET_DECLARING_CLASS =
       TypeUtils.parseSignature("Class getDeclaringClass()");
-    private static final Signature GET_CLASS_LOADER =
-      TypeUtils.parseSignature("ClassLoader getClassLoader()");
     private static final Signature MAKE_PROXY =
       new Signature("create", METHOD_PROXY, new Type[]{
-          Constants.TYPE_CLASS_LOADER,
           Constants.TYPE_CLASS,
           Constants.TYPE_CLASS,
           Constants.TYPE_STRING,
@@ -61,6 +61,11 @@ implements CallbackGenerator
       new Signature(FIND_PROXY_NAME, METHOD_PROXY, new Type[]{ Constants.TYPE_SIGNATURE });
     private static final Signature TO_STRING =
       TypeUtils.parseSignature("String toString()");
+    private static final Transformer METHOD_TO_CLASS = new Transformer(){
+        public Object transform(Object value) {
+            return ((MethodInfo)value).getClassInfo();
+        }
+    };
 
     private String getMethodField(Signature impl) {
         return impl.getName() + "$Method";
@@ -103,33 +108,12 @@ implements CallbackGenerator
             // around method
             e = context.beginMethod(ce, method);
             Label nullInterceptor = e.make_label();
-            Label haveMethod = e.make_label();
             context.emitCallback(e, context.getIndex(method));
             e.dup();
             e.ifnull(nullInterceptor);
 
             e.load_this();
             e.getfield(methodField);
-            e.dup();
-            e.ifnonnull(haveMethod);
-            
-            e.pop();
-            EmitUtils.load_class_this(e);
-            e.dup();
-            e.invoke_virtual(Constants.TYPE_CLASS, GET_CLASS_LOADER);
-            e.swap();
-            EmitUtils.load_method(e, method);
-            e.dup();
-            e.putfield(getMethodField(impl));
-            e.invoke_virtual(METHOD, GET_DECLARING_CLASS);
-            e.swap();
-            e.push(sig.getDescriptor());
-            e.push(sig.getName());
-            e.push(impl.getName());
-            e.invoke_static(METHOD_PROXY, MAKE_PROXY);
-            e.putfield(getMethodProxyField(impl));
-            e.getfield(methodField);
-            e.mark(haveMethod);
             
             if (sig.getArgumentTypes().length == 0) {
                 e.getfield(EMPTY_ARGS_NAME);
@@ -152,10 +136,66 @@ implements CallbackGenerator
         generateFindProxy(ce, sigMap);
     }
 
-    public void generateStatic(CodeEmitter e, Context context, List methods) {
+    public void generateStatic(CodeEmitter e, Context context, List methods) throws Exception {
+        /* generates:
+           static {
+             Class thisClass = Class.forName("NameOfThisClass");
+             Class cls = Class.forName("java.lang.Object");
+             Method[] methods = cls.getDeclaredMethods();
+             METHOD_0 = methods[3]; // index is determined at compile-time
+             CGLIB$ACCESS_0 = MethodProxy.create(cls, thisClass, "()Ljava/lang/String;", "toString", "CGLIB$ACCESS_0");
+           }
+        */
+
         e.push(0);
         e.newarray();
-        e.putfield(EMPTY_ARGS_NAME);        
+        e.putfield(EMPTY_ARGS_NAME);
+
+        Local thisclass = e.make_local();
+        Local declaringclass = e.make_local();
+        EmitUtils.load_class_this(e);
+        e.store_local(thisclass);
+
+        Map methodsByClass = CollectionUtils.bucket(methods, METHOD_TO_CLASS);
+        for (Iterator i = methodsByClass.keySet().iterator(); i.hasNext();) {
+            ClassInfo classInfo = (ClassInfo)i.next();
+
+            // build up map of (indices into declared methods array -> MethodInfo)
+            Map indexMap = new TreeMap();
+            Set bucket = new HashSet((List)methodsByClass.get(classInfo));
+            Class cls = Class.forName(classInfo.getType().getClassName(), false, context.getClassLoader());
+            List declaredMethods = Arrays.asList(cls.getDeclaredMethods());
+            List declaredInfo = CollectionUtils.transform(declaredMethods, MethodInfoTransformer.getInstance());
+            for (int j = 0; j < declaredInfo.size(); j++) {
+                MethodInfo method = (MethodInfo)declaredInfo.get(j);
+                if (bucket.contains(method))
+                    indexMap.put(new Integer(j), method);
+            }
+            
+            EmitUtils.load_class(e, classInfo.getType());
+            e.dup();
+            e.store_local(declaringclass);
+            e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHODS);
+            for (Iterator j = indexMap.keySet().iterator(); j.hasNext();) {
+                Integer index = (Integer)j.next();
+                MethodInfo method = (MethodInfo)indexMap.get(index);
+                Signature sig = method.getSignature();
+                Signature impl = context.getImplSignature(method);
+                e.dup();
+                e.push(index.intValue());
+                e.array_load(METHOD);
+                e.putfield(getMethodField(impl));
+
+                e.load_local(declaringclass);
+                e.load_local(thisclass);
+                e.push(sig.getDescriptor());
+                e.push(sig.getName());
+                e.push(impl.getName());
+                e.invoke_static(METHOD_PROXY, MAKE_PROXY);
+                e.putfield(getMethodProxyField(impl));
+            }
+            e.pop();
+        }
     }
 
     public void generateFindProxy(ClassEmitter ce, final Map sigMap) {

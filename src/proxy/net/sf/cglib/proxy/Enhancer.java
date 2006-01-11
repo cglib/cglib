@@ -903,6 +903,9 @@ public class Enhancer extends AbstractClassGenerator
 
         final Object[] state = new Object[1];
         CallbackGenerator.Context context = new CallbackGenerator.Context() {
+            public ClassLoader getClassLoader() {
+                return Enhancer.this.getClassLoader();
+            }
             public int getOriginalModifiers(MethodInfo method) {
                 return ((Integer)originalModifiers.get(method)).intValue();
             }
