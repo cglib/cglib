@@ -95,13 +95,7 @@ implements CallbackGenerator
                                 impl,
                                 method.getExceptionTypes(),
                                 null);
-            if (TypeUtils.isAbstract(method.getModifiers())) {
-                e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
-            } else {
-                e.load_this();
-                e.load_args();
-                e.super_invoke(sig);
-            }
+            superHelper(e, method);
             e.return_value();
             e.end_method();
 
@@ -127,13 +121,22 @@ implements CallbackGenerator
             e.return_value();
 
             e.mark(nullInterceptor);
-            e.load_this();
-            e.load_args();
-            e.super_invoke(sig);
+            superHelper(e, method);
             e.return_value();
             e.end_method();
         }
         generateFindProxy(ce, sigMap);
+    }
+
+    private static void superHelper(CodeEmitter e, MethodInfo method)
+    {
+        if (TypeUtils.isAbstract(method.getModifiers())) {
+            e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
+        } else {
+            e.load_this();
+            e.load_args();
+            e.super_invoke(method.getSignature());
+        }
     }
 
     public void generateStatic(CodeEmitter e, Context context, List methods) throws Exception {
