@@ -36,7 +36,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
             throw new IOException("hello");
         }
     }
-    
+
     public void testSimple() throws Throwable {
         FastClass.create(Simple.class).newInstance();
     }
@@ -50,6 +50,14 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         } catch (InvocationTargetException e) {
             assertTrue(e.getTargetException() instanceof IOException);
         }
+    }
+
+    public static class Child extends net.sf.cglib.reflect.sub.Parent { }
+
+    public void testSuperclass() throws Throwable {
+        FastClass fc = FastClass.create(Child.class);
+        assertEquals("dill", new Child().getHerb());
+        assertEquals("dill", fc.invoke("getHerb", new Class[0], new Child(), new Object[0]));
     }
 
     public void testTypeMismatch() throws Throwable {
@@ -78,7 +86,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         assertTrue(fc.getMethod(m1).invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
 
         // TODO: should null be allowed here?
-        Method m2 = MemberSwitchBean.class.getDeclaredMethod("pkg", null);
+        Method m2 = MemberSwitchBean.class.getDeclaredMethod("pkg", (Class[])null);
         assertTrue(fc.getMethod(m2).invoke(bean, null).equals(new Integer(9)));
     }
 
