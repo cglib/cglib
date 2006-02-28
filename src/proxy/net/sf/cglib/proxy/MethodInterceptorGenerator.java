@@ -34,6 +34,8 @@ implements CallbackGenerator
       TypeUtils.parseType("AbstractMethodError");
     private static final Type METHOD =
       TypeUtils.parseType("java.lang.reflect.Method");
+    private static final Type REFLECT_UTILS =
+      TypeUtils.parseType("net.sf.cglib.core.ReflectUtils");
     private static final Type METHOD_PROXY =
       TypeUtils.parseType("net.sf.cglib.proxy.MethodProxy");
     private static final Type METHOD_INTERCEPTOR =
@@ -42,6 +44,8 @@ implements CallbackGenerator
       TypeUtils.parseSignature("java.lang.reflect.Method[] getDeclaredMethods()");
     private static final Signature GET_DECLARING_CLASS =
       TypeUtils.parseSignature("Class getDeclaringClass()");
+    private static final Signature FIND_METHODS =
+      TypeUtils.parseSignature("java.lang.reflect.Method[] findMethods(String[], java.lang.reflect.Method[])");
     private static final Signature MAKE_PROXY =
       new Signature("create", METHOD_PROXY, new Type[]{
           Constants.TYPE_CLASS,
@@ -66,6 +70,8 @@ implements CallbackGenerator
             return ((MethodInfo)value).getClassInfo();
         }
     };
+    private static final Signature CSTRUCT_SIGNATURE =
+        TypeUtils.parseConstructor("String, String");
 
     private String getMethodField(Signature impl) {
         return impl.getName() + "$Method";
@@ -144,9 +150,12 @@ implements CallbackGenerator
            static {
              Class thisClass = Class.forName("NameOfThisClass");
              Class cls = Class.forName("java.lang.Object");
+             String[] sigs = new String[]{ "toString", "()Ljava/lang/String;", ... };
              Method[] methods = cls.getDeclaredMethods();
-             METHOD_0 = methods[3]; // index is determined at compile-time
+             methods = ReflectUtils.findMethods(sigs, methods);
+             METHOD_0 = methods[0];
              CGLIB$ACCESS_0 = MethodProxy.create(cls, thisClass, "()Ljava/lang/String;", "toString", "CGLIB$ACCESS_0");
+             ...
            }
         */
 
@@ -158,34 +167,39 @@ implements CallbackGenerator
         Local declaringclass = e.make_local();
         EmitUtils.load_class_this(e);
         e.store_local(thisclass);
-
+        
         Map methodsByClass = CollectionUtils.bucket(methods, METHOD_TO_CLASS);
         for (Iterator i = methodsByClass.keySet().iterator(); i.hasNext();) {
             ClassInfo classInfo = (ClassInfo)i.next();
 
-            // build up map of (indices into declared methods array -> MethodInfo)
-            Map indexMap = new TreeMap();
-            Set bucket = new HashSet((List)methodsByClass.get(classInfo));
-            Class cls = Class.forName(classInfo.getType().getClassName(), false, context.getClassLoader());
-            List declaredMethods = Arrays.asList(cls.getDeclaredMethods());
-            List declaredInfo = CollectionUtils.transform(declaredMethods, MethodInfoTransformer.getInstance());
-            for (int j = 0; j < declaredInfo.size(); j++) {
-                MethodInfo method = (MethodInfo)declaredInfo.get(j);
-                if (bucket.contains(method))
-                    indexMap.put(new Integer(j), method);
+            List classMethods = (List)methodsByClass.get(classInfo);
+            e.push(2 * classMethods.size());
+            e.newarray(Constants.TYPE_STRING);
+            for (int index = 0; index < classMethods.size(); index++) {
+                MethodInfo method = (MethodInfo)classMethods.get(index);
+                Signature sig = method.getSignature();
+                e.dup();
+                e.push(2 * index);
+                e.push(sig.getName());
+                e.aastore();
+                e.dup();
+                e.push(2 * index + 1);
+                e.push(sig.getDescriptor());
+                e.aastore();
             }
             
             EmitUtils.load_class(e, classInfo.getType());
             e.dup();
             e.store_local(declaringclass);
             e.invoke_virtual(Constants.TYPE_CLASS, GET_DECLARED_METHODS);
-            for (Iterator j = indexMap.keySet().iterator(); j.hasNext();) {
-                Integer index = (Integer)j.next();
-                MethodInfo method = (MethodInfo)indexMap.get(index);
+            e.invoke_static(REFLECT_UTILS, FIND_METHODS);
+
+            for (int index = 0; index < classMethods.size(); index++) {
+                MethodInfo method = (MethodInfo)classMethods.get(index);
                 Signature sig = method.getSignature();
                 Signature impl = context.getImplSignature(method);
                 e.dup();
-                e.push(index.intValue());
+                e.push(index);
                 e.array_load(METHOD);
                 e.putfield(getMethodField(impl));
 
