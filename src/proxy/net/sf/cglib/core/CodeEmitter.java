@@ -842,7 +842,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
         }
     }
 
-    public void invoke(MethodInfo method) {
+    public void invoke(MethodInfo method, Type virtualType) {
         ClassInfo classInfo = method.getClassInfo();
         Type type = classInfo.getType();
         Signature sig = method.getSignature();
@@ -853,8 +853,12 @@ public class CodeEmitter extends RemappingCodeVisitor {
         } else if (TypeUtils.isStatic(method.getModifiers())) {
             invoke_static(type, sig);
         } else {
-            invoke_virtual(type, sig);
+            invoke_virtual(virtualType, sig);
         }
+    }
+
+    public void invoke(MethodInfo method) {
+        invoke(method, method.getClassInfo().getType());
     }
 
     public void define_attribute(Attribute attrs) {
