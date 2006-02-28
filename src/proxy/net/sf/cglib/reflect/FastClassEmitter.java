@@ -51,7 +51,8 @@ class FastClassEmitter extends ClassEmitter {
     
     public FastClassEmitter(ClassVisitor v, String className, Class type) {
         super(v);
-      
+
+        Type base = Type.getType(type);
         begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
@@ -85,17 +86,17 @@ class FastClassEmitter extends ClassEmitter {
         // invoke(int, Object, Object[])
         e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
         e.load_arg(1);
-        e.checkcast(Type.getType(type));
+        e.checkcast(base);
         e.load_arg(0);
-        invokeSwitchHelper(e, methods, 2);
+        invokeSwitchHelper(e, methods, 2, base);
         e.end_method();
 
         // newInstance(int, Object[])
         e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
-        e.new_instance(Type.getType(type));
+        e.new_instance(base);
         e.dup();
         e.load_arg(0);
-        invokeSwitchHelper(e, constructors, 1);
+        invokeSwitchHelper(e, constructors, 1, base);
         e.end_method();
 
         // getMaxIndex()
@@ -161,7 +162,7 @@ class FastClassEmitter extends ClassEmitter {
                                 callback);
     }
 
-    private static void invokeSwitchHelper(final CodeEmitter e, List members, final int arg) {
+    private static void invokeSwitchHelper(final CodeEmitter e, List members, final int arg, final Type base) {
         final List info = CollectionUtils.transform(members, MethodInfoTransformer.getInstance());        
         final Label illegalArg = e.make_label();
         Block block = e.begin_block();
@@ -174,7 +175,9 @@ class FastClassEmitter extends ClassEmitter {
                     e.aaload(i);
                     e.unbox(types[i]);
                 }
-                e.invoke(method);
+                // TODO: change method lookup process so MethodInfo will already reference base
+                // instead of superclass when superclass method is inaccessible
+                e.invoke(method, base);
                 if (!TypeUtils.isConstructor(method)) {
                     e.box(method.getSignature().getReturnType());
                 }
