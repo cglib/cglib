@@ -25,7 +25,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: ReflectUtils.java,v 1.28 2005/06/06 17:11:23 herbyderby Exp $
+ * @version $Id: ReflectUtils.java,v 1.29 2006/02/28 00:30:51 herbyderby Exp $
  */
 public class ReflectUtils {
     private ReflectUtils() { }
@@ -438,5 +438,23 @@ public class ReflectUtils {
                 return clazz.getModifiers();
             }
         };
+    }
+
+    // used by MethodInterceptorGenerated generated code
+    public static Method[] findMethods(String[] namesAndDescriptors, Method[] methods)
+    {
+        Map map = new HashMap();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            map.put(method.getName() + Type.getMethodDescriptor(method), method);
+        }
+        Method[] result = new Method[namesAndDescriptors.length / 2];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = (Method)map.get(namesAndDescriptors[i * 2] + namesAndDescriptors[i * 2 + 1]);
+            if (result[i] == null) {
+                // TODO: error?
+            }
+        }
+        return result;
     }
 }
