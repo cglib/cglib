@@ -27,7 +27,7 @@ public class ClassEmitter extends ClassAdapter {
     private Map fieldInfo;
 
     private static int hookCounter;
-    private CodeVisitor rawStaticInit;
+    private MethodVisitor rawStaticInit;
     private CodeEmitter staticInit;
     private CodeEmitter staticHook;
     private Signature staticHookSig;
@@ -58,7 +58,7 @@ public class ClassEmitter extends ClassAdapter {
         return classInfo;
     }
 
-    public void begin_class(int version, final int access, String className, final Type superType, final Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, final int access, String className, final Type superType, final Type[] interfaces, String source) {
         final Type classType = Type.getType("L" + className.replace('.', '/') + ";");
         classInfo = new ClassInfo() {
             public Type getType() {
@@ -77,9 +77,11 @@ public class ClassEmitter extends ClassAdapter {
         cv.visit(version,
                  access,
                  classInfo.getType().getInternalName(),
+                 null,
                  classInfo.getSuperType().getInternalName(),
-                 TypeUtils.toInternalNames(interfaces),
-                 sourceFile);
+                 TypeUtils.toInternalNames(interfaces));
+        if (source != null)
+            cv.visitSource(source, null);
         init();
     }
 
@@ -91,7 +93,6 @@ public class ClassEmitter extends ClassAdapter {
              staticHookSig = new Signature("CGLIB$STATICHOOK" + getNextHook(), "()V");
              staticHook = begin_method(Constants.ACC_STATIC,
                                        staticHookSig,
-                                       null,
                                        null);
              if (staticInit != null) {
                  staticInit.invoke_static_this(staticHookSig);
@@ -131,17 +132,17 @@ public class ClassEmitter extends ClassAdapter {
         cv.visitEnd();
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
         if (classInfo == null)
             throw new IllegalStateException("classInfo is null! " + this);
-        CodeVisitor v = cv.visitMethod(access,
-                                       sig.getName(),
-                                       sig.getDescriptor(),
-                                       TypeUtils.toInternalNames(exceptions),
-                                       attrs);
+        MethodVisitor v = cv.visitMethod(access,
+                                         sig.getName(),
+                                         sig.getDescriptor(),
+                                         null,
+                                         TypeUtils.toInternalNames(exceptions));
         if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(getAccess())) {
             rawStaticInit = v;
-            CodeVisitor wrapped = new CodeAdapter(v) {
+            MethodVisitor wrapped = new MethodAdapter(v) {
                 public void visitMaxs(int maxStack, int maxLocals) {
                     // ignore
                 }
@@ -171,10 +172,10 @@ public class ClassEmitter extends ClassAdapter {
     }
 
     public CodeEmitter begin_static() {
-        return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null, null);
+        return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null);
     }
 
-    public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {
+    public void declare_field(int access, String name, Type type, Object value) {
         FieldInfo existing = (FieldInfo)fieldInfo.get(name);
         FieldInfo info = new FieldInfo(access, name, type, value);
         if (existing != null) {
@@ -183,12 +184,8 @@ public class ClassEmitter extends ClassAdapter {
             }
         } else {
             fieldInfo.put(name, info);
-            cv.visitField(access, name, type.getDescriptor(), value, attrs);
+            cv.visitField(access, name, type.getDescriptor(), null, value);
         }
-    }
-
-    public void define_attribute(Attribute attrs) {
-        cv.visitAttribute(attrs);
     }
 
     // TODO: make public?
@@ -240,33 +237,40 @@ public class ClassEmitter extends ClassAdapter {
         }
     }
 
-    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+    public void visit(int version,
+                      int access,
+                      String name,
+                      String signature,
+                      String superName,
+                      String[] interfaces) {
         begin_class(version,
                     access,
                     name.replace('/', '.'),
                     TypeUtils.fromInternalName(superName),
                     TypeUtils.fromInternalNames(interfaces),
-                    sourceFile);
+                    null); // TODO
     }
     
     public void visitEnd() {
         end_class();
     }
     
-    public void visitField(int access, String name, String desc, Object value, Attribute attrs) {
-        declare_field(access, name, Type.getType(desc), value, attrs);
+    public FieldVisitor visitField(int access,
+                                   String name,
+                                   String desc,
+                                   String signature,
+                                   Object value) {
+        declare_field(access, name, Type.getType(desc), value);
+        return null; // TODO
     }
-
-    // TODO: handle visitInnerClass?
     
-    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
+    public MethodVisitor visitMethod(int access,
+                                     String name,
+                                     String desc,
+                                     String signature,
+                                     String[] exceptions) {
         return begin_method(access,
                             new Signature(name, desc),
-                            TypeUtils.fromInternalNames(exceptions),
-                            attrs);
-    }
-
-    public void visitAttribute(Attribute attrs) {
-        define_attribute(attrs);
+                            TypeUtils.fromInternalNames(exceptions));        
     }
 }

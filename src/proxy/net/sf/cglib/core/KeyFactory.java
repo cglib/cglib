@@ -48,7 +48,7 @@ import org.objectweb.asm.Type;
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is only guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
  *
- * @version $Id: KeyFactory.java,v 1.25 2005/12/14 13:06:19 baliuka Exp $
+ * @version $Id: KeyFactory.java,v 1.26 2006/03/05 02:43:19 herbyderby Exp $
  */
 abstract public class KeyFactory {
     private static final Signature GET_NAME =
@@ -181,7 +181,6 @@ abstract public class KeyFactory {
             int seed = 0;
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                             TypeUtils.parseConstructor(parameterTypes),
-                                            null,
                                             null);
             e.load_this();
             e.super_invoke_constructor();
@@ -191,7 +190,6 @@ abstract public class KeyFactory {
                 ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
                                  getFieldName(i),
                                  parameterTypes[i],
-                                 null,
                                  null);
                 e.dup();
                 e.load_arg(i);
@@ -201,7 +199,7 @@ abstract public class KeyFactory {
             e.end_method();
             
             // hash code
-            e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
             int hc = (constant != 0) ? constant : PRIMES[(int)(Math.abs(seed) % PRIMES.length)];
             int hm = (multiplier != 0) ? multiplier : PRIMES[(int)(Math.abs(seed * 13) % PRIMES.length)];
             e.push(hc);
@@ -214,7 +212,7 @@ abstract public class KeyFactory {
             e.end_method();
 
             // equals
-            e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null);
             Label fail = e.make_label();
             e.load_arg(0);
             e.instance_of_this();
@@ -235,7 +233,7 @@ abstract public class KeyFactory {
             e.end_method();
 
             // toString
-            e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
             e.new_instance(Constants.TYPE_STRING_BUFFER);
             e.dup();
             e.invoke_constructor(Constants.TYPE_STRING_BUFFER);

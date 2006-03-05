@@ -56,8 +56,8 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         super.begin_class(version, access, className, superType, interfaces, sourceFile);
     }
 
-    public void declare_field(int access, String name, Type type, Object value, Attribute attrs) {
-        super.declare_field(access, name, type, value, attrs);
+    public void declare_field(int access, String name, Type type, Object value) {
+        super.declare_field(access, name, type, value);
         
         if (!TypeUtils.isStatic(access)) {
             fields.put(name, type);
@@ -85,8 +85,8 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
             indexes[i] = i;
         }
         
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null, null);
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null);
 
         // use separate methods here because each process switch inner class needs a final CodeEmitter
         initFieldProvider(names);
@@ -117,21 +117,21 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     }
 
     private void getNames() {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null, null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_NAMES, null);
         e.getstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
         e.return_value();
         e.end_method();
     }
 
     private void getTypes() {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null, null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_TYPES, null);
         e.getstatic(getClassType(), FIELD_TYPES, Constants.TYPE_CLASS_ARRAY);
         e.return_value();
         e.end_method();
     }
 
     private void setByIndex(final String[] names, final int[] indexes) throws Exception {
-        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null, null);
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_SET_BY_INDEX, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);
@@ -150,7 +150,7 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     }
 
     private void getByIndex(final String[] names, final int[] indexes) throws Exception {
-        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null, null);
+        final CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, PROVIDER_GET_BY_INDEX, null);
         e.load_this();
         e.load_arg(0);
         e.process_switch(indexes, new ProcessSwitchCallback() {
@@ -170,7 +170,7 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     // TODO: if this is used to enhance class files SWITCH_STYLE_TRIE should be used
     // to avoid JVM hashcode implementation incompatibilities
     private void getField(String[] names) throws Exception {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_GET, null);
         e.load_this();
         e.load_arg(0);
         EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
@@ -188,7 +188,7 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     }
 
     private void setField(String[] names) throws Exception {
-        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null, null);
+        final CodeEmitter e = begin_method(Constants.ACC_PUBLIC, PROVIDER_SET, null);
         e.load_this();
         e.load_arg(1);
         e.load_arg(0);

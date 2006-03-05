@@ -40,8 +40,8 @@ public class UndeclaredThrowableTransformer extends ClassEmitterTransformer {
             throw new IllegalArgumentException(wrapper + " does not have a single-arg constructor that takes a Throwable");
     }
 
-    public CodeEmitter begin_method(int access, final Signature sig, final Type[] exceptions, Attribute attrs) {
-        CodeEmitter e = super.begin_method(access, sig, exceptions, attrs);
+    public CodeEmitter begin_method(int access, final Signature sig, final Type[] exceptions) {
+        CodeEmitter e = super.begin_method(access, sig, exceptions);
         if (TypeUtils.isAbstract(access) || sig.equals(Constants.SIG_STATIC)) {
             return e;
         }

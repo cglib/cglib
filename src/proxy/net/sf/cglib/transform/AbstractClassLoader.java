@@ -22,7 +22,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.*;
 import org.objectweb.asm.Attribute;
-import org.objectweb.asm.attrs.Attributes;
 
 import java.io.IOException;
 
@@ -111,7 +110,7 @@ abstract public class AbstractClassLoader extends ClassLoader {
     }
     
     protected Attribute[] attributes() {
-        return Attributes.getDefaultAttributes();
+        return null;
     }
 
     protected void postProcess(Class c) {

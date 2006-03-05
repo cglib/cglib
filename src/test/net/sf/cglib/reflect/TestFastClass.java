@@ -24,7 +24,6 @@ import junit.framework.*;
 import net.sf.cglib.core.ClassGenerator;
 import net.sf.cglib.core.DefaultGeneratorStrategy;
 import net.sf.cglib.transform.ClassTransformerTee;
-import net.sf.cglib.transform.NullClassVisitor;
 import net.sf.cglib.transform.TransformingClassGenerator;
 
 public class TestFastClass extends net.sf.cglib.CodeGenTestCase {

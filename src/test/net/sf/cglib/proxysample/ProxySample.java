@@ -74,7 +74,7 @@ public final class ProxySample implements ProxySampleInterface_ReturnsObject, Pr
         String result =  null;
         try {
             // invocation is also generated
-            result = (String) handler.invoke(this, Object.class.getMethod("toString", null), null);
+            result = (String) handler.invoke(this, Object.class.getMethod("toString", (Class[])null), null);
         } catch (ClassCastException e) {
             throw e;
         } catch (NoSuchMethodException e) {

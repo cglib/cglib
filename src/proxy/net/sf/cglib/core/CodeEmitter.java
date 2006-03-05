@@ -22,7 +22,7 @@ import org.objectweb.asm.*;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class CodeEmitter extends RemappingCodeVisitor {
+public class CodeEmitter extends LocalVariablesSorter {
     private static final Signature BOOLEAN_VALUE =
       TypeUtils.parseSignature("boolean booleanValue()");
     private static final Signature CHAR_VALUE =
@@ -102,8 +102,8 @@ public class CodeEmitter extends RemappingCodeVisitor {
         }
     }
 
-    CodeEmitter(ClassEmitter ce, CodeVisitor cv, int access, Signature sig, Type[] exceptionTypes) {
-        super(cv, access, sig.getArgumentTypes());
+    CodeEmitter(ClassEmitter ce, MethodVisitor mv, int access, Signature sig, Type[] exceptionTypes) {
+        super(access, sig.getDescriptor(), mv);
         this.ce = ce;
         state = new State(ce.getClassInfo(), access, sig, exceptionTypes);
     }
@@ -146,18 +146,18 @@ public class CodeEmitter extends RemappingCodeVisitor {
         if (block.getEnd() == null) {
             throw new IllegalStateException("end of block is unset");
         }
-        cv.visitTryCatchBlock(block.getStart(),
+        mv.visitTryCatchBlock(block.getStart(),
                               block.getEnd(),
                               mark(),
                               exception.getInternalName());
     }
 
-    public void goTo(Label label) { cv.visitJumpInsn(Constants.GOTO, label); }
-    public void ifnull(Label label) { cv.visitJumpInsn(Constants.IFNULL, label); }
-    public void ifnonnull(Label label) { cv.visitJumpInsn(Constants.IFNONNULL, label); }
+    public void goTo(Label label) { mv.visitJumpInsn(Constants.GOTO, label); }
+    public void ifnull(Label label) { mv.visitJumpInsn(Constants.IFNULL, label); }
+    public void ifnonnull(Label label) { mv.visitJumpInsn(Constants.IFNONNULL, label); }
 
     public void if_jump(int mode, Label label) {
-        cv.visitJumpInsn(mode, label);
+        mv.visitJumpInsn(mode, label);
     }
 
     public void if_icmp(int mode, Label label) {
@@ -173,22 +173,22 @@ public class CodeEmitter extends RemappingCodeVisitor {
         }
         switch (type.getSort()) {
         case Type.LONG:
-            cv.visitInsn(Constants.LCMP);
+            mv.visitInsn(Constants.LCMP);
             break;
         case Type.DOUBLE:
-            cv.visitInsn(Constants.DCMPG);
+            mv.visitInsn(Constants.DCMPG);
             break;
         case Type.FLOAT:
-            cv.visitInsn(Constants.FCMPG);
+            mv.visitInsn(Constants.FCMPG);
             break;
         case Type.ARRAY:
         case Type.OBJECT:
             switch (mode) {
             case EQ:
-                cv.visitJumpInsn(Constants.IF_ACMPEQ, label);
+                mv.visitJumpInsn(Constants.IF_ACMPEQ, label);
                 return;
             case NE:
-                cv.visitJumpInsn(Constants.IF_ACMPNE, label);
+                mv.visitJumpInsn(Constants.IF_ACMPNE, label);
                 return;
             }
             throw new IllegalArgumentException("Bad comparison for type " + type);
@@ -201,22 +201,22 @@ public class CodeEmitter extends RemappingCodeVisitor {
             case LE: swap(); /* fall through */
             case GT: intOp = Constants.IF_ICMPGT; break;
             }
-            cv.visitJumpInsn(intOp, label);
+            mv.visitJumpInsn(intOp, label);
             return;
         }
         if_jump(jumpmode, label);
     }
 
-    public void pop() { cv.visitInsn(Constants.POP); }
-    public void pop2() { cv.visitInsn(Constants.POP2); }
-    public void dup() { cv.visitInsn(Constants.DUP); }
-    public void dup2() { cv.visitInsn(Constants.DUP2); }
-    public void dup_x1() { cv.visitInsn(Constants.DUP_X1); }
-    public void dup_x2() { cv.visitInsn(Constants.DUP_X2); }
-    public void dup2_x1() { cv.visitInsn(Constants.DUP2_X1); }
-    public void dup2_x2() { cv.visitInsn(Constants.DUP2_X2); }
-    public void swap() { cv.visitInsn(Constants.SWAP); }
-    public void aconst_null() { cv.visitInsn(Constants.ACONST_NULL); }
+    public void pop() { mv.visitInsn(Constants.POP); }
+    public void pop2() { mv.visitInsn(Constants.POP2); }
+    public void dup() { mv.visitInsn(Constants.DUP); }
+    public void dup2() { mv.visitInsn(Constants.DUP2); }
+    public void dup_x1() { mv.visitInsn(Constants.DUP_X1); }
+    public void dup_x2() { mv.visitInsn(Constants.DUP_X2); }
+    public void dup2_x1() { mv.visitInsn(Constants.DUP2_X1); }
+    public void dup2_x2() { mv.visitInsn(Constants.DUP2_X2); }
+    public void swap() { mv.visitInsn(Constants.SWAP); }
+    public void aconst_null() { mv.visitInsn(Constants.ACONST_NULL); }
 
     public void swap(Type prev, Type type) {
         if (type.getSize() == 1) {
@@ -237,13 +237,13 @@ public class CodeEmitter extends RemappingCodeVisitor {
         }
     }
 
-    public void monitorenter() { cv.visitInsn(Constants.MONITORENTER); }
-    public void monitorexit() { cv.visitInsn(Constants.MONITOREXIT); }
+    public void monitorenter() { mv.visitInsn(Constants.MONITORENTER); }
+    public void monitorexit() { mv.visitInsn(Constants.MONITOREXIT); }
 
-    public void math(int op, Type type) { cv.visitInsn(type.getOpcode(op)); }
+    public void math(int op, Type type) { mv.visitInsn(type.getOpcode(op)); }
 
-    public void array_load(Type type) { cv.visitInsn(type.getOpcode(Constants.IALOAD)); }
-    public void array_store(Type type) { cv.visitInsn(type.getOpcode(Constants.IASTORE)); }
+    public void array_load(Type type) { mv.visitInsn(type.getOpcode(Constants.IALOAD)); }
+    public void array_store(Type type) { mv.visitInsn(type.getOpcode(Constants.IASTORE)); }
 
     /**
      * Casts from one primitive numeric type to another
@@ -252,44 +252,44 @@ public class CodeEmitter extends RemappingCodeVisitor {
         if (from != to) {
             if (from == Type.DOUBLE_TYPE) {
                 if (to == Type.FLOAT_TYPE) {
-                    cv.visitInsn(Constants.D2F);
+                    mv.visitInsn(Constants.D2F);
                 } else if (to == Type.LONG_TYPE) {
-                    cv.visitInsn(Constants.D2L);
+                    mv.visitInsn(Constants.D2L);
                 } else {
-                    cv.visitInsn(Constants.D2I);
+                    mv.visitInsn(Constants.D2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else if (from == Type.FLOAT_TYPE) {
                 if (to == Type.DOUBLE_TYPE) {
-                    cv.visitInsn(Constants.F2D);
+                    mv.visitInsn(Constants.F2D);
                 } else if (to == Type.LONG_TYPE) {
-                    cv.visitInsn(Constants.F2L);
+                    mv.visitInsn(Constants.F2L);
                 } else {
-                    cv.visitInsn(Constants.F2I);
+                    mv.visitInsn(Constants.F2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else if (from == Type.LONG_TYPE) {
                 if (to == Type.DOUBLE_TYPE) {
-                    cv.visitInsn(Constants.L2D);
+                    mv.visitInsn(Constants.L2D);
                 } else if (to == Type.FLOAT_TYPE) {
-                    cv.visitInsn(Constants.L2F);
+                    mv.visitInsn(Constants.L2F);
                 } else {
-                    cv.visitInsn(Constants.L2I);
+                    mv.visitInsn(Constants.L2I);
                     cast_numeric(Type.INT_TYPE, to);
                 }
             } else {
                 if (to == Type.BYTE_TYPE) {
-                    cv.visitInsn(Constants.I2B);
+                    mv.visitInsn(Constants.I2B);
                 } else if (to == Type.CHAR_TYPE) {
-                    cv.visitInsn(Constants.I2C);
+                    mv.visitInsn(Constants.I2C);
                 } else if (to == Type.DOUBLE_TYPE) {
-                    cv.visitInsn(Constants.I2D);
+                    mv.visitInsn(Constants.I2D);
                 } else if (to == Type.FLOAT_TYPE) {
-                    cv.visitInsn(Constants.I2F);
+                    mv.visitInsn(Constants.I2F);
                 } else if (to == Type.LONG_TYPE) {
-                    cv.visitInsn(Constants.I2L);
+                    mv.visitInsn(Constants.I2L);
                 } else if (to == Type.SHORT_TYPE) {
-                    cv.visitInsn(Constants.I2S);
+                    mv.visitInsn(Constants.I2S);
                 }
             }
         }
@@ -297,43 +297,43 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     public void push(int i) {
         if (i < -1) {
-            cv.visitLdcInsn(new Integer(i));
+            mv.visitLdcInsn(new Integer(i));
         } else if (i <= 5) {
-            cv.visitInsn(TypeUtils.ICONST(i));
+            mv.visitInsn(TypeUtils.ICONST(i));
         } else if (i <= Byte.MAX_VALUE) {
-            cv.visitIntInsn(Constants.BIPUSH, i);
+            mv.visitIntInsn(Constants.BIPUSH, i);
         } else if (i <= Short.MAX_VALUE) {
-            cv.visitIntInsn(Constants.SIPUSH, i);
+            mv.visitIntInsn(Constants.SIPUSH, i);
         } else {
-            cv.visitLdcInsn(new Integer(i));
+            mv.visitLdcInsn(new Integer(i));
         }
     }
     
     public void push(long value) {
         if (value == 0L || value == 1L) {
-            cv.visitInsn(TypeUtils.LCONST(value));
+            mv.visitInsn(TypeUtils.LCONST(value));
         } else {
-            cv.visitLdcInsn(new Long(value));
+            mv.visitLdcInsn(new Long(value));
         }
     }
     
     public void push(float value) {
         if (value == 0f || value == 1f || value == 2f) {
-            cv.visitInsn(TypeUtils.FCONST(value));
+            mv.visitInsn(TypeUtils.FCONST(value));
         } else {
-            cv.visitLdcInsn(new Float(value));
+            mv.visitLdcInsn(new Float(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
-            cv.visitInsn(TypeUtils.DCONST(value));
+            mv.visitInsn(TypeUtils.DCONST(value));
         } else {
-            cv.visitLdcInsn(new Double(value));
+            mv.visitLdcInsn(new Double(value));
         }
     }
     
     public void push(String value) {
-        cv.visitLdcInsn(value);
+        mv.visitLdcInsn(value);
     }
 
     public void newarray() {
@@ -342,21 +342,21 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     public void newarray(Type type) {
         if (TypeUtils.isPrimitive(type)) {
-            cv.visitIntInsn(Constants.NEWARRAY, TypeUtils.NEWARRAY(type));
+            mv.visitIntInsn(Constants.NEWARRAY, TypeUtils.NEWARRAY(type));
         } else {
             emit_type(Constants.ANEWARRAY, type);
         }
     }
     
     public void arraylength() {
-        cv.visitInsn(Constants.ARRAYLENGTH);
+        mv.visitInsn(Constants.ARRAYLENGTH);
     }
     
     public void load_this() {
         if (TypeUtils.isStatic(state.access)) {
             throw new IllegalStateException("no 'this' pointer within static method");
         }
-        cv.visitVarInsn(Constants.ALOAD, 0);
+        mv.visitVarInsn(Constants.ALOAD, 0);
     }
     
     /**
@@ -395,16 +395,16 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     private void load_local(Type t, int pos) {
         // TODO: make t == null ok?
-        cv.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
+        mv.visitVarInsn(t.getOpcode(Constants.ILOAD), pos);
     }
 
     private void store_local(Type t, int pos) {
         // TODO: make t == null ok?
-        cv.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
+        mv.visitVarInsn(t.getOpcode(Constants.ISTORE), pos);
     }
     
     public void iinc(Local local, int amount) {
-        cv.visitIincInsn(local.getIndex(), amount);
+        mv.visitIincInsn(local.getIndex(), amount);
     }
     
     public void store_local(Local local) {
@@ -416,7 +416,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
     }
 
     public void return_value() {
-        cv.visitInsn(state.sig.getReturnType().getOpcode(Constants.IRETURN));
+        mv.visitInsn(state.sig.getReturnType().getOpcode(Constants.IRETURN));
     }
 
     public void getfield(String name) {
@@ -465,7 +465,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     // package-protected for EmitUtils, try to fix
     void emit_field(int opcode, Type ctype, String name, Type ftype) {
-        cv.visitFieldInsn(opcode,
+        mv.visitFieldInsn(opcode,
                           ctype.getInternalName(),
                           name,
                           ftype.getDescriptor());
@@ -497,7 +497,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
              (opcode == Constants.INVOKESTATIC))) {
             // TODO: error
         }
-        cv.visitMethodInsn(opcode,
+        mv.visitMethodInsn(opcode,
                            type.getInternalName(),
                            sig.getName(),
                            sig.getDescriptor());
@@ -550,7 +550,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
         } else {
             desc = type.getInternalName();
         }
-        cv.visitTypeInsn(opcode, desc);
+        mv.visitTypeInsn(opcode, desc);
     }
 
     public void aaload(int index) {
@@ -558,9 +558,9 @@ public class CodeEmitter extends RemappingCodeVisitor {
         aaload();
     }
 
-    public void aaload() { cv.visitInsn(Constants.AALOAD); }
-    public void aastore() { cv.visitInsn(Constants.AASTORE); }
-    public void athrow() { cv.visitInsn(Constants.ATHROW); }
+    public void aaload() { mv.visitInsn(Constants.AALOAD); }
+    public void aastore() { mv.visitInsn(Constants.AASTORE); }
+    public void athrow() { mv.visitInsn(Constants.ATHROW); }
 
     public Label make_label() {
         return new Label();
@@ -571,7 +571,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
     }
     
     public Local make_local(Type type) {
-        return new Local(nextLocal(type.getSize()), type);
+        return new Local(newLocal(type.getSize()), type);
     }
 
     public void checkcast_this() {
@@ -621,7 +621,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
                     for (int i = 0; i < len; i++) {
                         labels[keys[i] - min] = make_label();
                     }
-                    cv.visitTableSwitchInsn(min, max, def, labels);
+                    mv.visitTableSwitchInsn(min, max, def, labels);
                     for (int i = 0; i < range; i++) {
                         Label label = labels[i];
                         if (label != def) {
@@ -634,7 +634,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
                     for (int i = 0; i < len; i++) {
                         labels[i] = make_label();
                     }
-                    cv.visitLookupSwitchInsn(def, keys, labels);
+                    mv.visitLookupSwitchInsn(def, keys, labels);
                     for (int i = 0; i < len; i++) {
                         mark(labels[i]);
                         callback.processCase(keys[i], end);
@@ -664,12 +664,12 @@ public class CodeEmitter extends RemappingCodeVisitor {
     }
 
     public void mark(Label label) {
-        cv.visitLabel(label);
+        mv.visitLabel(label);
     }
 
     Label mark() {
         Label label = make_label();
-        cv.visitLabel(label);
+        mv.visitLabel(label);
         return label;
     }
 
@@ -838,7 +838,7 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     public void visitMaxs(int maxStack, int maxLocals) {
         if (!TypeUtils.isAbstract(state.access)) {
-            cv.visitMaxs(0, 0);
+            mv.visitMaxs(0, 0);
         }
     }
 
@@ -859,9 +859,5 @@ public class CodeEmitter extends RemappingCodeVisitor {
 
     public void invoke(MethodInfo method) {
         invoke(method, method.getClassInfo().getType());
-    }
-
-    public void define_attribute(Attribute attrs) {
-        cv.visitAttribute(attrs);
     }
 }

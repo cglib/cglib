@@ -27,7 +27,6 @@ abstract public class MethodInfo {
     abstract public int getModifiers();
     abstract public Signature getSignature();
     abstract public Type[] getExceptionTypes();
-    abstract public Attribute getAttribute();
 
     public boolean equals(Object o) {
         if (o == null)

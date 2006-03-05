@@ -44,8 +44,8 @@ public class TestInterfaceMaker extends CodeGenTestCase
                 return "test";
             }
         });
-        Method method = obj.getClass().getMethod("herby", null);
-        assertTrue("test".equals(method.invoke(obj, null)));
+        Method method = obj.getClass().getMethod("herby", (Class[])null);
+        assertTrue("test".equals(method.invoke(obj, (Object[])null)));
     }
 
     public TestInterfaceMaker(String testName) {

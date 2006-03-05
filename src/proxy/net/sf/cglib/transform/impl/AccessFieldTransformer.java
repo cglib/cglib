@@ -18,7 +18,7 @@ package net.sf.cglib.transform.impl;
 import net.sf.cglib.transform.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Type;
 
@@ -33,8 +33,8 @@ public class AccessFieldTransformer extends ClassEmitterTransformer {
         String getPropertyName(Type owner, String fieldName);
     }
 
-    public void declare_field(int access, final String name, Type type, Object value, Attribute attrs) {
-        super.declare_field(access, name, type, value, attrs);
+    public void declare_field(int access, final String name, Type type, Object value) {
+        super.declare_field(access, name, type, value);
 
         String property = TypeUtils.upperFirst(callback.getPropertyName(getClassType(), name));
         if (property != null) {
@@ -43,7 +43,6 @@ public class AccessFieldTransformer extends ClassEmitterTransformer {
                              new Signature("get" + property,
                                            type,
                                            Constants.TYPES_EMPTY),
-                             null,
                              null);
             e.load_this();
             e.getfield(name);
@@ -54,7 +53,6 @@ public class AccessFieldTransformer extends ClassEmitterTransformer {
                              new Signature("set" + property,
                                            Type.VOID_TYPE,
                                            new Type[]{ type }),
-                             null,
                              null);
             e.load_this();
             e.load_arg(0);

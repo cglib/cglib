@@ -53,13 +53,12 @@ class LazyLoaderGenerator implements CallbackGenerator {
             int index = ((Integer)it.next()).intValue();
 
             String delegate = "CGLIB$LAZY_LOADER_" + index;
-            ce.declare_field(Constants.ACC_PRIVATE, delegate, Constants.TYPE_OBJECT, null, null);
+            ce.declare_field(Constants.ACC_PRIVATE, delegate, Constants.TYPE_OBJECT, null);
 
             CodeEmitter e = ce.begin_method(Constants.ACC_PRIVATE |
                                             Constants.ACC_SYNCHRONIZED |
                                             Constants.ACC_FINAL,
                                             loadMethod(index),
-                                            null,
                                             null);
             e.load_this();
             e.getfield(delegate);
