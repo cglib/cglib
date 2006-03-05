@@ -27,8 +27,6 @@ import org.apache.tools.ant.*;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.ProjectComponent;
 import org.objectweb.asm.*;
-import org.objectweb.asm.attrs.Attributes;
-
 
 abstract public class AbstractTransformTask extends AbstractProcessTask {
     private static final int ZIP_MAGIC = 0x504B0304;
@@ -53,7 +51,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     abstract protected ClassTransformer getClassTransformer(String[] classInfo);
 
     protected Attribute[] attributes() {
-        return Attributes.getDefaultAttributes();
+        return null;
     }
 
     protected void processFile(File file) throws Exception {

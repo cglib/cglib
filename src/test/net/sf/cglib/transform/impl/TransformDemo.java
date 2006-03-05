@@ -111,7 +111,7 @@ public class TransformDemo {
         );
         
         
-        loader.loadClass(TransformDemo.class.getName()).getMethod("start",new Class[]{}).invoke(null,null);
+        loader.loadClass(TransformDemo.class.getName()).getMethod("start",new Class[]{}).invoke(null, (Object[])null);
     
     }
     

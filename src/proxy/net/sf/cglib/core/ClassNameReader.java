@@ -40,9 +40,9 @@ public class ClassNameReader {
                 public void visit(int version,
                                   int access,
                                   String name,
+                                  String signature,
                                   String superName,
-                                  String[] interfaces,
-                                  String sourceFile) {
+                                  String[] interfaces) {
                     array.add( name.replace('/', '.') );
                     if(superName != null){
                       array.add( superName.replace('/', '.') );

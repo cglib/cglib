@@ -91,16 +91,15 @@ implements CallbackGenerator
             String methodProxyField = getMethodProxyField(impl);
 
             sigMap.put(sig.toString(), methodProxyField);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodField, METHOD, null, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodProxyField, METHOD_PROXY, null, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodField, METHOD, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodProxyField, METHOD_PROXY, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY, null);
             CodeEmitter e;
 
             // access method
             e = ce.begin_method(Constants.ACC_FINAL,
                                 impl,
-                                method.getExceptionTypes(),
-                                null);
+                                method.getExceptionTypes());
             superHelper(e, method);
             e.return_value();
             e.end_method();
@@ -218,7 +217,6 @@ implements CallbackGenerator
     public void generateFindProxy(ClassEmitter ce, final Map sigMap) {
         final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC | Constants.ACC_STATIC,
                                               FIND_PROXY,
-                                              null,
                                               null);
         e.load_arg(0);
         e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);

@@ -19,7 +19,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 abstract public class MulticastDelegate implements Cloneable {
@@ -109,7 +109,7 @@ abstract public class MulticastDelegate implements Cloneable {
             emitProxy(ce, method);
 
             // newInstance
-            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.invoke_constructor_this();
@@ -117,7 +117,7 @@ abstract public class MulticastDelegate implements Cloneable {
             e.end_method();
 
             // add
-            e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null);
             e.load_this();
             e.load_arg(0);
             e.checkcast(Type.getType(iface));

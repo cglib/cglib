@@ -28,10 +28,14 @@ public class MethodFilterTransformer extends AbstractClassTransformer {
         super.setTarget(pass);
     }
 
-    public CodeVisitor visitMethod(int access, String name, String desc, String[] exceptions, Attribute attrs) {
-        return (filter.accept(access, name, desc, exceptions, attrs) ? pass : direct).visitMethod(access, name, desc, exceptions, attrs);
+    public MethodVisitor visitMethod(int access,
+                                     String name,
+                                     String desc,
+                                     String signature,
+                                     String[] exceptions) {
+        return (filter.accept(access, name, desc, signature, exceptions) ? pass : direct).visitMethod(access, name, desc, signature, exceptions);
     }
-
+    
     public void setTarget(ClassVisitor target) {
         pass.setTarget(target);
         direct = target;

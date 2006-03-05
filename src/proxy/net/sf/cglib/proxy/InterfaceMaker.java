@@ -27,7 +27,7 @@ import org.objectweb.asm.Type;
  * implement, you can make your enhanced classes handle an arbitrary set
  * of method signatures.
  * @author Chris Nokleberg
- * @version $Id: InterfaceMaker.java,v 1.3 2004/09/18 21:22:22 herbyderby Exp $
+ * @version $Id: InterfaceMaker.java,v 1.4 2006/03/05 02:43:19 herbyderby Exp $
  */
 public class InterfaceMaker extends AbstractClassGenerator
 {
@@ -111,8 +111,7 @@ public class InterfaceMaker extends AbstractClassGenerator
             Type[] exceptions = (Type[])signatures.get(sig);
             ce.begin_method(Constants.ACC_PUBLIC | Constants.ACC_ABSTRACT,
                             sig,
-                            exceptions,
-                            null).end_method();
+                            exceptions).end_method();
         }
         ce.end_class();
     }

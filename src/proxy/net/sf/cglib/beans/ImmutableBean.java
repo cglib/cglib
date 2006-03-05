@@ -76,9 +76,9 @@ public class ImmutableBean
                            null,
                            Constants.SOURCE_FILE);
 
-            ce.declare_field(Constants.ACC_FINAL | Constants.ACC_PRIVATE, FIELD_NAME, targetType, null, null);
+            ce.declare_field(Constants.ACC_FINAL | Constants.ACC_PRIVATE, FIELD_NAME, targetType, null);
 
-            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null, null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT, null);
             e.load_this();
             e.super_invoke_constructor();
             e.load_this();

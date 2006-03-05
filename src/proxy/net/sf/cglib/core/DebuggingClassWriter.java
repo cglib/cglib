@@ -54,10 +54,15 @@ public class DebuggingClassWriter extends ClassWriter {
         super(computeMaxs);
     }
     
-    public void visit(int version, int access, String name, String superName, String[] interfaces, String sourceFile) {
+    public void visit(int version,
+                      int access,
+                      String name,
+                      String signature,
+                      String superName,
+                      String[] interfaces) {
         className = name.replace('/', '.');
         this.superName = superName.replace('/', '.');
-        super.visit(version, access, name, superName, interfaces, sourceFile);
+        super.visit(version, access, name, signature, superName, interfaces);
     }
     
     public String getClassName() {

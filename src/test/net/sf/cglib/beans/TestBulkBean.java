@@ -298,7 +298,7 @@ public class TestBulkBean extends TestCase {
             try{
                 for( int i = 0; i < size ; i++  ){
                     if( this.gets[i] != null ){
-                        values[i] = gets[i].invoke(bean, null );             
+                        values[i] = gets[i].invoke(bean, (Object[])null );             
                     }
                 }
             }catch( Exception e ){

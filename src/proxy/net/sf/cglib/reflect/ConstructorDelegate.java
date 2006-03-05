@@ -22,7 +22,7 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: ConstructorDelegate.java,v 1.19 2005/09/27 11:42:27 baliuka Exp $
+ * @version $Id: ConstructorDelegate.java,v 1.20 2006/03/05 02:43:19 herbyderby Exp $
  */
 abstract public class ConstructorDelegate {
     private static final ConstructorKey KEY_FACTORY =
@@ -97,8 +97,7 @@ abstract public class ConstructorDelegate {
             EmitUtils.null_constructor(ce);
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
                                             ReflectUtils.getSignature(newInstance),
-                                            ReflectUtils.getExceptionTypes(newInstance),
-                                            null);
+                                            ReflectUtils.getExceptionTypes(newInstance));
             e.new_instance(declaring);
             e.dup();
             e.load_args();

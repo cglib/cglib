@@ -25,7 +25,7 @@ import junit.framework.*;
 import org.objectweb.asm.Type;
 
 /**
- * @version $Id: TestTransformingLoader.java,v 1.5 2004/06/24 21:15:15 herbyderby Exp $
+ * @version $Id: TestTransformingLoader.java,v 1.6 2006/03/05 02:43:17 herbyderby Exp $
  */
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
@@ -48,7 +48,7 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         Object obj = loaded.newInstance();
         String value = "HELLO";
         loaded.getMethod("setHerby", new Class[]{ String.class }).invoke(obj, new Object[]{ value });
-        assertTrue(value.equals(loaded.getMethod("getHerby", null).invoke(obj, null)));
+        assertTrue(value.equals(loaded.getMethod("getHerby", (Class[])null).invoke(obj, (Object[])null)));
 
         loaded.getMethod("setDerby", new Class[]{ Double.TYPE }).invoke(obj, new Object[]{ new Double(1.23456789d) });
     }

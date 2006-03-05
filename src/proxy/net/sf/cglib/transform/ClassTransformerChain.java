@@ -33,12 +33,12 @@ public class ClassTransformerChain extends AbstractClassTransformer {
         }
     }
 
-    public CodeVisitor visitMethod(int access,
-                                   String name,
-                                   String desc,
-                                   String[] exceptions,
-                                   Attribute attrs) {
-        return cv.visitMethod(access, name, desc, exceptions, attrs);
+    public MethodVisitor visitMethod(int access,
+                                     String name,
+                                     String desc,
+                                     String signature,
+                                     String[] exceptions) {
+        return cv.visitMethod(access, name, desc, signature, exceptions);
     }
 
     public String toString() {

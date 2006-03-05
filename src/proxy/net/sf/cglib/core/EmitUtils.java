@@ -74,7 +74,7 @@ public class EmitUtils {
     }
 
     public static void factory_method(ClassEmitter ce, Signature sig) {
-        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, sig, null, null);
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, sig, null);
         e.new_instance_this();
         e.dup();
         e.load_args();
@@ -84,7 +84,7 @@ public class EmitUtils {
     }
 
     public static void null_constructor(ClassEmitter ce) {
-        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null, null);
+        CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, CSTRUCT_NULL, null);
         e.load_this();
         e.super_invoke_constructor();
         e.return_value();
@@ -330,7 +330,7 @@ public class EmitUtils {
             // TODO: can end up with duplicated field names when using chained transformers; incorporate static hook # somehow
             String fieldName = "CGLIB$load_class$" + TypeUtils.escapeType(typeName);
             if (!ce.isFieldDeclared(fieldName)) {
-                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null, null);
+                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null);
                 CodeEmitter hook = ce.getStaticHook();
                 hook.push(typeName);
                 hook.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
@@ -832,7 +832,7 @@ public class EmitUtils {
     public static void add_properties(ClassEmitter ce, String[] names, Type[] types) {
         for (int i = 0; i < names.length; i++) {
             String fieldName = "$cglib_prop_" + names[i];
-            ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null, null);
+            ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null);
             EmitUtils.add_property(ce, names[i], types[i], fieldName);
         }
     }
@@ -844,7 +844,6 @@ public class EmitUtils {
                             new Signature("get" + property,
                                           type,
                                           Constants.TYPES_EMPTY),
-                            null,
                             null);
         e.load_this();
         e.getfield(fieldName);
@@ -855,7 +854,6 @@ public class EmitUtils {
                             new Signature("set" + property,
                                           Type.VOID_TYPE,
                                           new Type[]{ type }),
-                            null,
                             null);
         e.load_this();
         e.load_arg(0);
@@ -914,7 +912,6 @@ public class EmitUtils {
     public static CodeEmitter begin_method(ClassEmitter e, MethodInfo method, int access) {
         return e.begin_method(access,
                               method.getSignature(),
-                              method.getExceptionTypes(),
-                              method.getAttribute());
+                              method.getExceptionTypes());
     }
 }

@@ -102,7 +102,7 @@ import org.objectweb.asm.Type;
  *     <li>They refer to the same method as resolved by <code>Method.equals</code>.</li>
  *   </ul>
  *
- * @version $Id: MethodDelegate.java,v 1.24 2004/12/24 00:08:31 herbyderby Exp $
+ * @version $Id: MethodDelegate.java,v 1.25 2006/03/05 02:43:19 herbyderby Exp $
  */
 abstract public class MethodDelegate {
     private static final MethodDelegateKey KEY_FACTORY =
@@ -219,7 +219,7 @@ abstract public class MethodDelegate {
                            METHOD_DELEGATE,
                            new Type[]{ Type.getType(iface) },
                            Constants.SOURCE_FILE);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
             EmitUtils.null_constructor(ce);
 
             // generate proxied method
@@ -234,7 +234,7 @@ abstract public class MethodDelegate {
             e.end_method();
 
             // newInstance
-            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null, null);
+            e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
             e.dup();
             e.dup2();

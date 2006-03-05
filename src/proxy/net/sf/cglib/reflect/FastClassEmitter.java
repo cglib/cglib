@@ -56,7 +56,7 @@ class FastClassEmitter extends ClassEmitter {
         begin_class(Constants.V1_2, Constants.ACC_PUBLIC, className, FAST_CLASS, null, Constants.SOURCE_FILE);
 
         // constructor
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_CLASS, null);
         e.load_this();
         e.load_args();
         e.super_invoke_constructor(CSTRUCT_CLASS);
@@ -77,14 +77,14 @@ class FastClassEmitter extends ClassEmitter {
         emitIndexByClassArray(methods);
         
         // getIndex(Class[])
-        e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null, null);
+        e = begin_method(Constants.ACC_PUBLIC, CONSTRUCTOR_GET_INDEX, null);
         e.load_args();
         List info = CollectionUtils.transform(constructors, MethodInfoTransformer.getInstance());
         EmitUtils.constructor_switch(e, info, new GetIndexCallback(e, info));
         e.end_method();
 
         // invoke(int, Object, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
+        e = begin_method(Constants.ACC_PUBLIC, INVOKE, INVOCATION_TARGET_EXCEPTION_ARRAY);
         e.load_arg(1);
         e.checkcast(base);
         e.load_arg(0);
@@ -92,7 +92,7 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         // newInstance(int, Object[])
-        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY, null);
+        e = begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, INVOCATION_TARGET_EXCEPTION_ARRAY);
         e.new_instance(base);
         e.dup();
         e.load_arg(0);
@@ -100,7 +100,7 @@ class FastClassEmitter extends ClassEmitter {
         e.end_method();
 
         // getMaxIndex()
-        e = begin_method(Constants.ACC_PUBLIC, GET_MAX_INDEX, null, null);
+        e = begin_method(Constants.ACC_PUBLIC, GET_MAX_INDEX, null);
         e.push(methods.size() - 1);
         e.return_value();
         e.end_method();
@@ -110,7 +110,7 @@ class FastClassEmitter extends ClassEmitter {
 
     // TODO: support constructor indices ("<init>")
     private void emitIndexBySignature(List methods) {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, SIGNATURE_GET_INDEX, null);
         List signatures = CollectionUtils.transform(methods, new Transformer() {
             public Object transform(Object obj) {
                 return ReflectUtils.getSignature((Method)obj).toString();
@@ -124,7 +124,7 @@ class FastClassEmitter extends ClassEmitter {
 
     private static final int TOO_MANY_METHODS = 100; // TODO
     private void emitIndexByClassArray(List methods) {
-        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null, null);
+        CodeEmitter e = begin_method(Constants.ACC_PUBLIC, METHOD_GET_INDEX, null);
         if (methods.size() > TOO_MANY_METHODS) {
             // hack for big classes
             List signatures = CollectionUtils.transform(methods, new Transformer() {

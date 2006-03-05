@@ -44,11 +44,8 @@ public class AddInitTransformer extends ClassEmitterTransformer {
         }
     }
     
-    public CodeEmitter begin_method(int access, Signature sig, Type[]
-    exceptions, Attribute attrs) {
-        final CodeEmitter emitter = super.begin_method(access, sig,
-        exceptions, attrs);
-        
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+        final CodeEmitter emitter = super.begin_method(access, sig, exceptions);
         if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
             return new CodeEmitter(emitter) {
                 public void visitInsn(int opcode) {

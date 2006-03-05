@@ -125,7 +125,7 @@ abstract public class StringSwitcher {
                            null,
                            Constants.SOURCE_FILE);
             EmitUtils.null_constructor(ce);
-            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, INT_VALUE, null, null);
+            final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, INT_VALUE, null);
             e.load_arg(0);
             final List stringList = Arrays.asList(strings);
             int style = fixedInput ? Constants.SWITCH_STYLE_HASHONLY : Constants.SWITCH_STYLE_HASH;

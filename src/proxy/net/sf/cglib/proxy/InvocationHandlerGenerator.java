@@ -37,7 +37,7 @@ implements CallbackGenerator
         for (Iterator it = methods.iterator(); it.hasNext();) {
             MethodInfo method = (MethodInfo)it.next();
             Signature impl = context.getImplSignature(method);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, impl.getName(), METHOD, null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, impl.getName(), METHOD, null);
 
             CodeEmitter e = context.beginMethod(ce, method);
             Block handler = e.begin_block();

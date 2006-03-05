@@ -56,7 +56,6 @@ public class AddDelegateTransformer extends ClassEmitterTransformer {
         declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                       DELEGATE,
                       delegateType,
-                      null,
                       null);
         for (int i = 0; i < delegateIf.length; i++) {
             Method[] methods = delegateIf[i].getMethods();
@@ -71,8 +70,8 @@ public class AddDelegateTransformer extends ClassEmitterTransformer {
         }
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions, Attribute attrs) {
-        final CodeEmitter e = super.begin_method(access, sig, exceptions, attrs);
+    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+        final CodeEmitter e = super.begin_method(access, sig, exceptions);
         if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
             return new CodeEmitter(e) {
                 private boolean transformInit = true;
@@ -106,7 +105,7 @@ public class AddDelegateTransformer extends ClassEmitterTransformer {
 
         final Signature sig = ReflectUtils.getSignature(m);
         Type[] exceptions = TypeUtils.getTypes(m.getExceptionTypes());
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, sig, exceptions, null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, sig, exceptions);
         e.load_this();
         e.getfield(DELEGATE);
         e.load_args();

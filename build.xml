@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.49 2005/10/13 08:31:30 baliuka Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.50 2006/03/05 02:43:20 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -28,8 +28,9 @@
     <property name="samples.source.home" value="src/proxy/samples"/>
     <property name="source.test" value="src/test"/>
     <property name="source.asm" value="../asm-src"/>    
-  
+
     <property name="compile.target" value="1.2"/>
+    <property name="compile.source" value="1.2"/>
     <property name="compile.bootclasspath" value=""/>
     <property name="compile.extdirs" value=""/>
 
@@ -72,7 +73,7 @@
   <target depends="prepare" description="Compile shareable components" 
           name="compile">
     <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}"
-      target="${compile.target}" bootclasspath="${compile.bootclasspath}" extdirs="${compile.extdirs}">
+      target="${compile.target}" bootclasspath="${compile.bootclasspath}" extdirs="${compile.extdirs}" source="${compile.source}">
       <classpath refid="compile.classpath"/>
       <compilerarg compiler="jikes" value="-nowarn"/>
     </javac>
@@ -127,7 +128,6 @@
     <jarjar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-nodep-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
       <zipfileset src="lib/asm.jar" excludes="META-INF"/>
-      <zipfileset src="lib/asm-attrs.jar" excludes="META-INF"/>
       <rule pattern="org.objectweb.asm.**" result="net.sf.cglib.asm.@1"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
