@@ -87,7 +87,7 @@ public class Enhancer extends AbstractClassGenerator
     private static final Type CALLBACK =
       TypeUtils.parseType("net.sf.cglib.proxy.Callback");
     private static final Type CALLBACK_ARRAY =
-      TypeUtils.parseType("net.sf.cglib.proxy.Callback[]");
+      Type.getType(Callback[].class);
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature SET_THREAD_CALLBACKS =
@@ -748,18 +748,17 @@ public class Enhancer extends AbstractClassGenerator
 
     private void emitSetCallback(ClassEmitter ce, int[] keys) {
         final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, SET_CALLBACK, null);
-        e.load_this();
-        e.load_arg(1);
         e.load_arg(0);
         e.process_switch(keys, new ProcessSwitchCallback() {
             public void processCase(int key, Label end) {
+                e.load_this();
+                e.load_arg(1);
                 e.checkcast(callbackTypes[key]);
                 e.putfield(getCallbackField(key));
                 e.goTo(end);
             }
             public void processDefault() {
                 // TODO: error?
-                e.pop2(); // stack height
             }
         });
         e.return_value();

@@ -23,16 +23,16 @@ import org.objectweb.asm.Type;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: MixinEmitter.java,v 1.8 2006/03/05 02:43:19 herbyderby Exp $
+ * @version $Id: MixinEmitter.java,v 1.9 2006/08/27 21:04:37 herbyderby Exp $
  */
 class MixinEmitter extends ClassEmitter {
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
     private static final Signature CSTRUCT_OBJECT_ARRAY =
       TypeUtils.parseConstructor("Object[]");
-    private static final Signature NEW_INSTANCE =
-      TypeUtils.parseSignature("net.sf.cglib.proxy.Mixin newInstance(Object[])"); // JARJAR
     private static final Type MIXIN =
       TypeUtils.parseType("net.sf.cglib.proxy.Mixin");
+    private static final Signature NEW_INSTANCE =
+      new Signature("newInstance", MIXIN, new Type[]{ Constants.TYPE_OBJECT_ARRAY });
 
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         super(v);
