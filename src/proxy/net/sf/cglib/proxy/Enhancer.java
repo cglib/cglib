@@ -568,7 +568,10 @@ public class Enhancer extends AbstractClassGenerator
      * <p>
      * The registered callbacks are overwritten and subsequently cleared
      * when calling any of the <code>create</code> methods (such as
-     * {@link #create}).
+     * {@link #create}), or any {@link Factory} <code>newInstance</code> method.
+     * Otherwise they are <i>not</i> cleared, and you should be careful to set them
+     * back to <code>null</code> after creating new instances via reflection if
+     * memory leakage is a concern.
      * @param generatedClass a class previously created by {@link Enhancer}
      * @param callbacks the array of callbacks to use when instances of the generated
      * class are created
