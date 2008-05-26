@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.52 2008/05/26 04:06:26 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.53 2008/05/26 04:34:26 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -127,7 +127,7 @@
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="compile.classpath"/>
     <jarjar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-nodep-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
-      <zipfileset src="lib/asm.jar" excludes="META-INF"/>
+      <zipfileset src="lib/asm-3.1.jar" excludes="META-INF"/>
       <rule pattern="org.objectweb.asm.**" result="net.sf.cglib.asm.@1"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
