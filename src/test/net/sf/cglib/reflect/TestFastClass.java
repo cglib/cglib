@@ -38,6 +38,7 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
 
     public void testSimple() throws Throwable {
         FastClass.create(Simple.class).newInstance();
+        FastClass.create(Simple.class).newInstance();
     }
 
     public void testException() throws Throwable {
