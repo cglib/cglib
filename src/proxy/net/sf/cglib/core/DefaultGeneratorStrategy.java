@@ -27,7 +27,7 @@ public class DefaultGeneratorStrategy implements GeneratorStrategy {
     }
 
     protected ClassWriter getClassWriter() throws Exception {
-        return new DebuggingClassWriter(true);
+      return new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
     }
 
     protected byte[] transform(byte[] b) throws Exception {

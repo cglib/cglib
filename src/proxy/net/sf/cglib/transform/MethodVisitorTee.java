@@ -18,11 +18,17 @@ package net.sf.cglib.transform;
 import org.objectweb.asm.*;
 
 public class MethodVisitorTee implements MethodVisitor {
-    private MethodVisitor mv1, mv2;
+    private final MethodVisitor mv1;
+    private final MethodVisitor mv2;
     
     public MethodVisitorTee(MethodVisitor mv1, MethodVisitor mv2) {
         this.mv1 = mv1;
         this.mv2 = mv2;
+    }
+
+    public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
+        mv1.visitFrame(type, nLocal, local, nStack, stack);
+        mv2.visitFrame(type, nLocal, local, nStack, stack);
     }
 
     public AnnotationVisitor visitAnnotationDefault() {

@@ -83,7 +83,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
         ClassReader reader = getClassReader(file);
         String name[] = ClassNameReader.getClassInfo(reader);
-        ClassWriter w = new DebuggingClassWriter(true);
+        ClassWriter w = new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
 
@@ -91,7 +91,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
                 log("processing " + file.toURL());
             }
             new TransformingClassGenerator(new ClassReaderGenerator(
-                    getClassReader(file), attributes(), skipDebug()), t)
+                    getClassReader(file), attributes(), getFlags()), t)
                     .generateClass(w);
             FileOutputStream fos = new FileOutputStream(file);
             try {
@@ -104,8 +104,8 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
     }
 
-    protected boolean skipDebug() {
-        return false;
+    protected int getFlags() {
+        return 0;
     }
 
     private static ClassReader getClassReader(File file) throws Exception {
@@ -221,7 +221,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
         ClassReader reader = new ClassReader(new ByteArrayInputStream(bytes));
         String name[] = ClassNameReader.getClassInfo(reader);
-        ClassWriter w = new DebuggingClassWriter(true);
+        ClassWriter w = new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
             if (verbose) {
@@ -229,7 +229,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
             }
             new TransformingClassGenerator(new ClassReaderGenerator(
                     new ClassReader(new ByteArrayInputStream(bytes)),
-                    attributes(), skipDebug()), t).generateClass(w);
+                    attributes(), getFlags()), t).generateClass(w);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             out.write(w.toByteArray());
             return out.toByteArray();

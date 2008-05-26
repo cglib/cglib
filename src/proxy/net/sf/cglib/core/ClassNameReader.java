@@ -53,7 +53,7 @@ public class ClassNameReader {
                     
                     throw EARLY_EXIT;
                 }
-            }, true);
+            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         } catch (EarlyExitException e) { }
         
         return (String[])array.toArray( new String[]{} );

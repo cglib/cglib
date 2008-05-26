@@ -43,17 +43,10 @@ public class DebuggingClassWriter extends ClassWriter {
         }
     }
     
-    public DebuggingClassWriter(boolean computeMaxs) {
-        super(computeMaxs);
+    public DebuggingClassWriter(int flags) {
+        super(flags);
     }
 
-    /**
-     * @deprecated
-     */
-    public DebuggingClassWriter(boolean computeMaxs, int major, int minor) {
-        super(computeMaxs);
-    }
-    
     public void visit(int version,
                       int access,
                       String name,
@@ -101,7 +94,7 @@ public class DebuggingClassWriter extends ClassWriter {
                                 ClassReader cr = new ClassReader(b);
                                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
                                 TraceClassVisitor tcv = new TraceClassVisitor(null, pw);
-                                cr.accept(tcv, false);
+                                cr.accept(tcv, 0);
                                 pw.flush();
                             } finally {
                                 out.close();
