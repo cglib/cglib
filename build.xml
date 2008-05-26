@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.51 2006/03/05 02:44:37 herbyderby Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.52 2008/05/26 04:06:26 herbyderby Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -14,7 +14,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="2.2_beta1"/>
+    <property name="component.version" value="2.2"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>

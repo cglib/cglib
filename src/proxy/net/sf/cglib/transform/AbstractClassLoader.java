@@ -86,8 +86,8 @@ abstract public class AbstractClassLoader extends ClassLoader {
         }
 
         try {
-            ClassWriter w =  new DebuggingClassWriter(true);
-            getGenerator(r).generateClass( w );
+            ClassWriter w =  new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
+            getGenerator(r).generateClass(w);
             byte[] b = w.toByteArray();
             Class c = super.defineClass(name, b, 0, b.length, DOMAIN);
             postProcess(c);
@@ -102,11 +102,11 @@ abstract public class AbstractClassLoader extends ClassLoader {
     }
 
     protected ClassGenerator getGenerator(ClassReader r) {
-        return new ClassReaderGenerator(r, attributes(), skipDebug());
+        return new ClassReaderGenerator(r, attributes(), getFlags());
     }
 
-    protected boolean skipDebug() {
-        return false;
+    protected int getFlags() {
+        return 0;
     }
     
     protected Attribute[] attributes() {

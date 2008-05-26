@@ -66,7 +66,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
                 out.println("class=" + className + ", field=" + name);
                 return null;
             }
-        }, true);
+        }, ClassReader.SKIP_DEBUG);
     }
 }
 
