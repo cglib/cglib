@@ -30,7 +30,7 @@ import net.sf.cglib.reflect.FastClass;
  * registered {@link MethodInterceptor} objects when an intercepted method is invoked. It can
  * be used to either invoke the original method, or call the same method on a different
  * object of the same type.
- * @version $Id: MethodProxy.java,v 1.15 2009/01/11 19:47:49 herbyderby Exp $
+ * @version $Id: MethodProxy.java,v 1.16 2009/01/11 20:09:48 herbyderby Exp $
  */
 public class MethodProxy {
     private Signature sig1;
@@ -73,8 +73,6 @@ public class MethodProxy {
                     FastClassInfo fci = new FastClassInfo();
                     fci.f1 = helper(ci, ci.c1);
                     fci.f2 = helper(ci, ci.c2);
-                    System.err.println("gen f1: " + fci.f1.getClass());
-                    System.err.println("gen f2: " + fci.f2.getClass());
                     fci.i1 = fci.f1.getIndex(sig1);
                     fci.i2 = fci.f2.getIndex(sig2);
                     fastClassInfo = fci;
@@ -107,7 +105,6 @@ public class MethodProxy {
             AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
             if (fromEnhancer != null) {
                 namingPolicy = fromEnhancer.getNamingPolicy();
-                System.err.println("from enhancer: " + namingPolicy);
                 strategy = fromEnhancer.getStrategy();
                 attemptLoad = fromEnhancer.getAttemptLoad();
             }
