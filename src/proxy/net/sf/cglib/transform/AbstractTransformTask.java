@@ -137,7 +137,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
             
             ZipInputStream zip = new ZipInputStream(new FileInputStream(file));
             try {
-                FileOutputStream fout = new FileOutputStream(tempFile, false);
+                FileOutputStream fout = new FileOutputStream(tempFile);
                 try{
                  ZipOutputStream out = new ZipOutputStream(fout);
                                 
