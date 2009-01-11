@@ -19,13 +19,14 @@ import java.io.*;
 import java.lang.reflect.*;
 import junit.framework.*;
 import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.55 2005/10/11 07:13:32 baliuka Exp $
+ *@version    $Id: TestEnhancer.java,v 1.56 2009/01/11 19:47:50 herbyderby Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -441,6 +442,38 @@ public class TestEnhancer extends CodeGenTestCase {
                 }
             });
         assertTrue("boop".equals(d.herby()));
+    }
+
+    static class NamingPolicyDummy {}
+
+    public void testNamingPolicy() throws Throwable {
+      Enhancer e = new Enhancer();
+      e.setSuperclass(NamingPolicyDummy.class);
+      e.setUseCache(false);
+      e.setUseFactory(false);
+      e.setNamingPolicy(new DefaultNamingPolicy() {
+        public String getTag() {
+          return "ByHerby";
+        }
+          public String toString() {
+            return getTag();
+          }
+      });
+      e.setCallbackType(MethodInterceptor.class);
+      Class proxied = e.createClass();
+      final boolean[] ran = new boolean[1];
+      Enhancer.registerStaticCallbacks(proxied, new Callback[]{
+        new MethodInterceptor() {
+          public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+            ran[0] = true;
+            assertTrue(proxy.getSuperFastClass().getClass().getName().indexOf("$FastClassByHerby$") >= 0);
+            return proxy.invokeSuper(obj, args);
+          }
+        }
+      });
+      NamingPolicyDummy dummy = (NamingPolicyDummy) proxied.newInstance();
+      dummy.toString();
+      assertTrue(ran[0]);
     }
 
     public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
