@@ -100,7 +100,7 @@ implements CallbackGenerator
             e = ce.begin_method(Constants.ACC_FINAL,
                                 impl,
                                 method.getExceptionTypes());
-            superHelper(e, method);
+            superHelper(e, method, context);
             e.return_value();
             e.end_method();
 
@@ -126,21 +126,21 @@ implements CallbackGenerator
             e.return_value();
 
             e.mark(nullInterceptor);
-            superHelper(e, method);
+            superHelper(e, method, context);
             e.return_value();
             e.end_method();
         }
         generateFindProxy(ce, sigMap);
     }
 
-    private static void superHelper(CodeEmitter e, MethodInfo method)
+    private static void superHelper(CodeEmitter e, MethodInfo method, Context context)
     {
         if (TypeUtils.isAbstract(method.getModifiers())) {
             e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
             e.load_args();
-            e.super_invoke(method.getSignature());
+            context.emitInvoke(e, method);
         }
     }
 

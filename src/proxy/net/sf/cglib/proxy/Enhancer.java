@@ -876,6 +876,7 @@ public class Enhancer extends AbstractClassGenerator
         final Map indexes = new HashMap();
         final Map originalModifiers = new HashMap();
         final Map positions = CollectionUtils.getIndexMap(methods);
+        final Map declToBridge = new HashMap();
 
         Iterator it1 = methods.iterator();
         Iterator it2 = (actualMethods != null) ? actualMethods.iterator() : null;
@@ -894,7 +895,20 @@ public class Enhancer extends AbstractClassGenerator
                 groups.put(generators[index], group = new ArrayList(methods.size()));
             }
             group.add(method);
+            
+            // Optimization: build up a map of Class -> bridge methods in class
+            // so that we can look up all the bridge methods in one pass for a class.
+            if (TypeUtils.isBridge(actualMethod.getModifiers())) {
+            	Set bridges = (Set)declToBridge.get(actualMethod.getDeclaringClass());
+            	if (bridges == null) {
+            	    bridges = new HashSet();
+            	    declToBridge.put(actualMethod.getDeclaringClass(), bridges);
+            	}
+            	bridges.add(method.getSignature());            	
+            }
         }
+        
+        final Map bridgeToTarget = new BridgeMethodResolver(declToBridge).resolveAll();
 
         Set seenGen = new HashSet();
         CodeEmitter se = ce.getStaticHook();
@@ -919,6 +933,39 @@ public class Enhancer extends AbstractClassGenerator
             }
             public Signature getImplSignature(MethodInfo method) {
                 return rename(method.getSignature(), ((Integer)positions.get(method)).intValue());
+            }
+            public void emitInvoke(CodeEmitter e, MethodInfo method) {
+                // If this is a bridge and we know the target was called from invokespecial,
+                // then we need to invoke_virtual w/ the bridge target instead of doing
+                // a super, because super may itself be using super, which would bypass
+                // any proxies on the target.
+                Signature bridgeTarget = (Signature)bridgeToTarget.get(method.getSignature());
+                if (bridgeTarget != null) {
+                    // TODO: this assumes that the target has wider or the same type
+                    // parameters than the current.  
+                    // In reality this should always be true because otherwise we wouldn't
+                    // have had a bridge doing an invokespecial.
+                    // If it isn't true, we would need to checkcast each argument
+                    // against the target's argument types
+                    e.invoke_virtual_this(bridgeTarget);
+                    
+                    Type retType = method.getSignature().getReturnType();                    
+                    // Not necessary to cast if the target & bridge have
+                    // the same return type. 
+                    // (This conveniently includes void and primitive types,
+                    // which would fail if casted.  It's not possible to 
+                    // covariant from boxed to unbox (or vice versa), so no having
+                    // to box/unbox for bridges).
+                    // TODO: It also isn't necessary to checkcast if the return is
+                    // assignable from the target.  (This would happen if a subclass
+                    // used covariant returns to narrow the return type within a bridge
+                    // method.)
+                    if (!retType.equals(bridgeTarget.getReturnType())) {
+                        e.checkcast(retType);
+                    }
+                } else {
+                    e.super_invoke(method.getSignature());
+                }
             }
             public CodeEmitter beginMethod(ClassEmitter ce, MethodInfo method) {
                 CodeEmitter e = EmitUtils.begin_method(ce, method);
