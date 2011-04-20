@@ -17,6 +17,11 @@ package net.sf.cglib.proxy;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+
 import junit.framework.*;
 import net.sf.cglib.CodeGenTestCase;
 import net.sf.cglib.core.DefaultNamingPolicy;
@@ -26,7 +31,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.56 2009/01/11 19:47:50 herbyderby Exp $
+ *@version    $Id: TestEnhancer.java,v 1.57 2011/04/20 16:16:04 sameb Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -415,18 +420,18 @@ public class TestEnhancer extends CodeGenTestCase {
     }
 
     public abstract static class AbstractMethodCallInConstructor {
-	public AbstractMethodCallInConstructor() {
-	    foo();
-	}
-
-	public abstract void foo();
+        public AbstractMethodCallInConstructor() {
+            foo();
+        }
+    
+        public abstract void foo();
     }
 
     public void testAbstractMethodCallInConstructor() throws Throwable {
-	AbstractMethodCallInConstructor obj = (AbstractMethodCallInConstructor)
-	    Enhancer.create(AbstractMethodCallInConstructor.class,
-			     TEST_INTERCEPTOR);
-	obj.foo();
+        AbstractMethodCallInConstructor obj = (AbstractMethodCallInConstructor)
+            Enhancer.create(AbstractMethodCallInConstructor.class,
+                     TEST_INTERCEPTOR);
+        obj.foo();
     }
 
     public void testProxyIface() throws Throwable {
@@ -804,16 +809,16 @@ public class TestEnhancer extends CodeGenTestCase {
     
     
    void assertThreadLocalCallbacks(Class cls)throws Exception{
-    	
-    	Field field = cls.getDeclaredField("CGLIB$THREAD_CALLBACKS");
-    	field.setAccessible(true);
-    	
-    	assertNull(((ThreadLocal) field.get(null)).get());
+        
+        Field field = cls.getDeclaredField("CGLIB$THREAD_CALLBACKS");
+        field.setAccessible(true);
+        
+        assertNull(((ThreadLocal) field.get(null)).get());
     }
     
     public void testThreadLocalCleanup1()throws Exception{
-    	
-    	Enhancer e = new Enhancer();
+        
+        Enhancer e = new Enhancer();
         e.setUseCache(false);    
         e.setCallbackType(NoOp.class);
         Class cls = e.createClass();
@@ -827,8 +832,8 @@ public class TestEnhancer extends CodeGenTestCase {
     
     
     public void testThreadLocalCleanup2()throws Exception{
-    	
-    	Enhancer e = new Enhancer();
+        
+        Enhancer e = new Enhancer();
         e.setCallback(NoOp.INSTANCE);
         Object obj = e.create();
         
@@ -839,8 +844,8 @@ public class TestEnhancer extends CodeGenTestCase {
     }
     
     public void testThreadLocalCleanup3()throws Exception{
-    	
-    	Enhancer e = new Enhancer();
+        
+        Enhancer e = new Enhancer();
         e.setCallback(NoOp.INSTANCE);
         Factory obj = (Factory) e.create();
         obj.newInstance(NoOp.INSTANCE);
@@ -850,9 +855,212 @@ public class TestEnhancer extends CodeGenTestCase {
         
 
     }
-
     
+    public void testBridgeForcesInvokeVirtual() {
+        List<Class> retTypes = new ArrayList<Class>();
+        List<Class> paramTypes = new ArrayList<Class>();
+        Interceptor interceptor = new Interceptor(retTypes, paramTypes);
 
+        Enhancer e = new Enhancer();
+        e.setSuperclass(Impl.class);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return method.getDeclaringClass() != Object.class ? 0 : 1;
+            }
+        });
+        e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
+        // We expect the bridge ('ret') to be called & forward us to the non-bridge 'erased'
+        Interface intf = (Interface)e.create();
+        intf.aMethod(null);
+        // Make sure the right things got called in the right order:
+        assertEquals(Arrays.asList(RetType.class, ErasedType.class), retTypes);
+        
+        // Validate calling the refined just gives us that.
+        retTypes.clear();
+        Impl impl = (Impl)intf;
+        impl.aMethod((Refined)null);
+        assertEquals(Arrays.asList(Refined.class), retTypes);
+        
+        // When calling from the impl, we are dispatched directly to the non-bridge,
+        // because that's just how it works.
+        retTypes.clear();
+        impl.aMethod((RetType)null);
+        assertEquals(Arrays.asList(ErasedType.class), retTypes);
+        
+        // Do a whole bunch of checks for the other methods too
+        
+        paramTypes.clear();
+        intf.intReturn(null);
+        assertEquals(Arrays.asList(RetType.class, ErasedType.class), paramTypes);
+        
+        paramTypes.clear();
+        intf.voidReturn(null);
+        assertEquals(Arrays.asList(RetType.class, ErasedType.class), paramTypes);
+        
+        paramTypes.clear();
+        intf.widenReturn(null);
+        assertEquals(Arrays.asList(RetType.class, ErasedType.class), paramTypes);
+    }
     
+    public void testBridgeForcesInvokeVirtualEvenWithoutInterceptingBridge() {
+        List<Class> retTypes = new ArrayList<Class>();
+        Interceptor interceptor = new Interceptor(retTypes);
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(Impl.class);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+              // Ideally this would be:
+              // return !method.isBridge() && method.getDeclaringClass() != Object.class ? 0 : 1;
+              // But Eclipse sometimes labels the wrong things as bridge methods, so we're more
+              // explicit:
+              return method.getDeclaringClass() != Object.class
+                  && method.getReturnType() != RetType.class ? 0 : 1;
+            }
+        });
+        e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
+        // We expect the bridge ('ret') to be called & forward us to non-bridge ('erased'),
+        // and we only intercept on the non-bridge.
+        Interface intf = (Interface)e.create();
+        intf.aMethod(null);
+        assertEquals(Arrays.asList(ErasedType.class), retTypes);
+        
+        // Validate calling the refined just gives us that.
+        retTypes.clear();
+        Impl impl = (Impl)intf;
+        impl.aMethod((Refined)null);
+        assertEquals(Arrays.asList(Refined.class), retTypes);
+        
+        // Make sure we still get our non-bride interception if we didn't intercept the bridge.
+        retTypes.clear();
+        impl.aMethod((RetType)null);
+        assertEquals(Arrays.asList(ErasedType.class), retTypes);
+    }
+
+    public void testReverseBridge() {
+        List<Class> retTypes = new ArrayList<Class>();
+        Interceptor interceptor = new Interceptor(retTypes);
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(ReverseImpl.class);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return method.getDeclaringClass() != Object.class ? 0 : 1;
+            }
+        });
+        e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
+        // We expect the bridge ('erased') to be called & forward us to 'ret' (non-bridge)
+        ReverseSuper superclass = (ReverseSuper)e.create();
+        superclass.aMethod(null, null, null, null);
+        assertEquals(Arrays.asList(ErasedType.class, RetType.class), retTypes);
+        
+        // Calling the Refined type gives us just that.
+        retTypes.clear();
+        ReverseImpl impl2 = (ReverseImpl)superclass;
+        impl2.aMethod(null, (Refined)null, null, null);
+        assertEquals(Arrays.asList(Refined.class), retTypes);
+
+        retTypes.clear();
+        impl2.aMethod(null, (RetType)null, null, null);
+        assertEquals(Arrays.asList(RetType.class), retTypes);
+    }
+    
+    public void testBridgeForMoreViz() {
+        List<Class> retTypes = new ArrayList<Class>();
+        List<Class> paramTypes = new ArrayList<Class>();
+        Interceptor interceptor = new Interceptor(retTypes, paramTypes);
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(PublicViz.class);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return method.getDeclaringClass() != Object.class ? 0 : 1;
+            }
+        });
+        e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
+
+        VizIntf intf = (VizIntf)e.create();
+        intf.aMethod(null);
+        assertEquals(Arrays.asList(Concrete.class), paramTypes);
+    }
+    
+    
+    
+    static class ErasedType {}
+    static class RetType extends ErasedType {}
+    static class Refined extends RetType {}
+    
+    static abstract class Superclass<T extends ErasedType> {
+        // Check narrowing return value & parameters
+        public T aMethod(T t) { return null; }
+        // Check void return value
+        public void voidReturn(T t) { }
+        // Check primitive return value
+        public int intReturn(T t) { return 1; }
+        // Check widening return value
+        public RetType widenReturn(T t) { return null; }
+    }
+    public interface Interface { // the usage of the interface forces the bridge
+        RetType aMethod(RetType obj);
+        void voidReturn(RetType obj);
+        int intReturn(RetType obj);
+        // a wider type than in superclass
+        ErasedType widenReturn(RetType obj);
+    }
+    public static class Impl extends Superclass<RetType> implements Interface {
+        // An even more narrowed type, just to make sure
+        // it doesn't confuse us.
+        public Refined aMethod(Refined obj) { return null; }
+    }
+    
+    // Another set of classes -- this time with the bridging in reverse,
+    // to make sure that if we define the concrete type, a bridge
+    // is created to call it from an erased type.
+    static abstract class ReverseSuper<T extends ErasedType> {
+        // the various parameters are to make sure we only
+        // change signature when we have to -- only 'c' goes
+        // from ErasedType -> RetType
+        public T aMethod(Concrete b, T c, RetType d, ErasedType e) { return null; }
+    }
+    static class Concrete {}
+    static class ReverseImpl extends ReverseSuper<RetType> {
+        public Refined aMethod(Concrete b, Refined c, RetType d, ErasedType e) { return null; }
+        public RetType aMethod(Concrete b, RetType c, RetType d, ErasedType e) { return null; }
+    }
+    
+    public interface VizIntf {
+        public void aMethod(Concrete a);
+    }
+    static abstract class PackageViz implements VizIntf {
+        public void aMethod(Concrete e) {  }
+    }
+    // inherits aMethod from PackageViz, but bridges to make it
+    // publicly accessible.  the bridge here has the same
+    // target signature, so it absolutely requires invokespecial,
+    // otherwise we recurse forever.
+    public static class PublicViz extends PackageViz implements VizIntf {}
+    
+    private static class Interceptor implements MethodInterceptor {
+        private final List<Class> retList;
+        private final List<Class> paramList;
+        
+        public Interceptor(List<Class> retList) {
+            this(retList, new ArrayList<Class>());
+        }
+        
+        public Interceptor(List<Class> retList, List<Class> paramList) {
+            this.retList = retList;
+            this.paramList = paramList;
+        }
+
+        public Object intercept(Object obj, Method method, Object[] args,
+                MethodProxy proxy) throws Throwable {
+            retList.add(method.getReturnType());
+            if (method.getParameterTypes().length > 0) {
+                paramList.add(method.getParameterTypes()[0]);
+            }
+            return proxy.invokeSuper(obj, args);
+        }
+    }
     
 }

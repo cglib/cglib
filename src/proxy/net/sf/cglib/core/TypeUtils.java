@@ -75,6 +75,10 @@ public class TypeUtils {
         return (Constants.ACC_SYNTHETIC & access) != 0;
     }
     
+    public static boolean isBridge(int access) {
+    	return (Constants.ACC_BRIDGE & access) != 0;
+    }
+    
     // getPackage returns null on JDK 1.2
     public static String getPackageName(Type type) {
         return getPackageName(getClassName(type));
