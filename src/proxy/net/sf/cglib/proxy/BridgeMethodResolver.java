@@ -66,13 +66,14 @@ class BridgeMethodResolver {
         return resolved;
     }
 
-    private static class BridgedFinder implements ClassVisitor, MethodVisitor {
+    private static class BridgedFinder extends ClassVisitor {
         private Map/*<Signature, Signature>*/ resolved;
         private Set/*<Signature>*/ eligableMethods;
         
         private Signature currentMethod = null;
 
         BridgedFinder(Set eligableMethods, Map resolved) {
+            super(Opcodes.ASM4);
             this.resolved = resolved;
             this.eligableMethods = eligableMethods;
         }
@@ -86,120 +87,27 @@ class BridgeMethodResolver {
             Signature sig = new Signature(name, desc);
             if (eligableMethods.remove(sig)) {
                 currentMethod = sig;
-                return this;
+                return new MethodVisitor(Opcodes.ASM4) {
+                    public void visitMethodInsn(int opcode, String owner, String name,
+                                                String desc) {
+                        if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {
+                            Signature target = new Signature(name, desc);
+                            // If the target signature is the same as the current,
+                            // we shouldn't change our bridge becaues invokespecial
+                            // is the only way to make progress (otherwise we'll
+                            // get infinite recursion).  This would typically
+                            // only happen when a bridge method is created to widen
+                            // the visibility of a superclass' method.
+                            if (!target.equals(currentMethod)) {
+                                resolved.put(currentMethod, target);
+                            }
+                            currentMethod = null;
+                        }
+                    }
+                };
             } else {
                 return null;
             }
-        }
-
-        public void visitSource(String source, String debug) {
-        }
-
-        public void visitLineNumber(int line, Label start) {
-        }
-
-        public void visitFieldInsn(int opcode, String owner, String name,
-                String desc) {
-        }
-
-        public void visitEnd() {
-        }
-
-        public void visitInnerClass(String name, String outerName,
-                String innerName, int access) {
-        }
-
-        public void visitOuterClass(String owner, String name, String desc) {
-        }
-
-        public void visitAttribute(Attribute attr) {
-        }
-
-        public FieldVisitor visitField(int access, String name, String desc,
-                String signature, Object value) {
-            return null;
-        }
-
-        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            return null;
-        }
-
-        public AnnotationVisitor visitAnnotationDefault() {
-            return null;
-        }
-
-        public AnnotationVisitor visitParameterAnnotation(int parameter,
-                String desc, boolean visible) {
-            return null;
-        }
-
-        public void visitCode() {
-        }
-
-        public void visitFrame(int type, int nLocal, Object[] local,
-                int nStack, Object[] stack) {
-        }
-
-        public void visitIincInsn(int var, int increment) {
-        }
-
-        public void visitInsn(int opcode) {
-        }
-
-        public void visitIntInsn(int opcode, int operand) {
-        }
-
-        public void visitJumpInsn(int opcode, Label label) {
-        }
-
-        public void visitLabel(Label label) {
-        }
-
-        public void visitLdcInsn(Object cst) {
-        }
-
-        public void visitLocalVariable(String name, String desc,
-                String signature, Label start, Label end, int index) {
-        }
-
-        public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
-        }
-
-        public void visitMaxs(int maxStack, int maxLocals) {
-        }
-
-        public void visitMethodInsn(int opcode, String owner, String name,
-                String desc) {
-            if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {
-                Signature target = new Signature(name, desc);
-                // If the target signature is the same as the current,
-                // we shouldn't change our bridge becaues invokespecial
-                // is the only way to make progress (otherwise we'll
-                // get infinite recursion).  This would typically
-                // only happen when a bridge method is created to widen
-                // the visibility of a superclass' method.
-                if (!target.equals(currentMethod)) {
-                    resolved.put(currentMethod, target);
-                }
-                currentMethod = null;
-            }
-        }
-
-        public void visitMultiANewArrayInsn(String desc, int dims) {
-        }
-
-        public void visitTableSwitchInsn(int min, int max, Label dflt,
-                Label[] labels) {
-        }
-
-        public void visitTryCatchBlock(Label start, Label end, Label handler,
-                String type) {
-        }
-
-        public void visitTypeInsn(int opcode, String desc) {
-        }
-
-        public void visitVarInsn(int opcode, int var) {
         }
     }
 

@@ -18,12 +18,14 @@ package net.sf.cglib.transform;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Opcodes;
 
-public class FieldVisitorTee implements FieldVisitor {
+public class FieldVisitorTee extends FieldVisitor {
     private FieldVisitor fv1, fv2;
     
     public FieldVisitorTee(FieldVisitor fv1, FieldVisitor fv2) {
-        this.fv1 = fv1;
+	super(Opcodes.ASM4);
+	this.fv1 = fv1;
         this.fv2 = fv2;
     }
 

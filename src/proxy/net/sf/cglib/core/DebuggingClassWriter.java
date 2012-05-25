@@ -17,11 +17,13 @@ package net.sf.cglib.core;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.*;
 
-public class DebuggingClassWriter extends ClassWriter {
+public class DebuggingClassWriter extends ClassVisitor {
     
     public static final String DEBUG_LOCATION_PROPERTY = "cglib.debugLocation";
     
@@ -44,7 +46,7 @@ public class DebuggingClassWriter extends ClassWriter {
     }
     
     public DebuggingClassWriter(int flags) {
-        super(flags);
+	super(flags, new ClassWriter(flags));
     }
 
     public void visit(int version,
@@ -73,7 +75,7 @@ public class DebuggingClassWriter extends ClassWriter {
             public Object run() {
                 
                 
-                byte[] b = DebuggingClassWriter.super.toByteArray();
+                byte[] b = ((ClassWriter) DebuggingClassWriter.super.cv).toByteArray();
                 if (debugLocation != null) {
                     String dirs = className.replace('.', File.separatorChar);
                     try {

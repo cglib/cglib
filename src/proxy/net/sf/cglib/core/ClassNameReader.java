@@ -15,8 +15,10 @@
  */
 package net.sf.cglib.core;
 
-import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
+
 import java.util.*;
 
 // TODO: optimize (ClassReader buffers entire class before accept)
@@ -36,7 +38,7 @@ public class ClassNameReader {
     public static String[] getClassInfo(ClassReader r) {
         final List array = new ArrayList();
         try {
-            r.accept(new ClassAdapter(null) {
+            r.accept(new ClassVisitor(Opcodes.ASM4, null) {
                 public void visit(int version,
                                   int access,
                                   String name,

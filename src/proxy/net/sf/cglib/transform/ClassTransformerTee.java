@@ -15,14 +15,14 @@
  */
 package net.sf.cglib.transform;
 
-import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 
-public class ClassTransformerTee extends ClassAdapter implements ClassTransformer {
+public class ClassTransformerTee extends ClassTransformer {
     private ClassVisitor branch;
     
     public ClassTransformerTee(ClassVisitor branch) {
-        super(null);
+        super(Opcodes.ASM4);
         this.branch = branch;
     }
     
