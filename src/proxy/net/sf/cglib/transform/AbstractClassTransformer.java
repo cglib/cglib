@@ -15,13 +15,12 @@
  */
 package net.sf.cglib.transform;
 
-import net.sf.cglib.core.CodeGenerationException;
-import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 
-abstract public class AbstractClassTransformer extends ClassAdapter implements ClassTransformer {
+abstract public class AbstractClassTransformer extends ClassTransformer {
     protected AbstractClassTransformer() {
-        super(null);
+        super(Opcodes.ASM4);
     }
 
     public void setTarget(ClassVisitor target) {

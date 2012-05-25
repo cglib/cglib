@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="test" name="simplestore">
 
-<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.55 2011/04/20 16:24:24 sameb Exp $ -->
+<!--   "cglib"  was   "simplestore" component of the Jakarta Commons Subproject         $Id: build.xml,v 1.56 2012/05/25 22:56:15 jmanson Exp $ -->
 
 <!-- ========== Executable Targets ======================================== -->
 
@@ -14,7 +14,7 @@
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="2.2.2"/>
+    <property name="component.version" value="3.0"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>
@@ -127,7 +127,7 @@
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="compile.classpath"/>
     <jarjar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-nodep-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
-      <zipfileset src="lib/asm-3.3.1.jar" excludes="META-INF"/>
+      <zipfileset src="lib/asm-4.0.jar" excludes="META-INF"/>
       <rule pattern="org.objectweb.asm.**" result="net.sf.cglib.asm.@1"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
@@ -149,6 +149,7 @@
       <include name="LICENSE*"/>
       <include name="NOTICE*"/>
       <include name="README*"/>
+      <include name="src/**/*.txt"/>
       <include name="src/**/*.java"/>
       <include name="src/**/*.properties"/>
       <include name="src/**/*.xml"/>  

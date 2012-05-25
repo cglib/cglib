@@ -20,7 +20,6 @@ import java.io.*;
 
 import org.apache.tools.ant.BuildException;
 import org.objectweb.asm.*;
-import org.objectweb.asm.commons.EmptyVisitor;
 
 public class DumpFieldsTask extends AbstractProcessTask {
     private File outfile;
@@ -41,6 +40,60 @@ public class DumpFieldsTask extends AbstractProcessTask {
         } catch (IOException e) {
             throw new BuildException(e);
         }
+    }
+
+    static class EmptyVisitor extends ClassVisitor {
+	AnnotationVisitor av = new AnnotationVisitor(Opcodes.ASM4) {
+	    public AnnotationVisitor visitAnnotation(
+		    String name, String desc) {
+		return this;
+	    }
+
+	    public AnnotationVisitor visitArray(String name) {
+		return this;
+	    }
+	};
+
+	public EmptyVisitor() {
+	    super(Opcodes.ASM4);
+	}
+
+	public AnnotationVisitor visitAnnotation(
+		String desc, boolean visible) {
+	    return av;
+	}
+
+	public FieldVisitor visitField(
+		int access, String name, String desc,
+		String signature, Object value) {
+	    return new FieldVisitor(Opcodes.ASM4) {
+		public AnnotationVisitor visitAnnotation(
+			String desc, boolean visible) {
+		    return av;
+		}
+	    };
+	}
+
+	@Override
+	public MethodVisitor visitMethod(
+		int access, String name, String desc, String signature,
+		String[] exceptions) {
+	    return new MethodVisitor(Opcodes.ASM4) {
+		public AnnotationVisitor visitAnnotationDefault() {
+		    return av;
+		}
+
+		public AnnotationVisitor visitAnnotation(
+			String desc, boolean visible) {
+		    return av;
+		}
+
+		public AnnotationVisitor visitParameterAnnotation(
+			int parameter, String desc, boolean visible) {
+		    return av;
+		}
+	    };
+	}
     }
 
     protected void processFile(File file) throws Exception {

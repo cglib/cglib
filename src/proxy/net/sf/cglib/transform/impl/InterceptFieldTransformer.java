@@ -17,10 +17,6 @@ package net.sf.cglib.transform.impl;
 
 import net.sf.cglib.transform.*;
 import net.sf.cglib.core.*;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodAdapter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
