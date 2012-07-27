@@ -20,7 +20,7 @@ import java.util.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestKeyFactory.java,v 1.6 2004/06/24 21:15:17 herbyderby Exp $
+ * @version $Id: TestKeyFactory.java,v 1.7 2012/07/27 16:02:50 baliuka Exp $
  */
 public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
     public interface MyKey {
@@ -157,10 +157,5 @@ public class TestKeyFactory extends net.sf.cglib.CodeGenTestCase {
         KeyFactory.create(loader, MyKey.class, null );
     }
     
-    public void testFailOnMemoryLeak() throws Throwable {
-        if(leaks()){
-          fail("Memory Leak in KeyFactory");
-        }
-    }
     
 }

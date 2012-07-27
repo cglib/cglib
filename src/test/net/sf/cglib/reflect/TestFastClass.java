@@ -605,10 +605,6 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         FastClass.create(loader,Simple.class).newInstance();
     }
     
-    public void testFailOnMemoryLeak() throws Throwable {
-        if(leaks()){
-          fail("Memory Leak in FastClass");
-        }
-    }
+   
     
 }

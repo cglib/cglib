@@ -31,7 +31,7 @@ import net.sf.cglib.reflect.FastClass;
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
  *      baliuka@mwm.lt</a>
- *@version    $Id: TestEnhancer.java,v 1.57 2011/04/20 16:16:04 sameb Exp $
+ *@version    $Id: TestEnhancer.java,v 1.58 2012/07/27 16:02:49 baliuka Exp $
  */
 public class TestEnhancer extends CodeGenTestCase {
     private static final MethodInterceptor TEST_INTERCEPTOR = new TestInterceptor();
@@ -709,12 +709,7 @@ public class TestEnhancer extends CodeGenTestCase {
     
     }
     
-   public void testFailOnMemoryLeak() throws Throwable{
-         if( leaks() ){ 
-           fail("Memory leak caused by Enhancer");
-         }
-    }
-
+  
     public void testCallbackHelper() {
         final ArgInit delegate = new ArgInit("helper");
         Class sc = ArgInit.class;
