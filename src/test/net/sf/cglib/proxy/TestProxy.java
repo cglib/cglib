@@ -26,7 +26,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg <a href="mailto:chris@nokleberg.com">chris@nokleberg.com</a>
- * @version $Id: TestProxy.java,v 1.5 2004/06/24 21:15:16 herbyderby Exp $
+ * @version $Id: TestProxy.java,v 1.6 2012/07/27 16:02:49 baliuka Exp $
  */
 public class TestProxy extends CodeGenTestCase {
 
@@ -169,10 +169,6 @@ public class TestProxy extends CodeGenTestCase {
        
     }
     
-    public void testFailOnMemoryLeak() throws Throwable {
-        if(leaks()){
-         fail("Memory Leak in Proxy");
-        }
-    }
+   
     
 }

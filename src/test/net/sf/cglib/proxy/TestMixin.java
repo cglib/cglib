@@ -23,7 +23,7 @@ import junit.framework.*;
 
 /**
  * @author Chris Nokleberg
- * @version $Id: TestMixin.java,v 1.5 2004/06/24 21:15:16 herbyderby Exp $
+ * @version $Id: TestMixin.java,v 1.6 2012/07/27 16:02:49 baliuka Exp $
  */
 public class TestMixin extends CodeGenTestCase {
     public void testSimple() throws Exception {
@@ -125,10 +125,6 @@ public class TestMixin extends CodeGenTestCase {
         Mixin.createBean(loader, new Object[]{ new DBean1(), new DBean2() });
     }
     
-    public void testFailOnMemoryLeak() throws Throwable {
-        if(leaks()){
-          fail("Memory Leak in Mixin");
-        }
-    }
+    
     
 }
