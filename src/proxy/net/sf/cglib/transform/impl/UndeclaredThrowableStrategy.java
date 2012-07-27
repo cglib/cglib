@@ -15,9 +15,14 @@
  */
 package net.sf.cglib.transform.impl;
 
-import net.sf.cglib.core.*;
-import net.sf.cglib.transform.*;
-import org.objectweb.asm.Attribute;
+import net.sf.cglib.core.ClassGenerator;
+import net.sf.cglib.core.DefaultGeneratorStrategy;
+import net.sf.cglib.core.GeneratorStrategy;
+import net.sf.cglib.core.TypeUtils;
+import net.sf.cglib.transform.ClassTransformer;
+import net.sf.cglib.transform.MethodFilter;
+import net.sf.cglib.transform.MethodFilterTransformer;
+import net.sf.cglib.transform.TransformingClassGenerator;
 
 /**
  * A {@link GeneratorStrategy} suitable for use with {@link net.sf.cglib.Enhancer} which
@@ -25,9 +30,11 @@ import org.objectweb.asm.Attribute;
  * in an alternative exception of your choice.
  */
 public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
-    private ClassTransformer t;
+    
 
-    /**
+    private Class wrapper;
+
+	/**
      * Create a new instance of this strategy.
      * @param wrapper a class which extends either directly or
      * indirectly from <code>Throwable</code> and which has at least one
@@ -36,8 +43,7 @@ public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
      * <code>java.lang.reflect.UndeclaredThrowableException.class</code>
      */
     public UndeclaredThrowableStrategy(Class wrapper) {
-        t = new UndeclaredThrowableTransformer(wrapper);
-        t = new MethodFilterTransformer(TRANSFORM_FILTER, t);
+       this.wrapper = wrapper;
     }
     
     private static final MethodFilter TRANSFORM_FILTER = new MethodFilter() {
@@ -47,7 +53,9 @@ public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
     };
 
     protected ClassGenerator transform(ClassGenerator cg) throws Exception {
-        return new TransformingClassGenerator(cg, t);
+    	 ClassTransformer   tr = new UndeclaredThrowableTransformer(wrapper);
+         tr = new MethodFilterTransformer(TRANSFORM_FILTER, tr);
+        return new TransformingClassGenerator(cg, tr);
     }
 }
 
