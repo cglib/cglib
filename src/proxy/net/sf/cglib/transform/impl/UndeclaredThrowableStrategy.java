@@ -15,14 +15,9 @@
  */
 package net.sf.cglib.transform.impl;
 
-import net.sf.cglib.core.ClassGenerator;
-import net.sf.cglib.core.DefaultGeneratorStrategy;
-import net.sf.cglib.core.GeneratorStrategy;
-import net.sf.cglib.core.TypeUtils;
-import net.sf.cglib.transform.ClassTransformer;
-import net.sf.cglib.transform.MethodFilter;
-import net.sf.cglib.transform.MethodFilterTransformer;
-import net.sf.cglib.transform.TransformingClassGenerator;
+import net.sf.cglib.core.*;
+import net.sf.cglib.transform.*;
+import org.objectweb.asm.Attribute;
 
 /**
  * A {@link GeneratorStrategy} suitable for use with {@link net.sf.cglib.Enhancer} which
@@ -43,7 +38,7 @@ public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
      * <code>java.lang.reflect.UndeclaredThrowableException.class</code>
      */
     public UndeclaredThrowableStrategy(Class wrapper) {
-       this.wrapper = wrapper;
+    	this.wrapper = wrapper;
     }
     
     private static final MethodFilter TRANSFORM_FILTER = new MethodFilter() {
@@ -53,7 +48,7 @@ public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
     };
 
     protected ClassGenerator transform(ClassGenerator cg) throws Exception {
-    	 ClassTransformer   tr = new UndeclaredThrowableTransformer(wrapper);
+    	 ClassTransformer tr = new UndeclaredThrowableTransformer(wrapper);
          tr = new MethodFilterTransformer(TRANSFORM_FILTER, tr);
         return new TransformingClassGenerator(cg, tr);
     }
