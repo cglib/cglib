@@ -19,16 +19,16 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
 
 public class DebuggingClassWriter extends ClassVisitor {
     
     public static final String DEBUG_LOCATION_PROPERTY = "cglib.debugLocation";
     
     private static String debugLocation;
-    private static boolean traceEnabled;
+    private static Constructor traceCtor;
     
     private String className;
     private String superName;
@@ -38,15 +38,15 @@ public class DebuggingClassWriter extends ClassVisitor {
         if (debugLocation != null) {
             System.err.println("CGLIB debugging enabled, writing to '" + debugLocation + "'");
             try {
-                Class.forName("org.objectweb.asm.util.TraceClassVisitor");
-                traceEnabled = true;
+              Class clazz = Class.forName("org.objectweb.asm.util.TraceClassVisitor");
+              traceCtor = clazz.getConstructor(new Class[]{ClassVisitor.class, PrintWriter.class});
             } catch (Throwable ignore) {
             }
         }
     }
     
     public DebuggingClassWriter(int flags) {
-	super(flags, new ClassWriter(flags));
+	super(Opcodes.ASM4, new ClassWriter(flags));
     }
 
     public void visit(int version,
@@ -89,20 +89,20 @@ public class DebuggingClassWriter extends ClassVisitor {
                             out.close();
                         }
                         
-                        if (traceEnabled) {
+                        if (traceCtor != null) {
                             file = new File(new File(debugLocation), dirs + ".asm");
                             out = new BufferedOutputStream(new FileOutputStream(file));
                             try {
                                 ClassReader cr = new ClassReader(b);
                                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(out));
-                                TraceClassVisitor tcv = new TraceClassVisitor(null, pw);
+                                ClassVisitor tcv = (ClassVisitor)traceCtor.newInstance(new Object[]{null, pw});
                                 cr.accept(tcv, 0);
                                 pw.flush();
                             } finally {
                                 out.close();
                             }
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         throw new CodeGenerationException(e);
                     }
                 }
