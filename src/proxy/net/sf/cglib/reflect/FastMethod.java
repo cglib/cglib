@@ -18,6 +18,10 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import net.sf.cglib.core.Signature;
+
+import org.objectweb.asm.Type;
+
 public class FastMethod extends FastMember
 {
     FastMethod(FastClass fc, Method method) {
@@ -25,7 +29,7 @@ public class FastMethod extends FastMember
     }
 
     private static int helper(FastClass fc, Method method) {
-        int index = fc.getIndex(method.getName(), method.getParameterTypes());
+        int index = fc.getIndex(new Signature(method.getName(), Type.getMethodDescriptor(method)));
         if (index < 0) {
             Class[] types = method.getParameterTypes();
             System.err.println("hash=" + method.getName().hashCode() + " size=" + types.length);
