@@ -589,6 +589,32 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         FastClass fc = gen.create();
     }
 
+    public void testGetMethod() throws Exception {
+      FastClass fc = FastClass.create(Base.class);
+      FastMethod method = fc.getMethod(
+          Base.class.getDeclaredMethod("foo", new Class[] { String.class }));
+      assertEquals("hello world", method.invoke(new Base(), new Object[] { "hello world" }));
+    }
+
+    class Base {
+      CharSequence foo(String f) { 
+        return f;
+      }
+    }
+
+    public void testGetMethod_covarientOverride() throws Exception {
+      FastClass fc = FastClass.create(Sub.class);
+      FastMethod method = fc.getMethod(
+          Sub.class.getDeclaredMethod("foo", new Class[] {String.class}));
+      assertEquals("foofoo", method.invoke(new Sub(), new Object[] { "foo" }));
+    }
+
+    class Sub extends Base {
+      String foo(String f) { 
+        return f + f;
+      }
+    }
+
     public TestFastClass(String testName) {
         super(testName);
     }
