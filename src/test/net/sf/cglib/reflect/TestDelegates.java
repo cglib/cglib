@@ -44,6 +44,10 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
         int indexOf(String str, int fromIndex);
     }
 
+    public interface Format {
+        String format(String format, Object... args);
+    }
+
     public void testFancy() throws Throwable {
         Substring delegate = (Substring)MethodDelegate.create("CGLIB", "substring", Substring.class);
         assertTrue("LI".equals(delegate.substring(2, 4)));
@@ -58,6 +62,13 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
         String test = "abcabcabc";
         IndexOf delegate = (IndexOf)MethodDelegate.create(test, "indexOf", IndexOf.class);
         assertTrue(delegate.indexOf("ab", 1) == test.indexOf("ab", 1));
+    }
+
+    public void testVarArgs() throws Throwable {
+        String formatStr = "Time: %d";
+        long time = System.currentTimeMillis();
+        Format delegate = (Format) MethodDelegate.createStatic(String.class, "format", Format.class);
+        assertEquals(delegate.format(formatStr, time), String.format(formatStr, time));
     }
 
     public void testEquals() throws Throwable {
@@ -120,7 +131,7 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
         p.fireEvent();
         assertTrue(p.test == 2);
         p.removeListener(l1);
-        p.fireEvent(); 
+        p.fireEvent();
         assertTrue(p.test == 3);
     }
 
@@ -151,19 +162,19 @@ public class TestDelegates extends net.sf.cglib.CodeGenTestCase {
     public TestDelegates(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestDelegates.class);
     }
 
     public void perform(ClassLoader loader) throws Throwable {
-    }    
-    
+    }
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
+
 }
