@@ -8,18 +8,17 @@
   <target description="Initialize and evaluate conditionals" name="init">
 
     <!-- read properties from the build.properties, if any -->
-    <property file="${user.home}/build.properties" />
+    <property file="${basedir}/build.properties" />
     <property name="component-propfile" value="${basedir}/build.properties"/>
 
     <property name="component.name" value="cglib"/>
     <property name="component.package" value="net.sf.cglib"/>
     <property name="component.title" value="cglib"/>
-    <property name="component.version" value="3.1"/>
+    <property name="component.version" value="3.2"/>
 
     <property name="build.home" value="build/proxy"/>
     <property name="build.transform" value="build/transform"/>
     <property name="samples.build.home" value="build/samples"/>
-
 
     <property name="test.build.home" value="build/test"/>
 
@@ -52,7 +51,7 @@
 
     <!-- ========== Test Execution Defaults =================================== -->
     <property name="cp" value=""/>
-    <property name="classpath" value="${cp}:${junit.jar}" />
+    <property name="classpath" value="${cp}:lib/junit.jar" />
     <property name="test.entry" value="net.sf.cglib.TestAll" />
     <property name="test.failonerror" value="true" />
     <property name="test.runner" value="junit.textui.TestRunner" />
@@ -127,7 +126,7 @@
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="compile.classpath"/>
     <jarjar basedir="${build.home}/classes" jarfile="${dist.home}/${component.name}-nodep-${component.version}.jar" >
       <zipfileset dir="lib" includes="asm*.txt"/>
-      <zipfileset src="lib/asm-4.2.jar" excludes="META-INF"/>
+      <zipfileset src="lib/asm-5.0.3.jar" excludes="META-INF"/>
       <rule pattern="org.objectweb.asm.**" result="net.sf.cglib.asm.@1"/>
       <include name="**/*"/>
       <exclude name="samples/**"/>
@@ -263,31 +262,6 @@
           </fileset>
         </classpath>
     </java>
-  </target>
-
-  <target name="test-transform" depends="build-test">
-    <mkdir dir="${build.transform}"/>
-    <copy todir="${build.transform}" preservelastmodified="yes">
-      <fileset dir="${build.home}/classes"/>
-      <fileset dir="./lib"/>	
-    </copy>
-    <taskdef name="example" classname="net.sf.cglib.transform.impl.ExampleTask">
-      <classpath>
-        <pathelement path="${build.home}/classes"/>
-        <pathelement path="${test.build.home}/classes"/>
-        <fileset dir="./lib">
-          <include name="*.jar"/>
-        </fileset>
-      </classpath>
-    </taskdef>
-    <example fieldsuffix="Cglib" verbose="yes">
-      <fileset dir="${build.transform}" includes="**/*">
-      <!--  <not><depend targetdir="${build.home}/classes"/></not> -->
-      </fileset>
-    	
-      <newproperty name="cglibFoo" type="long"/>
-      <newproperty name="cglibBar" type="Double"/>
-    </example>
   </target>
 
 </project>
