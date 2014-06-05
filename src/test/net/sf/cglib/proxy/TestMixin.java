@@ -38,7 +38,7 @@ public class TestMixin extends CodeGenTestCase {
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
     }
- 
+
     public void testOverride() throws Exception {
         Object obj = Mixin.create(new Object[]{ new D1(), new D4() });
         assertTrue(((DI1)obj).herby().equals("D1"));
@@ -86,6 +86,12 @@ public class TestMixin extends CodeGenTestCase {
         Object obj = mixin.newInstance(new Object[]{ new DBean1(), new DBean2() });
     }
 
+    public void testVarArgs() throws Exception {
+        Object obj = Mixin.create(new Object[] { new D1(), new D5() });
+        assertEquals(((DI1) obj).herby(), "D1");
+        assertEquals(((DI5) obj).vararg("1", "2"), 2);
+    }
+
     private static Set getGetters(Class beanClass) throws Exception {
         Set getters = new HashSet();
         PropertyDescriptor[] descriptors =
@@ -112,19 +118,19 @@ public class TestMixin extends CodeGenTestCase {
     public TestMixin(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestMixin.class);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
         Mixin.createBean(loader, new Object[]{ new DBean1(), new DBean2() });
     }
-    
-    
-    
+
+
+
 }

@@ -152,12 +152,12 @@ abstract public class MethodDelegate {
           TypeUtils.parseType("net.sf.cglib.reflect.MethodDelegate");
         private static final Signature NEW_INSTANCE =
           new Signature("newInstance", METHOD_DELEGATE, new Type[]{ Constants.TYPE_OBJECT });
-        
+
         private Object target;
         private Class targetClass;
         private String methodName;
         private Class iface;
-        
+
         public Generator() {
             super(SOURCE);
         }
@@ -224,7 +224,11 @@ abstract public class MethodDelegate {
 
             // generate proxied method
             MethodInfo proxied = ReflectUtils.getMethodInfo(iface.getDeclaredMethods()[0]);
-            e = EmitUtils.begin_method(ce, proxied, Constants.ACC_PUBLIC);
+            int modifiers = Constants.ACC_PUBLIC;
+            if ((proxied.getModifiers() & Constants.ACC_VARARGS) == Constants.ACC_VARARGS) {
+                modifiers |= Constants.ACC_VARARGS;
+            }
+            e = EmitUtils.begin_method(ce, proxied, modifiers);
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(methodInfo.getClassInfo().getType());
@@ -252,7 +256,7 @@ abstract public class MethodDelegate {
             e.putfield("eqMethod");
             e.return_value();
             e.end_method();
-            
+
             ce.end_class();
         }
     }
