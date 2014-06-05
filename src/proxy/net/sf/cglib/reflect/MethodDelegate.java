@@ -224,11 +224,11 @@ abstract public class MethodDelegate {
 
             // generate proxied method
             MethodInfo proxied = ReflectUtils.getMethodInfo(iface.getDeclaredMethods()[0]);
-            int access = Constants.ACC_PUBLIC;
+            int modifiers = Constants.ACC_PUBLIC;
             if ((proxied.getModifiers() & Constants.ACC_VARARGS) == Constants.ACC_VARARGS) {
-                access |= Constants.ACC_VARARGS;
+                modifiers |= Constants.ACC_VARARGS;
             }
-            e = EmitUtils.begin_method(ce, proxied, access);
+            e = EmitUtils.begin_method(ce, proxied, modifiers);
             e.load_this();
             e.super_getfield("target", Constants.TYPE_OBJECT);
             e.checkcast(methodInfo.getClassInfo().getType());

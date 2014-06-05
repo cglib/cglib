@@ -129,11 +129,11 @@ abstract public class MulticastDelegate implements Cloneable {
         }
 
         private void emitProxy(ClassEmitter ce, final MethodInfo method) {
-            int access = Constants.ACC_PUBLIC;
+            int modifiers = Constants.ACC_PUBLIC;
             if ((method.getModifiers() & Constants.ACC_VARARGS) == Constants.ACC_VARARGS) {
-                access |= Constants.ACC_VARARGS;
+                modifiers |= Constants.ACC_VARARGS;
             }
-            final CodeEmitter e = EmitUtils.begin_method(ce, method, access);
+            final CodeEmitter e = EmitUtils.begin_method(ce, method, modifiers);
             Type returnType = method.getSignature().getReturnType();
             final boolean returns = returnType != Type.VOID_TYPE;
             Local result = null;
