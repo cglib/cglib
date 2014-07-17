@@ -24,7 +24,7 @@ import java.util.*;
  */
 public class TestBeanMapProxy extends net.sf.cglib.CodeGenTestCase {
     public void testBeanMap() throws Exception {
-        HashMap identity = new HashMap();
+        HashMap identity = new HashMap() {}; // use anonymous class for correct class loader
         Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });
         person.setName("Chris");
         assertTrue("Chris".equals(person.getName()));

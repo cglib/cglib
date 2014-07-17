@@ -701,6 +701,10 @@ public class TestEnhancer extends CodeGenTestCase {
          };
          thread.start();
          thread.join();
+
+         // clean-up static callback
+         Enhancer.registerStaticCallbacks(clazz, null);
+         assertEquals("test", newArgInit(clazz, "test").toString());
     }
     
    public void perform(ClassLoader loader) throws Exception{
