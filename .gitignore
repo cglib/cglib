@@ -10,3 +10,4 @@ bin/
 .java~
 .bak
 maven.log*
+build/

@@ -36,6 +36,11 @@
     <property name="compile.debug" value="true"/>
     <property name="compile.deprecation" value="true"/>
     <property name="compile.optimize" value="true"/>
+    
+    <property name="samplesign.key.store" value="${samples.build.home}/.keystore"/>
+    <property name="samplesign.key.storepass" value="cglibsamples"/>
+    <property name="samplesign.key.alias" value="cglibsamples"/>
+    <property name="samplesign.key.pass" value="cglibsamples"/>
 
     <path id="compile.classpath">
       <pathelement location="${build.home}/classes"/>
@@ -72,7 +77,7 @@
   <target depends="prepare" description="Compile shareable components" 
           name="compile">
     <javac debug="${compile.debug}" deprecation="${compile.deprecation}" destdir="${build.home}/classes" optimize="${compile.optimize}" srcdir="${source.home}"
-      target="${compile.target}" bootclasspath="${compile.bootclasspath}" extdirs="${compile.extdirs}" source="${compile.source}">
+      target="${compile.target}" bootclasspath="${compile.bootclasspath}" extdirs="${compile.extdirs}" source="${compile.source}" excludes="samples/**">
       <classpath refid="compile.classpath"/>
       <compilerarg compiler="jikes" value="-nowarn"/>
     </javac>
@@ -168,6 +173,31 @@
        <compilerarg compiler="jikes" value="-nowarn"/>
      </javac>
    </target>  
+  
+   <target depends="compile-samples" name="signed-samples-jar">
+     <jar basedir="${samples.build.home}/classes"  destfile="${samples.build.home}/samples.jar" >
+     </jar>
+     <delete file="${samplesign.key.store}" quiet="true"/>
+     <genkey alias="${samplesign.key.alias}" 
+             verbose="true" 
+             storepass="${samplesign.key.storepass}"
+             keypass="${samplesign.key.pass}" 
+             validity="365" 
+             keystore="${samplesign.key.store}">
+       <dname>
+         <param name="CN" value="CGLIB Project"/>
+         <param name="OU" value="Samples"/>
+         <param name="O"  value="CGLIB"/>
+         <param name="C"  value="US"/>
+       </dname>
+     </genkey>
+     <signjar jar="${samples.build.home}/samples.jar"
+            signedjar="${samples.build.home}/samples.jar"
+            keystore="${samplesign.key.store}"
+            alias="${samplesign.key.alias}"
+            storepass="${samplesign.key.storepass}"
+            keypass="${samplesign.key.pass}"/>
+   </target>
 
 
    <target depends="compile-samples" 
@@ -208,10 +238,26 @@
     </java>
   </target>
 
+  <target depends="signed-samples-jar" 
+         description="runs samples" 
+         name="samples-trace-signed">
+   <java classname="samples.Trace" 
+         failonerror="${test.failonerror}"
+         fork="yes" 
+         >
+
+       <classpath>
+         <pathelement path="${samples.build.home}/samples.jar"/>
+         <pathelement path="${build.home}/classes"/>
+         <fileset dir="./lib">
+		<include name="*.*"/>
+         </fileset>
+       </classpath>
+   </java>
+ </target>
 
 
-
-  <target depends="compile,compile-samples"
+  <target depends="compile,compile-samples,signed-samples-jar"
     name="build-test">
     <javac debug="${compile.debug}" 
            deprecation="${compile.deprecation}" 
@@ -256,7 +302,7 @@
           <pathelement path="${classpath}"/>
           <pathelement path="${java.class.path}"/>
           <pathelement path="${source.test}"/>
-          <pathelement path="${samples.build.home}/classes" />      
+          <pathelement path="${samples.build.home}/samples.jar" />      
           <fileset dir="./lib">
 		<include name="*.jar"/>
           </fileset>
