@@ -18,6 +18,7 @@ package net.sf.cglib.core;
 import java.io.*;
 import java.util.*;
 import java.lang.ref.*;
+import java.security.ProtectionDomain;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -183,12 +184,26 @@ implements ClassGenerator
 
     abstract protected ClassLoader getDefaultClassLoader();
 
+    /**
+     * Returns the protection domain to use when defining the class.
+     * <p>
+     * Default implementation returns <code>null</code> for using a default protection domain. Sub-classes may
+     * override to use a more specific protection domain.
+     * </p>
+     *
+     * @return the protection domain (<code>null</code> for using a default)
+     */
+    protected ProtectionDomain getProtectionDomain() {
+    	return null;
+    }
+
     protected Object create(Object key) {
         try {
         	Class gen = null;
         	
             synchronized (source) {
                 ClassLoader loader = getClassLoader();
+                ProtectionDomain protectionDomain = getProtectionDomain();
                 Map cache2 = null;
                 cache2 = (Map)source.cache.get(loader);
                 if (cache2 == null) {
@@ -216,7 +231,11 @@ implements ClassGenerator
                             byte[] b = strategy.generate(this);
                             String className = ClassNameReader.getClassName(new ClassReader(b));
                             getClassNameCache(loader).add(className);
-                            gen = ReflectUtils.defineClass(className, b, loader);
+                            if(protectionDomain == null) {
+                            	gen = ReflectUtils.defineClass(className, b, loader);
+                            } else {
+                            	gen = ReflectUtils.defineClass(className, b, loader, protectionDomain);
+                            }
                         }
                        
                         if (useCache) {

@@ -16,6 +16,7 @@
 package net.sf.cglib.reflect;
 
 import java.lang.reflect.*;
+import java.security.ProtectionDomain;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
@@ -82,6 +83,10 @@ abstract public class MulticastDelegate implements Cloneable {
 
         protected ClassLoader getDefaultClassLoader() {
             return iface.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(iface);
         }
 
         public void setInterface(Class iface) {

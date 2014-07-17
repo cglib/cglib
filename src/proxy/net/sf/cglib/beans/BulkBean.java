@@ -18,6 +18,7 @@ package net.sf.cglib.beans;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.ProtectionDomain;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
@@ -99,6 +100,10 @@ abstract public class BulkBean
 
         protected ClassLoader getDefaultClassLoader() {
             return target.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(target);
         }
 
         public BulkBean create() {

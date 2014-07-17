@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.proxy;
 
+import java.security.ProtectionDomain;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -106,6 +107,10 @@ abstract public class Mixin {
 
         protected ClassLoader getDefaultClassLoader() {
             return classes[0].getClassLoader(); // is this right?
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(classes[0]);
         }
 
         public void setStyle(int style) {

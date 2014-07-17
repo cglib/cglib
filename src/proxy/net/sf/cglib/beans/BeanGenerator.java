@@ -16,6 +16,7 @@
 package net.sf.cglib.beans;
 
 import java.beans.PropertyDescriptor;
+import java.security.ProtectionDomain;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
@@ -68,6 +69,10 @@ public class BeanGenerator extends AbstractClassGenerator
         } else {
             return null;
         }
+    }
+
+    protected ProtectionDomain getProtectionDomain() {
+        return ReflectUtils.getProtectionDomain(superclass);
     }
 
     public Object create() {

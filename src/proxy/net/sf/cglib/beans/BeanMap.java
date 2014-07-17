@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.beans;
 
+import java.security.ProtectionDomain;
 import java.beans.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -109,6 +110,10 @@ abstract public class BeanMap implements Map {
 
         protected ClassLoader getDefaultClassLoader() {
             return beanClass.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(beanClass);
         }
 
         /**

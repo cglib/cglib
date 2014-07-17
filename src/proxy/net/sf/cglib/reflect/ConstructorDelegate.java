@@ -16,6 +16,7 @@
 package net.sf.cglib.reflect;
 
 import java.lang.reflect.*;
+import java.security.ProtectionDomain;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
@@ -70,6 +71,10 @@ abstract public class ConstructorDelegate {
 
         protected ClassLoader getDefaultClassLoader() {
             return targetClass.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(targetClass);
         }
 
         public void generateClass(ClassVisitor v) {
