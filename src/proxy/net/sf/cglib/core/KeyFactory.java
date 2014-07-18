@@ -17,6 +17,7 @@
 package net.sf.cglib.core;
 
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
@@ -129,6 +130,10 @@ abstract public class KeyFactory {
 
         protected ClassLoader getDefaultClassLoader() {
             return keyInterface.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(keyInterface);
         }
 
         public void setCustomizer(Customizer customizer) {

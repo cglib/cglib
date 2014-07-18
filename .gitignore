@@ -1,5 +1,8 @@
 .classpath
 .project
+bin/
+.settings/
+
 .log
 .class
 .bat
@@ -7,3 +10,4 @@
 .java~
 .bak
 maven.log*
+build/

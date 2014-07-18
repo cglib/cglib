@@ -17,6 +17,7 @@ package net.sf.cglib.beans;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.*;
+import java.security.ProtectionDomain;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
@@ -83,6 +84,10 @@ abstract public class BeanCopier
 
         protected ClassLoader getDefaultClassLoader() {
             return source.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(source);
         }
 
         public BeanCopier create() {

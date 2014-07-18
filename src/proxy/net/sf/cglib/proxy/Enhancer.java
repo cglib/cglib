@@ -18,6 +18,7 @@ package net.sf.cglib.proxy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 import java.util.*;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.Attribute;
@@ -388,6 +389,16 @@ public class Enhancer extends AbstractClassGenerator
             return superclass.getClassLoader();
         } else if (interfaces != null) {
             return interfaces[0].getClassLoader();
+        } else {
+            return null;
+        }
+    }
+
+    protected ProtectionDomain getProtectionDomain() {
+        if (superclass != null) {
+        	return ReflectUtils.getProtectionDomain(superclass);
+        } else if (interfaces != null) {
+        	return ReflectUtils.getProtectionDomain(interfaces[0]);
         } else {
             return null;
         }

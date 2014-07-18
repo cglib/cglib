@@ -17,10 +17,10 @@ package net.sf.cglib.beans;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
-
 /**
  * @author Chris Nokleberg
  */
@@ -58,6 +58,10 @@ public class ImmutableBean
 
         protected ClassLoader getDefaultClassLoader() {
             return target.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(target);
         }
 
         public Object create() {

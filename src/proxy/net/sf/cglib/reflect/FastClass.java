@@ -19,6 +19,7 @@ import net.sf.cglib.core.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.ProtectionDomain;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
@@ -66,6 +67,10 @@ abstract public class FastClass
 
         protected ClassLoader getDefaultClassLoader() {
             return type.getClassLoader();
+        }
+
+        protected ProtectionDomain getProtectionDomain() {
+        	return ReflectUtils.getProtectionDomain(type);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {

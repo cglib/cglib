@@ -20,7 +20,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+
+import samples.Bean;
+import samples.SimpleClass;
 import junit.framework.*;
+
 import net.sf.cglib.core.ClassGenerator;
 import net.sf.cglib.core.DefaultGeneratorStrategy;
 import net.sf.cglib.transform.ClassTransformerTee;
@@ -39,6 +43,25 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public void testSimple() throws Throwable {
         FastClass.create(Simple.class).newInstance();
         FastClass.create(Simple.class).newInstance();
+    }
+    
+    public void testSignedClassProtectionDomain() throws Throwable {
+    	// SimpleClass must be signed for this test to work
+    	assertNotNull(SimpleClass.class.getProtectionDomain().getCodeSource());
+    	assertNotNull("SimpleClass.class must be signed for this test to work",SimpleClass.class.getProtectionDomain().getCodeSource().getCertificates());
+    	assertTrue("SimpleClass.class must be signed for this test to work", SimpleClass.class.getProtectionDomain().getCodeSource().getCertificates().length > 0);
+    	
+    	// when
+        Object instance = FastClass.create(SimpleClass.class).newInstance();
+        
+        // then
+    	assertNotNull(instance.getClass().getProtectionDomain().getCodeSource());
+    	assertNotNull(instance.getClass().getProtectionDomain().getCodeSource().getCertificates());
+    	assertTrue(instance.getClass().getProtectionDomain().getCodeSource().getCertificates().length > 0);
+    	assertEquals(SimpleClass.class.getProtectionDomain().getCodeSource().getCertificates().length, instance.getClass().getProtectionDomain().getCodeSource().getCertificates().length);
+    	for (int i = 0; i < SimpleClass.class.getProtectionDomain().getCodeSource().getCertificates().length; i++) {
+        	assertEquals(SimpleClass.class.getProtectionDomain().getCodeSource().getCertificates()[i], instance.getClass().getProtectionDomain().getCodeSource().getCertificates()[i]);
+		}
     }
 
     public void testException() throws Throwable {
