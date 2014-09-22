@@ -1,13 +1,27 @@
+# Eclipse
 .classpath
 .project
-bin/
 .settings/
 
-.log
-.class
-.bat
-.nbattrs
-.java~
-.bak
-maven.log*
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
+site/
+
+# Gradle
+.gradle/
 build/
+
+#jRebel
+rebel.xml
+
+#Shade plugin
+dependency-reduced-pom.xml

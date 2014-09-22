@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>cglib</groupId>
+    <artifactId>cglib-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>3.2-SNAPSHOT</version>
+
+    <modules>
+        <module>cglib-nodep</module>
+        <module>cglib</module>
+    </modules>
+
+    <name>Code Generation Library</name>
+    <url>http://cglib.sourceforge.net/</url>
+    <description>Code generation library</description>
+
+    <licenses>
+        <license>
+            <name>ASF 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>baliuka</id>
+            <name>Juozas Baliuka</name>
+        </developer>
+        <developer>
+            <id>herbyderby</id>
+            <name>Chris Nokleberg</name>
+        </developer>
+        <developer>
+            <id>sameb</id>
+            <name>Sam Berlin</name>
+        </developer>
+    </developers>
+
+</project>
