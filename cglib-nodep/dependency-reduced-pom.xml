@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <artifactId>cglib-parent</artifactId>
+    <groupId>cglib</groupId>
+    <version>3.2.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>cglib-nodep</artifactId>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <createSourcesJar>true</createSourcesJar>
+              <shadeSourcesContent>true</shadeSourcesContent>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>net.sf.cglib.asm</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+

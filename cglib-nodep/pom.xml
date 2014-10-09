@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ====================================================================== -->
+    <!-- P A R E N T  P R O J E C T  D E S C R I P T I O N -->
+    <!-- ====================================================================== -->
+    <parent>
+        <groupId>cglib</groupId>
+        <artifactId>cglib-parent</artifactId>
+        <version>3.2.0-SNAPSHOT</version>
+    </parent>
+
+    <!-- ====================================================================== -->
+    <!-- P R O J E C T  D E S C R I P T I O N -->
+    <!-- ====================================================================== -->
+    <artifactId>cglib-nodep</artifactId>
+    <packaging>jar</packaging>
+
+    <!-- ====================================================================== -->
+    <!-- B U I L D -->
+    <!-- ====================================================================== -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.objectweb.asm</pattern>
+                                    <shadedPattern>net.sf.cglib.asm</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- ====================================================================== -->
+    <!-- D E P E N D E N C I E S -->
+    <!-- ====================================================================== -->
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cglib</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>
