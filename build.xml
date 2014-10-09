@@ -33,9 +33,9 @@
     <property name="compile.bootclasspath" value=""/>
     <property name="compile.extdirs" value=""/>
 
-    <property name="compile.debug" value="true"/>
-    <property name="compile.deprecation" value="true"/>
-    <property name="compile.optimize" value="true"/>
+    <property name="compile.debug" value="false"/>
+    <property name="compile.deprecation" value="false"/>
+    <property name="compile.optimize" value="false"/>
     
     <property name="samplesign.key.store" value="${samples.build.home}/.keystore"/>
     <property name="samplesign.key.storepass" value="cglibsamples"/>
