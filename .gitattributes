@@ -4,3 +4,7 @@
 # Java
 *.java text eol=lf
 *.jsp text eol=lf
+
+# Text
+*.xml text eol=lf
+*.txt text eol=lf
