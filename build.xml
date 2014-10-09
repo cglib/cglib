@@ -28,14 +28,14 @@
     <property name="source.test" value="src/test"/>
     <property name="source.asm" value="../asm-src"/>    
 
-    <property name="compile.target" value="1.2"/>
-    <property name="compile.source" value="1.2"/>
+    <property name="compile.target" value="1.5"/>
+    <property name="compile.source" value="1.5"/>
     <property name="compile.bootclasspath" value=""/>
     <property name="compile.extdirs" value=""/>
 
-    <property name="compile.debug" value="true"/>
-    <property name="compile.deprecation" value="true"/>
-    <property name="compile.optimize" value="true"/>
+    <property name="compile.debug" value="false"/>
+    <property name="compile.deprecation" value="false"/>
+    <property name="compile.optimize" value="false"/>
     
     <property name="samplesign.key.store" value="${samples.build.home}/.keystore"/>
     <property name="samplesign.key.storepass" value="cglibsamples"/>
