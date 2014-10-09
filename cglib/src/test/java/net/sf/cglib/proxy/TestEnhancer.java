@@ -349,12 +349,6 @@ public class TestEnhancer extends CodeGenTestCase {
       
     }
     
-    // TODO: Re-enable
-    /*public void testSamples() throws Throwable{
-        net.sf.cglib.samples.Trace.main(new String[]{});
-        net.sf.cglib.samples.Beans.main(new String[]{});
-    }*/
-
     public static interface FinalA {
         void foo();
     }
