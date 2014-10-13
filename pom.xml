@@ -14,6 +14,22 @@
     <name>Code Generation Library</name>
     <url>https://github.com/cglib/cglib</url>
     <description>cglib is a powerful, high performance and quality Code Generation Library, It is used to extend JAVA classes and implements interfaces at runtime.</description>
+    
+    <scm>
+        <connection>scm:git:git://github.com/cglib/cglib.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/cglib/cglib.git</developerConnection>
+        <url>https://github.com/cglib/cglib</url>
+    </scm>
+
+    <issueManagement>
+        <system>Github Issues</system>
+        <url>https://github.com/cglib/cglib/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Travis</system>
+        <url>https://travis-ci.org/cglib/cglib</url>
+    </ciManagement>
 
     <licenses>
         <license>
