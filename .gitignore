@@ -1,13 +1,14 @@
+# Eclipse
 .classpath
 .project
-bin/
 .settings/
 
-.log
-.class
-.bat
-.nbattrs
-.java~
-.bak
-maven.log*
-build/
+## JetBrains IDEs: IntelliJ
+.idea/
+.idea_modules/
+*.iml
+*.ipr
+*.iws
+
+# Maven
+target/

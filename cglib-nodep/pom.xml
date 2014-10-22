@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ====================================================================== -->
+    <!-- P A R E N T  P R O J E C T  D E S C R I P T I O N -->
+    <!-- ====================================================================== -->
+    <parent>
+        <groupId>cglib</groupId>
+        <artifactId>cglib-parent</artifactId>
+        <version>3.2.0-SNAPSHOT</version>
+    </parent>
+
+    <!-- ====================================================================== -->
+    <!-- P R O J E C T  D E S C R I P T I O N -->
+    <!-- ====================================================================== -->
+    <artifactId>cglib-nodep</artifactId>
+    <packaging>jar</packaging>
+
+    <!-- ====================================================================== -->
+    <!-- B U I L D -->
+    <!-- ====================================================================== -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>jarjar-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jarjar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <overwrite>true</overwrite>
+                    <includes>
+                        <include>*:asm*</include>
+                        <include>*:cglib</include>
+                    </includes>
+                    <rules>
+                        <rule>
+                            <pattern>org.objectweb.asm.*</pattern>
+                            <result>net.sf.cglib.asm.$@1</result>
+                        </rule>
+                        <rule>
+                            <pattern>org.objectweb.asm.**.*</pattern>
+                            <result>net.sf.cglib.asm.@1.$@2</result>
+                        </rule>
+                        <keep>
+                            <pattern>net.sf.cglib.**</pattern>
+                        </keep>
+                    </rules>
+                </configuration>
+            </plugin>
+        </plugins>
+        
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${basedir}/..</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                    <include>README</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+
+    <!-- ====================================================================== -->
+    <!-- D E P E N D E N C I E S -->
+    <!-- ====================================================================== -->
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cglib</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

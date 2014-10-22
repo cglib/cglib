@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ====================================================================== -->
+    <!-- P R O J E C T  D E S C R I P T I O N -->
+    <!-- ====================================================================== -->
+    <groupId>cglib</groupId>
+    <artifactId>cglib-parent</artifactId>
+    <version>3.2.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Code Generation Library</name>
+    <url>https://github.com/cglib/cglib</url>
+    <description>cglib is a powerful, high performance and quality Code Generation Library, It is used to extend JAVA classes and implements interfaces at runtime.</description>
+    
+    <scm>
+        <connection>scm:git:git://github.com/cglib/cglib.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/cglib/cglib.git</developerConnection>
+        <url>https://github.com/cglib/cglib</url>
+    </scm>
+
+    <issueManagement>
+        <system>Github Issues</system>
+        <url>https://github.com/cglib/cglib/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Travis</system>
+        <url>https://travis-ci.org/cglib/cglib</url>
+    </ciManagement>
+
+    <licenses>
+        <license>
+            <name>ASF 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- ====================================================================== -->
+    <!-- P R O P E R T I E S -->
+    <!-- ====================================================================== -->
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <java.version.source>1.5</java.version.source>
+        <java.version.target>1.5</java.version.target>
+    </properties>
+
+    <!-- ====================================================================== -->
+    <!-- M O D U L E S -->
+    <!-- ====================================================================== -->
+    <modules>
+        <module>cglib</module>
+        <module>cglib-nodep</module>
+        <module>cglib-sample</module>
+        <module>cglib-integration-test</module>
+    </modules>
+
+    <!-- ====================================================================== -->
+    <!-- B U I L D -->
+    <!-- ====================================================================== -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <source>${java.version.source}</source>
+                        <target>${java.version.target}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.17</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>2.17</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.10</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>jarjar-maven-plugin</artifactId>
+                    <version>1.9</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <!-- ====================================================================== -->
+    <!-- D E P E N D E N C Y  M A N A G E M E N T -->
+    <!-- ====================================================================== -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>cglib</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>cglib-sample</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-util</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant</artifactId>
+                <version>1.9.4</version>
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.11</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

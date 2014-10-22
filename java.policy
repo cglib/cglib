@@ -1,9 +1,0 @@
-
-//cglib
-grant codeBase "file:${user.dir}/-"{
-
-   permission java.security.AllPermission; 
-        
-
-
-};
