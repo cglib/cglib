@@ -34,6 +34,15 @@ public class TestBeanCopier extends TestCase {
         assertTrue(bean2.getIntP() == 42);
     }
 
+    public void testOneWay() {
+        BeanCopier copier = BeanCopier.create(SampleGetter.class, SampleSetter.class, false);
+        SampleGetter sampleGetter = new SampleGetter();
+        sampleGetter.foo = 42;
+        SampleSetter sampleSetter = new SampleSetter();
+        copier.copy(sampleGetter, sampleSetter, null);
+        assertTrue(sampleSetter.foo == 42);
+    }
+
     public void testConvert() {
         BeanCopier copier = BeanCopier.create(MA.class, MA.class, true);
         MA bean1 = new MA();
@@ -49,15 +58,15 @@ public class TestBeanCopier extends TestCase {
         });
         assertTrue(bean2.getIntP() == 43);
     }
-    
+
     public TestBeanCopier(java.lang.String testName) {
         super(testName);
     }
-    
+
     public static void main(java.lang.String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestBeanCopier.class);
     }
