@@ -48,6 +48,11 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
+        <java.compiler.argument />
+
+        <java.test.version.source>${java.version.source}</java.test.version.source>
+        <java.test.version.target>${java.version.target}</java.test.version.target>
+        <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
     </properties>
 
     <!-- ====================================================================== -->
@@ -61,6 +66,23 @@
     </modules>
 
     <!-- ====================================================================== -->
+    <!-- P R O F I L E S -->
+    <!-- ====================================================================== -->
+    <profiles>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <properties>
+                <java.test.version.source>1.8</java.test.version.source>
+                <java.test.version.target>1.8</java.test.version.target>
+                <java.test.compiler.argument>-parameters</java.test.compiler.argument>
+            </properties>
+        </profile>
+    </profiles>
+
+    <!-- ====================================================================== -->
     <!-- B U I L D -->
     <!-- ====================================================================== -->
     <build>
@@ -68,16 +90,15 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <version>1.8</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
                     <configuration>
                         <source>${java.version.source}</source>
                         <target>${java.version.target}</target>
+                        <compilerArgument>${java.compiler.argument}</compilerArgument>
+                        <testSource>${java.test.version.source}</testSource>
+                        <testTarget>${java.test.version.target}</testTarget>
+                        <testCompilerArgument>${java.test.compiler.argument}</testCompilerArgument>
                     </configuration>
                 </plugin>
                 <plugin>
