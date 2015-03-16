@@ -20,7 +20,7 @@ import org.objectweb.asm.Opcodes;
 
 abstract public class AbstractClassTransformer extends ClassTransformer {
     protected AbstractClassTransformer() {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
     }
 
     public void setTarget(ClassVisitor target) {

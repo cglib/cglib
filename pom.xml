@@ -48,6 +48,9 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
+        <java.compiler.argument />
+
+        <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
     </properties>
 
     <!-- ====================================================================== -->
@@ -59,6 +62,21 @@
         <module>cglib-sample</module>
         <module>cglib-integration-test</module>
     </modules>
+
+    <!-- ====================================================================== -->
+    <!-- P R O F I L E S -->
+    <!-- ====================================================================== -->
+    <profiles>
+        <profile>
+            <id>java8</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <properties>
+                <java.test.compiler.argument>-parameters</java.test.compiler.argument>
+            </properties>
+        </profile>
+    </profiles>
 
     <!-- ====================================================================== -->
     <!-- B U I L D -->
@@ -73,6 +91,10 @@
                     <configuration>
                         <source>${java.version.source}</source>
                         <target>${java.version.target}</target>
+                        <compilerArgument>${java.compiler.argument}</compilerArgument>
+                        <testSource>${java.specification.version}</testSource>
+                        <testTarget>${java.specification.version}</testTarget>
+                        <testCompilerArgument>${java.test.compiler.argument}</testCompilerArgument>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -36,7 +36,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
         </plugins>
-        
+
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

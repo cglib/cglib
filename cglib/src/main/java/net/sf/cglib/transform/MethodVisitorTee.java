@@ -22,7 +22,7 @@ public class MethodVisitorTee extends MethodVisitor {
     private final MethodVisitor mv2;
     
     public MethodVisitorTee(MethodVisitor mv1, MethodVisitor mv2) {
-	super(Opcodes.ASM4);
+	super(Opcodes.ASM5);
 	this.mv1 = mv1;
         this.mv2 = mv2;
     }
@@ -83,10 +83,15 @@ public class MethodVisitorTee extends MethodVisitor {
         mv1.visitFieldInsn(opcode, owner, name, desc);
         mv2.visitFieldInsn(opcode, owner, name, desc);
     }
-    
+
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         mv1.visitMethodInsn(opcode, owner, name, desc);
         mv2.visitMethodInsn(opcode, owner, name, desc);
+    }
+
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+        mv1.visitMethodInsn(opcode, owner, name, desc, itf);
+        mv2.visitMethodInsn(opcode, owner, name, desc, itf);
     }
     
     public void visitJumpInsn(int opcode, Label label) {
@@ -147,6 +152,36 @@ public class MethodVisitorTee extends MethodVisitor {
     public void visitEnd() {
         mv1.visitEnd();
         mv2.visitEnd();
+    }
+
+    public void visitParameter(String name, int access) {
+        mv1.visitParameter(name, access);
+        mv2.visitParameter(name, access);
+    }
+
+    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(mv1.visitTypeAnnotation(typeRef, typePath, desc, visible),
+                                                mv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
+    }
+
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+        mv1.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
+        mv2.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
+    }
+
+    public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(mv1.visitInsnAnnotation(typeRef, typePath, desc, visible),
+                                                mv2.visitInsnAnnotation(typeRef, typePath, desc, visible));
+    }
+
+    public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(mv1.visitTryCatchAnnotation(typeRef, typePath, desc, visible),
+                                                mv2.visitTryCatchAnnotation(typeRef, typePath, desc, visible));
+    }
+
+    public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(mv1.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, desc, visible),
+                                                mv2.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, desc, visible));
     }
 }
 

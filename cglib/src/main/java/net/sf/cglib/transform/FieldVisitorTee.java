@@ -19,12 +19,13 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.TypePath;
 
 public class FieldVisitorTee extends FieldVisitor {
     private FieldVisitor fv1, fv2;
     
     public FieldVisitorTee(FieldVisitor fv1, FieldVisitor fv2) {
-	super(Opcodes.ASM4);
+	super(Opcodes.ASM5);
 	this.fv1 = fv1;
         this.fv2 = fv2;
     }
@@ -42,6 +43,11 @@ public class FieldVisitorTee extends FieldVisitor {
     public void visitEnd() {
         fv1.visitEnd();
         fv2.visitEnd();
+    }
+
+    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(fv1.visitTypeAnnotation(typeRef, typePath, desc, visible),
+                                                fv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
     }
 }
 

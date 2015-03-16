@@ -21,7 +21,7 @@ public class ClassVisitorTee extends ClassVisitor {
     private ClassVisitor cv1, cv2;
     
     public ClassVisitorTee(ClassVisitor cv1, ClassVisitor cv2) {
-	super(Opcodes.ASM4);
+	super(Opcodes.ASM5);
 	this.cv1 = cv1;
         this.cv2 = cv2;
     }
@@ -94,5 +94,10 @@ public class ClassVisitorTee extends ClassVisitor {
     public void visitAttribute(Attribute attrs) {
         cv1.visitAttribute(attrs);
         cv2.visitAttribute(attrs);
+    }
+
+    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(cv1.visitTypeAnnotation(typeRef, typePath, desc, visible),
+                                                cv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
     }
 }
