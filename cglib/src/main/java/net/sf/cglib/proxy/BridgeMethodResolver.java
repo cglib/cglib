@@ -89,7 +89,7 @@ class BridgeMethodResolver {
                 currentMethod = sig;
                 return new MethodVisitor(Opcodes.ASM5) {
                     public void visitMethodInsn(int opcode, String owner, String name,
-                                                String desc) {
+                                                String desc, boolean itf) {
                         if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {
                             Signature target = new Signature(name, desc);
                             // If the target signature is the same as the current,

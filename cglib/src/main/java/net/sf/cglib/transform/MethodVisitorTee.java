@@ -84,9 +84,9 @@ public class MethodVisitorTee extends MethodVisitor {
         mv2.visitFieldInsn(opcode, owner, name, desc);
     }
     
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-        mv1.visitMethodInsn(opcode, owner, name, desc);
-        mv2.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+        mv1.visitMethodInsn(opcode, owner, name, desc, itf);
+        mv2.visitMethodInsn(opcode, owner, name, desc, itf);
     }
     
     public void visitJumpInsn(int opcode, Label label) {
