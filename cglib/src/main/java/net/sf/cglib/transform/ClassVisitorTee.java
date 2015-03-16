@@ -95,4 +95,9 @@ public class ClassVisitorTee extends ClassVisitor {
         cv1.visitAttribute(attrs);
         cv2.visitAttribute(attrs);
     }
+
+    public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
+        return AnnotationVisitorTee.getInstance(cv1.visitTypeAnnotation(typeRef, typePath, desc, visible),
+                                                cv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
+    }
 }
