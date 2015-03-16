@@ -73,7 +73,7 @@ class BridgeMethodResolver {
         private Signature currentMethod = null;
 
         BridgedFinder(Set eligableMethods, Map resolved) {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
             this.resolved = resolved;
             this.eligableMethods = eligableMethods;
         }
@@ -87,7 +87,7 @@ class BridgeMethodResolver {
             Signature sig = new Signature(name, desc);
             if (eligableMethods.remove(sig)) {
                 currentMethod = sig;
-                return new MethodVisitor(Opcodes.ASM4) {
+                return new MethodVisitor(Opcodes.ASM5) {
                     public void visitMethodInsn(int opcode, String owner, String name,
                                                 String desc) {
                         if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {

@@ -46,7 +46,7 @@ public class DebuggingClassWriter extends ClassVisitor {
     }
     
     public DebuggingClassWriter(int flags) {
-	super(Opcodes.ASM4, new ClassWriter(flags));
+	super(Opcodes.ASM5, new ClassWriter(flags));
     }
 
     public void visit(int version,

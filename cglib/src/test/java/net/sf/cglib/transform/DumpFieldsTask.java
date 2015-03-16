@@ -43,7 +43,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
     }
 
     static class EmptyVisitor extends ClassVisitor {
-	AnnotationVisitor av = new AnnotationVisitor(Opcodes.ASM4) {
+	AnnotationVisitor av = new AnnotationVisitor(Opcodes.ASM5) {
 	    public AnnotationVisitor visitAnnotation(
 		    String name, String desc) {
 		return this;
@@ -55,7 +55,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	};
 
 	public EmptyVisitor() {
-	    super(Opcodes.ASM4);
+	    super(Opcodes.ASM5);
 	}
 
 	public AnnotationVisitor visitAnnotation(
@@ -66,7 +66,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	public FieldVisitor visitField(
 		int access, String name, String desc,
 		String signature, Object value) {
-	    return new FieldVisitor(Opcodes.ASM4) {
+	    return new FieldVisitor(Opcodes.ASM5) {
 		public AnnotationVisitor visitAnnotation(
 			String desc, boolean visible) {
 		    return av;
@@ -78,7 +78,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	public MethodVisitor visitMethod(
 		int access, String name, String desc, String signature,
 		String[] exceptions) {
-	    return new MethodVisitor(Opcodes.ASM4) {
+	    return new MethodVisitor(Opcodes.ASM5) {
 		public AnnotationVisitor visitAnnotationDefault() {
 		    return av;
 		}

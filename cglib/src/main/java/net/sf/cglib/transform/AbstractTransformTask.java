@@ -84,7 +84,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         ClassReader reader = getClassReader(file);
         String name[] = ClassNameReader.getClassInfo(reader);
         DebuggingClassWriter w =
-        	new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
+        	new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
 
@@ -223,7 +223,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         ClassReader reader = new ClassReader(new ByteArrayInputStream(bytes));
         String name[] = ClassNameReader.getClassInfo(reader);
         DebuggingClassWriter w =
-        	new DebuggingClassWriter(ClassWriter.COMPUTE_MAXS);
+        	new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
             if (verbose) {

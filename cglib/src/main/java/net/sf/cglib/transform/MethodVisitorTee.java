@@ -22,7 +22,7 @@ public class MethodVisitorTee extends MethodVisitor {
     private final MethodVisitor mv2;
     
     public MethodVisitorTee(MethodVisitor mv1, MethodVisitor mv2) {
-	super(Opcodes.ASM4);
+	super(Opcodes.ASM5);
 	this.mv1 = mv1;
         this.mv2 = mv2;
     }

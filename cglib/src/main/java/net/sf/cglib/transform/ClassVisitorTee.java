@@ -21,7 +21,7 @@ public class ClassVisitorTee extends ClassVisitor {
     private ClassVisitor cv1, cv2;
     
     public ClassVisitorTee(ClassVisitor cv1, ClassVisitor cv2) {
-	super(Opcodes.ASM4);
+	super(Opcodes.ASM5);
 	this.cv1 = cv1;
         this.cv2 = cv2;
     }

@@ -44,7 +44,7 @@ public class ClassEmitter extends ClassTransformer {
     }
 
     public ClassEmitter() {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
     }
 
     public void setTarget(ClassVisitor cv) {
@@ -148,7 +148,7 @@ public class ClassEmitter extends ClassTransformer {
                                          TypeUtils.toInternalNames(exceptions));
         if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(getAccess())) {
             rawStaticInit = v;
-            MethodVisitor wrapped = new MethodVisitor(Opcodes.ASM4, v) {
+            MethodVisitor wrapped = new MethodVisitor(Opcodes.ASM5, v) {
                 public void visitMaxs(int maxStack, int maxLocals) {
                     // ignore
                 }
