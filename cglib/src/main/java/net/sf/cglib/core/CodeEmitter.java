@@ -500,7 +500,8 @@ public class CodeEmitter extends LocalVariablesSorter {
         mv.visitMethodInsn(opcode,
                            type.getInternalName(),
                            sig.getName(),
-                           sig.getDescriptor());
+                           sig.getDescriptor(),
+                           opcode == Opcodes.INVOKEINTERFACE);
     }
     
     public void invoke_interface(Type owner, Signature sig) {
