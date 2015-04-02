@@ -454,7 +454,7 @@ public class Enhancer extends AbstractClassGenerator
         Class sc = (superclass == null) ? Object.class : superclass;
 
         if (TypeUtils.isFinal(sc.getModifiers()))
-            throw new IllegalArgumentException("Cannot subclass final class " + sc);
+            throw new IllegalArgumentException("Cannot subclass final class " + sc.getName());
         List constructors = new ArrayList(Arrays.asList(sc.getDeclaredConstructors()));
         filterConstructors(sc, constructors);
 
