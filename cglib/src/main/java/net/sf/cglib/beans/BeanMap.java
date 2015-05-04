@@ -221,7 +221,7 @@ abstract public class BeanMap implements Map {
     public boolean containsValue(Object value) {
         for (Iterator it = keySet().iterator(); it.hasNext();) {
             Object v = get(it.next());
-            if (value==v || (value!=null&&value.equals(v))) 
+            if (value == v || (value != null && value.equals(v))) 
                 return true;
         }
         return false;
