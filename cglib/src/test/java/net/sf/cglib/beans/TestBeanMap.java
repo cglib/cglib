@@ -117,6 +117,15 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(map.containsKey("bar"));
         assertTrue(!map.containsKey("baz"));
     }
+    
+    public void testContainsValue() {
+        TestBean bean = new TestBean();
+        BeanMap map = beanMap.create(bean);
+        assertTrue(map.containsValue(null));
+        bean.setFoo("foo");
+        bean.setBaz("baz");
+        assertFalse(map.containsValue(null));
+    }
 
     public static Object mixinMapIntoBean(final Object bean) {
         Enhancer e = new Enhancer();
