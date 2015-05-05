@@ -120,7 +120,7 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     
     public void testContainsValue() {
         TestBean bean = new TestBean();
-        BeanMap map = beanMap.create(bean);
+        BeanMap map = BeanMap.create(bean);
         assertTrue(map.containsValue(null));
         bean.setFoo("foo");
         bean.setBaz("baz");
