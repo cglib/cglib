@@ -268,7 +268,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param callbackTypes the array of callback types
      */
     public void setCallbackTypes(Class[] callbackTypes) {
-        if (callbackTypes != null && callbackTypes.length == 0) {
+        if (callbackTypes == null || callbackTypes.length == 0) {
             throw new IllegalArgumentException("Array cannot be empty");
         }
         this.callbackTypes = CallbackInfo.determineTypes(callbackTypes);
