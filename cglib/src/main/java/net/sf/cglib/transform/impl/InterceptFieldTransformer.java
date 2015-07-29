@@ -17,6 +17,8 @@ package net.sf.cglib.transform.impl;
 
 import net.sf.cglib.transform.*;
 import net.sf.cglib.core.*;
+
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
@@ -40,13 +42,14 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         this.filter = filter;
     }
     
-    public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, int access, String className,String signature, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isInterface(access)) {
-            super.begin_class(version, access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
+            super.begin_class(version, access, className,signature, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
                     
             super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                                 CALLBACK_FIELD,
                                 CALLBACK,
+                                null,
                                 null);
 
             CodeEmitter e;
@@ -63,12 +66,12 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
             e.return_value();
             e.end_method();
         } else {
-            super.begin_class(version, access, className, superType, interfaces, sourceFile);
+            super.begin_class(version, access, className,signature, superType, interfaces, sourceFile);
         }
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
-        super.declare_field(access, name, type, value);
+    public FieldVisitor declare_field(int access, String name, Type type,String signature, Object value) {
+        FieldVisitor visitor = super.declare_field(access, name, type,signature, value);
         if (!TypeUtils.isStatic(access)) {
             if (filter.acceptRead(getClassType(), name)) {
                 addReadMethod(name, type);
@@ -77,6 +80,7 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
                 addWriteMethod(name, type);
             }
         }
+        return visitor;
     }
 
     private void addReadMethod(String name, Type type) {
@@ -138,8 +142,8 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         e.end_method();
     }
                 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        return new CodeEmitter(super.begin_method(access, sig, exceptions)) {
+    public CodeEmitter begin_method(int access, Signature sig,String signature, Type[] exceptions) {
+        return new CodeEmitter(super.begin_method(access, sig, signature, exceptions)) {
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                 Type towner = TypeUtils.fromInternalName(owner);
                 switch (opcode) {

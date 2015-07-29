@@ -330,7 +330,7 @@ public class EmitUtils {
             // TODO: can end up with duplicated field names when using chained transformers; incorporate static hook # somehow
             String fieldName = "CGLIB$load_class$" + TypeUtils.escapeType(typeName);
             if (!ce.isFieldDeclared(fieldName)) {
-                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS, null);
+                ce.declare_field(Constants.PRIVATE_FINAL_STATIC, fieldName, Constants.TYPE_CLASS,null, null);
                 CodeEmitter hook = ce.getStaticHook();
                 hook.push(typeName);
                 hook.invoke_static(Constants.TYPE_CLASS, FOR_NAME);
@@ -832,7 +832,7 @@ public class EmitUtils {
     public static void add_properties(ClassEmitter ce, String[] names, Type[] types) {
         for (int i = 0; i < names.length; i++) {
             String fieldName = "$cglib_prop_" + names[i];
-            ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null);
+            ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i],null, null);
             EmitUtils.add_property(ce, names[i], types[i], fieldName);
         }
     }

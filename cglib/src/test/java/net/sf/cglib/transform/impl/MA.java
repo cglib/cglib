@@ -1,8 +1,11 @@
 package net.sf.cglib.transform.impl;
 
 import java.io.ObjectStreamException;
+import java.util.List;
 
-public class MA extends Base{
+public class MA extends Base implements Comparable<MA>{
+	
+	@TestAnnotation
     private Long id;
     private String name;
     private String privateName;
@@ -16,8 +19,24 @@ public class MA extends Base{
     private double doubleP;
     private String stringP;
     public  String publicField;
+    
+    private List<String> list;
+    
+    private MAGeneric<? extends Number> generic;
 
-    public Long getId() {
+    public MA(MAGeneric<? extends Number> generic){
+       this.generic = generic;	
+    }
+    
+    public MA(MAType test) {
+		
+	}
+    
+    public MA() {
+		
+	}
+
+	public Long getId() {
         return id;
     }
 
@@ -116,5 +135,27 @@ public class MA extends Base{
     public void setStringP(String stringP) {
         this.stringP = stringP;
     }
+
+	public int compareTo(MA ma) {		
+		return 0;
+	}
+
+	public List<String> getList() {
+		return list;
+	}
+
+	public void setList(List<String> list) {
+		this.list = list;
+	}
+
+	public MAGeneric<? extends Number> getGeneric() {
+		return generic;
+	}
+
+	public void setGeneric(MAGeneric<? extends Number> generic) {
+		this.generic = generic;
+	}
+
+	
 }
 

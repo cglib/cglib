@@ -91,9 +91,9 @@ implements CallbackGenerator
             String methodProxyField = getMethodProxyField(impl);
 
             sigMap.put(sig.toString(), methodProxyField);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodField, METHOD, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodProxyField, METHOD_PROXY, null);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodField, METHOD,null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, methodProxyField, METHOD_PROXY,null, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, EMPTY_ARGS_NAME, Constants.TYPE_OBJECT_ARRAY,null, null);
             CodeEmitter e;
 
             // access method

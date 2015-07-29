@@ -224,7 +224,7 @@ abstract public class MethodDelegate {
                            METHOD_DELEGATE,
                            new Type[]{ Type.getType(iface) },
                            Constants.SOURCE_FILE);
-            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING, null);
+            ce.declare_field(Constants.PRIVATE_FINAL_STATIC, "eqMethod", Constants.TYPE_STRING,null, null);
             EmitUtils.null_constructor(ce);
 
             // generate proxied method

@@ -492,18 +492,18 @@ public class Enhancer extends AbstractClassGenerator
                       Constants.SOURCE_FILE);
         List constructorInfo = CollectionUtils.transform(constructors, MethodInfoTransformer.getInstance());
 
-        e.declare_field(Constants.ACC_PRIVATE, BOUND_FIELD, Type.BOOLEAN_TYPE, null);
+        e.declare_field(Constants.ACC_PRIVATE, BOUND_FIELD, Type.BOOLEAN_TYPE, null, null);
         if (!interceptDuringConstruction) {
-            e.declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE, null);
+            e.declare_field(Constants.ACC_PRIVATE, CONSTRUCTED_FIELD, Type.BOOLEAN_TYPE,null, null);
         }
-        e.declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL, null);
-        e.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_CALLBACKS_FIELD, CALLBACK_ARRAY, null);
+        e.declare_field(Constants.PRIVATE_FINAL_STATIC, THREAD_CALLBACKS_FIELD, THREAD_LOCAL,null, null);
+        e.declare_field(Constants.PRIVATE_FINAL_STATIC, STATIC_CALLBACKS_FIELD, CALLBACK_ARRAY,null, null);
         if (serialVersionUID != null) {
-            e.declare_field(Constants.PRIVATE_FINAL_STATIC, Constants.SUID_FIELD_NAME, Type.LONG_TYPE, serialVersionUID);
+            e.declare_field(Constants.PRIVATE_FINAL_STATIC, Constants.SUID_FIELD_NAME, Type.LONG_TYPE,null, serialVersionUID);
         }
 
         for (int i = 0; i < callbackTypes.length; i++) {
-            e.declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackTypes[i], null);
+            e.declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackTypes[i],null, null);
         }
 
         emitMethods(e, methods, actualMethods);
