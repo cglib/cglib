@@ -46,7 +46,9 @@ public class TestInterceptFields extends AbstractTransformTest implements  Inter
         InterceptFieldEnabled e = (InterceptFieldEnabled)this;
         e.setInterceptFieldCallback( this );
         field = "test";
-        assertEquals(TEST_VALUE,field);        
+        assertEquals(TEST_VALUE,field); 
+        //make sure constructor is valid after instrumentation  
+         new TestInterceptFields(){};
         
     }
     
@@ -61,9 +63,10 @@ public class TestInterceptFields extends AbstractTransformTest implements  Inter
                 new InterceptFieldFilter(){
                     
                     public  boolean acceptRead(Type owner, String name){
-                        return true;
+                        return  true;
                     }
                     public  boolean acceptWrite(Type owner, String name){
+                    	
                         return true;
                     }
                     

@@ -40,13 +40,14 @@ public class TransformDemo {
 	public static void start() throws NoSuchMethodException, SecurityException, NoSuchFieldException, ClassNotFoundException{
 
 		MA ma = new MA();
-		makePersistent(ma);
+		makePersistent(ma);		
 		ma.setCharP('A');
 		ma.getCharP();
 		ma.setDoubleP(554);
 		ma.setDoubleP(1.2);
 		ma.getFloatP();
 		ma.setName("testName");
+		ma.getName();
 		ma.publicField = "set value";
 		ma.publicField = ma.publicField + " append value";
 		ma.setBaseTest("base test field");
@@ -105,7 +106,7 @@ public class TransformDemo {
 						System.out.println("load : "  + name);
 						boolean f =
 								Base.class.getName().equals(name) ||  
-								MA.class.getName().equals(name) ||
+								name.startsWith(MA.class.getName()) ||
 								MAGeneric.class.getName().equals(name) ||
 								MAType.class.getName().equals(name) || 
 								TransformDemo.class.getName().equals(name);

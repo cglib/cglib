@@ -26,7 +26,8 @@ import org.objectweb.asm.Type;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class InterceptFieldTransformer extends ClassEmitterTransformer {
-    private static final String CALLBACK_FIELD = "$CGLIB_READ_WRITE_CALLBACK";
+    private static final String INIT = "<init>";
+	private static final String CALLBACK_FIELD = "$CGLIB_READ_WRITE_CALLBACK";
     private static final Type CALLBACK =
       TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldCallback");
     private static final Type ENABLED =
@@ -142,19 +143,19 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         e.end_method();
     }
                 
-    public CodeEmitter begin_method(int access, Signature sig,String signature, Type[] exceptions) {
+    public CodeEmitter begin_method(int access,final Signature sig,String signature, Type[] exceptions) {
         return new CodeEmitter(super.begin_method(access, sig, signature, exceptions)) {
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                 Type towner = TypeUtils.fromInternalName(owner);
                 switch (opcode) {
                 case Constants.GETFIELD:
-                    if (filter.acceptRead(towner, name)) {
+                    if (filter.acceptRead(towner, name) && !sig.getName().equals(INIT)) {
                         helper(towner, readMethodSig(name, desc));
                         return;
                     }
                     break;
                 case Constants.PUTFIELD:
-                    if (filter.acceptWrite(towner, name)) {
+                    if (filter.acceptWrite(towner, name) && !sig.getName().equals(INIT)) {
                         helper(towner, writeMethodSig(name, desc));
                         return;
                     }

@@ -37,11 +37,13 @@ public class MA extends Base implements Comparable<MA>{
 	}
 
 	public Long getId() {
-        return id;
+		
+		return id;
+		
     }
 
     public String getName() {
-        return name;
+        return  name;
     }
 
     public void setId(Long id) {
