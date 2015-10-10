@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -628,6 +629,42 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
         FastClass.create(loader,Simple.class).newInstance();
     }
     
-   
+    class HasProtectedMethod {
+    	protected int foo() {
+    		return 2;
+    	}
+    }
+
+    // Previously fastclass would refuse to generate accessors for protected methods.
+    public void testProtectedMethod() throws Exception {
+        FastClass fc = FastClass.create(HasProtectedMethod.class);
+        Method fooMethod = HasProtectedMethod.class.getDeclaredMethod("foo");
+        assertEquals(2, fc.getMethod(fooMethod).invoke(new HasProtectedMethod(), new Object[0]));
+    }
+
+    public void testProtectedMethod_bootstrapClassLoader() throws Exception {
+        // Can't access protected methods on the bootstrap loader
+        FastClass fc = FastClass.create(ArrayList.class);
+        Method removeRangeMethod = 
+            ArrayList.class.getDeclaredMethod("removeRange", int.class, int.class);
+        try {
+            // TODO(lukes): getMethod throws IAE if it can't be found (seems reasonable)
+            // however getConstructor returns a FastConstructor with an -1 index.
+            fc.getMethod(removeRangeMethod);
+            fail();
+        } catch (IllegalArgumentException iae) {}
+    }
+
+    public void testPackagePrivateMethod_bootstrapClassLoader() throws Exception {
+        // String has a package private method getChars (used by AbstractStringBuilder), previous
+        // versions of fastclass would try to call it and it would result in an
+        // IllegalAccessException at runtime.
+        FastClass fc = FastClass.create(String.class);
+        Method method = String.class.getDeclaredMethod("getChars", char[].class, int.class);
+        try {
+            fc.getMethod(method);
+            fail();
+        } catch (IllegalArgumentException iae) {}
+    }
     
 }
