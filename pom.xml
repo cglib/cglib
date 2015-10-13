@@ -14,7 +14,7 @@
     <name>Code Generation Library</name>
     <url>https://github.com/cglib/cglib</url>
     <description>cglib is a powerful, high performance and quality Code Generation Library, It is used to extend JAVA classes and implements interfaces at runtime.</description>
-    
+
     <scm>
         <connection>scm:git:git://github.com/cglib/cglib.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/cglib/cglib.git</developerConnection>
@@ -111,6 +111,34 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>2.10</version>
+                    <configuration>
+                      <quiet>true</quiet>
+                      <detectLinks>false</detectLinks>
+                      <detectOfflineLinks>false</detectOfflineLinks>
+                      <!--<skip>${skipJavadoc}</skip>-->
+                      <use>false</use>
+                      <additionalparam>-Xdoclint:none</additionalparam>
+                      <additionalDependencies>
+                        <additionalDependency>
+                          <groupId>org.ow2.asm</groupId>
+                          <artifactId>asm</artifactId>
+                          <version>5.0.3</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                          <groupId>org.apache.ant</groupId>
+                          <artifactId>ant</artifactId>
+                          <version>1.9.4</version>
+                        </additionalDependency>
+                      </additionalDependencies>
+                    </configuration>
+                    <executions>
+                      <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                          <goal>jar</goal>
+                        </goals>
+                      </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.sonatype.plugins</groupId>
