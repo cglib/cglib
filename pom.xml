@@ -57,6 +57,7 @@
         <java.compiler.argument />
 
         <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
+        <gpg.skip>true</gpg.skip>
     </properties>
 
     <!-- ====================================================================== -->
@@ -167,7 +168,7 @@
                 </goals>
               </execution>
             </executions>
-             </plugin>
+          </plugin>
         </plugins>
     </build>
 
