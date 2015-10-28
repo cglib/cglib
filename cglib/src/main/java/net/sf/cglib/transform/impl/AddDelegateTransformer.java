@@ -46,16 +46,17 @@ public class AddDelegateTransformer extends ClassEmitterTransformer {
         }
     }
     
-    public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, int access, String className,String signature, Type superType, Type[] interfaces, String sourceFile) {
         
         if(!TypeUtils.isInterface(access)){
             
         Type[] all = TypeUtils.add(interfaces, TypeUtils.getTypes(delegateIf));
-        super.begin_class(version, access, className, superType, all, sourceFile);
+        super.begin_class(version, access, className,signature, superType, all, sourceFile);
         
         declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
                       DELEGATE,
                       delegateType,
+                      null,
                       null);
         for (int i = 0; i < delegateIf.length; i++) {
             Method[] methods = delegateIf[i].getMethods();
@@ -66,12 +67,12 @@ public class AddDelegateTransformer extends ClassEmitterTransformer {
             }
         }
         }else{
-           super.begin_class(version, access, className, superType, interfaces, sourceFile);
+           super.begin_class(version, access, className,signature, superType, interfaces, sourceFile);
         }
     }
 
-    public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
-        final CodeEmitter e = super.begin_method(access, sig, exceptions);
+    public CodeEmitter begin_method(int access, Signature sig,String signature, Type[] exceptions) {
+        final CodeEmitter e = super.begin_method(access, sig, signature, exceptions);
         if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
             return new CodeEmitter(e) {
                 private boolean transformInit = true;

@@ -54,7 +54,7 @@ class ParallelSorterEmitter extends ClassEmitter {
         e.super_putfield("a", Constants.TYPE_OBJECT_ARRAY);
         for (int i = 0; i < arrays.length; i++) {
             Type type = Type.getType(arrays[i].getClass());
-            declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null);
+            declare_field(Constants.ACC_PRIVATE, getFieldName(i), type, null,null);
             e.load_this();
             e.load_arg(0);
             e.push(i);

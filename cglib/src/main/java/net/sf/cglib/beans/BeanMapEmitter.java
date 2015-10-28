@@ -154,7 +154,7 @@ class BeanMapEmitter extends ClassEmitter {
             
     private void generateKeySet(String[] allNames) {
         // static initializer
-        declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET, null);
+        declare_field(Constants.ACC_STATIC | Constants.ACC_PRIVATE, "keys", FIXED_KEY_SET,null, null);
 
         CodeEmitter e = begin_static();
         e.new_instance(FIXED_KEY_SET);

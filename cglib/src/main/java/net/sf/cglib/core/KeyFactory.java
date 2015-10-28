@@ -195,6 +195,7 @@ abstract public class KeyFactory {
                 ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
                                  getFieldName(i),
                                  parameterTypes[i],
+                                 null,
                                  null);
                 e.dup();
                 e.load_arg(i);

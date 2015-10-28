@@ -16,9 +16,13 @@
 package net.sf.cglib.transform.impl;
 
 import net.sf.cglib.transform.*;
+
 import java.util.*;
+
 import net.sf.cglib.core.*;
+
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
@@ -47,21 +51,23 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     private int access;
     private Map fields;
     
-    public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
+    public void begin_class(int version, int access, String className,String signature, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isAbstract(access)) {
             interfaces = TypeUtils.add(interfaces, FIELD_PROVIDER);
         }
         this.access = access;
         fields = new HashMap();
-        super.begin_class(version, access, className, superType, interfaces, sourceFile);
+        super.begin_class(version, access, className, signature,superType, interfaces, sourceFile);
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
-        super.declare_field(access, name, type, value);
+    public FieldVisitor declare_field(int access, String name, Type type,String signature, Object value) {
+        FieldVisitor visitor = super.declare_field(access, name, type,signature, value);
         
         if (!TypeUtils.isStatic(access)) {
             fields.put(name, type);
         }
+        
+        return visitor;
     }
 
     public void end_class() {
@@ -85,8 +91,8 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
             indexes[i] = i;
         }
         
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null);
-        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY,null, null);
+        super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY,null, null);
 
         // use separate methods here because each process switch inner class needs a final CodeEmitter
         initFieldProvider(names);

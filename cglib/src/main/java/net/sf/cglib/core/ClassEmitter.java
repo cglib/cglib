@@ -30,6 +30,9 @@ import java.util.Map;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class ClassEmitter extends ClassTransformer {
+	
+	private static int MAX_VERSION = 49;
+	
     private ClassInfo classInfo;
     private Map fieldInfo;
 
@@ -64,7 +67,14 @@ public class ClassEmitter extends ClassTransformer {
         return classInfo;
     }
 
-    public void begin_class(int version, final int access, String className, final Type superType, final Type[] interfaces, String source) {
+    public  void begin_class(int version, final int access, String className,  final Type superType, final Type[] interfaces, String source) {
+    	begin_class( version, access,  className, null, superType, interfaces, source);    	
+    }
+    
+    public void begin_class(int version, final int access, String className, String signature, final Type superType, final Type[] interfaces, String source) {
+    	
+    	version = Math.max(MAX_VERSION, version);
+    	
         final Type classType = Type.getType("L" + className.replace('.', '/') + ";");
         classInfo = new ClassInfo() {
             public Type getType() {
@@ -83,7 +93,7 @@ public class ClassEmitter extends ClassTransformer {
         cv.visit(version,
                  access,
                  classInfo.getType().getInternalName(),
-                 null,
+                 signature,
                  classInfo.getSuperType().getInternalName(),
                  TypeUtils.toInternalNames(interfaces));
         if (source != null)
@@ -139,12 +149,17 @@ public class ClassEmitter extends ClassTransformer {
     }
 
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
+    	
+    	return begin_method(access,sig,null,exceptions);
+    }
+    
+    public CodeEmitter begin_method(int access, Signature sig,String signature, Type[] exceptions) {
         if (classInfo == null)
             throw new IllegalStateException("classInfo is null! " + this);
         MethodVisitor v = cv.visitMethod(access,
                                          sig.getName(),
                                          sig.getDescriptor(),
-                                         null,
+                                         signature,
                                          TypeUtils.toInternalNames(exceptions));
         if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(getAccess())) {
             rawStaticInit = v;
@@ -181,17 +196,23 @@ public class ClassEmitter extends ClassTransformer {
         return begin_method(Constants.ACC_STATIC, Constants.SIG_STATIC, null);
     }
 
-    public void declare_field(int access, String name, Type type, Object value) {
+    public void declare_field(int access, String name, Type type, Object value) {    	
+    	declare_field(access,name,type,null,value);
+    }
+    
+    public FieldVisitor declare_field(int access, String name, Type type,String signature, Object value) {
         FieldInfo existing = (FieldInfo)fieldInfo.get(name);
         FieldInfo info = new FieldInfo(access, name, type, value);
+        FieldVisitor visitor = null;
         if (existing != null) {
             if (!info.equals(existing)) {
                 throw new IllegalArgumentException("Field \"" + name + "\" has been declared differently");
             }
         } else {
             fieldInfo.put(name, info);
-            cv.visitField(access, name, type.getDescriptor(), null, value);
+            visitor = cv.visitField(access, name, type.getDescriptor(), signature, value);
         }
+        return visitor;
     }
 
     // TODO: make public?
@@ -252,6 +273,7 @@ public class ClassEmitter extends ClassTransformer {
         begin_class(version,
                     access,
                     name.replace('/', '.'),
+                    signature,
                     TypeUtils.fromInternalName(superName),
                     TypeUtils.fromInternalNames(interfaces),
                     null); // TODO
@@ -266,8 +288,8 @@ public class ClassEmitter extends ClassTransformer {
                                    String desc,
                                    String signature,
                                    Object value) {
-        declare_field(access, name, Type.getType(desc), value);
-        return null; // TODO
+        
+        return declare_field(access, name, Type.getType(desc), signature, value);
     }
     
     public MethodVisitor visitMethod(int access,
@@ -277,6 +299,7 @@ public class ClassEmitter extends ClassTransformer {
                                      String[] exceptions) {
         return begin_method(access,
                             new Signature(name, desc),
+                            signature,
                             TypeUtils.fromInternalNames(exceptions));        
     }
 }
