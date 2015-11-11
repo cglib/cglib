@@ -65,6 +65,11 @@ abstract public class FastClass
             return (FastClass)super.create(type.getName());
         }
 
+        @Override
+        protected String flattenKey(Object key) {
+            return (String) key;
+        }
+
         protected ClassLoader getDefaultClassLoader() {
             return type.getClassLoader();
         }

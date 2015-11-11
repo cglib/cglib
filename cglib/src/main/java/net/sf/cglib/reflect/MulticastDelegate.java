@@ -98,6 +98,11 @@ abstract public class MulticastDelegate implements Cloneable {
             return (MulticastDelegate)super.create(iface.getName());
         }
 
+        @Override
+        protected String flattenKey(Object key) {
+            return (String) key;
+        }
+
         public void generateClass(ClassVisitor cv) {
             final MethodInfo method = ReflectUtils.getMethodInfo(ReflectUtils.findInterfaceMethod(iface));
 
