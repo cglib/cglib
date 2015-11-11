@@ -149,6 +149,11 @@ abstract public class KeyFactory {
             return (KeyFactory)super.create(keyInterface.getName());
         }
 
+        @Override
+        protected String flattenKey(Object key) {
+            return (String) key;
+        }
+
         public void setHashConstant(int constant) {
             this.constant = constant;
         }

@@ -70,6 +70,11 @@ public class ImmutableBean
             return super.create(name);
         }
 
+        @Override
+        protected String flattenKey(Object key) {
+            return (String) key;
+        }
+
         public void generateClass(ClassVisitor v) {
             Type targetType = Type.getType(target);
             ClassEmitter ce = new ClassEmitter(v);
