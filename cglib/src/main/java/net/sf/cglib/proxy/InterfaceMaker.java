@@ -86,6 +86,11 @@ public class InterfaceMaker extends AbstractClassGenerator
         return (Class)super.create(this);
     }
 
+    @Override
+    protected String flattenKey(Object key) {
+        return key.toString();
+    }
+
     protected ClassLoader getDefaultClassLoader() {
         return null;
     }

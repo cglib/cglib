@@ -64,11 +64,11 @@ implements ClassGenerator
 
     final protected String getClassName() {
         if (className == null)
-            className = getClassName(getClassLoader());
+            className = getClassName(getClassLoader(), key);
         return className;
     }
 
-    private String getClassName(final ClassLoader loader) {
+    private String getClassName(final ClassLoader loader, Object key) {
         final Set nameCache = getClassNameCache(loader);
         return namingPolicy.getClassName(namePrefix, source.name, key, new Predicate() {
             public boolean evaluate(Object arg) {
@@ -211,7 +211,7 @@ implements ClassGenerator
                     cache2.put(NAME_KEY, new HashSet());
                     source.cache.put(loader, cache2);
                 } else if (useCache) {
-                    Reference ref = (Reference)cache2.get(key);
+                    Reference ref = (Reference) cache2.get(flattenKey(key));
                     gen = (Class) (( ref == null ) ? null : ref.get()); 
                 }
                 if (gen == null) {
@@ -239,7 +239,7 @@ implements ClassGenerator
                         }
                        
                         if (useCache) {
-                            cache2.put(key, new WeakReference(gen));
+                            cache2.put(flattenKey(key), new WeakReference(gen));
                         }
                         return firstInstance(gen);
                     } finally {
@@ -255,6 +255,20 @@ implements ClassGenerator
         } catch (Exception e) {
             throw new CodeGenerationException(e);
         }
+    }
+
+    /**
+     * Most key implementations hold references to the callbacks of the
+     * generated class that may hold references to whatever the callback needs
+     * to work. Those references in the callback being referenced by the key
+     * would prevent those classes from being unloaded and its ClassLoader
+     * garbage collected.
+     * <p/>
+     * By flattening the key to a string representation and not using it for
+     * anything else these unwanted references are kept away from the cache.
+     */
+    protected String flattenKey(Object key) {
+        return getClassName(getClassLoader(), key);
     }
 
     abstract protected Object firstInstance(Class type) throws Exception;
