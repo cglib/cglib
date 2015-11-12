@@ -29,6 +29,11 @@ import java.util.Set;
  */
 public class DefaultNamingPolicy implements NamingPolicy {
     public static final DefaultNamingPolicy INSTANCE = new DefaultNamingPolicy();
+
+    /**
+     * This allows to test collisions of {@code key.hashCode()}.
+     */
+    private final static boolean STRESS_HASH_CODE = Boolean.getBoolean("net.sf.cglib.test.stressHashCodes");
     
     public String getClassName(String prefix, String source, Object key, Predicate names) {
         if (prefix == null) {
@@ -40,7 +45,7 @@ public class DefaultNamingPolicy implements NamingPolicy {
             prefix + "$$" + 
             source.substring(source.lastIndexOf('.') + 1) +
             getTag() + "$$" +
-            Integer.toHexString(key.hashCode());
+            Integer.toHexString(STRESS_HASH_CODE ? 0 : key.hashCode());
         String attempt = base;
         int index = 2;
         while (names.evaluate(attempt))
