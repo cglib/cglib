@@ -35,6 +35,14 @@ public class TestMixin extends CodeGenTestCase {
 
     public void testDetermineInterfaces() throws Exception {
         Object obj = Mixin.create(new Object[]{ new D1(), new D2() });
+        Object obj2 = Mixin.create(new Object[]{ new D1(), new D2() });
+        assertEquals("Mixin.create should use exactly the same class when called with same parameters",
+                obj.getClass(), obj2.getClass()
+        );
+        Object obj3 = Mixin.create(new Object[]{ new D1(), new D4() });
+        assertNotSame("Mixin.create should use different classes for different parameters",
+                obj.getClass(), obj3.getClass()
+        );
         assertTrue(((DI1)obj).herby().equals("D1"));
         assertTrue(((DI2)obj).derby().equals("D2"));
     }
