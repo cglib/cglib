@@ -70,22 +70,22 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public void testComplex() throws Throwable {
         FastClass fc = FastClass.create(MemberSwitchBean.class);
         MemberSwitchBean bean = (MemberSwitchBean)fc.newInstance();
-        assertTrue(bean.init == 0);
-        assertTrue(fc.getName().equals("net.sf.cglib.reflect.MemberSwitchBean"));
-        assertTrue(fc.getJavaClass() == MemberSwitchBean.class);
-        assertTrue(fc.getMaxIndex() == 19);
+        assertEquals("bean.init", 0, bean.init);
+        assertEquals("fc.getName()", "net.sf.cglib.reflect.MemberSwitchBean", fc.getName());
+        assertEquals("fc.getJavaClass()", MemberSwitchBean.class, fc.getJavaClass());
+        assertEquals("fc.getMaxIndex()", 13, fc.getMaxIndex());
 
-        Constructor c1 = MemberSwitchBean.class.getConstructor(new Class[0]);
+        Constructor c1 = MemberSwitchBean.class.getConstructor();
         FastConstructor fc1 = fc.getConstructor(c1);
-        assertTrue(((MemberSwitchBean)fc1.newInstance()).init == 0);
-        assertTrue(fc1.toString().equals("public net.sf.cglib.reflect.MemberSwitchBean()"));
+        assertEquals("((MemberSwitchBean)fc1.newInstance()).init", 0, ((MemberSwitchBean)fc1.newInstance()).init);
+        assertEquals("fc1.toString()", "public net.sf.cglib.reflect.MemberSwitchBean()", fc1.toString());
 
-        Method m1 = MemberSwitchBean.class.getMethod("foo", new Class[]{ Integer.TYPE, String.class });
-        assertTrue(fc.getMethod(m1).invoke(bean, new Object[]{ new Integer(0), "" }).equals(new Integer(6)));
+        Method m1 = MemberSwitchBean.class.getMethod("foo", Integer.TYPE, String.class);
+        assertEquals("fc.getMethod(m1).invoke(bean, new Object[]{ new Integer(0), \"\" })", 6, fc.getMethod(m1).invoke(bean, new Object[]{0, ""}));
 
         // TODO: should null be allowed here?
         Method m2 = MemberSwitchBean.class.getDeclaredMethod("pkg", (Class[])null);
-        assertTrue(fc.getMethod(m2).invoke(bean, null).equals(new Integer(9)));
+        assertEquals("fc.getMethod(m2).invoke(bean, null)", 9, fc.getMethod(m2).invoke(bean, null));
     }
 
     public void testStatic() throws Throwable {
