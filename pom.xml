@@ -108,11 +108,27 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.17</version>
+                    <configuration>
+                        <systemProperties>
+                            <property>
+                                <name>net.sf.cglib.test.stressHashCodes</name>
+                                <value>true</value>
+                            </property>
+                        </systemProperties>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>2.17</version>
+                    <configuration>
+                        <systemProperties>
+                            <property>
+                                <name>net.sf.cglib.test.stressHashCodes</name>
+                                <value>true</value>
+                            </property>
+                        </systemProperties>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

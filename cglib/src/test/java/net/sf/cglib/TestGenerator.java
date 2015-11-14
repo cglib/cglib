@@ -40,4 +40,9 @@ abstract public class TestGenerator extends AbstractClassGenerator {
     public Object create() {
         return create(new Integer(counter++));
     }
+
+    @Override
+    protected String flattenKey(Object key) {
+        return Integer.toString((Integer) key);
+    }
 }
