@@ -15,13 +15,11 @@
  */
 package net.sf.cglib.proxy;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.*;
 import net.sf.cglib.core.*;
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.Label;
@@ -124,7 +122,7 @@ public class Enhancer extends AbstractClassGenerator
     public interface EnhancerKey {
         public Object newInstance(String type,
                                   String[] interfaces,
-                                  CallbackFilter filter,
+                                  WeakIdentityKey<CallbackFilter> filter,
                                   Type[] callbackTypes,
                                   boolean useFactory,
                                   boolean interceptDuringConstruction,
@@ -377,7 +375,7 @@ public class Enhancer extends AbstractClassGenerator
         }
         return super.create(KEY_FACTORY.newInstance((superclass != null) ? superclass.getName() : null,
                                                     ReflectUtils.getNames(interfaces),
-                                                    filter,
+                                                    filter == ALL_ZERO ? null : new WeakIdentityKey<CallbackFilter>(filter),
                                                     callbackTypes,
                                                     useFactory,
                                                     interceptDuringConstruction,
