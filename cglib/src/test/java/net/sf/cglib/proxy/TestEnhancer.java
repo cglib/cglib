@@ -35,6 +35,7 @@ import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
+import org.objectweb.asm.Type;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
@@ -142,10 +143,17 @@ public class TestEnhancer extends CodeGenTestCase {
         obj.setName("herby");
         EA proxy = (EA)Enhancer.create( EA.class,  new DelegateInterceptor(save) );
      
-        assertTrue(proxy.getName().equals("herby"));
+        assertEquals("proxy.getName()", "herby", proxy.getName());
 
         Factory factory = (Factory)proxy;
-        assertTrue(((EA)factory.newInstance(factory.getCallbacks())).getName().equals("herby"));
+        assertEquals("((EA)factory.newInstance(factory.getCallbacks())).getName()", "herby", ((EA)factory.newInstance(factory.getCallbacks())).getName());
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(EA.class);
+        e.setCallbackType(MethodInterceptor.class);
+        Factory factory1 = e.createFactory();
+        assertEquals("((EA)e.createFactory().newInstance(factory.getCallbacks())).getName()",
+                "herby", ((EA)factory1.newInstance(new DelegateInterceptor(save))).getName());
     }
 
     class DelegateInterceptor implements MethodInterceptor {
@@ -651,7 +659,7 @@ public class TestEnhancer extends CodeGenTestCase {
         Object instance = enhancer.create();
 
         assertTrue(instance instanceof ClassOnlyX);
-        assertTrue(instance.getClass().equals(type));
+        assertEquals("types of enhancer.createClass() and enhancer.create().getClass() should match", type, instance.getClass());
     }
 
      public void testSql() {

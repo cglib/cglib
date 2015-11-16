@@ -15,14 +15,16 @@
  */
 package net.sf.cglib.core;
 
-import java.io.*;
-import java.util.*;
-import java.lang.ref.*;
-import java.security.ProtectionDomain;
+import net.sf.cglib.core.internal.Function;
+import net.sf.cglib.core.internal.LoadingCache;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Type;
+
+import java.lang.ref.WeakReference;
+import java.security.ProtectionDomain;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract class for all code-generating CGLIB utilities.
@@ -30,11 +32,20 @@ import org.objectweb.asm.Type;
  * customizing the <code>ClassLoader</code>, name of the generated class, and transformations
  * applied before generation.
  */
-abstract public class AbstractClassGenerator
+abstract public class AbstractClassGenerator<T>
 implements ClassGenerator
 {
-    private static final Object NAME_KEY = new Object();
     private static final ThreadLocal CURRENT = new ThreadLocal();
+
+    private static volatile Map<ClassLoader, ClassLoaderData> CACHE = new WeakHashMap<ClassLoader, ClassLoaderData>();
+//    private static final WeakLoadingCache<ClassLoader, ClassLoaderData> CACHE =
+//            new WeakLoadingCache<ClassLoader, ClassLoaderData>(
+//                    new Function<ClassLoader, ClassLoaderData>() {
+//                        public ClassLoaderData apply(ClassLoader key) {
+//                            return new ClassLoaderData(key);
+//                        }
+//                    }
+//            );
 
     private GeneratorStrategy strategy = DefaultGeneratorStrategy.INSTANCE;
     private NamingPolicy namingPolicy = DefaultNamingPolicy.INSTANCE;
@@ -46,9 +57,63 @@ implements ClassGenerator
     private String className;
     private boolean attemptLoad;
 
+    protected static class ClassLoaderData {
+        private final ConcurrentMap<String, Boolean> reservedClassNames = new ConcurrentHashMap<String, Boolean>(1, 0.75f, 1);
+        private final LoadingCache<AbstractClassGenerator, Object, Object> generatedClasses;
+        private final WeakReference<ClassLoader> classLoader;
+
+        private final Predicate uniqueNamePredicate = new Predicate() {
+            public boolean evaluate(Object arg) {
+                return allocateName((String) arg);
+            }
+        };
+
+        private static final Function<AbstractClassGenerator, Object> GET_KEY = new Function<AbstractClassGenerator, Object>() {
+            public Object apply(AbstractClassGenerator gen) {
+                return gen.key;
+            }
+        };
+
+        public ClassLoaderData(ClassLoader classLoader) {
+            this.classLoader = new WeakReference<ClassLoader>(classLoader);
+            Function<AbstractClassGenerator, Object> load =
+                    new Function<AbstractClassGenerator, Object>() {
+                        public Object apply(AbstractClassGenerator gen) {
+                            Class klass = gen.generate(ClassLoaderData.this);
+                            return gen.wrapCachedClass(klass);
+                        }
+                    };
+            generatedClasses = new LoadingCache<AbstractClassGenerator, Object, Object>(GET_KEY, load);
+        }
+
+        public ClassLoader getClassLoader() {
+            return classLoader.get();
+        }
+
+        public boolean allocateName(String name) {
+            return reservedClassNames.putIfAbsent(name, true) != null;
+        }
+
+        public Predicate getUniqueNamePredicate() {
+            return uniqueNamePredicate;
+        }
+
+        public Object get(AbstractClassGenerator gen) {
+            Object cachedValue = generatedClasses.get(gen);
+            return gen.unwrapCachedValue(cachedValue);
+        }
+    }
+
+    protected T wrapCachedClass(Class klass) {
+        return (T) new WeakReference(klass);
+    }
+
+    protected Object unwrapCachedValue(T cached) {
+        return ((WeakReference) cached).get();
+    }
+
     protected static class Source {
         String name;
-        Map cache = new WeakHashMap();
         public Source(String name) {
             this.name = name;
         }
@@ -63,22 +128,15 @@ implements ClassGenerator
     }
 
     final protected String getClassName() {
-        if (className == null)
-            className = getClassName(getClassLoader());
         return className;
     }
 
-    private String getClassName(final ClassLoader loader) {
-        final Set nameCache = getClassNameCache(loader);
-        return namingPolicy.getClassName(namePrefix, source.name, key, new Predicate() {
-            public boolean evaluate(Object arg) {
-                return nameCache.contains(arg);
-            }
-        });
+    private void setClassName(String className) {
+        this.className = className;
     }
 
-    private Set getClassNameCache(ClassLoader loader) {
-        return (Set)((Map)source.cache.get(loader)).get(NAME_KEY);
+    private String generateClassName(Predicate nameTestPredicate) {
+        return namingPolicy.getClassName(namePrefix, source.name, key, nameTestPredicate);
     }
 
     /**
@@ -199,61 +257,69 @@ implements ClassGenerator
 
     protected Object create(Object key) {
         try {
-        	Class gen = null;
-        	
-            synchronized (source) {
-                ClassLoader loader = getClassLoader();
-                ProtectionDomain protectionDomain = getProtectionDomain();
-                Map cache2 = null;
-                cache2 = (Map)source.cache.get(loader);
-                if (cache2 == null) {
-                    cache2 = new HashMap();
-                    cache2.put(NAME_KEY, new HashSet());
-                    source.cache.put(loader, cache2);
-                } else if (useCache) {
-                    Reference ref = (Reference)cache2.get(key);
-                    gen = (Class) (( ref == null ) ? null : ref.get()); 
-                }
-                if (gen == null) {
-                    Object save = CURRENT.get();
-                    CURRENT.set(this);
-                    try {
-                        this.key = key;
-                        
-                        if (attemptLoad) {
-                            try {
-                                gen = loader.loadClass(getClassName());
-                            } catch (ClassNotFoundException e) {
-                                // ignore
-                            }
-                        }
-                        if (gen == null) {
-                            byte[] b = strategy.generate(this);
-                            String className = ClassNameReader.getClassName(new ClassReader(b));
-                            getClassNameCache(loader).add(className);
-                            if(protectionDomain == null) {
-                            	gen = ReflectUtils.defineClass(className, b, loader);
-                            } else {
-                            	gen = ReflectUtils.defineClass(className, b, loader, protectionDomain);
-                            }
-                        }
-                       
-                        if (useCache) {
-                            cache2.put(key, new WeakReference(gen));
-                        }
-                        return firstInstance(gen);
-                    } finally {
-                        CURRENT.set(save);
+            ClassLoader loader = getClassLoader();
+            Map<ClassLoader, ClassLoaderData> cache = CACHE;
+            ClassLoaderData data = cache.get(loader);
+            if (data == null) {
+                synchronized (AbstractClassGenerator.class) {
+                    data = cache.get(loader);
+                    if (data == null) {
+                        Map<ClassLoader, ClassLoaderData> newCache = new WeakHashMap<ClassLoader, ClassLoaderData>(cache);
+                        data = new ClassLoaderData(classLoader);
+                        newCache.put(classLoader, data);
+                        CACHE = newCache;
                     }
                 }
             }
-            return firstInstance(gen);
+            this.key = key;
+            Object obj = data.get(this);
+            if (obj instanceof Class) {
+                return firstInstance((Class) obj);
+            }
+            return nextInstance(obj);
         } catch (RuntimeException e) {
             throw e;
         } catch (Error e) {
             throw e;
         } catch (Exception e) {
             throw new CodeGenerationException(e);
+        }
+    }
+
+    protected Class generate(ClassLoaderData data) {
+        Class gen;
+        Object save = CURRENT.get();
+        CURRENT.set(this);
+        try {
+            ClassLoader classLoader = data.getClassLoader();
+            this.setClassName(generateClassName(data.getUniqueNamePredicate()));
+            if (attemptLoad) {
+                try {
+                    gen = classLoader.loadClass(getClassName());
+                    return gen;
+                } catch (ClassNotFoundException e) {
+                    // ignore
+                }
+            }
+            byte[] b = strategy.generate(this);
+            String className = ClassNameReader.getClassName(new ClassReader(b));
+            ProtectionDomain protectionDomain = getProtectionDomain();
+            synchronized (classLoader) { // just in case
+                if (protectionDomain == null) {
+                    gen = ReflectUtils.defineClass(className, b, classLoader);
+                } else {
+                    gen = ReflectUtils.defineClass(className, b, classLoader, protectionDomain);
+                }
+            }
+            return gen;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CodeGenerationException(e);
+        } finally {
+            CURRENT.set(save);
         }
     }
 
