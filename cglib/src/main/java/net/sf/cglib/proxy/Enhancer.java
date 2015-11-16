@@ -66,7 +66,7 @@ public class Enhancer extends AbstractClassGenerator
 
     private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
-      (EnhancerKey)KeyFactory.create(EnhancerKey.class);
+      (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.HASH_ASM_TYPE, null);
 
     private static final String BOUND_FIELD = "CGLIB$BOUND";
     private static final String THREAD_CALLBACKS_FIELD = "CGLIB$THREAD_CALLBACKS";
