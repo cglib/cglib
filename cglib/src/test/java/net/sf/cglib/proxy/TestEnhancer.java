@@ -15,7 +15,7 @@
  */
 package net.sf.cglib.proxy;
 
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -980,9 +980,47 @@ public class TestEnhancer extends CodeGenTestCase {
         intf.aMethod(null);
         assertEquals(Arrays.asList(Concrete.class), paramTypes);
     }
-    
-    
-    
+
+
+    public void testInvokeStaticInBridgeMethod() throws Exception {
+        File root = new File(".");
+        File packageDir = new File(root, "src/test/java/net/sf/cglib/proxy");
+        File classesDir = new File(root, "target/test-classes/net/sf/cglib/proxy");
+        copy(new File(packageDir, "Test.class"), new File(classesDir, "Test.class"));
+        copy(new File(packageDir, "TestImpl.class"), new File(classesDir, "TestImpl.class"));
+        Class c = getClass().getClassLoader().loadClass("net.sf.cglib.proxy.TestImpl");
+        Enhancer e = new Enhancer();
+        e.setSuperclass(c);
+        e.setCallbacks(new Callback[] { NoOp.INSTANCE });
+        e.create(new Class[]{String.class}, new Object[]{"value"});
+    }
+
+    private void copy(File src, File dst) throws IOException {
+        InputStream input = null;
+        OutputStream output = null;
+        byte[] buf = new byte[4096];
+        try {
+            input = new BufferedInputStream(new FileInputStream(src));
+            output = new BufferedOutputStream(new FileOutputStream(dst));
+            int read;
+            while ((read = input.read(buf)) != -1) {
+                output.write(buf, 0, read);
+            }
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {}
+            }
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {}
+            }
+        }
+    }
+
+
     static class ErasedType {}
     static class RetType extends ErasedType {}
     static class Refined extends RetType {}
