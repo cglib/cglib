@@ -15,7 +15,11 @@
  */
 package net.sf.cglib.proxy;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -27,6 +31,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
@@ -241,6 +246,87 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
         
+    }
+
+    /**
+     * Verifies that the cache in {@link AbstractClassGenerator} SOURCE doesn't
+     * leak class definitions of classloaders that are no longer used.
+     */
+    public void testSourceCleanAfterClassLoaderDispose() throws Throwable {
+        ClassLoader custom = new ClassLoader(this.getClass().getClassLoader()) {
+
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                if (EA.class.getName().equals(name)) {
+                    InputStream classStream = this.getClass().getResourceAsStream("/net/sf/cglib/proxy/EA.class");
+                    byte[] classBytes;
+                    try {
+                        classBytes = toByteArray(classStream);
+                        return this.defineClass(null, classBytes, 0, classBytes.length);
+                    } catch (IOException e) {
+                        return super.loadClass(name);
+                    }
+                } else {
+                    return super.loadClass(name);
+                }
+            }
+        };
+
+        PhantomReference<ClassLoader> clRef = new PhantomReference<ClassLoader>(custom,
+                new ReferenceQueue<ClassLoader>());
+
+        buildAdvised(custom);
+        custom = null;
+
+        for (int i = 0; i < 10; ++i) {
+            System.gc();
+            Thread.sleep(100);
+            if (clRef.isEnqueued()) {
+                break;
+            }
+        }
+        assertTrue("CGLIB should allow classloaders to be evicted. PhantomReference<ClassLoader> was not cleared after 10 gc cycles," +
+                "thus it is likely some cache is preventing the class loader to be garbage collected", clRef.isEnqueued());
+
+    }
+
+    protected Object buildAdvised(ClassLoader custom)
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        final Class<?> eaClassFromCustomClassloader = custom.loadClass(EA.class.getName());
+
+        CallbackFilter callbackFilter = new CallbackFilter() {
+            Object advised = eaClassFromCustomClassloader.newInstance();
+
+            public int accept(Method method) {
+                return 0;
+            }
+
+        };
+
+        Object source = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
+        Object source2 = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
+        assertEquals("enhance should return cached Enhancer when calling with same parameters",
+                source.getClass(), source2.getClass()
+        );
+        Object source3 = enhance(eaClassFromCustomClassloader, null, null, TEST_INTERCEPTOR, custom);
+        assertNotSame("enhance should return different instance when callbackFilter differs",
+                source.getClass(), source3.getClass()
+        );
+
+        return source;
+    }
+
+    private static byte[] toByteArray(InputStream input) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int n = 0;
+
+        while (-1 != (n = input.read(buffer))) {
+            output.write(buffer, 0, n);
+        }
+
+        return output.toByteArray();
+
     }
 
     public void testRuntimException()throws Throwable{
@@ -483,6 +569,16 @@ public class TestEnhancer extends CodeGenTestCase {
         Enhancer e = new Enhancer();
         e.setSuperclass(cls);
         e.setInterfaces(interfaces);
+        e.setCallback(callback);
+        e.setClassLoader(loader);
+        return e.create();
+    }
+
+    public static Object enhance(Class cls, Class interfaces[], CallbackFilter callbackFilter, Callback callback, ClassLoader loader) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(cls);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(callbackFilter);
         e.setCallback(callback);
         e.setClassLoader(loader);
         return e.create();
