@@ -137,6 +137,19 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
 
+    public void testFinalizeNotProxied() throws Throwable {
+        Source source = (Source) Enhancer.create(
+                Source.class,
+                null, TEST_INTERCEPTOR);
+
+        try {
+            Method finalize = source.getClass().getDeclaredMethod("finalize");
+            assertNull("CGLIB should enhanced object should not declare finalize() method so proxy objects are not eligible for finalization, thus faster", finalize);
+        } catch(NoSuchMethodException e) {
+            // expected
+        }
+    }
+
     public void testEnhanceObject() throws Throwable {
         EA obj = new EA();
         EA save = obj;
