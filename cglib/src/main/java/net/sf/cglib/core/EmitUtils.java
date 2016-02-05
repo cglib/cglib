@@ -427,10 +427,19 @@ public class EmitUtils {
         Label end = e.make_label();
         e.dup();
         e.ifnull(skip);
-        for (Customizer customizer : registry.get(Customizer.class)) {
-            customizer.customize(e, type);
+        boolean customHashCode = false;
+        for (HashCodeCustomizer customizer : registry.get(HashCodeCustomizer.class)) {
+            if (customizer.customize(e, type)) {
+                customHashCode = true;
+                break;
+            }
         }
-        e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        if (!customHashCode) {
+            for (Customizer customizer : registry.get(Customizer.class)) {
+                customizer.customize(e, type);
+            }
+            e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        }
         e.goTo(end);
         e.mark(skip);
         e.pop();

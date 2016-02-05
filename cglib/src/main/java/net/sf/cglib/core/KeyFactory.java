@@ -114,6 +114,20 @@ abstract public class KeyFactory {
     };
 
     /**
+     * {@link Type#hashCode()} is very expensive as it traverses full descriptor to calculate hash code.
+     * This customizer uses {@link Type#getSort()} as a hash code.
+     */
+    public static final HashCodeCustomizer HASH_ASM_TYPE = new HashCodeCustomizer() {
+        public boolean customize(CodeEmitter e, Type type) {
+            if (Constants.TYPE_TYPE.equals(type)) {
+                e.invoke_virtual(type, GET_SORT);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    /**
      * @deprecated this customizer might result in unexpected class leak since key object still holds a strong reference to the Object and class.
      *             It is recommended to have pre-processing method that would strip Objects and represent Classes as Strings
      */
