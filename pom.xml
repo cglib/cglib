@@ -68,6 +68,7 @@
         <module>cglib-nodep</module>
         <module>cglib-sample</module>
         <module>cglib-integration-test</module>
+        <module>cglib-jmh</module>
     </modules>
 
     <!-- ====================================================================== -->
