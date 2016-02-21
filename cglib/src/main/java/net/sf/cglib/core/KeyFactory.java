@@ -179,7 +179,8 @@ abstract public class KeyFactory {
         private static final Class[] KNOWN_CUSTOMIZER_TYPES = new Class[]{Customizer.class, FieldTypeCustomizer.class};
 
         private Class keyInterface;
-        private final CustomizerRegistry customizers = new CustomizerRegistry(KNOWN_CUSTOMIZER_TYPES);
+        // TODO: Make me final when deprecated methods are removed
+        private CustomizerRegistry customizers = new CustomizerRegistry(KNOWN_CUSTOMIZER_TYPES);
         private int constant;
         private int multiplier;
 
@@ -195,6 +196,14 @@ abstract public class KeyFactory {
         	return ReflectUtils.getProtectionDomain(keyInterface);
         }
 
+        /**
+         * @deprecated Use {@link #addCustomizer(KeyFactoryCustomizer)} instead.
+         */
+        @Deprecated
+        public void setCustomizer(Customizer customizer) {
+            customizers = CustomizerRegistry.singleton(customizer);
+        }
+        
         public void addCustomizer(KeyFactoryCustomizer customizer) {
             customizers.add(customizer);
         }
