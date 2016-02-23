@@ -388,6 +388,14 @@ public class EmitUtils {
         }
     }
 
+    /**
+     * @deprecated use {@link #hash_code(CodeEmitter, Type, int, CustomizerRegistry)} instead
+     */
+    @Deprecated
+    public static void hash_code(CodeEmitter e, Type type, int multiplier, final Customizer customizer) {
+    	hash_code(e, type, multiplier, CustomizerRegistry.singleton(customizer));
+    }
+    
     public static void hash_code(CodeEmitter e, Type type, int multiplier, final CustomizerRegistry registry) {
         if (TypeUtils.isArray(type)) {
             hash_array(e, type, multiplier, registry);
@@ -479,6 +487,14 @@ public class EmitUtils {
 //     public static void not_equals(CodeEmitter e, Type type, Label notEquals) {
 //         not_equals(e, type, notEquals, null);
 //     }
+    
+    /**
+     * @deprecated use {@link #not_equals(CodeEmitter, Type, Label, CustomizerRegistry)} instead
+     */
+    @Deprecated
+    public static void not_equals(CodeEmitter e, Type type, final Label notEquals, final Customizer customizer) {
+    	not_equals(e, type, notEquals, CustomizerRegistry.singleton(customizer));
+    }
     
     /**
      * Branches to the specified label if the top two items on the stack
@@ -575,6 +591,17 @@ public class EmitUtils {
         e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
     }
     */
+
+    /**
+      * @deprecated use {@link #append_string(CodeEmitter, Type, ArrayDelimiters, CustomizerRegistry)} instead
+      */
+    @Deprecated
+    public static void append_string(final CodeEmitter e,
+                                     Type type,
+                                     final ArrayDelimiters delims,
+                                     final Customizer customizer) {
+        append_string(e, type, delims, CustomizerRegistry.singleton(customizer));
+    }
 
     public static void append_string(final CodeEmitter e,
                                      Type type,
