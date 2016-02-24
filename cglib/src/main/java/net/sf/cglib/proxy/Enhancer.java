@@ -134,7 +134,7 @@ public class Enhancer extends AbstractClassGenerator
     public interface EnhancerKey {
         public Object newInstance(String type,
                                   String[] interfaces,
-                                  WeakIdentityKey<CallbackFilter> filter,
+                                  WeakCacheKey<CallbackFilter> filter,
                                   Type[] callbackTypes,
                                   boolean useFactory,
                                   boolean interceptDuringConstruction,
@@ -424,7 +424,7 @@ public class Enhancer extends AbstractClassGenerator
         preValidate();
         Object key = KEY_FACTORY.newInstance((superclass != null) ? superclass.getName() : null,
                 ReflectUtils.getNames(interfaces),
-                filter == ALL_ZERO ? null : new WeakIdentityKey<CallbackFilter>(filter),
+                filter == ALL_ZERO ? null : new WeakCacheKey<CallbackFilter>(filter),
                 callbackTypes,
                 useFactory,
                 interceptDuringConstruction,
