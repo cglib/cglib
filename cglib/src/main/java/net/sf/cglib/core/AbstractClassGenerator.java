@@ -75,6 +75,9 @@ implements ClassGenerator
         };
 
         public ClassLoaderData(ClassLoader classLoader) {
+            if (classLoader == null) {
+                throw new IllegalArgumentException("classLoader == null is not yet supported");
+            }
             this.classLoader = new WeakReference<ClassLoader>(classLoader);
             Function<AbstractClassGenerator, Object> load =
                     new Function<AbstractClassGenerator, Object>() {
@@ -265,8 +268,8 @@ implements ClassGenerator
                     data = cache.get(loader);
                     if (data == null) {
                         Map<ClassLoader, ClassLoaderData> newCache = new WeakHashMap<ClassLoader, ClassLoaderData>(cache);
-                        data = new ClassLoaderData(classLoader);
-                        newCache.put(classLoader, data);
+                        data = new ClassLoaderData(loader);
+                        newCache.put(loader, data);
                         CACHE = newCache;
                     }
                 }
@@ -292,6 +295,11 @@ implements ClassGenerator
         CURRENT.set(this);
         try {
             ClassLoader classLoader = data.getClassLoader();
+            if (classLoader == null) {
+                throw new IllegalStateException("ClassLoader is null while trying to define class " +
+                        getClassName() + ". It seems that the loader has been expired from a weak reference somehow. " +
+                        "Please file an issue at cglib's issue tracker.");
+            }
             this.setClassName(generateClassName(data.getUniqueNamePredicate()));
             if (attemptLoad) {
                 try {
