@@ -35,7 +35,6 @@ import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.DefaultNamingPolicy;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
-import org.objectweb.asm.Type;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
@@ -348,6 +347,44 @@ public class TestEnhancer extends CodeGenTestCase {
 
         return output.toByteArray();
 
+    }
+
+    private static class TestFilter implements CallbackFilter {
+        private final int pk;
+
+        TestFilter(int pk) {
+            this.pk = pk;
+        }
+
+        public int accept(Method method) {
+            return 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1; // Make sure Enhancer uses equals, not just hashCode alone
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof TestFilter && ((TestFilter) obj).pk == pk;
+        }
+    }
+
+    public void testCallbackFilterEqualsVsClassReuse() {
+        Callback[] callbacks = new Callback[]{NoOp.INSTANCE};
+        Object a = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        Object b = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        assertSame("Using the same as per .equal() CallbackFilter, thus Enhancer should reuse the same proxy class",
+                a.getClass(), b.getClass());
+    }
+
+    public void testCallbackFilterNotEqualsVsClassReuse() {
+        Callback[] callbacks = new Callback[]{NoOp.INSTANCE};
+        Object a = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        Object b = Enhancer.create(Source.class, null, new TestFilter(2), callbacks);
+        assertNotSame("Using the different CallbackFilter instances, thus Enhancer should generate new proxy class",
+                a.getClass(), b.getClass());
     }
 
     public void testRuntimException()throws Throwable{
