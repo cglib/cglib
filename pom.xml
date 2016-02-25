@@ -151,7 +151,7 @@
                         <additionalDependency>
                           <groupId>org.apache.ant</groupId>
                           <artifactId>ant</artifactId>
-                          <version>1.9.4</version>
+                          <version>1.9.6</version>
                         </additionalDependency>
                       </additionalDependencies>
                     </configuration>
@@ -213,7 +213,7 @@
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
-                <version>1.9.4</version>
+                <version>1.9.6</version>
                 <optional>true</optional>
             </dependency>
 
