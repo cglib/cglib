@@ -323,11 +323,25 @@ public class TestEnhancer extends CodeGenTestCase {
 
         };
 
+        // Need to test both orders: "null classloader first" and "null last" just in case
+        Object source_ = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, null);
         Object source = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
+        assertSame("Same proxy class is expected since Enhancer with null (default) ClassLoader should use " +
+                        " target class.getClassLoader(), thus the same cache key instance should be reused",
+                source.getClass(), source_.getClass()
+        );
+
         Object source2 = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
-        assertEquals("enhance should return cached Enhancer when calling with same parameters",
+        assertSame("enhance should return cached Enhancer when calling with same parameters",
                 source.getClass(), source2.getClass()
         );
+
+        Object source2_ = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, null);
+        assertSame("Same proxy class is expected since Enhancer with null (default) ClassLoader should use " +
+                " target class.getClassLoader(), thus the same cache key instance should be reused",
+                source.getClass(), source2_.getClass()
+        );
+
         Object source3 = enhance(eaClassFromCustomClassloader, null, null, TEST_INTERCEPTOR, custom);
         assertNotSame("enhance should return different instance when callbackFilter differs",
                 source.getClass(), source3.getClass()
