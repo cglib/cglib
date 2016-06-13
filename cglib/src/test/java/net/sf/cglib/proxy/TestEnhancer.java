@@ -1021,6 +1021,30 @@ public class TestEnhancer extends CodeGenTestCase {
 
     }
     
+    public void testUseCache() throws Exception {
+        Enhancer noCache = new Enhancer();
+        noCache.setUseCache(false);
+        noCache.setSuperclass(Foo.class);
+        noCache.setCallback(NoOp.INSTANCE);
+        Class<?> a = noCache.create().getClass();
+        Class<?> b = noCache.create().getClass();
+        assertNotSame(a, b);
+        
+        Enhancer withCache = new Enhancer();
+        withCache.setUseCache(true);
+        withCache.setSuperclass(Foo.class);
+        withCache.setCallback(NoOp.INSTANCE);
+        Class<?> c = withCache.create().getClass();
+        Class<?> d = withCache.create().getClass();
+        assertNotSame(a, c);
+        assertNotSame(b, c);
+        assertSame(c, d);
+    }
+    
+    static class Foo {
+      Foo() {}
+    }
+    
     public void testBridgeForcesInvokeVirtual() {
         List<Class> retTypes = new ArrayList<Class>();
         List<Class> paramTypes = new ArrayList<Class>();
