@@ -101,9 +101,13 @@ implements ClassGenerator
             return uniqueNamePredicate;
         }
 
-        public Object get(AbstractClassGenerator gen) {
-            Object cachedValue = generatedClasses.get(gen);
-            return gen.unwrapCachedValue(cachedValue);
+        public Object get(AbstractClassGenerator gen, boolean useCache) {
+            if (!useCache) {
+              return gen.generate(ClassLoaderData.this);
+            } else {
+              Object cachedValue = generatedClasses.get(gen);
+              return gen.unwrapCachedValue(cachedValue);
+            }
         }
     }
 
@@ -275,7 +279,7 @@ implements ClassGenerator
                 }
             }
             this.key = key;
-            Object obj = data.get(this);
+            Object obj = data.get(this, getUseCache());
             if (obj instanceof Class) {
                 return firstInstance((Class) obj);
             }
