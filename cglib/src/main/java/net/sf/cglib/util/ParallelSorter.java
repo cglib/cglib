@@ -19,9 +19,6 @@ import java.util.Comparator;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
 
-import static net.sf.cglib.util.ApproximateNumberEqual.doubleEquals;
-import static net.sf.cglib.util.ApproximateNumberEqual.floatEquals;
-
 /**
  * For the efficient sorting of multiple arrays in parallel.
  * <p>
@@ -226,7 +223,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         public int compare(int i, int j) {
             float vi = a[i];
             float vj = a[j];
-            return (floatEquals(vi, vj)) ? 0 : (vi > vj) ? 1 : -1;
+            return Float.compare(vi, vj);
         }
     }
     
@@ -236,7 +233,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         public int compare(int i, int j) {
             double vi = a[i];
             double vj = a[j];
-            return (doubleEquals(vi, vj)) ? 0 : (vi > vj) ? 1 : -1;
+            return Double.compare(vi, vj);
         }
     }
 
