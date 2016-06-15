@@ -33,6 +33,8 @@ import junit.framework.TestSuite;
 import net.sf.cglib.CodeGenTestCase;
 import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.DefaultNamingPolicy;
+import net.sf.cglib.core.NamingPolicy;
+import net.sf.cglib.core.Predicate;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
 
@@ -635,6 +637,32 @@ public class TestEnhancer extends CodeGenTestCase {
       NamingPolicyDummy dummy = (NamingPolicyDummy) proxied.newInstance();
       dummy.toString();
       assertTrue(ran[0]);
+    }
+    
+    public void testBadNamingPolicyStillReservesNames() throws Throwable {
+      Enhancer e = new Enhancer();
+      e.setSuperclass(NamingPolicyDummy.class);
+      e.setUseCache(false);
+      e.setUseFactory(false);
+      e.setNamingPolicy(new NamingPolicy() {      
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          return prefix + "$ByDerby";
+        }
+      });
+      e.setCallbackType(MethodInterceptor.class);
+      Class proxied = e.createClass();
+      final String name = proxied.getCanonicalName();
+      final boolean[] ran = new boolean[1];
+      e.setNamingPolicy(new NamingPolicy() {
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          ran[0] = true;
+          assertTrue(names.evaluate(name));
+          return name + "42"; 
+        }
+      });
+      Class proxied2 = e.createClass();
+      assertTrue(ran[0]);
+      assertEquals(name + "42", proxied2.getCanonicalName());
     }
 
     public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
