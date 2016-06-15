@@ -641,28 +641,27 @@ public class TestEnhancer extends CodeGenTestCase {
     
     public void testBadNamingPolicyStillReservesNames() throws Throwable {
       Enhancer e = new Enhancer();
-      e.setSuperclass(NamingPolicyDummy.class);
       e.setUseCache(false);
-      e.setUseFactory(false);
+      e.setCallback(NoOp.INSTANCE);
+      e.setClassLoader(new ClassLoader(this.getClass().getClassLoader()){});
       e.setNamingPolicy(new NamingPolicy() {      
         public String getClassName(String prefix, String source, Object key, Predicate names) {
-          return prefix + "$ByDerby";
+          return "net.sf.cglib.empty.Object$$ByDerby$$123";
         }
       });
-      e.setCallbackType(MethodInterceptor.class);
-      Class proxied = e.createClass();
+      Class proxied = e.create().getClass();
       final String name = proxied.getCanonicalName();
       final boolean[] ran = new boolean[1];
       e.setNamingPolicy(new NamingPolicy() {
         public String getClassName(String prefix, String source, Object key, Predicate names) {
           ran[0] = true;
           assertTrue(names.evaluate(name));
-          return name + "42"; 
+          return name + "45"; 
         }
       });
-      Class proxied2 = e.createClass();
+      Class proxied2 = e.create().getClass();
       assertTrue(ran[0]);
-      assertEquals(name + "42", proxied2.getCanonicalName());
+      assertEquals(name + "45", proxied2.getCanonicalName());
     }
 
     public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {

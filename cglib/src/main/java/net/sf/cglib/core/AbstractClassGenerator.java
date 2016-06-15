@@ -305,7 +305,7 @@ implements ClassGenerator
                         getClassName() + ". It seems that the loader has been expired from a weak reference somehow. " +
                         "Please file an issue at cglib's issue tracker.");
             }
-            synchronized(data) {
+            synchronized (classLoader) {
               String name = generateClassName(data.getUniqueNamePredicate());              
               data.reserveName(name);
               this.setClassName(name);
