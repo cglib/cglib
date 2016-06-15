@@ -22,9 +22,9 @@ import org.objectweb.asm.ClassReader;
 import java.lang.ref.WeakReference;
 import java.security.ProtectionDomain;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Abstract class for all code-generating CGLIB utilities.
@@ -58,13 +58,13 @@ implements ClassGenerator
     private boolean attemptLoad;
 
     protected static class ClassLoaderData {
-        private final ConcurrentMap<String, Boolean> reservedClassNames = new ConcurrentHashMap<String, Boolean>(1, 0.75f, 1);
+        private final Set<String> reservedClassNames = new HashSet<String>();
         private final LoadingCache<AbstractClassGenerator, Object, Object> generatedClasses;
         private final WeakReference<ClassLoader> classLoader;
 
         private final Predicate uniqueNamePredicate = new Predicate() {
-            public boolean evaluate(Object arg) {
-                return allocateName((String) arg);
+            public boolean evaluate(Object name) {
+                return reservedClassNames.contains(name);
             }
         };
 
@@ -93,8 +93,8 @@ implements ClassGenerator
             return classLoader.get();
         }
 
-        public boolean allocateName(String name) {
-            return reservedClassNames.putIfAbsent(name, true) != null;
+        public void reserveName(String name) {
+            reservedClassNames.add(name);
         }
 
         public Predicate getUniqueNamePredicate() {
@@ -269,6 +269,7 @@ implements ClassGenerator
             ClassLoaderData data = cache.get(loader);
             if (data == null) {
                 synchronized (AbstractClassGenerator.class) {
+                    cache = CACHE;
                     data = cache.get(loader);
                     if (data == null) {
                         Map<ClassLoader, ClassLoaderData> newCache = new WeakHashMap<ClassLoader, ClassLoaderData>(cache);
@@ -304,7 +305,11 @@ implements ClassGenerator
                         getClassName() + ". It seems that the loader has been expired from a weak reference somehow. " +
                         "Please file an issue at cglib's issue tracker.");
             }
-            this.setClassName(generateClassName(data.getUniqueNamePredicate()));
+            synchronized (classLoader) {
+              String name = generateClassName(data.getUniqueNamePredicate());              
+              data.reserveName(name);
+              this.setClassName(name);
+            }
             if (attemptLoad) {
                 try {
                     gen = classLoader.loadClass(getClassName());
