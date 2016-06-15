@@ -640,7 +640,15 @@ public class Enhancer extends AbstractClassGenerator
             this.currentData = data;
             Object factoryKey = FACTORY_KEY_FACTORY.newInstance((EnhancerKey) currentKey);
             this.currentKey = factoryKey;
+
+            // Here we create a factory class, thus we use "default" naming policy
+            // The factory class is used internally by cglib to avoid reflection for
+            // instantiation of enhanced classes, thus default naming policy should be just fine
+            NamingPolicy namingPolicy = getNamingPolicy();
+            setNamingPolicy(DefaultNamingPolicy.INSTANCE);
             factory = (Factory) super.create(factoryKey);
+            setNamingPolicy(namingPolicy);
+
             this.currentData = null;
             data.factory = factory;
         }
