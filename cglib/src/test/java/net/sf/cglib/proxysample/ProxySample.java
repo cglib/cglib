@@ -64,11 +64,7 @@ public final class ProxySample implements ProxySampleInterface_ReturnsObject, Pr
         } catch (Throwable e) {
         	throw new UndeclaredThrowableException(e);
         }
-        if (result != null) {
-            return result;
-        } else {
-            return 0;
-        }
+        return result.intValue();
     }
 
     /**
