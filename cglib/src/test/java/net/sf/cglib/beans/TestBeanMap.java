@@ -30,10 +30,10 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     public static class TestBean {
         private String foo;
         private String bar = "x";
-        private String baz;
+        protected String baz;
         private int quud;
         private int quick = 42;
-        private int quip;
+        protected int quip;
 
         public String getFoo() {
             return foo;
@@ -67,6 +67,15 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
             quip = value;
         }
     }
+    public static class TestBeanFullGetters extends TestBean {
+		public String getBaz() {
+			return baz;
+		}
+
+		public int getQuip() {
+			return quip;
+		}
+	}
 
     public void testBeanMap() {
         TestBean bean = new TestBean();
@@ -128,6 +137,15 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
         assertTrue(map.containsKey("foo"));
         assertTrue(map.containsKey("bar"));
         assertTrue(!map.containsKey("baz"));
+    }
+    
+    public void testContainsValue() {
+        TestBeanFullGetters bean = new TestBeanFullGetters();
+        BeanMap map = BeanMap.create(bean);
+        assertTrue(map.containsValue(null));
+        bean.setFoo("foo");
+        bean.setBaz("baz");
+        assertFalse(map.containsValue(null));
     }
 
     public static Object mixinMapIntoBean(final Object bean) {
