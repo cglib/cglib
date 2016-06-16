@@ -134,7 +134,7 @@ abstract public class MethodDelegate {
 
     public boolean equals(Object obj) {
         MethodDelegate other = (MethodDelegate)obj;
-        return target == other.target && eqMethod.equals(other.eqMethod);
+        return (other != null && target == other.target) && eqMethod.equals(other.eqMethod);
     }
 
     public int hashCode() {
