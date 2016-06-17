@@ -18,6 +18,7 @@ package net.sf.cglib.proxy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
@@ -268,6 +269,49 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
         
+    }
+
+    public void testProxyClassReuseAcrossGC() throws InterruptedException {
+        String proxyClassName = null;
+        for (int i = 0; i < 50; i++) {
+            Enhancer enhancer = new Enhancer();
+            enhancer.setSuperclass(Source.class);
+            enhancer.setCallbackFilter(new CallbackFilter() {
+                public int accept(Method method) {
+                    return 0;
+                }
+
+                @Override
+                public boolean equals(Object obj) {
+                    return true;
+                }
+
+                @Override
+                public int hashCode() {
+                    return 0;
+                }
+            });
+            enhancer.setInterfaces(new Class[]{Serializable.class});
+            enhancer.setCallback(new InvocationHandler() {
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (method.getDeclaringClass() != Object.class
+                            && method.getReturnType() == String.class) {
+                        return null;
+                    } else {
+                        throw new RuntimeException("Do not know what to do.");
+                    }
+                }
+            });
+            Source proxy = (Source) enhancer.create();
+            String actualProxyClassName = proxy.getClass().getName();
+            if (proxyClassName == null) {
+                proxyClassName = actualProxyClassName;
+            } else {
+                assertEquals("GC iteration " + i + ", proxy class should survive GC and be reused even across GC",
+                        proxyClassName, actualProxyClassName);
+            }
+            System.gc();
+        }
     }
 
     /**
