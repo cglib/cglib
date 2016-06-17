@@ -161,13 +161,6 @@ public class TestEnhancer extends CodeGenTestCase {
 
         Factory factory = (Factory)proxy;
         assertEquals("((EA)factory.newInstance(factory.getCallbacks())).getName()", "herby", ((EA)factory.newInstance(factory.getCallbacks())).getName());
-
-        Enhancer e = new Enhancer();
-        e.setSuperclass(EA.class);
-        e.setCallbackType(MethodInterceptor.class);
-        Factory factory1 = e.createFactory();
-        assertEquals("((EA)e.createFactory().newInstance(factory.getCallbacks())).getName()",
-                "herby", ((EA)factory1.newInstance(new DelegateInterceptor(save))).getName());
     }
 
     class DelegateInterceptor implements MethodInterceptor {

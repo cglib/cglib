@@ -71,8 +71,6 @@ public class Enhancer extends AbstractClassGenerator
     private static final Source SOURCE = new Source(Enhancer.class.getName());
     private static final EnhancerKey KEY_FACTORY =
       (EnhancerKey)KeyFactory.create(EnhancerKey.class, KeyFactory.HASH_ASM_TYPE, null);
-    private static final EnhancerFactoryKey FACTORY_KEY_FACTORY =
-      (EnhancerFactoryKey)KeyFactory.create(EnhancerFactoryKey.class);
 
     private static final String BOUND_FIELD = "CGLIB$BOUND";
     private static final String FACTORY_DATA_FIELD = "CGLIB$FACTORY_DATA";
@@ -152,7 +150,6 @@ public class Enhancer extends AbstractClassGenerator
     private Type[] callbackTypes;
     private boolean validateCallbackTypes;
     private boolean classOnly;
-    private boolean factoryOnly;
     private Class superclass;
     private Class[] argumentTypes;
     private Object[] arguments;
@@ -299,7 +296,6 @@ public class Enhancer extends AbstractClassGenerator
      */
     public Object create() {
         classOnly = false;
-        factoryOnly = false;
         argumentTypes = null;
         return createHelper();
     }
@@ -315,7 +311,6 @@ public class Enhancer extends AbstractClassGenerator
      */
     public Object create(Class[] argumentTypes, Object[] arguments) {
         classOnly = false;
-        factoryOnly = false;
         if (argumentTypes == null || arguments == null || argumentTypes.length != arguments.length) {
             throw new IllegalArgumentException("Arguments must be non-null and of equal length");
         }
@@ -334,21 +329,7 @@ public class Enhancer extends AbstractClassGenerator
      */
     public Class createClass() {
         classOnly = true;
-        factoryOnly = false;
         return (Class)createHelper();
-    }
-
-    /**
-     * Generate a {@link Factory} implementation if necessary and return it.
-     * This ignores any callbacks that have been set.
-     * @see Factory#newInstance(Callback)
-     * @see Factory#newInstance(Callback[])
-     * @see Factory#newInstance(Class[], Object[], Callback[])
-     */
-    public Factory createFactory() {
-        classOnly = false;
-        factoryOnly = true;
-        return (Factory)createHelper();
     }
 
     /**
@@ -413,10 +394,58 @@ public class Enhancer extends AbstractClassGenerator
 
     static class EnhancerFactoryData {
         public final Class generatedClass;
-        public volatile Factory factory;
+        private final Method setThreadCallbacks;
+        private final Class[] primaryConstructorArgTypes;
+        private final Constructor primaryConstructor;
 
-        public EnhancerFactoryData(Class generatedClass) {
+        public EnhancerFactoryData(Class generatedClass, Class[] primaryConstructorArgTypes, boolean classOnly) {
             this.generatedClass = generatedClass;
+            try {
+                setThreadCallbacks = getCallbacksSetter(generatedClass, SET_THREAD_CALLBACKS_NAME);
+                setThreadCallbacks.setAccessible(true);
+                if (classOnly) {
+                    this.primaryConstructorArgTypes = null;
+                    this.primaryConstructor = null;
+                } else {
+                    this.primaryConstructorArgTypes = primaryConstructorArgTypes;
+                    this.primaryConstructor = generatedClass.getDeclaredConstructor(primaryConstructorArgTypes);
+                    primaryConstructor.setAccessible(true);
+                }
+            } catch (NoSuchMethodException e) {
+                throw new CodeGenerationException(e);
+            }
+        }
+
+        public Object newInstance(Class[] argumentTypes, Object[] arguments, Callback[] callbacks) {
+            setThreadCallbacks(callbacks);
+            try {
+                if (!Arrays.equals(primaryConstructorArgTypes, argumentTypes)) {
+                    return ReflectUtils.newInstance(generatedClass, argumentTypes, arguments);
+                }
+                try {
+                    return primaryConstructor.newInstance(arguments);
+                } catch (InstantiationException e) {
+                    throw new CodeGenerationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new CodeGenerationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new CodeGenerationException(e.getTargetException());
+                }
+            } finally {
+                // clear thread callbacks to allow them to be gc'd
+                setThreadCallbacks(null);
+            }
+
+        }
+
+        private void setThreadCallbacks(Callback[] callbacks) {
+            try {
+                setThreadCallbacks.invoke(generatedClass, (Object) callbacks);
+            } catch (IllegalAccessException e) {
+                throw new CodeGenerationException(e);
+            } catch (InvocationTargetException e) {
+                throw new CodeGenerationException(e.getTargetException());
+            }
         }
     }
 
@@ -635,19 +664,14 @@ public class Enhancer extends AbstractClassGenerator
         if (classOnly) {
             return data.generatedClass;
         }
-        Factory factory = data.factory;
-        if (factory == null) {
-            this.currentData = data;
-            Object factoryKey = FACTORY_KEY_FACTORY.newInstance((EnhancerKey) currentKey);
-            this.currentKey = factoryKey;
-            factory = (Factory) super.create(factoryKey);
-            this.currentData = null;
-            data.factory = factory;
+
+        Class[] argumentTypes = this.argumentTypes;
+        Object[] arguments = this.arguments;
+        if (argumentTypes == null) {
+            argumentTypes = Constants.EMPTY_CLASS_ARRAY;
+            arguments = null;
         }
-        if (factoryOnly) {
-            return factory;
-        }
-        return createUsingFactory(factory);
+        return data.newInstance(argumentTypes, arguments, callbacks);
     }
 
     @Override
@@ -655,7 +679,11 @@ public class Enhancer extends AbstractClassGenerator
         if (currentKey instanceof EnhancerFactoryKey) {
             return new WeakReference(ReflectUtils.newInstance(klass));
         }
-        EnhancerFactoryData factoryData = new EnhancerFactoryData(klass);
+        Class[] argumentTypes = this.argumentTypes;
+        if (argumentTypes == null) {
+            argumentTypes = Constants.EMPTY_CLASS_ARRAY;
+        }
+        EnhancerFactoryData factoryData = new EnhancerFactoryData(klass, argumentTypes, classOnly);
         Field factoryDataField = null;
         try {
             factoryDataField = klass.getField(FACTORY_DATA_FIELD);
@@ -798,7 +826,7 @@ public class Enhancer extends AbstractClassGenerator
      * Helper method to create an intercepted object.
      * For finer control over the generated instance, use a new instance of <code>Enhancer</code>
      * instead of this static method.
-     * @param type class to extend or interface to implement
+     * @param superclass class to extend or interface to implement
      * @param interfaces array of interfaces to implement, or null
      * @param callback the callback to use for all methods
      */
@@ -814,7 +842,7 @@ public class Enhancer extends AbstractClassGenerator
      * Helper method to create an intercepted object.
      * For finer control over the generated instance, use a new instance of <code>Enhancer</code>
      * instead of this static method.
-     * @param type class to extend or interface to implement
+     * @param superclass class to extend or interface to implement
      * @param interfaces array of interfaces to implement, or null
      * @param filter the callback filter to use when generating a new class
      * @param callbacks callback implementations to use for the enhanced object
