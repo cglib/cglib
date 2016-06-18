@@ -81,6 +81,16 @@ public class Enhancer extends AbstractClassGenerator
     private static final String SET_THREAD_CALLBACKS_NAME = "CGLIB$SET_THREAD_CALLBACKS";
     private static final String SET_STATIC_CALLBACKS_NAME = "CGLIB$SET_STATIC_CALLBACKS";
     private static final String CONSTRUCTED_FIELD = "CGLIB$CONSTRUCTED";
+    /**
+     * {@link net.sf.cglib.core.AbstractClassGenerator.ClassLoaderData#generatedClasses} requires to keep cache key
+     * in a good shape (the keys should be up and running if the proxy class is alive), and one of the cache keys is
+     * {@link CallbackFilter}. That is why the generated class contains static field that keeps strong reference to
+     * the {@link #filter}.
+     * <p>This dance achieves two goals: ensures generated class is reusable and available through generatedClasses
+     * cache, and it enables to unload classloader and the related {@link CallbackFilter} in case user does not need
+     * that</p>
+     */
+    private static final String CALLBACK_FILTER_FIELD = "CGLIB$CALLBACK_FILTER";
 
     private static final Type OBJECT_TYPE =
       TypeUtils.parseType("Object");
@@ -576,6 +586,8 @@ public class Enhancer extends AbstractClassGenerator
         for (int i = 0; i < callbackTypes.length; i++) {
             e.declare_field(Constants.ACC_PRIVATE, getCallbackField(i), callbackTypes[i], null);
         }
+        // This is declared private to avoid "public field" pollution
+        e.declare_field(Constants.ACC_PRIVATE | Constants.ACC_STATIC, CALLBACK_FILTER_FIELD, OBJECT_TYPE, null);
 
         if (currentData == null) {
             emitMethods(e, methods, actualMethods);
@@ -632,6 +644,7 @@ public class Enhancer extends AbstractClassGenerator
         }
 
         EnhancerFactoryData data = (EnhancerFactoryData) instance;
+
         if (classOnly) {
             return data.generatedClass;
         }
@@ -658,12 +671,17 @@ public class Enhancer extends AbstractClassGenerator
         EnhancerFactoryData factoryData = new EnhancerFactoryData(klass);
         Field factoryDataField = null;
         try {
+            // The subsequent dance is performed just once for each class,
+            // so it does not matter much how fast it goes
             factoryDataField = klass.getField(FACTORY_DATA_FIELD);
             factoryDataField.set(null, factoryData);
+            Field callbackFilterField = klass.getDeclaredField(CALLBACK_FILTER_FIELD);
+            callbackFilterField.setAccessible(true);
+            callbackFilterField.set(null, this.filter);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            throw new CodeGenerationException(e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            throw new CodeGenerationException(e);
         }
         return new WeakReference<EnhancerFactoryData>(factoryData);
     }

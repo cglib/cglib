@@ -38,14 +38,6 @@ implements ClassGenerator
     private static final ThreadLocal CURRENT = new ThreadLocal();
 
     private static volatile Map<ClassLoader, ClassLoaderData> CACHE = new WeakHashMap<ClassLoader, ClassLoaderData>();
-//    private static final WeakLoadingCache<ClassLoader, ClassLoaderData> CACHE =
-//            new WeakLoadingCache<ClassLoader, ClassLoaderData>(
-//                    new Function<ClassLoader, ClassLoaderData>() {
-//                        public ClassLoaderData apply(ClassLoader key) {
-//                            return new ClassLoaderData(key);
-//                        }
-//                    }
-//            );
 
     private GeneratorStrategy strategy = DefaultGeneratorStrategy.INSTANCE;
     private NamingPolicy namingPolicy = DefaultNamingPolicy.INSTANCE;
@@ -59,7 +51,23 @@ implements ClassGenerator
 
     protected static class ClassLoaderData {
         private final Set<String> reservedClassNames = new HashSet<String>();
+
+        /**
+         * {@link AbstractClassGenerator} here holds "cache key" (e.g. {@link net.sf.cglib.proxy.Enhancer}
+         * configuration), and the value is the generated class plus some additional values
+         * (see {@link #unwrapCachedValue(Object)}.
+         * <p>The generated classes can be reused as long as their classloader is reachable.</p>
+         * <p>Note: the only way to access a class is to find it through generatedClasses cache, thus
+         * the key should not expire as long as the class itself is alive (its classloader is alive).</p>
+         */
         private final LoadingCache<AbstractClassGenerator, Object, Object> generatedClasses;
+
+        /**
+         * Note: ClassLoaderData object is stored as a value of {@code WeakHashMap<ClassLoader, ...>} thus
+         * this classLoader reference should be weak otherwise it would make classLoader strongly reachable
+         * and alive forever.
+         * Reference queue is not required since the cleanup is handled by {@link WeakHashMap}.
+         */
         private final WeakReference<ClassLoader> classLoader;
 
         private final Predicate uniqueNamePredicate = new Predicate() {
