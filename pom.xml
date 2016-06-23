@@ -54,6 +54,7 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
+        <asm.version>5.0.4</asm.version>
         <java.compiler.argument />
 
         <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
@@ -81,6 +82,18 @@
                 <jdk>[1.8,)</jdk>
             </activation>
             <properties>
+                <java.test.compiler.argument>-parameters</java.test.compiler.argument>
+            </properties>
+        </profile>
+        <profile>
+            <id>java9</id>
+            <activation>
+                <jdk>[1.9,)</jdk>
+            </activation>
+            <properties>
+                <java.version.source>1.6</java.version.source>
+                <java.version.target>1.6</java.version.target>
+                <asm.version>6.0_ALPHA</asm.version>
                 <java.test.compiler.argument>-parameters</java.test.compiler.argument>
             </properties>
         </profile>
@@ -146,7 +159,7 @@
                         <additionalDependency>
                           <groupId>org.ow2.asm</groupId>
                           <artifactId>asm</artifactId>
-                          <version>5.0.4</version>
+                          <version>${asm.version}</version>
                         </additionalDependency>
                         <additionalDependency>
                           <groupId>org.apache.ant</groupId>
@@ -208,7 +221,7 @@
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
-                <version>5.0.4</version>
+                <version>${asm.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
