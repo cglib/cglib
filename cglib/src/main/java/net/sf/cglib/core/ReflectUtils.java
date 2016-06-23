@@ -241,7 +241,9 @@ public class ReflectUtils {
             
         boolean flag = cstruct.isAccessible();
         try {
-            cstruct.setAccessible(true);
+            if (!flag) {
+                cstruct.setAccessible(true);
+            }
             Object result = cstruct.newInstance(args);
             return result;
         } catch (InstantiationException e) {
@@ -251,7 +253,9 @@ public class ReflectUtils {
         } catch (InvocationTargetException e) {
             throw new CodeGenerationException(e.getTargetException());
         } finally {
-            cstruct.setAccessible(flag);
+            if (!flag) {
+                cstruct.setAccessible(flag);
+            }
         }
                 
     }
