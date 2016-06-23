@@ -657,6 +657,26 @@ public class TestEnhancer extends CodeGenTestCase {
       assertEquals(name + "45", proxied2.getCanonicalName());
     }
 
+    /**
+     * In theory, every sane implementation of {@link NamingPolicy} should check if the class name is occupied,
+     * however, in practice there are implementations in the wild that just return whatever they feel is good.
+     *
+     * @throws Throwable if something wrong happens
+     */
+    public void testNamingPolicyThatReturnsConstantNames() throws Throwable {
+      Enhancer e = new Enhancer();
+      final String desiredClassName = "net.sf.cglib.empty.Object$$42";
+      e.setCallback(NoOp.INSTANCE);
+      e.setClassLoader(new ClassLoader(this.getClass().getClassLoader()){});
+      e.setNamingPolicy(new NamingPolicy() {
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          return desiredClassName;
+        }
+      });
+      Class proxied = e.create().getClass();
+      assertEquals("Class name should match the one returned by NamingPolicy", desiredClassName, proxied.getName());
+    }
+
     public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
         Enhancer e = new Enhancer();
         e.setSuperclass(cls);
