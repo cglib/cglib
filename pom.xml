@@ -54,7 +54,7 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
-        <asm.version>5.0.4</asm.version>
+        <asm.version>5.1</asm.version>
         <java.compiler.argument />
 
         <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
