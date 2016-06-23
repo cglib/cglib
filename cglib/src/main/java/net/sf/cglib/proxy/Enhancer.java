@@ -139,11 +139,6 @@ public class Enhancer extends AbstractClassGenerator
                                   Long serialVersionUID);
     }
 
-    /** Internal interface, only public due to ClassLoader issues. */
-    public interface EnhancerFactoryKey {
-        Object newInstance(EnhancerKey key);
-    }
-
     private Class[] interfaces;
     private CallbackFilter filter;
     private Callback[] callbacks;
@@ -392,6 +387,11 @@ public class Enhancer extends AbstractClassGenerator
         }
     }
 
+    /**
+     * The idea of the class is to cache relevant java.lang.reflect instances so
+     * proxy-class can be instantiated faster that when using {@link ReflectUtils#newInstance(Class, Class[], Object[])}
+     * and {@link Enhancer#setThreadCallbacks(Class, Callback[])}
+     */
     static class EnhancerFactoryData {
         public final Class generatedClass;
         private final Method setThreadCallbacks;
@@ -402,35 +402,43 @@ public class Enhancer extends AbstractClassGenerator
             this.generatedClass = generatedClass;
             try {
                 setThreadCallbacks = getCallbacksSetter(generatedClass, SET_THREAD_CALLBACKS_NAME);
-                setThreadCallbacks.setAccessible(true);
                 if (classOnly) {
                     this.primaryConstructorArgTypes = null;
                     this.primaryConstructor = null;
                 } else {
                     this.primaryConstructorArgTypes = primaryConstructorArgTypes;
-                    this.primaryConstructor = generatedClass.getDeclaredConstructor(primaryConstructorArgTypes);
-                    primaryConstructor.setAccessible(true);
+                    this.primaryConstructor = ReflectUtils.getConstructor(generatedClass, primaryConstructorArgTypes);
                 }
             } catch (NoSuchMethodException e) {
                 throw new CodeGenerationException(e);
             }
         }
 
+        /**
+         * Creates proxy instance for given argument types, and assigns the callbacks.
+         * Ideally, for each proxy class, just one set of argument types should be used,
+         * otherwise it would have to spend time on constructor lookup.
+         * Technically, it is a re-implementation of {@link Enhancer#createUsingReflection(Class)},
+         * with "cache {@link #setThreadCallbacks} and {@link #primaryConstructor}"
+         *
+         * @see #createUsingReflection(Class)
+         * @param argumentTypes constructor argument types
+         * @param arguments constructor arguments
+         * @param callbacks callbacks to set for the new instance
+         * @return newly created proxy
+         */
         public Object newInstance(Class[] argumentTypes, Object[] arguments, Callback[] callbacks) {
             setThreadCallbacks(callbacks);
             try {
-                if (!Arrays.equals(primaryConstructorArgTypes, argumentTypes)) {
-                    return ReflectUtils.newInstance(generatedClass, argumentTypes, arguments);
+                // Explicit reference equality is added here just in case Arrays.equals does not have one
+                if (primaryConstructorArgTypes == argumentTypes ||
+                        Arrays.equals(primaryConstructorArgTypes, argumentTypes)) {
+                    // If we have relevant Constructor instance at hand, just call it
+                    // This skips "get constructors" machinery
+                    return ReflectUtils.newInstance(primaryConstructor, arguments);
                 }
-                try {
-                    return primaryConstructor.newInstance(arguments);
-                } catch (InstantiationException e) {
-                    throw new CodeGenerationException(e);
-                } catch (IllegalAccessException e) {
-                    throw new CodeGenerationException(e);
-                } catch (InvocationTargetException e) {
-                    throw new CodeGenerationException(e.getTargetException());
-                }
+                // Take a slow path if observing unexpected argument types
+                return ReflectUtils.newInstance(generatedClass, argumentTypes, arguments);
             } finally {
                 // clear thread callbacks to allow them to be gc'd
                 setThreadCallbacks(null);
@@ -646,8 +654,17 @@ public class Enhancer extends AbstractClassGenerator
             throw new IllegalArgumentException("No visible constructors in " + sc);
     }
 
+    /**
+     * This method should not be called in regular flow.
+     * Technically speaking {@link #wrapCachedClass(Class)} uses {@link EnhancerFactoryData} as a cache value,
+     * and the latter enables faster instantiation than plain old reflection lookup and invoke.
+     * This method is left intact for backward compatibility reasons: just in case it was ever used.
+     *
+     * @param type class to instantiate
+     * @return newly created proxy instance
+     * @throws Exception if something goes wrong
+     */
     protected Object firstInstance(Class type) throws Exception {
-        // Should not reach here
         if (classOnly) {
             return type;
         } else {
@@ -656,10 +673,6 @@ public class Enhancer extends AbstractClassGenerator
     }
 
     protected Object nextInstance(Object instance) {
-        if (currentKey instanceof EnhancerFactoryKey) {
-            return instance;
-        }
-
         EnhancerFactoryData data = (EnhancerFactoryData) instance;
         if (classOnly) {
             return data.generatedClass;
@@ -676,9 +689,6 @@ public class Enhancer extends AbstractClassGenerator
 
     @Override
     protected Object wrapCachedClass(Class klass) {
-        if (currentKey instanceof EnhancerFactoryKey) {
-            return new WeakReference(ReflectUtils.newInstance(klass));
-        }
         Class[] argumentTypes = this.argumentTypes;
         if (argumentTypes == null) {
             argumentTypes = Constants.EMPTY_CLASS_ARRAY;
@@ -781,6 +791,15 @@ public class Enhancer extends AbstractClassGenerator
         return type.getDeclaredMethod(methodName, new Class[]{ Callback[].class });
     }
 
+    /**
+     * Instantiates a proxy instance and assigns callback values.
+     * Implementation detail: java.lang.reflect instances are not cached, so this method should not
+     * be used on a hot path.
+     * This method is used when {@link #setUseCache(boolean)} is set to {@code false}.
+     *
+     * @param type class to instantiate
+     * @return newly created instance
+     */
     private Object createUsingReflection(Class type) {
         setThreadCallbacks(type, callbacks);
         try{
@@ -797,14 +816,6 @@ public class Enhancer extends AbstractClassGenerator
         }finally{
          // clear thread callbacks to allow them to be gc'd
          setThreadCallbacks(type, null);
-        }
-    }
-
-    private Object createUsingFactory(Factory factory) {
-        if (argumentTypes != null) {
-            return factory.newInstance(argumentTypes, arguments, callbacks);
-        } else {
-            return factory.newInstance(callbacks);
         }
     }
 
