@@ -7,7 +7,7 @@
     <parent>
         <artifactId>cglib-parent</artifactId>
         <groupId>cglib</groupId>
-        <version>3.2.4-SNAPSHOT</version>
+        <version>3.2.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
