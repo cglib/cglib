@@ -18,6 +18,7 @@ import net.sf.cglib.beans.BeanCopier;
 import net.sf.cglib.core.ClassGenerator;
 import net.sf.cglib.core.internal.Function;
 import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.EnhancerITCase;
 import net.sf.cglib.reflect.FastClass;
 import net.sf.cglib.samples.Beans;
 import net.sf.cglib.samples.Trace;
@@ -27,30 +28,21 @@ import net.sf.cglib.util.ParallelSorter;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
-public class CglibBundleTest {
-	
+public class CglibBundleTest extends EnhancerITCase {
+
 	@Configuration
 	public Option[] options() {
-		return new Option[] { 
-				cglibBundle(),
-				provision(bundle().add(Trace.class).add(Beans.class).build()),
+		return new Option[] { cglibBundle(), provision(bundle().add(Trace.class).add(Beans.class).build()),
 				mavenBundle("org.ow2.asm", "asm").versionAsInProject(),
-				wrappedBundle(mavenBundle("org.apache.ant", "ant").versionAsInProject())
-		};
+				wrappedBundle(mavenBundle("org.apache.ant", "ant").versionAsInProject()) };
 	}
-	
-    @Test
-    public void samples() throws Throwable{
-        Trace.main(new String[]{});
-        Beans.main(new String[]{});
-    }
 
 	/**
 	 * Loads a class from any exported package. No ClassNotFoundException should
 	 * be caused to be thrown.
 	 */
 	@Test
-	public void verifyExports() {		
+	public void verifyExports() {
 		BeanCopier.class.getName();
 		ClassGenerator.class.getName();
 		Function.class.getName();

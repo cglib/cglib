@@ -16,8 +16,6 @@ import net.sf.cglib.core.internal.Function;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.EnhancerITCase;
 import net.sf.cglib.reflect.FastClass;
-import net.sf.cglib.samples.Beans;
-import net.sf.cglib.samples.Trace;
 import net.sf.cglib.transform.ClassFilter;
 import net.sf.cglib.transform.impl.FieldProvider;
 import net.sf.cglib.util.ParallelSorter;
@@ -29,12 +27,6 @@ public class CglibNodepBundleTest extends EnhancerITCase {
 	@Configuration
 	public Option[] options() {
 		return new Option[] { cglibNodepBundle() };
-	}
-
-	@Test
-	public void samples() throws Throwable {
-		Trace.main(new String[] {});
-		Beans.main(new String[] {});
 	}
 
 	/**

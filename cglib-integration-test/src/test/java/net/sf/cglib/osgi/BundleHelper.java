@@ -9,12 +9,9 @@ import static org.ops4j.pax.tinybundles.core.TinyBundles.bundle;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.util.Properties;
 
-import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.options.UrlProvisionOption;
 
 import net.sf.cglib.samples.Bean;
 import net.sf.cglib.samples.Beans;
