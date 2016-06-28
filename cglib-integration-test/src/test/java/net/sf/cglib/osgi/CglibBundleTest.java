@@ -9,7 +9,7 @@ import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerMethod;
+import org.ops4j.pax.exam.spi.reactors.PerClass;
 
 import net.sf.cglib.beans.BeanCopier;
 import net.sf.cglib.core.ClassGenerator;
@@ -21,7 +21,7 @@ import net.sf.cglib.transform.impl.FieldProvider;
 import net.sf.cglib.util.ParallelSorter;
 
 @RunWith(PaxExam.class)
-@ExamReactorStrategy(PerMethod.class)
+@ExamReactorStrategy(PerClass.class)
 public class CglibBundleTest {
 	
 	@Configuration
