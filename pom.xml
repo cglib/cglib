@@ -154,7 +154,6 @@
                       <detectOfflineLinks>false</detectOfflineLinks>
                       <!--<skip>${skipJavadoc}</skip>-->
                       <use>false</use>
-                      <additionalparam>-Xdoclint:none</additionalparam>
                       <additionalDependencies>
                         <additionalDependency>
                           <groupId>org.ow2.asm</groupId>

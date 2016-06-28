@@ -247,6 +247,9 @@ public class CodeEmitter extends LocalVariablesSorter {
 
     /**
      * Casts from one primitive numeric type to another
+     *
+     * @param from cast source type
+     * @param to cast target type
      */
     public void cast_numeric(Type from, Type to) {
         if (from != to) {
@@ -697,7 +700,7 @@ public class CodeEmitter extends LocalVariablesSorter {
     /**
      * If the argument is a primitive class, replaces the primitive value
      * on the top of the stack with the wrapped (Object) equivalent. For
-     * example, char -> Character.
+     * example, {@code char -> Character}.
      * If the class is Void, a null is pushed onto the stack instead.
      * @param type the class indicating the current type of the top stack value
      */
@@ -726,9 +729,8 @@ public class CodeEmitter extends LocalVariablesSorter {
     /**
      * If the argument is a primitive class, replaces the object
      * on the top of the stack with the unwrapped (primitive)
-     * equivalent. For example, Character -> char.
+     * equivalent. For example, {@code Character -> char}.
      * @param type the class indicating the desired type of the top stack value
-     * @return true if the value was unboxed
      */
     public void unbox(Type type) {
         Type t = Constants.TYPE_NUMBER;
@@ -790,7 +792,8 @@ public class CodeEmitter extends LocalVariablesSorter {
 
 
     /**
-     * Pushes a zero onto the stack if the argument is a primitive class, or a null otherwise.
+     * Pushes a zero onto the stack if the argument is a primitive class, or a {@code null} otherwise.
+     * @param type type of the primitive value or {@code null} otherwise
      */
     public void zero_or_null(Type type) {
         if (TypeUtils.isPrimitive(type)) {
@@ -817,6 +820,7 @@ public class CodeEmitter extends LocalVariablesSorter {
     /**
      * Unboxes the object on the top of the stack. If the object is null, the
      * unboxed primitive value becomes zero.
+     * @param type type of the value to unbox
      */
     public void unbox_or_zero(Type type) {
         if (TypeUtils.isPrimitive(type)) {

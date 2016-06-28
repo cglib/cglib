@@ -22,7 +22,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 /**
- * This class implements a simple String->int mapping for a fixed set of keys.
+ * This class implements a simple {@code String->int} mapping for a fixed set of keys.
  */
 abstract public class StringSwitcher {
     private static final Type STRING_SWITCHER =
@@ -44,6 +44,7 @@ abstract public class StringSwitcher {
      * @param ints the array of integer results; must be the same length as the key array
      * @param fixedInput if false, an unknown key will be returned from {@link #intValue} as <code>-1</code>; if true,
      * the result will be undefined, and the resulting code will be faster
+     * @return StringSwitcher with given parameters
      */
     public static StringSwitcher create(String[] strings, int[] ints, boolean fixedInput) {
         Generator gen = new Generator();
@@ -109,6 +110,7 @@ abstract public class StringSwitcher {
 
         /**
          * Generate the <code>StringSwitcher</code>.
+         * @return StringSwitcher instance
          */
         public StringSwitcher create() {
             setNamePrefix(StringSwitcher.class.getName());

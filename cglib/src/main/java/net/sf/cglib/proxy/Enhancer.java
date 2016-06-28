@@ -331,6 +331,7 @@ public class Enhancer extends AbstractClassGenerator
      * called during the constructor will not be intercepted. To avoid this problem,
      * use the multi-arg <code>create</code> method.
      * @see #create(Class[], Object[])
+     * @return a new class if necessary and return it without creating a new instance
      */
     public Class createClass() {
         classOnly = true;
@@ -843,6 +844,7 @@ public class Enhancer extends AbstractClassGenerator
      * instead of this static method.
      * @param type class to extend or interface to implement
      * @param callback the callback to use for all methods
+     * @return an intercepted object
      */
     public static Object create(Class type, Callback callback) {
         Enhancer e = new Enhancer();
@@ -858,6 +860,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param superclass class to extend or interface to implement
      * @param interfaces array of interfaces to implement, or null
      * @param callback the callback to use for all methods
+     * @return an intercepted object
      */
     public static Object create(Class superclass, Class interfaces[], Callback callback) {
         Enhancer e = new Enhancer();
@@ -875,6 +878,7 @@ public class Enhancer extends AbstractClassGenerator
      * @param interfaces array of interfaces to implement, or null
      * @param filter the callback filter to use when generating a new class
      * @param callbacks callback implementations to use for the enhanced object
+     * @return an intercepted object
      */
     public static Object create(Class superclass, Class[] interfaces, CallbackFilter filter, Callback[] callbacks) {
         Enhancer e = new Enhancer();

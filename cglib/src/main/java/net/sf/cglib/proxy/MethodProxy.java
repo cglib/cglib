@@ -39,10 +39,18 @@ public class MethodProxy {
     
     private final Object initLock = new Object();
     private volatile FastClassInfo fastClassInfo;
-    
+
     /**
      * For internal use by {@link Enhancer} only; see the {@link net.sf.cglib.reflect.FastMethod} class
      * for similar functionality.
+     *
+     * @see MethodInterceptorGenerator#generateStatic(net.sf.cglib.core.CodeEmitter, net.sf.cglib.proxy.CallbackGenerator.Context, java.util.List)
+     * @param c1 declaring class
+     * @param c2 this class
+     * @param desc method signature
+     * @param name1 method name
+     * @param name2 impl signature name
+     * @return method proxy instance to be used in {@link MethodInterceptor}
      */
     public static MethodProxy create(Class c1, Class c2, String desc, String name1, String name2) {
         MethodProxy proxy = new MethodProxy();
@@ -126,6 +134,7 @@ public class MethodProxy {
 
     /**
      * Return the signature of the proxied method.
+     * @return the signature of the proxied method
      */
     public Signature getSignature() {
         return sig1;
@@ -136,6 +145,8 @@ public class MethodProxy {
      * used by {@link #invokeSuper} to invoke the superclass
      * (non-intercepted) method implementation. The parameter types are
      * the same as the proxied method.
+     * @return the name of the synthetic method created by CGLIB which is
+     *         used by {@link #invokeSuper}
      */
     public String getSuperName() {
         return sig2.getName();
@@ -147,6 +158,7 @@ public class MethodProxy {
      * identifies the method within the generated proxy, and therefore
      * can be useful to reference external metadata.
      * @see #getSuperName
+     * @return the method index for the method used by {@link #invokeSuper}
      */
     public int getSuperIndex() {
         init();
@@ -194,6 +206,7 @@ public class MethodProxy {
      * @param args the arguments passed to the intercepted method; you may substitute a different
      * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
+     * @return the result of invocation
      * @throws Throwable the bare exceptions thrown by the called method are passed through
      * without wrapping in an <code>InvocationTargetException</code>
      */
@@ -218,6 +231,7 @@ public class MethodProxy {
      * @param args the arguments passed to the intercepted method; you may substitute a different
      * argument array as long as the types are compatible
      * @see MethodInterceptor#intercept
+     * @return the result of invocation
      * @throws Throwable the bare exceptions thrown by the called method are passed through
      * without wrapping in an <code>InvocationTargetException</code>
      */

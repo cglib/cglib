@@ -30,6 +30,7 @@ public interface FixedValue extends Callback {
      * return. This method is called for <b>every</b> method invocation.
      * @return an object matching the type of the return value for every
      * method this callback is mapped to
+     * @throws Exception if something goes wrong
      */
     Object loadObject() throws Exception;
 }

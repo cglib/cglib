@@ -180,6 +180,7 @@ implements ClassGenerator
 
     /**
      * @see #setNamingPolicy
+     * @return naming policy
      */
     public NamingPolicy getNamingPolicy() {
         return namingPolicy;
@@ -188,13 +189,16 @@ implements ClassGenerator
     /**
      * Whether use and update the static cache of generated classes
      * for a class with the same properties. Default is <code>true</code>.
+     * @param useCache true (default) if class cache should be used
      */
     public void setUseCache(boolean useCache) {
         this.useCache = useCache;
     }
 
     /**
+     * Returns if current class generator is configured to use class cache.
      * @see #setUseCache
+     * @return true if class cached is used
      */
     public boolean getUseCache() {
         return useCache;
@@ -204,6 +208,7 @@ implements ClassGenerator
      * If set, CGLIB will attempt to load classes from the specified
      * <code>ClassLoader</code> before generating them. Because generated
      * class names are not guaranteed to be unique, the default is <code>false</code>.
+     * @param attemptLoad if set, CGLIB will attempt to load classes before generating them
      */
     public void setAttemptLoad(boolean attemptLoad) {
         this.attemptLoad = attemptLoad;
@@ -215,7 +220,8 @@ implements ClassGenerator
     
     /**
      * Set the strategy to use to create the bytecode from this generator.
-     * By default an instance of {@see DefaultGeneratorStrategy} is used.
+     * By default an instance of {@link DefaultGeneratorStrategy} is used.
+     * @param strategy strategy to use to create the bytecode from this generator
      */
     public void setStrategy(GeneratorStrategy strategy) {
         if (strategy == null)
@@ -224,7 +230,9 @@ implements ClassGenerator
     }
 
     /**
+     * Returns strategy that is used to create the bytecode from this generator.
      * @see #setStrategy
+     * @return strategy that is used to create the bytecode from this generator
      */
     public GeneratorStrategy getStrategy() {
         return strategy;
@@ -233,6 +241,7 @@ implements ClassGenerator
     /**
      * Used internally by CGLIB. Returns the <code>AbstractClassGenerator</code>
      * that is being used to generate a class in the current thread.
+     * @return {@code AbstractClassGenerator} that is being used to generate a class in the current thread
      */
     public static AbstractClassGenerator getCurrent() {
         return (AbstractClassGenerator)CURRENT.get();

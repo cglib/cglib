@@ -60,7 +60,7 @@ abstract public class ParallelSorter extends SorterTemplate {
      * @param arrays An array of arrays to sort. The arrays may be a mix
      * of primitive and non-primitive types, but should all be the same
      * length.
-     * @param loader ClassLoader for generated class, uses "current" if null
+     * @return a new ParallelSorter object for a set of arrays
      */
     public static ParallelSorter create(Object[] arrays) {
         Generator gen = new Generator();
@@ -131,8 +131,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     /**
      * Sort the arrays using an in-place merge sort.
      * @param index array (column) to sort by
-     * @param lo starting array index (row), inclusive
-     * @param hi ending array index (row), exclusive
+     * @param cmp comparator
      */
     public void mergeSort(int index, Comparator cmp) {
         mergeSort(index, 0, len(), cmp);

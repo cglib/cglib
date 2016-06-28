@@ -56,6 +56,7 @@ import org.objectweb.asm.Type;
  * </p>
  *
  * <pre>
+ * {@code
  *   public class Main {
  *       public static int main( String[] args ) {
  *           Main newMain = new Main();
@@ -71,6 +72,7 @@ import org.objectweb.asm.Type;
  *           return args.length;
  *       }
  *   }
+ * }
  * </pre>
  *
  * <p>

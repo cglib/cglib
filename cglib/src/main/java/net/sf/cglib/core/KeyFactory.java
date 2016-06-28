@@ -37,18 +37,18 @@ import java.util.List;
  * <code>Object</code>. The arguments array can be
  * <i>anything</i>--Objects, primitive values, or single or
  * multi-dimension arrays of either. For example:
- * <p><pre>
+ * <pre>
  *     private interface IntStringKey {
  *         public Object newInstance(int i, String s);
  *     }
- * </pre><p>
- * Once you have made a <code>KeyFactory</code>, you generate a new key by calling
+ * </pre>
+ * <p>Once you have made a <code>KeyFactory</code>, you generate a new key by calling
  * the <code>newInstance</code> method defined by your interface.
- * <p><pre>
+ * <pre>
  *     IntStringKey factory = (IntStringKey)KeyFactory.create(IntStringKey.class);
  *     Object key1 = factory.newInstance(4, "Hello");
  *     Object key2 = factory.newInstance(4, "World");
- * </pre><p>
+ * </pre>
  * <b>Note:</b>
  * <code>hashCode</code> equality between two keys <code>key1</code> and <code>key2</code> is only guaranteed if
  * <code>key1.equals(key2)</code> <i>and</i> the keys were produced by the same factory.
@@ -197,6 +197,7 @@ abstract public class KeyFactory {
         }
 
         /**
+         * @param customizer customizer to use
          * @deprecated Use {@link #addCustomizer(KeyFactoryCustomizer)} instead.
          */
         @Deprecated

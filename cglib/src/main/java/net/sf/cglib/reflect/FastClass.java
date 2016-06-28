@@ -170,19 +170,21 @@ abstract public class FastClass
 
     /**
      * Invoke the method with the specified index.
-     * @see getIndex(name, Class[])
+     * @see #getIndex(String, Class[])
      * @param index the method index
      * @param obj the object the underlying method is invoked from
      * @param args the arguments used for the method call
+     * @return the result of invocation
      * @throws java.lang.reflect.InvocationTargetException if the underlying method throws an exception
      */
     abstract public Object invoke(int index, Object obj, Object[] args) throws InvocationTargetException;
 
     /**
      * Create a new instance using the specified constructor index and arguments.
-     * @see getIndex(Class[])
+     * @see #getIndex(Class[])
      * @param index the constructor index
      * @param args the arguments passed to the constructor
+     * @return a new instance using the specified constructor index and arguments
      * @throws java.lang.reflect.InvocationTargetException if the constructor throws an exception
      */
     abstract public Object newInstance(int index, Object[] args) throws InvocationTargetException;
@@ -191,6 +193,7 @@ abstract public class FastClass
 
     /**
      * Returns the maximum method index for this class.
+     * @return the maximum method index for this class
      */
     abstract public int getMaxIndex();
 

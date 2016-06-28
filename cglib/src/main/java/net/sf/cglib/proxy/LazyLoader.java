@@ -25,6 +25,7 @@ public interface LazyLoader extends Callback {
      * the enhanced instance is invoked. The same object is then used
      * for every future method call to the proxy instance.
      * @return an object that can invoke the method
+     * @throws Exception if something goes wrong
      */
     Object loadObject() throws Exception;
 }
