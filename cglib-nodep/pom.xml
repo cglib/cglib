@@ -61,7 +61,7 @@
 				<artifactId>maven-bundle-plugin</artifactId>
 				<configuration>
 					<instructions>
-						<Export-Package>!net.sf.cglib.asm.*,net.sf.cglib.*</Export-Package>
+						<Export-Package>net.sf.cglib.*</Export-Package>
 						<Import-Package>!*</Import-Package>
 					</instructions>
 				</configuration>
