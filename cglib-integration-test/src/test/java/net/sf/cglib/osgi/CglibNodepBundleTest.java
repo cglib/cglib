@@ -1,10 +1,14 @@
 package net.sf.cglib.osgi;
 
+import static net.sf.cglib.osgi.BundleHelper.cglibNodepBundle;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+
+import java.io.File;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
@@ -22,12 +26,10 @@ import net.sf.cglib.util.ParallelSorter;
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerClass.class)
 public class CglibNodepBundleTest {
-	
+
 	@Configuration
 	public Option[] options() {
-		return new Option[] { 
-				mavenBundle("cglib", "cglib-nodep").versionAsInProject()
-		};
+		return new Option[] { cglibNodepBundle() };
 	}
 
 	/**
@@ -35,7 +37,7 @@ public class CglibNodepBundleTest {
 	 * be caused to be thrown.
 	 */
 	@Test
-	public void verifyExports() throws Exception {		
+	public void verifyExports() throws Exception {
 		BeanCopier.class.getName();
 		ClassGenerator.class.getName();
 		Function.class.getName();

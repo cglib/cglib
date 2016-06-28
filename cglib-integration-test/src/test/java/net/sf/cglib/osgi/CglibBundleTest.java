@@ -1,5 +1,6 @@
 package net.sf.cglib.osgi;
 
+import static net.sf.cglib.osgi.BundleHelper.cglibBundle;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.wrappedBundle;
 
@@ -27,7 +28,7 @@ public class CglibBundleTest {
 	@Configuration
 	public Option[] options() {
 		return new Option[] { 
-				mavenBundle("cglib", "cglib").versionAsInProject(),
+				cglibBundle(),
 				mavenBundle("org.ow2.asm", "asm").versionAsInProject(),
 				wrappedBundle(mavenBundle("org.apache.ant", "ant").versionAsInProject())
 		};
