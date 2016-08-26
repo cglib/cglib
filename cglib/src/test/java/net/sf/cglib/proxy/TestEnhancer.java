@@ -1174,7 +1174,38 @@ public class TestEnhancer extends CodeGenTestCase {
         intf.widenReturn(null);
         assertEquals(Arrays.asList(RetType.class, ErasedType.class), paramTypes);
     }
-    
+
+    public void testBridgesTypeErasedFromChildToParent() {
+        List<Class> retTypes = new ArrayList<Class>();
+        List<Class> paramTypes = new ArrayList<Class>();
+        Interceptor interceptor = new Interceptor(retTypes, paramTypes);
+
+        Enhancer e = new Enhancer();
+        e.setSuperclass(OtherImpl.class);
+        e.setCallbackFilter(new CallbackFilter() {
+            public int accept(Method method) {
+                return method.getDeclaringClass() != Object.class ? 0 : 1;
+            }
+        });
+        e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
+        // We expect the bridge ('ret') to be called & forward us to the non-bridge 'erased'
+        ParameterisedInterfaceNotTypeBounded intf =
+                (ParameterisedInterfaceNotTypeBounded) e.create();
+        intf.aMethod(new Refined());
+        // There is no actual implementation of aMethod in the subclass, however it has a bridge going
+        // Object -> superclass with a cast
+        assertEquals(Arrays.asList(Object.class), retTypes);
+
+        // The bridge internally emits a checkclass, if it does not cglib should emit this.
+        boolean fail = true;
+        try {
+            intf.aMethod("String");
+        } catch (ClassCastException cce) {
+            fail = false;
+        }
+        assertFalse("Bridge did not emit checkclass instruction", fail);
+    }
+
     public void testBridgeForcesInvokeVirtualEvenWithoutInterceptingBridge() {
         List<Class> retTypes = new ArrayList<Class>();
         Interceptor interceptor = new Interceptor(retTypes);
@@ -1280,10 +1311,24 @@ public class TestEnhancer extends CodeGenTestCase {
         // a wider type than in superclass
         ErasedType widenReturn(RetType obj);
     }
+    // This has a shape that fits the typing of the class heirachy, but the generic T
+    // is not bound to ErasedType directly. It creates bridge methods that
+    // given an abstract parent, will need to be ignored for creation of
+    // invokevirtual
+    public interface ParameterisedInterfaceNotTypeBounded<T> {
+        T aMethod(T obj);
+        void voidReturn(T obj);
+        int intReturn(T obj);
+        // a wider type than in superclass
+        ErasedType widenReturn(T obj);
+    }
     public static class Impl extends Superclass<RetType> implements Interface {
         // An even more narrowed type, just to make sure
         // it doesn't confuse us.
         public Refined aMethod(Refined obj) { return null; }
+    }
+    public static class OtherImpl extends Superclass<Refined> implements ParameterisedInterfaceNotTypeBounded<Refined> {
+        public String irrelvantMethod() { return "Not important"; }
     }
     
     // Another set of classes -- this time with the bridging in reverse,

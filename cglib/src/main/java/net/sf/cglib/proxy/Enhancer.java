@@ -1162,6 +1162,35 @@ public class Enhancer extends AbstractClassGenerator
                 // any proxies on the target.
                 Signature bridgeTarget = (Signature)bridgeToTarget.get(method.getSignature());
                 if (bridgeTarget != null) {
+                    Type[] argumentTypes = method.getSignature().getArgumentTypes();
+                    Type[] bridgeTypes = bridgeTarget.getArgumentTypes();
+
+                    // This should never happen, but its a simple check
+                    if (argumentTypes.length != bridgeTarget.getArgumentTypes().length) {
+                        throw new IllegalStateException("Mismatched method signatures?");
+                    }
+
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+
+                    try {
+                        for (int i = 0; i < argumentTypes.length; i++) {
+                            Type argType = argumentTypes[i];
+                            Type targetType = bridgeTypes[i];
+                            // This should be a fast check
+                            if (!argType.getClassName().equals(targetType.getClassName())) {
+                                Class argClass = loader.loadClass(argType.getClassName());
+                                Class targetClass = loader.loadClass(targetType.getClassName());
+
+                                if (argClass == Object.class && targetClass != Object.class) {
+                                    e.super_invoke(method.getSignature());
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (ClassNotFoundException ignored) {
+                        e.super_invoke(method.getSignature());
+                    }
+
                     // TODO: this assumes that the target has wider or the same type
                     // parameters than the current.  
                     // In reality this should always be true because otherwise we wouldn't

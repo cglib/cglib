@@ -59,7 +59,7 @@ class BridgeMethodResolver {
             Set bridges = (Set)entry.getValue();
             try {
                 new ClassReader(owner.getName())
-                  .accept(new BridgedFinder(bridges, resolved),
+                  .accept(new BridgedFinder(bridges, resolved, owner.getName()),
                           ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
             } catch(IOException ignored) {}
         }
@@ -71,11 +71,13 @@ class BridgeMethodResolver {
         private Set/*<Signature>*/ eligableMethods;
         
         private Signature currentMethod = null;
+        private String name;
 
-        BridgedFinder(Set eligableMethods, Map resolved) {
+        BridgedFinder(Set eligableMethods, Map resolved, String name) {
             super(Opcodes.ASM5);
             this.resolved = resolved;
             this.eligableMethods = eligableMethods;
+            this.name = name;
         }
 
         public void visit(int version, int access, String name,
@@ -85,11 +87,14 @@ class BridgeMethodResolver {
         public MethodVisitor visitMethod(int access, String name, String desc,
                 String signature, String[] exceptions) {
             Signature sig = new Signature(name, desc);
+
+            final String selfName = this.name;
             if (eligableMethods.remove(sig)) {
                 currentMethod = sig;
                 return new MethodVisitor(Opcodes.ASM5) {
                     public void visitMethodInsn(int opcode, String owner, String name,
                                                 String desc, boolean itf) {
+
                         if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {
                             Signature target = new Signature(name, desc);
                             // If the target signature is the same as the current,
