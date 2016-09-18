@@ -1129,7 +1129,7 @@ public class Enhancer extends AbstractClassGenerator
             }
         }
         
-        final Map bridgeToTarget = new BridgeMethodResolver(declToBridge).resolveAll();
+        final Map bridgeToTarget = new BridgeMethodResolver(declToBridge, getClassLoader()).resolveAll();
 
         Set seenGen = new HashSet();
         CodeEmitter se = ce.getStaticHook();
@@ -1155,19 +1155,22 @@ public class Enhancer extends AbstractClassGenerator
             public Signature getImplSignature(MethodInfo method) {
                 return rename(method.getSignature(), ((Integer)positions.get(method)).intValue());
             }
-            public void emitInvoke(CodeEmitter e, MethodInfo method) {
+            public void emitLoadArgsAndInvoke(CodeEmitter e, MethodInfo method) {
                 // If this is a bridge and we know the target was called from invokespecial,
                 // then we need to invoke_virtual w/ the bridge target instead of doing
                 // a super, because super may itself be using super, which would bypass
                 // any proxies on the target.
                 Signature bridgeTarget = (Signature)bridgeToTarget.get(method.getSignature());
                 if (bridgeTarget != null) {
-                    // TODO: this assumes that the target has wider or the same type
-                    // parameters than the current.  
-                    // In reality this should always be true because otherwise we wouldn't
-                    // have had a bridge doing an invokespecial.
-                    // If it isn't true, we would need to checkcast each argument
-                    // against the target's argument types
+                    // checkcast each argument against the target's argument types
+                    for (int i = 0; i < bridgeTarget.getArgumentTypes().length; i++) {
+                        e.load_arg(i);
+                        Type target = bridgeTarget.getArgumentTypes()[i];
+                        if (!target.equals(method.getSignature().getArgumentTypes()[i])) {
+                            e.checkcast(target);
+                        }
+                    }
+
                     e.invoke_virtual_this(bridgeTarget);
                     
                     Type retType = method.getSignature().getReturnType();                    
@@ -1185,6 +1188,7 @@ public class Enhancer extends AbstractClassGenerator
                         e.checkcast(retType);
                     }
                 } else {
+                    e.load_args();
                     e.super_invoke(method.getSignature());
                 }
             }
