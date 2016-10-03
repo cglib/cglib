@@ -32,8 +32,7 @@ implements CallbackGenerator
                     TypeUtils.isPublic(method.getModifiers()))) {
                 CodeEmitter e = EmitUtils.begin_method(ce, method);
                 e.load_this();
-                e.load_args();
-                context.emitInvoke(e, method);
+                context.emitLoadArgsAndInvoke(e, method);
                 e.return_value();
                 e.end_method();
             }

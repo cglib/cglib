@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.proxy;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,8 +27,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -38,6 +40,9 @@ import net.sf.cglib.core.NamingPolicy;
 import net.sf.cglib.core.Predicate;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
@@ -1256,9 +1261,163 @@ public class TestEnhancer extends CodeGenTestCase {
         intf.aMethod(null);
         assertEquals(Arrays.asList(Concrete.class), paramTypes);
     }
-    
-    
-    
+
+    public void testBridgeParameterCheckcast() throws Exception {
+
+    // If the compiler used for Z omits the bridge method, and X is compiled with javac,
+    // javac will generate an invokespecial bridge in X.
+
+    // public interface I<A, B> {
+    //   public A f(B b);
+    // }
+    // public abstract class Z<U extends Number> implements I<U, Long> {
+    //   public U f(Long id) {
+    //     return null;
+    //   }
+    // }
+    // public class X extends Z<Integer> {}
+
+    final Map<String, byte[]> classes = new HashMap<String, byte[]>();
+
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49,
+          Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE,
+          "I",
+          "<A:Ljava/lang/Object;B:Ljava/lang/Object;>Ljava/lang/Object;",
+          "java/lang/Object",
+          null);
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+                "f",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                "(TB;)TA;",
+                null);
+        mv.visitEnd();
+      }
+      cw.visitEnd();
+      classes.put("I.class", cw.toByteArray());
+    }
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49,
+          Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER | Opcodes.ACC_ABSTRACT,
+          "Z",
+          "<U:Ljava/lang/Number;>Ljava/lang/Object;LI<TU;Ljava/lang/String;>;",
+          "java/lang/Object",
+          new String[] {"I"});
+      {
+        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+      }
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC,
+                "f",
+                "(Ljava/lang/String;)Ljava/lang/Number;",
+                "(Ljava/lang/String;)TU;",
+                null);
+        mv.visitCode();
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(1, 2);
+        mv.visitEnd();
+      }
+      cw.visitEnd();
+      classes.put("Z.class", cw.toByteArray());
+    }
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, "X", "LZ<Ljava/lang/Integer;>;", "Z", null);
+      {
+        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "Z", "<init>", "()V", false);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+      }
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC,
+                "f",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+        mv.visitMethodInsn(
+            Opcodes.INVOKESPECIAL, "Z", "f", "(Ljava/lang/String;)Ljava/lang/Number;", false);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(2, 2);
+        mv.visitEnd();
+      }
+
+      cw.visitEnd();
+
+      classes.put("X.class", cw.toByteArray());
+    }
+
+    ClassLoader classLoader =
+        new ClassLoader(getClass().getClassLoader()) {
+          @Override
+          public InputStream getResourceAsStream(String name) {
+            InputStream is = super.getResourceAsStream(name);
+            if (is != null) {
+              return is;
+            }
+            if (classes.containsKey(name)) {
+              return new ByteArrayInputStream(classes.get(name));
+            }
+            return null;
+          }
+
+          public Class findClass(String name) throws ClassNotFoundException {
+            byte[] ba = classes.get(name.replace('.', '/') + ".class");
+            if (ba != null) {
+              return defineClass(name, ba, 0, ba.length);
+            }
+            throw new ClassNotFoundException(name);
+          }
+        };
+
+    List<Class> retTypes = new ArrayList<Class>();
+    List<Class> paramTypes = new ArrayList<Class>();
+    Interceptor interceptor = new Interceptor(retTypes, paramTypes);
+
+    Enhancer e = new Enhancer();
+    e.setClassLoader(classLoader);
+    e.setSuperclass(classLoader.loadClass("X"));
+    e.setCallback(interceptor);
+
+    Object c = e.create();
+
+    for (Method m : c.getClass().getDeclaredMethods()) {
+      if (m.getName().equals("f") && m.getReturnType().equals(Object.class)) {
+        m.invoke(c, new Object[] {null});
+      }
+    }
+
+    // f(Object)Object should bridge to f(Number)String
+    assertEquals(Arrays.asList(Object.class, Number.class), retTypes);
+    assertEquals(Arrays.asList(Object.class, String.class), paramTypes);
+  }
+
     static class ErasedType {}
     static class RetType extends ErasedType {}
     static class Refined extends RetType {}
