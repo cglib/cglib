@@ -17,7 +17,7 @@ before_cache:
 install: true
 script:
   - if [[ ! -z $JAVA_6_HOME ]]; then jdk_switcher use oraclejdk7; fi
-  - mvn install -B -V
+  - mvn install -B -V -e
 
 matrix:
   fast_finish: true
