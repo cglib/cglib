@@ -2,6 +2,7 @@ sudo: false
 language: java
 before_script:
   - echo "MAVEN_OPTS='-Xmx512m -Dgpg.skip=true'" > ~/.mavenrc
+  - if [[ "x$JDK" == *'x6'* ]]; then export JAVA_6_HOME=Ã$JAVA_HOME; fi
   - if [[ "x$JDK" == *'x9'* ]]; then remove_dir_from_path $JAVA_HOME/bin; export JAVA_HOME=/usr/lib/jvm/java-9-oracle; export PATH=$JAVA_HOME/bin:$PATH; java -Xmx32m -version; fi
 
 cache:
@@ -15,6 +16,7 @@ before_cache:
 # Skip default "mvn install" issued by Travis
 install: true
 script:
+  - if [[ ! -z $JAVA_6_HOME ]]; then jdk_switcher use oraclejdk7; fi
   - mvn install -B -V
 
 matrix:

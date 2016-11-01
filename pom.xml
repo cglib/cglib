@@ -77,6 +77,20 @@
     <!-- ====================================================================== -->
     <profiles>
         <profile>
+            <id>java6</id>
+            <activation>
+                <jdk>1.6</jdk>
+            </activation>
+            <build>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <jvm>${env.JAVA_6_HOME}/bin/java</jvm>
+                    <forkMode>once</forkMode>
+                </configuration>
+            </build>
+        </profile>
+        <profile>
             <id>java8</id>
             <activation>
                 <jdk>[1.8,)</jdk>
