@@ -176,7 +176,6 @@
                       <detectOfflineLinks>false</detectOfflineLinks>
                       <!--<skip>${skipJavadoc}</skip>-->
                       <use>false</use>
-                      <additionalparam>-Xdoclint:none</additionalparam>
                       <additionalDependencies>
                         <additionalDependency>
                           <groupId>org.ow2.asm</groupId>
@@ -205,11 +204,11 @@
                     <version>1.9</version>
                 </plugin>
                 <plugin>
-				    <groupId>org.apache.felix</groupId>
-				    <artifactId>maven-bundle-plugin</artifactId>
-				    <version>3.0.1</version>
-				    <extensions>true</extensions>
-				</plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <extensions>true</extensions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
