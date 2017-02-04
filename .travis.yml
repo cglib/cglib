@@ -1,5 +1,33 @@
+sudo: false
 language: java
-jdk:
-  - oraclejdk8
-  - openjdk7
-  - openjdk6
+before_script:
+  - echo "MAVEN_OPTS='-Xmx512m -Dgpg.skip=true'" > ~/.mavenrc
+  - if [[ "x$JDK" == *'x9'* ]]; then remove_dir_from_path $JAVA_HOME/bin; export JAVA_HOME=/usr/lib/jvm/java-9-oracle; export PATH=$JAVA_HOME/bin:$PATH; java -Xmx32m -version; fi
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+
+before_cache:
+  # No sense in caching current build artifacts
+  rm -rf $HOME/.m2/repository/cglib
+
+# Skip default "mvn install" issued by Travis
+install: true
+script:
+  - mvn test -B -V
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: JDK=9
+  include:
+    - jdk: oraclejdk8
+    - jdk: oraclejdk8
+      addons:
+        apt:
+          packages:
+            - oracle-java9-installer
+      env: JDK=9
+    - jdk: openjdk7
+    - jdk: openjdk6

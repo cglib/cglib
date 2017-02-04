@@ -18,6 +18,8 @@ package net.sf.cglib.core;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+
+import net.sf.cglib.core.internal.CustomizerRegistry;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
@@ -386,9 +388,17 @@ public class EmitUtils {
         }
     }
 
-    public static void hash_code(CodeEmitter e, Type type, int multiplier, Customizer customizer) {
+    /**
+     * @deprecated use {@link #hash_code(CodeEmitter, Type, int, CustomizerRegistry)} instead
+     */
+    @Deprecated
+    public static void hash_code(CodeEmitter e, Type type, int multiplier, final Customizer customizer) {
+    	hash_code(e, type, multiplier, CustomizerRegistry.singleton(customizer));
+    }
+    
+    public static void hash_code(CodeEmitter e, Type type, int multiplier, final CustomizerRegistry registry) {
         if (TypeUtils.isArray(type)) {
-            hash_array(e, type, multiplier, customizer);
+            hash_array(e, type, multiplier, registry);
         } else {
             e.swap(Type.INT_TYPE, type);
             e.push(multiplier);
@@ -397,20 +407,20 @@ public class EmitUtils {
             if (TypeUtils.isPrimitive(type)) {
                 hash_primitive(e, type);
             } else {
-                hash_object(e, type, customizer);
+                hash_object(e, type, registry);
             }
             e.math(e.ADD, Type.INT_TYPE);
         }
     }
 
-    private static void hash_array(final CodeEmitter e, Type type, final int multiplier, final Customizer customizer) {
+    private static void hash_array(final CodeEmitter e, Type type, final int multiplier, final CustomizerRegistry registry) {
         Label skip = e.make_label();
         Label end = e.make_label();
         e.dup();
         e.ifnull(skip);
         EmitUtils.process_array(e, type, new ProcessArrayCallback() {
             public void processElement(Type type) {
-                hash_code(e, type, multiplier, customizer);
+                hash_code(e, type, multiplier, registry);
             }
         });
         e.goTo(end);
@@ -419,16 +429,25 @@ public class EmitUtils {
         e.mark(end);
     }
 
-    private static void hash_object(CodeEmitter e, Type type, Customizer customizer) {
+    private static void hash_object(CodeEmitter e, Type type, CustomizerRegistry registry) {
         // (f == null) ? 0 : f.hashCode();
         Label skip = e.make_label();
         Label end = e.make_label();
         e.dup();
         e.ifnull(skip);
-        if (customizer != null) {
-            customizer.customize(e, type);
+        boolean customHashCode = false;
+        for (HashCodeCustomizer customizer : registry.get(HashCodeCustomizer.class)) {
+            if (customizer.customize(e, type)) {
+                customHashCode = true;
+                break;
+            }
         }
-        e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        if (!customHashCode) {
+            for (Customizer customizer : registry.get(Customizer.class)) {
+                customizer.customize(e, type);
+            }
+            e.invoke_virtual(Constants.TYPE_OBJECT, HASH_CODE);
+        }
         e.goTo(end);
         e.mark(skip);
         e.pop();
@@ -470,16 +489,24 @@ public class EmitUtils {
 //     }
     
     /**
+     * @deprecated use {@link #not_equals(CodeEmitter, Type, Label, CustomizerRegistry)} instead
+     */
+    @Deprecated
+    public static void not_equals(CodeEmitter e, Type type, final Label notEquals, final Customizer customizer) {
+    	not_equals(e, type, notEquals, CustomizerRegistry.singleton(customizer));
+    }
+    
+    /**
      * Branches to the specified label if the top two items on the stack
      * are not equal. The items must both be of the specified
      * class. Equality is determined by comparing primitive values
      * directly and by invoking the <code>equals</code> method for
      * Objects. Arrays are recursively processed in the same manner.
      */
-    public static void not_equals(final CodeEmitter e, Type type, final Label notEquals, final Customizer customizer) {
+    public static void not_equals(final CodeEmitter e, Type type, final Label notEquals, final CustomizerRegistry registry) {
         (new ProcessArrayCallback() {
             public void processElement(Type type) {
-                not_equals_helper(e, type, notEquals, customizer, this);
+                not_equals_helper(e, type, notEquals, registry, this);
             }
         }).processElement(type);
     }
@@ -487,7 +514,7 @@ public class EmitUtils {
     private static void not_equals_helper(CodeEmitter e,
                                           Type type,
                                           Label notEquals,
-                                          Customizer customizer,
+                                          CustomizerRegistry registry,
                                           ProcessArrayCallback callback) {
         if (TypeUtils.isPrimitive(type)) {
             e.if_cmp(type, e.NE, notEquals);
@@ -506,10 +533,15 @@ public class EmitUtils {
                 e.mark(checkContents);
                 EmitUtils.process_arrays(e, type, callback);
             } else {
-                if (customizer != null) {
-                    customizer.customize(e, type);
+                List<Customizer> customizers = registry.get(Customizer.class);
+                if (!customizers.isEmpty()) {
+                    for (Customizer customizer : customizers) {
+                        customizer.customize(e, type);
+                    }
                     e.swap();
-                    customizer.customize(e, type);
+                    for (Customizer customizer : customizers) {
+                        customizer.customize(e, type);
+                    }
                 }
                 e.invoke_virtual(Constants.TYPE_OBJECT, EQUALS);
                 e.if_jump(e.EQ, notEquals);
@@ -550,35 +582,46 @@ public class EmitUtils {
     public static void to_string(CodeEmitter e,
                                  Type type,
                                  ArrayDelimiters delims,
-                                 Customizer customizer) {
+                                 CustomizerRegistry registry) {
         e.new_instance(Constants.TYPE_STRING_BUFFER);
         e.dup();
         e.invoke_constructor(Constants.TYPE_STRING_BUFFER);
         e.swap();
-        append_string(e, type, delims, customizer);
+        append_string(e, type, delims, registry);
         e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
     }
     */
 
+    /**
+      * @deprecated use {@link #append_string(CodeEmitter, Type, ArrayDelimiters, CustomizerRegistry)} instead
+      */
+    @Deprecated
     public static void append_string(final CodeEmitter e,
                                      Type type,
                                      final ArrayDelimiters delims,
                                      final Customizer customizer) {
+        append_string(e, type, delims, CustomizerRegistry.singleton(customizer));
+    }
+
+    public static void append_string(final CodeEmitter e,
+                                     Type type,
+                                     final ArrayDelimiters delims,
+                                     final CustomizerRegistry registry) {
         final ArrayDelimiters d = (delims != null) ? delims : DEFAULT_DELIMITERS;
         ProcessArrayCallback callback = new ProcessArrayCallback() {
             public void processElement(Type type) {
-                append_string_helper(e, type, d, customizer, this);
+                append_string_helper(e, type, d, registry, this);
                 e.push(d.inside);
                 e.invoke_virtual(Constants.TYPE_STRING_BUFFER, APPEND_STRING);
             }
         };
-        append_string_helper(e, type, d, customizer, callback);
+        append_string_helper(e, type, d, registry, callback);
     }
 
     private static void append_string_helper(CodeEmitter e,
                                              Type type,
                                              ArrayDelimiters delims,
-                                             Customizer customizer,
+                                             CustomizerRegistry registry,
                                              ProcessArrayCallback callback) {
         Label skip = e.make_label();
         Label end = e.make_label();
@@ -623,7 +666,7 @@ public class EmitUtils {
         } else {
             e.dup();
             e.ifnull(skip);
-            if (customizer != null) {
+            for (Customizer customizer : registry.get(Customizer.class)) {
                 customizer.customize(e, type);
             }
             e.invoke_virtual(Constants.TYPE_OBJECT, TO_STRING);

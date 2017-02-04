@@ -139,8 +139,7 @@ implements CallbackGenerator
             e.throw_exception(ABSTRACT_METHOD_ERROR, method.toString() + " is abstract" );
         } else {
             e.load_this();
-            e.load_args();
-            context.emitInvoke(e, method);
+            context.emitLoadArgsAndInvoke(e, method);
         }
     }
 

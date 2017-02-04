@@ -42,9 +42,11 @@ import org.objectweb.asm.Opcodes;
 class BridgeMethodResolver {
 
     private final Map/* <Class, Set<Signature> */declToBridge;
+    private final ClassLoader classLoader;
 
-    public BridgeMethodResolver(Map declToBridge) {
+    public BridgeMethodResolver(Map declToBridge, ClassLoader classLoader) {
         this.declToBridge = declToBridge;
+        this.classLoader = classLoader;
     }
 
     /**
@@ -58,7 +60,7 @@ class BridgeMethodResolver {
             Class owner = (Class)entry.getKey();
             Set bridges = (Set)entry.getValue();
             try {
-                new ClassReader(owner.getName())
+                new ClassReader(classLoader.getResourceAsStream(owner.getName().replace('.', '/') + ".class"))
                   .accept(new BridgedFinder(bridges, resolved),
                           ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
             } catch(IOException ignored) {}
@@ -68,14 +70,14 @@ class BridgeMethodResolver {
 
     private static class BridgedFinder extends ClassVisitor {
         private Map/*<Signature, Signature>*/ resolved;
-        private Set/*<Signature>*/ eligableMethods;
+        private Set/*<Signature>*/ eligibleMethods;
         
         private Signature currentMethod = null;
 
-        BridgedFinder(Set eligableMethods, Map resolved) {
+        BridgedFinder(Set eligibleMethods, Map resolved) {
             super(Opcodes.ASM5);
             this.resolved = resolved;
-            this.eligableMethods = eligableMethods;
+            this.eligibleMethods = eligibleMethods;
         }
 
         public void visit(int version, int access, String name,
@@ -85,7 +87,7 @@ class BridgeMethodResolver {
         public MethodVisitor visitMethod(int access, String name, String desc,
                 String signature, String[] exceptions) {
             Signature sig = new Signature(name, desc);
-            if (eligableMethods.remove(sig)) {
+            if (eligibleMethods.remove(sig)) {
                 currentMethod = sig;
                 return new MethodVisitor(Opcodes.ASM5) {
                     public void visitMethodInsn(int opcode, String owner, String name,

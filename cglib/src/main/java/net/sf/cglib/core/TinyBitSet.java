@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.core;
 
+@Deprecated
 public class TinyBitSet {
     private static int[] T = new int[256];
     private int value = 0;
@@ -29,7 +30,7 @@ public class TinyBitSet {
     }
 
     static {
-        for(int j = 0; j < 256; j++) {
+        for (int j = 0; j < 256; j++) {
             T[j] = gcount(j);
         }
     }
@@ -49,11 +50,16 @@ public class TinyBitSet {
         }
         return j;
     }
-    
+
     public int length() {
         return log2(topbit(value));
     }
 
+    /**
+     * If bit 31 is set then this method results in an infinite loop.
+     *
+     * @return the number of bits set to <code>true</code> in this TinyBitSet.
+     */
     public int cardinality() {
         int w = value;
         int c = 0;

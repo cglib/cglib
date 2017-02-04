@@ -22,6 +22,10 @@ import java.lang.reflect.Method;
  * callback. The type of the callbacks chosen for each method affects
  * the bytecode generated for that method in the subclass, and cannot
  * change for the life of the class.
+ * <p>Note: {@link CallbackFilter} implementations are supposed to be
+ * lightweight as cglib might keep {@link CallbackFilter} objects
+ * alive to enable caching of generated classes. Prefer using {@code static}
+ * classes for implementation of {@link CallbackFilter}.</p>
  */
 public interface CallbackFilter {
     /**

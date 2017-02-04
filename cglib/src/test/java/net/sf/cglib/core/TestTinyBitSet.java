@@ -15,52 +15,79 @@
  */
 package net.sf.cglib.core;
 
-import net.sf.cglib.CodeGenTestCase;
-import junit.framework.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class TestTinyBitSet extends TestCase {
+
+    private TinyBitSet b = new TinyBitSet();
+
     public void testGetSetClear() {
-        TinyBitSet b = new TinyBitSet();
-        assertTrue(!b.get(5));
-        b.set(5);
-        assertTrue(b.get(5));
-        b.clear(5);
-        assertTrue(!b.get(5));
+        // get, set, clear, set bits 0 - 31
+        for (int index = 0; index < 32; index++) {
+            assertFalse(b.get(index));
+            b.set(index);
+            assertTrue(b.get(index));
+            b.clear(index);
+            assertFalse(b.get(index));
+            b.set(index);
+        }
+        // after setting bits 0-31, get bits 32 and above reports true;
+        assertTrue(b.get(32));
+        assertTrue(b.get(255));
+        assertTrue(b.get(256));
+        assertTrue(b.get(1000000));
     }
-    
+
+    public void testGetSetClear2() {
+        for (int index = 2; index > 0; index *= 2) {
+            b.set(index);
+            assertTrue(b.get(index));
+            b.clear(index);
+            assertFalse(b.get(index));
+            b.set(index);
+        }
+    }
+
     public void testLength() {
-        TinyBitSet b = new TinyBitSet();
+        assertEquals(0, b.length());
         b.set(10);
-        assertTrue(b.length() == 11);
+        assertEquals(11, b.length());
         b.set(15);
-        assertTrue(b.length() == 16);
+        assertEquals(16, b.length());
         b.set(14);
-        assertTrue(b.length() == 16);
+        assertEquals(16, b.length());
     }
 
     public void testCardinality() {
-        TinyBitSet b = new TinyBitSet();
-        assertTrue(b.cardinality() == 0);
+        assertEquals(0, b.cardinality());
         b.set(1);
-        assertTrue(b.cardinality() == 1);
+        assertEquals(1, b.cardinality());
         b.set(4);
-        assertTrue(b.cardinality() == 2);
+        assertEquals(2, b.cardinality());
         b.set(10);
-        assertTrue(b.cardinality() == 3);
+        assertEquals(3, b.cardinality());
         b.set(10);
-        assertTrue(b.cardinality() == 3);
+        assertEquals(3, b.cardinality());
         b.clear(10);
-        assertTrue(b.cardinality() == 2);
+        assertEquals(2, b.cardinality());
+    }
+
+    /** Causes infinite loop */
+    public void set31InfiniteLoopCardinality() {
+        b.set(31);
+        assertEquals(1, b.cardinality()); // infinite loop...
     }
 
     public TestTinyBitSet(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestTinyBitSet.class);
     }

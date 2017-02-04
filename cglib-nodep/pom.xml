@@ -9,7 +9,7 @@
     <parent>
         <groupId>cglib</groupId>
         <artifactId>cglib-parent</artifactId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.2.5-SNAPSHOT</version>
     </parent>
 
     <!-- ====================================================================== -->
@@ -52,6 +52,16 @@
                             <pattern>net.sf.cglib.**</pattern>
                         </keep>
                     </rules>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>${project.groupId}:cglib</dependencySourceInclude>
+                    </dependencySourceIncludes>
                 </configuration>
             </plugin>
         </plugins>

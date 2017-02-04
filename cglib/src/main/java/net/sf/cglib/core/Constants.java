@@ -53,7 +53,8 @@ public interface Constants extends org.objectweb.asm.Opcodes {
     public static final Type TYPE_ERROR = TypeUtils.parseType("Error");
     public static final Type TYPE_SYSTEM = TypeUtils.parseType("System");
     public static final Type TYPE_SIGNATURE = TypeUtils.parseType("net.sf.cglib.core.Signature");
-    
+    public static final Type TYPE_TYPE = Type.getType(Type.class);
+
     public static final String CONSTRUCTOR_NAME = "<init>";
     public static final String STATIC_NAME = "<clinit>";
     public static final String SOURCE_FILE = "<generated>";

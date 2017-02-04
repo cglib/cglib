@@ -15,21 +15,34 @@
  */
 package net.sf.cglib.proxy;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import net.sf.cglib.CodeGenTestCase;
+import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.DefaultNamingPolicy;
+import net.sf.cglib.core.NamingPolicy;
+import net.sf.cglib.core.Predicate;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  *@author     Juozas Baliuka <a href="mailto:baliuka@mwm.lt">
@@ -131,16 +144,29 @@ public class TestEnhancer extends CodeGenTestCase {
         
     }
 
+    public void testFinalizeNotProxied() throws Throwable {
+        Source source = (Source) Enhancer.create(
+                Source.class,
+                null, TEST_INTERCEPTOR);
+
+        try {
+            Method finalize = source.getClass().getDeclaredMethod("finalize");
+            assertNull("CGLIB should enhanced object should not declare finalize() method so proxy objects are not eligible for finalization, thus faster", finalize);
+        } catch(NoSuchMethodException e) {
+            // expected
+        }
+    }
+
     public void testEnhanceObject() throws Throwable {
         EA obj = new EA();
         EA save = obj;
         obj.setName("herby");
         EA proxy = (EA)Enhancer.create( EA.class,  new DelegateInterceptor(save) );
      
-        assertTrue(proxy.getName().equals("herby"));
+        assertEquals("proxy.getName()", "herby", proxy.getName());
 
         Factory factory = (Factory)proxy;
-        assertTrue(((EA)factory.newInstance(factory.getCallbacks())).getName().equals("herby"));
+        assertEquals("((EA)factory.newInstance(factory.getCallbacks())).getName()", "herby", ((EA)factory.newInstance(factory.getCallbacks())).getName());
     }
 
     class DelegateInterceptor implements MethodInterceptor {
@@ -241,6 +267,182 @@ public class TestEnhancer extends CodeGenTestCase {
         assertTrue("Custom classLoader", source.getClass().getClassLoader() == custom  );
         
         
+    }
+
+    public void testProxyClassReuseAcrossGC() throws InterruptedException {
+        String proxyClassName = null;
+        for (int i = 0; i < 50; i++) {
+            Enhancer enhancer = new Enhancer();
+            enhancer.setSuperclass(Source.class);
+            enhancer.setCallbackFilter(new CallbackFilter() {
+                public int accept(Method method) {
+                    return 0;
+                }
+
+                @Override
+                public boolean equals(Object obj) {
+                    return true;
+                }
+
+                @Override
+                public int hashCode() {
+                    return 0;
+                }
+            });
+            enhancer.setInterfaces(new Class[]{Serializable.class});
+            enhancer.setCallback(new InvocationHandler() {
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (method.getDeclaringClass() != Object.class
+                            && method.getReturnType() == String.class) {
+                        return null;
+                    } else {
+                        throw new RuntimeException("Do not know what to do.");
+                    }
+                }
+            });
+            Source proxy = (Source) enhancer.create();
+            String actualProxyClassName = proxy.getClass().getName();
+            if (proxyClassName == null) {
+                proxyClassName = actualProxyClassName;
+            } else {
+                assertEquals("GC iteration " + i + ", proxy class should survive GC and be reused even across GC",
+                        proxyClassName, actualProxyClassName);
+            }
+            System.gc();
+        }
+    }
+
+    /**
+     * Verifies that the cache in {@link AbstractClassGenerator} SOURCE doesn't
+     * leak class definitions of classloaders that are no longer used.
+     */
+    public void testSourceCleanAfterClassLoaderDispose() throws Throwable {
+        ClassLoader custom = new ClassLoader(this.getClass().getClassLoader()) {
+
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                if (EA.class.getName().equals(name)) {
+                    InputStream classStream = this.getClass().getResourceAsStream("/net/sf/cglib/proxy/EA.class");
+                    byte[] classBytes;
+                    try {
+                        classBytes = toByteArray(classStream);
+                        return this.defineClass(null, classBytes, 0, classBytes.length);
+                    } catch (IOException e) {
+                        return super.loadClass(name);
+                    }
+                } else {
+                    return super.loadClass(name);
+                }
+            }
+        };
+
+        PhantomReference<ClassLoader> clRef = new PhantomReference<ClassLoader>(custom,
+                new ReferenceQueue<ClassLoader>());
+
+        buildAdvised(custom);
+        custom = null;
+
+        for (int i = 0; i < 10; ++i) {
+            System.gc();
+            Thread.sleep(100);
+            if (clRef.isEnqueued()) {
+                break;
+            }
+        }
+        assertTrue("CGLIB should allow classloaders to be evicted. PhantomReference<ClassLoader> was not cleared after 10 gc cycles," +
+                "thus it is likely some cache is preventing the class loader to be garbage collected", clRef.isEnqueued());
+
+    }
+
+    protected Object buildAdvised(ClassLoader custom)
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        final Class<?> eaClassFromCustomClassloader = custom.loadClass(EA.class.getName());
+
+        CallbackFilter callbackFilter = new CallbackFilter() {
+            Object advised = eaClassFromCustomClassloader.newInstance();
+
+            public int accept(Method method) {
+                return 0;
+            }
+
+        };
+
+        // Need to test both orders: "null classloader first" and "null last" just in case
+        Object source_ = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, null);
+        Object source = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
+        assertSame("Same proxy class is expected since Enhancer with null (default) ClassLoader should use " +
+                        " target class.getClassLoader(), thus the same cache key instance should be reused",
+                source.getClass(), source_.getClass()
+        );
+
+        Object source2 = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, custom);
+        assertSame("enhance should return cached Enhancer when calling with same parameters",
+                source.getClass(), source2.getClass()
+        );
+
+        Object source2_ = enhance(eaClassFromCustomClassloader, null, callbackFilter, TEST_INTERCEPTOR, null);
+        assertSame("Same proxy class is expected since Enhancer with null (default) ClassLoader should use " +
+                " target class.getClassLoader(), thus the same cache key instance should be reused",
+                source.getClass(), source2_.getClass()
+        );
+
+        Object source3 = enhance(eaClassFromCustomClassloader, null, null, TEST_INTERCEPTOR, custom);
+        assertNotSame("enhance should return different instance when callbackFilter differs",
+                source.getClass(), source3.getClass()
+        );
+
+        return source;
+    }
+
+    private static byte[] toByteArray(InputStream input) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int n = 0;
+
+        while (-1 != (n = input.read(buffer))) {
+            output.write(buffer, 0, n);
+        }
+
+        return output.toByteArray();
+
+    }
+
+    private static class TestFilter implements CallbackFilter {
+        private final int pk;
+
+        TestFilter(int pk) {
+            this.pk = pk;
+        }
+
+        public int accept(Method method) {
+            return 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1; // Make sure Enhancer uses equals, not just hashCode alone
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof TestFilter && ((TestFilter) obj).pk == pk;
+        }
+    }
+
+    public void testCallbackFilterEqualsVsClassReuse() {
+        Callback[] callbacks = new Callback[]{NoOp.INSTANCE};
+        Object a = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        Object b = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        assertSame("Using the same as per .equal() CallbackFilter, thus Enhancer should reuse the same proxy class",
+                a.getClass(), b.getClass());
+    }
+
+    public void testCallbackFilterNotEqualsVsClassReuse() {
+        Callback[] callbacks = new Callback[]{NoOp.INSTANCE};
+        Object a = Enhancer.create(Source.class, null, new TestFilter(1), callbacks);
+        Object b = Enhancer.create(Source.class, null, new TestFilter(2), callbacks);
+        assertNotSame("Using the different CallbackFilter instances, thus Enhancer should generate new proxy class",
+                a.getClass(), b.getClass());
     }
 
     public void testRuntimException()throws Throwable{
@@ -478,11 +680,66 @@ public class TestEnhancer extends CodeGenTestCase {
       dummy.toString();
       assertTrue(ran[0]);
     }
+    
+    public void testBadNamingPolicyStillReservesNames() throws Throwable {
+      Enhancer e = new Enhancer();
+      e.setUseCache(false);
+      e.setCallback(NoOp.INSTANCE);
+      e.setClassLoader(new ClassLoader(this.getClass().getClassLoader()){});
+      e.setNamingPolicy(new NamingPolicy() {      
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          return "net.sf.cglib.empty.Object$$ByDerby$$123";
+        }
+      });
+      Class proxied = e.create().getClass();
+      final String name = proxied.getCanonicalName();
+      final boolean[] ran = new boolean[1];
+      e.setNamingPolicy(new NamingPolicy() {
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          ran[0] = true;
+          assertTrue(names.evaluate(name));
+          return name + "45"; 
+        }
+      });
+      Class proxied2 = e.create().getClass();
+      assertTrue(ran[0]);
+      assertEquals(name + "45", proxied2.getCanonicalName());
+    }
+
+    /**
+     * In theory, every sane implementation of {@link NamingPolicy} should check if the class name is occupied,
+     * however, in practice there are implementations in the wild that just return whatever they feel is good.
+     *
+     * @throws Throwable if something wrong happens
+     */
+    public void testNamingPolicyThatReturnsConstantNames() throws Throwable {
+      Enhancer e = new Enhancer();
+      final String desiredClassName = "net.sf.cglib.empty.Object$$42";
+      e.setCallback(NoOp.INSTANCE);
+      e.setClassLoader(new ClassLoader(this.getClass().getClassLoader()){});
+      e.setNamingPolicy(new NamingPolicy() {
+        public String getClassName(String prefix, String source, Object key, Predicate names) {
+          return desiredClassName;
+        }
+      });
+      Class proxied = e.create().getClass();
+      assertEquals("Class name should match the one returned by NamingPolicy", desiredClassName, proxied.getName());
+    }
 
     public static Object enhance(Class cls, Class interfaces[], Callback callback, ClassLoader loader) {
         Enhancer e = new Enhancer();
         e.setSuperclass(cls);
         e.setInterfaces(interfaces);
+        e.setCallback(callback);
+        e.setClassLoader(loader);
+        return e.create();
+    }
+
+    public static Object enhance(Class cls, Class interfaces[], CallbackFilter callbackFilter, Callback callback, ClassLoader loader) {
+        Enhancer e = new Enhancer();
+        e.setSuperclass(cls);
+        e.setInterfaces(interfaces);
+        e.setCallbackFilter(callbackFilter);
         e.setCallback(callback);
         e.setClassLoader(loader);
         return e.create();
@@ -555,7 +812,7 @@ public class TestEnhancer extends CodeGenTestCase {
         Object instance = enhancer.create();
 
         assertTrue(instance instanceof ClassOnlyX);
-        assertTrue(instance.getClass().equals(type));
+        assertEquals("types of enhancer.createClass() and enhancer.create().getClass() should match", type, instance.getClass());
     }
 
      public void testSql() {
@@ -853,6 +1110,30 @@ public class TestEnhancer extends CodeGenTestCase {
 
     }
     
+    public void testUseCache() throws Exception {
+        Enhancer noCache = new Enhancer();
+        noCache.setUseCache(false);
+        noCache.setSuperclass(Foo.class);
+        noCache.setCallback(NoOp.INSTANCE);
+        Class<?> a = noCache.create().getClass();
+        Class<?> b = noCache.create().getClass();
+        assertNotSame(a, b);
+        
+        Enhancer withCache = new Enhancer();
+        withCache.setUseCache(true);
+        withCache.setSuperclass(Foo.class);
+        withCache.setCallback(NoOp.INSTANCE);
+        Class<?> c = withCache.create().getClass();
+        Class<?> d = withCache.create().getClass();
+        assertNotSame(a, c);
+        assertNotSame(b, c);
+        assertSame(c, d);
+    }
+    
+    static class Foo {
+      Foo() {}
+    }
+    
     public void testBridgeForcesInvokeVirtual() {
         List<Class> retTypes = new ArrayList<Class>();
         List<Class> paramTypes = new ArrayList<Class>();
@@ -980,9 +1261,163 @@ public class TestEnhancer extends CodeGenTestCase {
         intf.aMethod(null);
         assertEquals(Arrays.asList(Concrete.class), paramTypes);
     }
-    
-    
-    
+
+    public void testBridgeParameterCheckcast() throws Exception {
+
+    // If the compiler used for Z omits the bridge method, and X is compiled with javac,
+    // javac will generate an invokespecial bridge in X.
+
+    // public interface I<A, B> {
+    //   public A f(B b);
+    // }
+    // public abstract class Z<U extends Number> implements I<U, Long> {
+    //   public U f(Long id) {
+    //     return null;
+    //   }
+    // }
+    // public class X extends Z<Integer> {}
+
+    final Map<String, byte[]> classes = new HashMap<String, byte[]>();
+
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49,
+          Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE,
+          "I",
+          "<A:Ljava/lang/Object;B:Ljava/lang/Object;>Ljava/lang/Object;",
+          "java/lang/Object",
+          null);
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+                "f",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                "(TB;)TA;",
+                null);
+        mv.visitEnd();
+      }
+      cw.visitEnd();
+      classes.put("I.class", cw.toByteArray());
+    }
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49,
+          Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER | Opcodes.ACC_ABSTRACT,
+          "Z",
+          "<U:Ljava/lang/Number;>Ljava/lang/Object;LI<TU;Ljava/lang/String;>;",
+          "java/lang/Object",
+          new String[] {"I"});
+      {
+        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+      }
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC,
+                "f",
+                "(Ljava/lang/String;)Ljava/lang/Number;",
+                "(Ljava/lang/String;)TU;",
+                null);
+        mv.visitCode();
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(1, 2);
+        mv.visitEnd();
+      }
+      cw.visitEnd();
+      classes.put("Z.class", cw.toByteArray());
+    }
+    {
+      ClassWriter cw = new ClassWriter(0);
+      cw.visit(
+          49, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, "X", "LZ<Ljava/lang/Integer;>;", "Z", null);
+      {
+        MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "Z", "<init>", "()V", false);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+      }
+      {
+        MethodVisitor mv =
+            cw.visitMethod(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC,
+                "f",
+                "(Ljava/lang/Object;)Ljava/lang/Object;",
+                null,
+                null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+        mv.visitMethodInsn(
+            Opcodes.INVOKESPECIAL, "Z", "f", "(Ljava/lang/String;)Ljava/lang/Number;", false);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(2, 2);
+        mv.visitEnd();
+      }
+
+      cw.visitEnd();
+
+      classes.put("X.class", cw.toByteArray());
+    }
+
+    ClassLoader classLoader =
+        new ClassLoader(getClass().getClassLoader()) {
+          @Override
+          public InputStream getResourceAsStream(String name) {
+            InputStream is = super.getResourceAsStream(name);
+            if (is != null) {
+              return is;
+            }
+            if (classes.containsKey(name)) {
+              return new ByteArrayInputStream(classes.get(name));
+            }
+            return null;
+          }
+
+          public Class findClass(String name) throws ClassNotFoundException {
+            byte[] ba = classes.get(name.replace('.', '/') + ".class");
+            if (ba != null) {
+              return defineClass(name, ba, 0, ba.length);
+            }
+            throw new ClassNotFoundException(name);
+          }
+        };
+
+    List<Class> retTypes = new ArrayList<Class>();
+    List<Class> paramTypes = new ArrayList<Class>();
+    Interceptor interceptor = new Interceptor(retTypes, paramTypes);
+
+    Enhancer e = new Enhancer();
+    e.setClassLoader(classLoader);
+    e.setSuperclass(classLoader.loadClass("X"));
+    e.setCallback(interceptor);
+
+    Object c = e.create();
+
+    for (Method m : c.getClass().getDeclaredMethods()) {
+      if (m.getName().equals("f") && m.getReturnType().equals(Object.class)) {
+        m.invoke(c, new Object[] {null});
+      }
+    }
+
+    // f(Object)Object should bridge to f(Number)String
+    assertEquals(Arrays.asList(Object.class, Number.class), retTypes);
+    assertEquals(Arrays.asList(Object.class, String.class), paramTypes);
+  }
+
     static class ErasedType {}
     static class RetType extends ErasedType {}
     static class Refined extends RetType {}

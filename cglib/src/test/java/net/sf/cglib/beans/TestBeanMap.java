@@ -23,6 +23,10 @@ import java.util.*;
 import junit.framework.*;
 
 public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
+    public static class TestBean2 {
+        private String foo;
+    }
+
     public static class TestBean {
         private String foo;
         private String bar = "x";
@@ -67,6 +71,14 @@ public class TestBeanMap extends net.sf.cglib.CodeGenTestCase {
     public void testBeanMap() {
         TestBean bean = new TestBean();
         BeanMap map = BeanMap.create(bean);
+        BeanMap map2 = BeanMap.create(bean);
+        assertEquals("BeanMap.create should use exactly the same bean class when called multiple times",
+                map.getClass(), map2.getClass()
+        );
+        BeanMap map3 = BeanMap.create(new TestBean2());
+        assertNotSame("BeanMap.create should use different classes for different beans",
+                map.getClass(), map3.getClass()
+        );
         assertTrue(map.size() == 6);
         assertTrue(map.get("foo") == null);
         map.put("foo", "FOO");
