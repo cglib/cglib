@@ -15,7 +15,6 @@
  */
 package net.sf.cglib.util;
 
-import java.lang.reflect.*;
 import java.util.Comparator;
 import net.sf.cglib.core.*;
 import org.objectweb.asm.ClassVisitor;
@@ -224,7 +223,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         public int compare(int i, int j) {
             float vi = a[i];
             float vj = a[j];
-            return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
+            return Float.compare(vi, vj);
         }
     }
     
@@ -234,7 +233,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         public int compare(int i, int j) {
             double vi = a[i];
             double vj = a[j];
-            return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
+            return Double.compare(vi, vj);
         }
     }
 

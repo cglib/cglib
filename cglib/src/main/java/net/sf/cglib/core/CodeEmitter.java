@@ -15,9 +15,12 @@
  */
 package net.sf.cglib.core;
 
-import java.io.*;
 import java.util.*;
+
 import org.objectweb.asm.*;
+
+import static net.sf.cglib.util.ApproximateNumberEqual.doubleEquals;
+import static net.sf.cglib.util.ApproximateNumberEqual.floatEquals;
 
 /**
  * @author Juozas Baliuka, Chris Nokleberg
@@ -318,14 +321,14 @@ public class CodeEmitter extends LocalVariablesSorter {
     }
     
     public void push(float value) {
-        if (value == 0f || value == 1f || value == 2f) {
+        if (floatEquals(value, 0f) || floatEquals(value, 1f) || floatEquals(value, 2f)) {
             mv.visitInsn(TypeUtils.FCONST(value));
         } else {
             mv.visitLdcInsn(new Float(value));
         }
     }
     public void push(double value) {
-        if (value == 0d || value == 1d) {
+        if (doubleEquals(value, 0) || doubleEquals(value, 1)) {
             mv.visitInsn(TypeUtils.DCONST(value));
         } else {
             mv.visitLdcInsn(new Double(value));

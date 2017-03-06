@@ -18,6 +18,9 @@ package net.sf.cglib.core;
 import java.util.*;
 import org.objectweb.asm.Type;
 
+import static net.sf.cglib.util.ApproximateNumberEqual.doubleEquals;
+import static net.sf.cglib.util.ApproximateNumberEqual.floatEquals;
+
 public class TypeUtils {
     private static final Map transforms = new HashMap();
     private static final Map rtransforms = new HashMap();
@@ -356,11 +359,11 @@ public class TypeUtils {
     }
 
     public static int FCONST(float value) {
-        if (value == 0f) {
+        if (floatEquals(value, 0f)) {
             return Constants.FCONST_0;
-        } else if (value == 1f) {
+        } else if (floatEquals(value, 1f)) {
             return Constants.FCONST_1;
-        } else if (value == 2f) {
+        } else if (floatEquals(value, 2f)) {
             return Constants.FCONST_2;
         } else {
             return -1; // error
@@ -368,9 +371,9 @@ public class TypeUtils {
     }
 
     public static int DCONST(double value) {
-        if (value == 0d) {
+        if (doubleEquals(value, 0)) {
             return Constants.DCONST_0;
-        } else if (value == 1d) {
+        } else if (doubleEquals(value, 1)) {
             return Constants.DCONST_1;
         } else {
             return -1; // error
