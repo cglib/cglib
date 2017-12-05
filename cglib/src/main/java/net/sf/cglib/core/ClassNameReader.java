@@ -38,7 +38,7 @@ public class ClassNameReader {
     public static String[] getClassInfo(ClassReader r) {
         final List array = new ArrayList();
         try {
-            r.accept(new ClassVisitor(Opcodes.ASM5, null) {
+            r.accept(new ClassVisitor(Opcodes.ASM6, null) {
                 public void visit(int version,
                                   int access,
                                   String name,

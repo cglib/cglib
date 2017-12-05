@@ -25,7 +25,7 @@ public class FieldVisitorTee extends FieldVisitor {
     private FieldVisitor fv1, fv2;
     
     public FieldVisitorTee(FieldVisitor fv1, FieldVisitor fv2) {
-	super(Opcodes.ASM5);
+	super(Opcodes.ASM6);
 	this.fv1 = fv1;
         this.fv2 = fv2;
     }

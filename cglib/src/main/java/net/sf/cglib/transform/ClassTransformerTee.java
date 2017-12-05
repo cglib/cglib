@@ -22,7 +22,7 @@ public class ClassTransformerTee extends ClassTransformer {
     private ClassVisitor branch;
     
     public ClassTransformerTee(ClassVisitor branch) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.branch = branch;
     }
     

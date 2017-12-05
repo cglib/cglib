@@ -54,7 +54,7 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
-        <asm.version>5.2</asm.version>
+        <asm.version>6.0</asm.version>
         <java.compiler.argument />
 
         <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
@@ -93,7 +93,6 @@
             <properties>
                 <java.version.source>1.6</java.version.source>
                 <java.version.target>1.6</java.version.target>
-                <asm.version>6.0_ALPHA</asm.version>
                 <java.test.compiler.argument>-parameters</java.test.compiler.argument>
             </properties>
         </profile>
