@@ -17,6 +17,7 @@
 package net.sf.cglib.proxy;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,14 +57,22 @@ class BridgeMethodResolver {
     public Map/*<Signature, Signature>*/resolveAll() {
         Map resolved = new HashMap();
         for (Iterator entryIter = declToBridge.entrySet().iterator(); entryIter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry)entryIter.next();
-            Class owner = (Class)entry.getKey();
-            Set bridges = (Set)entry.getValue();
+            Map.Entry entry = (Map.Entry) entryIter.next();
+            Class owner = (Class) entry.getKey();
+            Set bridges = (Set) entry.getValue();
             try {
-                new ClassReader(classLoader.getResourceAsStream(owner.getName().replace('.', '/') + ".class"))
-                  .accept(new BridgedFinder(bridges, resolved),
-                          ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
-            } catch(IOException ignored) {}
+                InputStream is = classLoader.getResourceAsStream(owner.getName().replace('.', '/') + ".class");
+                if (is == null) {
+                    return resolved;
+                }
+                try {
+                    new ClassReader(is)
+                            .accept(new BridgedFinder(bridges, resolved),
+                                    ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+                } finally {
+                    is.close();
+                }
+            } catch (IOException ignored) {}
         }
         return resolved;
     }
