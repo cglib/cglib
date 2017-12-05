@@ -31,3 +31,8 @@ matrix:
       env: JDK=9
     - jdk: openjdk7
     - jdk: openjdk6
+    
+addons:
+  apt:
+    packages:
+      - openjdk-6-jdk
