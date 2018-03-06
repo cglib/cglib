@@ -87,6 +87,7 @@ abstract public class AbstractClassLoader extends ClassLoader {
         try {
             DebuggingClassWriter w = 
         	    new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
+            w.setClassLoader(this);
             getGenerator(r).generateClass(w);
             byte[] b = w.toByteArray();
             Class c = super.defineClass(name, b, 0, b.length, DOMAIN);
