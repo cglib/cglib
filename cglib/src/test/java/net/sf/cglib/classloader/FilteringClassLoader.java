@@ -21,58 +21,54 @@ public class FilteringClassLoader extends ClassLoader {
     }
 
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (needFiltering(name)) {
-            synchronized(this) {
-                // Check whether this class is already loaded by this classloader
-                Class<?> cl = findLoadedClass(name);
-                // Do not load from parent classloader - try to find class file in delegating classloader and load it in this classloader
-                if (cl == null && delegatingClassLoader != null) {
-                    InputStream inputStream = delegatingClassLoader.getResourceAsStream(name.replace('.','/')+".class");
-                    if (inputStream != null) {
-                        // Class file was found - load it
-                        ByteArrayOutputStream targetBuffer = new ByteArrayOutputStream();
+        if (!needFiltering(name)) {
+            return super.loadClass(name, resolve);
+        }
+
+        synchronized(this) {
+            // Check whether this class is already loaded by this classloader
+            Class<?> cl = findLoadedClass(name);
+            // Do not load from parent classloader - try to find class file in delegating classloader and load it in this classloader
+            if (cl == null && delegatingClassLoader != null) {
+                InputStream inputStream = delegatingClassLoader.getResourceAsStream(name.replace('.','/')+".class");
+                if (inputStream != null) {
+                    // Class file was found - load it
+                    ByteArrayOutputStream targetBuffer = new ByteArrayOutputStream();
+                    try {
                         try {
-                            try {
-                                byte[] buffer = new byte[1024];
-                                for(int r = inputStream.read(buffer, 0, buffer.length); r > 0; r = inputStream.read(buffer, 0, buffer.length)) {
-                                    targetBuffer.write(buffer, 0, r);
-                                }
-                            } finally {
-                                inputStream.close();
+                            byte[] buffer = new byte[1024];
+                            for(int r = inputStream.read(buffer, 0, buffer.length); r > 0; r = inputStream.read(buffer, 0, buffer.length)) {
+                                targetBuffer.write(buffer, 0, r);
                             }
-                        } catch (IOException e) {
-                            throw new ClassNotFoundException("Cannot load class with name '"+name+"' from delegating classloader", e);
+                        } finally {
+                            inputStream.close();
                         }
-                        byte[] classBytes = targetBuffer.toByteArray();
-                        // Define and resolve class (if required)
-                        cl = defineClass(name, classBytes, 0, classBytes.length);
-                        if (resolve) {
-                            resolveClass(cl);
-                        }
+                    } catch (IOException e) {
+                        throw new ClassNotFoundException("Cannot load class with name '"+name+"' from delegating classloader", e);
+                    }
+                    byte[] classBytes = targetBuffer.toByteArray();
+                    // Define and resolve class (if required)
+                    cl = defineClass(name, classBytes, 0, classBytes.length);
+                    if (resolve) {
+                        resolveClass(cl);
                     }
                 }
-                // Filtering result - either class loaded in this classloader or exception
-                if (cl != null) {
-                    return cl;
-                } else {
-                    throw new ClassNotFoundException("Class with name '"+name+"' should not be loaded from parent classloader and is not found in delegating classloader");
-                }
             }
-        } else {
-            return super.loadClass(name, resolve);
+            // Filtering result - either class loaded in this classloader or exception
+            if (cl != null) {
+                return cl;
+            } else {
+                throw new ClassNotFoundException("Class with name '"+name+"' should not be loaded from parent classloader and is not found in delegating classloader");
+            }
         }
     }
 
     public URL getResource(String name) {
-        if (needFiltering(name.replace('/','.'))) {
-            if (delegatingClassLoader != null) {
-                return delegatingClassLoader.getResource(name);
-            } else {
-                return null;
-            }
-        } else {
-            return super.getResource(name); 
+        if (!needFiltering(name.replace('/','.'))) {
+            return super.getResource(name);
         }
+
+        return delegatingClassLoader != null ? delegatingClassLoader.getResource(name) : null;
     }
 
     private boolean needFiltering(String name) {
