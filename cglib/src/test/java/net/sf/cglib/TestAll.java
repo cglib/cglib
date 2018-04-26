@@ -49,6 +49,7 @@ public class TestAll extends TestCase {
         
         // proxy
         suite.addTest(TestEnhancer.suite());
+        suite.addTest(TestEnhancerDeadlock.suite());
         suite.addTest(TestProxy.suite());
         suite.addTest(TestDispatcher.suite());
         suite.addTest(TestProxyRefDispatcher.suite());
