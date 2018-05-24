@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2010 Harald Wellmann Licensed under the Apache License, Version 
+	2.0 (the "License"); you may not use this file except in compliance with 
+	the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 -->
+<configuration>
+
+	<!-- log to System.out on console -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- log to file test.log -->
+	<appender name="TEST_LOG" class="ch.qos.logback.core.FileAppender">
+		<file>test.log</file>
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="WARN">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="TEST_LOG" />
+	</root>
+	<logger name="org.ops4j.pax.exam" level="INFO" />
+	
+	<logger name="shaded.org.apache.http" level="INFO" />
+
+</configuration>
