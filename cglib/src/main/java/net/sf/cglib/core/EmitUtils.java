@@ -97,6 +97,7 @@ public class EmitUtils {
      * Process an array on the stack. Assumes the top item on the stack
      * is an array of the specified type. For each element in the array,
      * puts the element on the stack and triggers the callback.
+     * @param e code emitter
      * @param type the type of the array (type.isArray() must be true)
      * @param callback the callback triggered for each element
      */
@@ -129,6 +130,7 @@ public class EmitUtils {
      * Process two arrays on the stack in parallel. Assumes the top two items on the stack
      * are arrays of the specified class. The arrays must be the same length. For each pair
      * of elements in the arrays, puts the pair on the stack and triggers the callback.
+     * @param e code emitter
      * @param type the type of the arrays (type.isArray() must be true)
      * @param callback the callback triggered for each pair of elements
      */
@@ -389,13 +391,27 @@ public class EmitUtils {
     }
 
     /**
+     * Emits hash code evaluator for a given type.
+     *
+     * @param e code emitter
+     * @param type type of object to hash
+     * @param multiplier multiplier to use for hash
+     * @param customizer customizer to use
      * @deprecated use {@link #hash_code(CodeEmitter, Type, int, CustomizerRegistry)} instead
      */
     @Deprecated
     public static void hash_code(CodeEmitter e, Type type, int multiplier, final Customizer customizer) {
     	hash_code(e, type, multiplier, CustomizerRegistry.singleton(customizer));
     }
-    
+
+    /**
+     * Emits hash code evaluator for a given type.
+     *
+     * @param e code emitter
+     * @param type type of object to hash
+     * @param multiplier multiplier to use for hash
+     * @param registry customizers to use
+     */
     public static void hash_code(CodeEmitter e, Type type, int multiplier, final CustomizerRegistry registry) {
         if (TypeUtils.isArray(type)) {
             hash_array(e, type, multiplier, registry);
@@ -489,19 +505,34 @@ public class EmitUtils {
 //     }
     
     /**
+     * Branches to the specified label if the top two items on the stack
+     * are not equal. The items must both be of the specified
+     * class. Equality is determined by comparing primitive values
+     * directly and by invoking the {@link Object#equals(Object)}
+     * Arrays are recursively processed in the same manner.
+     *
+     * @param e code emitter
+     * @param type type of objects being compared
+     * @param notEquals branch to take if input arguments are not equal
+     * @param customizer customizer to use
      * @deprecated use {@link #not_equals(CodeEmitter, Type, Label, CustomizerRegistry)} instead
      */
     @Deprecated
     public static void not_equals(CodeEmitter e, Type type, final Label notEquals, final Customizer customizer) {
     	not_equals(e, type, notEquals, CustomizerRegistry.singleton(customizer));
     }
-    
+
     /**
      * Branches to the specified label if the top two items on the stack
      * are not equal. The items must both be of the specified
      * class. Equality is determined by comparing primitive values
-     * directly and by invoking the <code>equals</code> method for
-     * Objects. Arrays are recursively processed in the same manner.
+     * directly and by invoking the {@link Object#equals(Object)}
+     * Arrays are recursively processed in the same manner.
+     *
+     * @param e code emitter
+     * @param type type of objects being compared
+     * @param notEquals branch to take if input arguments are not equal
+     * @param registry customizers to use
      */
     public static void not_equals(final CodeEmitter e, Type type, final Label notEquals, final CustomizerRegistry registry) {
         (new ProcessArrayCallback() {
@@ -593,8 +624,14 @@ public class EmitUtils {
     */
 
     /**
-      * @deprecated use {@link #append_string(CodeEmitter, Type, ArrayDelimiters, CustomizerRegistry)} instead
-      */
+     * Emits bytecode to append a given object (or primitive) to a {@link StringBuffer}
+     *
+     * @deprecated use {@link #append_string(CodeEmitter, Type, ArrayDelimiters, CustomizerRegistry)} instead
+     * @param e code emitter
+     * @param type object (or primitive) type to append
+     * @param delims delimiters to use for arrays
+     * @param customizer customizer to use
+     */
     @Deprecated
     public static void append_string(final CodeEmitter e,
                                      Type type,
@@ -603,6 +640,14 @@ public class EmitUtils {
         append_string(e, type, delims, CustomizerRegistry.singleton(customizer));
     }
 
+    /**
+     * Emits bytecode to append a given object (or primitive) to a {@link StringBuffer}
+     *
+     * @param e code emitter
+     * @param type object (or primitive) type to append
+     * @param delims delimiters to use for arrays
+     * @param registry customizers to use
+     */
     public static void append_string(final CodeEmitter e,
                                      Type type,
                                      final ArrayDelimiters delims,

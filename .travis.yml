@@ -23,7 +23,7 @@ before_script:
 # Skip default "mvn install" issued by Travis
 install: true
 script:
-  - mvn test -B -V
+  - mvn install -B -V
 
 matrix:
   fast_finish: true

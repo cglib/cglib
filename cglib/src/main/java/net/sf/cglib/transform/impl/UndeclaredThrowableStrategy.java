@@ -25,7 +25,7 @@ import net.sf.cglib.transform.MethodFilterTransformer;
 import net.sf.cglib.transform.TransformingClassGenerator;
 
 /**
- * A {@link GeneratorStrategy} suitable for use with {@link net.sf.cglib.Enhancer} which
+ * A {@link GeneratorStrategy} suitable for use with {@link net.sf.cglib.proxy.Enhancer} which
  * causes all undeclared exceptions thrown from within a proxied method to be wrapped
  * in an alternative exception of your choice.
  */

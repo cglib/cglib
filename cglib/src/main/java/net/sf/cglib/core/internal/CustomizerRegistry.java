@@ -37,6 +37,8 @@ public class CustomizerRegistry {
     
     /**
      * @deprecated Only to keep backward compatibility.
+     * @param customizer customizer to wrap
+     * @return customizer registry with single customizer
      */
     @Deprecated
     public static CustomizerRegistry singleton(Customizer customizer)

@@ -16,9 +16,9 @@
 package net.sf.cglib.core;
 
 /**
- * The <code>GeneratorStrategy</code. is responsible for taking a
+ * The <code>GeneratorStrategy</code>. is responsible for taking a
  * {@link ClassGenerator} and producing a byte array containing the
- * data for the generated <code>Class</code>.  By providing your
+ * data for the generated {@link Class}.  By providing your
  * own strategy you may examine or modify the generated class before
  * it is loaded. Typically this will be accomplished by subclassing
  * {@link DefaultGeneratorStrategy} and overriding the appropriate
@@ -30,6 +30,7 @@ public interface GeneratorStrategy {
      * Generate the class.
      * @param cg a class generator on which you can call {@link ClassGenerator#generateClass}
      * @return a byte array containing the bits of a valid Class
+     * @throws Exception if something goes wrong
      */
     byte[] generate(ClassGenerator cg) throws Exception;
 

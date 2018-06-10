@@ -39,7 +39,7 @@ public class LoadingCache<K, KK, V> {
      * If entry is missing, put {@link FutureTask} first so other competing thread might wait for the result.
      * @param key original key that would be used to load the instance
      * @param cacheKey key that would be used to store the entry in internal map
-     * @param v null or {@link FutureTask<V>}
+     * @param v {@code null} or {@link FutureTask}
      * @return newly created instance
      */
     protected V createEntry(final K key, KK cacheKey, Object v) {

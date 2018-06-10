@@ -56,6 +56,7 @@ public class DefaultNamingPolicy implements NamingPolicy {
     /**
      * Returns a string which is incorporated into every generated class name.
      * By default returns "ByCGLIB"
+     * @return a string which is incorporated into every generated class name
      */
     protected String getTag() {
         return "ByCGLIB";

@@ -18,6 +18,7 @@ public interface FieldTypeCustomizer extends KeyFactoryCustomizer {
      * Computes type of field for storing given parameter
      * @param index parameter index
      * @param type parameter type
+     * @return type of field for storing given parameter
      */
     Type getOutType(int index, Type type);
 }

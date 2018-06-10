@@ -51,7 +51,9 @@ abstract public class Mixin {
      * Helper method to create an interface mixin. For finer control over the
      * generated instance, use a new instance of <code>Mixin</code>
      * instead of this static method.
-     * TODO
+     *
+     * @param delegates objects to delegate
+     * @return an interface mixin
      */
     public static Mixin create(Object[] delegates) {
         Generator gen = new Generator();
@@ -63,7 +65,10 @@ abstract public class Mixin {
      * Helper method to create an interface mixin. For finer control over the
      * generated instance, use a new instance of <code>Mixin</code>
      * instead of this static method.
-     * TODO
+     *
+     * @param interfaces interfaces to mix
+     * @param delegates objects to delegate
+     * @return an interface mixin
      */
     public static Mixin create(Class[] interfaces, Object[] delegates) {
         Generator gen = new Generator();
@@ -78,11 +83,15 @@ abstract public class Mixin {
         return createBean(null, beans);
     
     }
+
     /**
      * Helper method to create a bean mixin. For finer control over the
      * generated instance, use a new instance of <code>Mixin</code>
      * instead of this static method.
-     * TODO
+     *
+     * @param loader class loader to generate class in
+     * @param beans beans to mix
+     * @return a bean mixin
      */
     public static Mixin createBean(ClassLoader loader,Object[] beans) {
         Generator gen = new Generator();

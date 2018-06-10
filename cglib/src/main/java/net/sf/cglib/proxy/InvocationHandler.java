@@ -28,7 +28,14 @@ public interface InvocationHandler
 extends Callback
 {
     /**
-     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object)
+     * Handles invocation of a given method on a given target with given arguments.
+     *
+     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+     * @param proxy method receiver
+     * @param method method being executed
+     * @param args method arguments
+     * @return the result of invocation
+     * @throws Throwable if something goes wrong
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable;
 

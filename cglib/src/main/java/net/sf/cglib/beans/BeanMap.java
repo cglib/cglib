@@ -117,8 +117,10 @@ abstract public class BeanMap implements Map {
         }
 
         /**
-         * Create a new instance of the <code>BeanMap</code>. An existing
+         * Create a new instance of the {@code BeanMap}. An existing
          * generated class will be reused if possible.
+         *
+         * @return a new instance of the {@code BeanMap}
          */
         public BeanMap create() {
             if (beanClass == null)
@@ -187,7 +189,9 @@ abstract public class BeanMap implements Map {
      * Set the property of a bean. This allows a <code>BeanMap</code>
      * to be used statically for multiple beans--the bean instance tied to the
      * map is ignored and the bean passed to this method is used instead.
+     * @param bean bean to update
      * @param key must be a String
+     * @param value value to set
      * @return the old value, if there was one, or null
      */
     abstract public Object put(Object bean, Object key, Object value);

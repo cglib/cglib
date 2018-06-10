@@ -42,11 +42,13 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     /**
      * returns transformation for source class
      * 
-     * @param classInfo
-     *            class information 
-     *            class name := classInfo[ 0 ] 
-     *            super class  name := classInfo[ 1 ]
-     *            interfaces := classInfo[ >1 ]
+     * @param classInfo <pre>{@code
+     * class information
+     * class name := classInfo[ 0 ]
+     * super class  name := classInfo[ 1 ]
+     * interfaces := classInfo[ >1 ]
+     * }</pre>
+     * @return class transformer for source class
      */
     abstract protected ClassTransformer getClassTransformer(String[] classInfo);
 
@@ -72,7 +74,8 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     }
 
     /**
-     * @param file
+     * Transforms given class file.
+     * @param file class file to process
      * @throws Exception
      * @throws FileNotFoundException
      * @throws IOException

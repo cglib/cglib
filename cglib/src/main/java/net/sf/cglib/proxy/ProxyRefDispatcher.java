@@ -26,6 +26,7 @@ public interface ProxyRefDispatcher extends Callback {
      * be dispatched. This method is called for <b>every</b> method invocation.
      * @param proxy a reference to the proxy (generated) object
      * @return an object that can invoke the method
+     * @throws Exception if something goes wrong
      */
     Object loadObject(Object proxy) throws Exception;
 }
