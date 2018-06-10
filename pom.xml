@@ -54,7 +54,13 @@
 
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
-        <asm.version>6.1.1</asm.version>
+        <asm.version>6.2</asm.version>
+        <ant.version>1.10.3</ant.version>
+        <jmh.version>1.21</jmh.version>
+        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
+        <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
+        <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+        <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <java.compiler.argument />
 
         <java.test.compiler.argument>${java.compiler.argument}</java.test.compiler.argument>
@@ -76,6 +82,20 @@
     <!-- P R O F I L E S -->
     <!-- ====================================================================== -->
     <profiles>
+        <profile>
+            <id>java6</id>
+            <activation>
+                <jdk>1.6</jdk>
+            </activation>
+            <properties>
+                <jmh.version>1.16</jmh.version>
+                <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
+                <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
+                <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+                <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
+                <ant.version>1.9.11</ant.version>
+            </properties>
+        </profile>
         <profile>
             <id>java8</id>
             <activation>
@@ -107,7 +127,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <source>${java.version.source}</source>
                         <target>${java.version.target}</target>
@@ -120,7 +140,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.17</version>
+                    <version>2.21.0</version>
                     <configuration>
                         <systemProperties>
                             <property>
@@ -133,7 +153,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>2.17</version>
+                    <version>2.21.0</version>
                     <configuration>
                         <systemProperties>
                             <property>
@@ -146,14 +166,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10</version>
+                    <version>${maven-javadoc-plugin.version}</version>
                     <configuration>
                       <quiet>true</quiet>
                       <detectLinks>false</detectLinks>
                       <detectOfflineLinks>false</detectOfflineLinks>
                       <!--<skip>${skipJavadoc}</skip>-->
                       <use>false</use>
-                      <additionalparam>-Xdoclint:none</additionalparam>
+                      <doclint>none</doclint>
                       <additionalDependencies>
                         <additionalDependency>
                           <groupId>org.ow2.asm</groupId>
@@ -163,7 +183,7 @@
                         <additionalDependency>
                           <groupId>org.apache.ant</groupId>
                           <artifactId>ant</artifactId>
-                          <version>1.9.6</version>
+                          <version>${ant.version}</version>
                         </additionalDependency>
                       </additionalDependencies>
                     </configuration>
@@ -225,7 +245,7 @@
             <dependency>
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
-                <version>1.9.6</version>
+                <version>${ant.version}</version>
                 <optional>true</optional>
             </dependency>
 
