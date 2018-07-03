@@ -38,7 +38,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jarsigner-plugin</artifactId>
-                <version>1.3.2</version>
+                <version>1.4</version>
                 <executions>
                     <execution>
                         <id>sign</id>
