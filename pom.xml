@@ -83,20 +83,6 @@
     <!-- ====================================================================== -->
     <profiles>
         <profile>
-            <id>java6</id>
-            <activation>
-                <jdk>1.6</jdk>
-            </activation>
-            <properties>
-                <jmh.version>1.16</jmh.version>
-                <maven-compiler-plugin.version>3.6.1</maven-compiler-plugin.version>
-                <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
-                <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-                <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
-                <ant.version>1.9.11</ant.version>
-            </properties>
-        </profile>
-        <profile>
             <id>java8</id>
             <activation>
                 <jdk>[1.8,)</jdk>
