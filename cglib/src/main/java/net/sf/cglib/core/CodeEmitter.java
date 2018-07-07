@@ -806,6 +806,7 @@ public class CodeEmitter extends LocalVariablesSorter {
                 break;
             case Type.VOID:
                 aconst_null();
+                // fall through
             default:
                 push(0);
             }
