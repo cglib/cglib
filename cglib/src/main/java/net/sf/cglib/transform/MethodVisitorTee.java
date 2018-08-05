@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.Constants;
 import org.objectweb.asm.*;
 
 public class MethodVisitorTee extends MethodVisitor {
@@ -22,7 +23,7 @@ public class MethodVisitorTee extends MethodVisitor {
     private final MethodVisitor mv2;
     
     public MethodVisitorTee(MethodVisitor mv1, MethodVisitor mv2) {
-	super(Opcodes.ASM6);
+	super(Constants.ASM_API);
 	this.mv1 = mv1;
         this.mv2 = mv2;
     }

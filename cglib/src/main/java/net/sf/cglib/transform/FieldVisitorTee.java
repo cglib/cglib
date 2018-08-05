@@ -15,17 +15,17 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.Constants;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.TypePath;
 
 public class FieldVisitorTee extends FieldVisitor {
     private FieldVisitor fv1, fv2;
     
     public FieldVisitorTee(FieldVisitor fv1, FieldVisitor fv2) {
-	super(Opcodes.ASM6);
+	super(Constants.ASM_API);
 	this.fv1 = fv1;
         this.fv2 = fv2;
     }

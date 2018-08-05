@@ -15,12 +15,12 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.Constants;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 
 public abstract class ClassTransformer extends ClassVisitor {
     public ClassTransformer() {
-	super(Opcodes.ASM6);
+	super(Constants.ASM_API);
     }
     public ClassTransformer(int opcode) {
 	super(opcode);

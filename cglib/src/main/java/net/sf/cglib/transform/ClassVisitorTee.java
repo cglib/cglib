@@ -15,13 +15,14 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.Constants;
 import org.objectweb.asm.*;
 
 public class ClassVisitorTee extends ClassVisitor {
     private ClassVisitor cv1, cv2;
     
     public ClassVisitorTee(ClassVisitor cv1, ClassVisitor cv2) {
-	super(Opcodes.ASM6);
+	super(Constants.ASM_API);
 	this.cv1 = cv1;
         this.cv2 = cv2;
     }

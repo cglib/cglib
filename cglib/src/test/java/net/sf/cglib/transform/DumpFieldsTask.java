@@ -18,6 +18,7 @@ package net.sf.cglib.transform;
 
 import java.io.*;
 
+import net.sf.cglib.core.Constants;
 import org.apache.tools.ant.BuildException;
 import org.objectweb.asm.*;
 
@@ -43,7 +44,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
     }
 
     static class EmptyVisitor extends ClassVisitor {
-	AnnotationVisitor av = new AnnotationVisitor(Opcodes.ASM6) {
+	AnnotationVisitor av = new AnnotationVisitor(Constants.ASM_API) {
 	    public AnnotationVisitor visitAnnotation(
 		    String name, String desc) {
 		return this;
@@ -55,7 +56,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	};
 
 	public EmptyVisitor() {
-	    super(Opcodes.ASM6);
+	    super(Constants.ASM_API);
 	}
 
 	public AnnotationVisitor visitAnnotation(
@@ -66,7 +67,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	public FieldVisitor visitField(
 		int access, String name, String desc,
 		String signature, Object value) {
-	    return new FieldVisitor(Opcodes.ASM6) {
+	    return new FieldVisitor(Constants.ASM_API) {
 		public AnnotationVisitor visitAnnotation(
 			String desc, boolean visible) {
 		    return av;
@@ -78,7 +79,7 @@ public class DumpFieldsTask extends AbstractProcessTask {
 	public MethodVisitor visitMethod(
 		int access, String name, String desc, String signature,
 		String[] exceptions) {
-	    return new MethodVisitor(Opcodes.ASM6) {
+	    return new MethodVisitor(Constants.ASM_API) {
 		public AnnotationVisitor visitAnnotationDefault() {
 		    return av;
 		}

@@ -15,6 +15,7 @@
  */
 package net.sf.cglib.core;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
@@ -22,6 +23,10 @@ import org.objectweb.asm.Type;
  * @version $Id: Constants.java,v 1.21 2006/03/05 02:43:19 herbyderby Exp $
  */
 public interface Constants extends org.objectweb.asm.Opcodes {
+
+    /* Indicates the ASM API version that is used throughout cglib */
+    public static final int ASM_API = Opcodes.ASM6;
+
     public static final Class[] EMPTY_CLASS_ARRAY = {};
     public static final Type[] TYPES_EMPTY = {};
 
