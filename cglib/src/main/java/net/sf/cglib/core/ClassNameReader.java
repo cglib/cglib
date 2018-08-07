@@ -17,7 +17,6 @@ package net.sf.cglib.core;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 
 import java.util.*;
 
@@ -38,7 +37,7 @@ public class ClassNameReader {
     public static String[] getClassInfo(ClassReader r) {
         final List array = new ArrayList();
         try {
-            r.accept(new ClassVisitor(Opcodes.ASM6, null) {
+            r.accept(new ClassVisitor(Constants.ASM_API, null) {
                 public void visit(int version,
                                   int access,
                                   String name,

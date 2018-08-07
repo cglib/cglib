@@ -23,14 +23,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import net.sf.cglib.core.Constants;
 import net.sf.cglib.core.Signature;
 
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -84,7 +81,7 @@ class BridgeMethodResolver {
         private Signature currentMethod = null;
 
         BridgedFinder(Set eligibleMethods, Map resolved) {
-            super(Opcodes.ASM6);
+            super(Constants.ASM_API);
             this.resolved = resolved;
             this.eligibleMethods = eligibleMethods;
         }
@@ -98,7 +95,7 @@ class BridgeMethodResolver {
             Signature sig = new Signature(name, desc);
             if (eligibleMethods.remove(sig)) {
                 currentMethod = sig;
-                return new MethodVisitor(Opcodes.ASM6) {
+                return new MethodVisitor(Constants.ASM_API) {
                     public void visitMethodInsn(int opcode, String owner, String name,
                                                 String desc, boolean itf) {
                         if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {

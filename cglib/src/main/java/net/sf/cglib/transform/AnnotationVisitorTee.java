@@ -15,8 +15,8 @@
  */
 package net.sf.cglib.transform;
 
+import net.sf.cglib.core.Constants;
 import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.Opcodes;
 
 public class AnnotationVisitorTee extends AnnotationVisitor {
     private AnnotationVisitor av1, av2;
@@ -30,7 +30,7 @@ public class AnnotationVisitorTee extends AnnotationVisitor {
     }
 
     public AnnotationVisitorTee(AnnotationVisitor av1, AnnotationVisitor av2) {
-	super(Opcodes.ASM6);
+	super(Constants.ASM_API);
         this.av1 = av1;
         this.av2 = av2;
     }

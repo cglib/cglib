@@ -20,7 +20,6 @@ import net.sf.cglib.transform.ClassTransformer;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.HashMap;
@@ -44,7 +43,7 @@ public class ClassEmitter extends ClassTransformer {
     }
 
     public ClassEmitter() {
-        super(Opcodes.ASM6);
+        super(Constants.ASM_API);
     }
 
     public void setTarget(ClassVisitor cv) {
@@ -148,7 +147,7 @@ public class ClassEmitter extends ClassTransformer {
                                          TypeUtils.toInternalNames(exceptions));
         if (sig.equals(Constants.SIG_STATIC) && !TypeUtils.isInterface(getAccess())) {
             rawStaticInit = v;
-            MethodVisitor wrapped = new MethodVisitor(Opcodes.ASM6, v) {
+            MethodVisitor wrapped = new MethodVisitor(Constants.ASM_API, v) {
                 public void visitMaxs(int maxStack, int maxLocals) {
                     // ignore
                 }
