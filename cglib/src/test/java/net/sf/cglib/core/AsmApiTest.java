@@ -9,28 +9,28 @@ public class AsmApiTest {
 
     @Test
     public void testValue() {
-        assertEquals(Opcodes.ASM6, AsmApi.value());
+        assertEquals(Opcodes.ASM7, AsmApi.value());
     }
 
+    /**
+     * With the release of ASM 7.0 beta, Opcodes.ASM7_EXPERIMENTAL
+     * has been replaced by Opcodes.ASM7 so we simply ignore
+     * the system property and default to the newest stable
+     * version.
+     */
     @Test
-    public void testValueWithSystemPropertyTrue() {
-        int asmApi = setSystemPropertyAndGetValue("true");
-        assertEquals(Opcodes.ASM7_EXPERIMENTAL, asmApi);
+    public void testValueWithAsm7Experimental() {
+        int asmApi = setAsm7ExperimentalAndGetValue("true");
+        assertEquals(Opcodes.ASM7, asmApi);
+
+        asmApi = setAsm7ExperimentalAndGetValue("");
+        assertEquals(Opcodes.ASM7, asmApi);
+
+        asmApi = setAsm7ExperimentalAndGetValue("false");
+        assertEquals(Opcodes.ASM7, asmApi);
     }
 
-    @Test
-    public void testValueWithSystemPropertyEmptyString() {
-        int asmApi = setSystemPropertyAndGetValue("");
-        assertEquals(Opcodes.ASM6, asmApi);
-    }
-
-    @Test
-    public void testValueWithSystemPropertyFalse() {
-        int asmApi = setSystemPropertyAndGetValue("false");
-        assertEquals(Opcodes.ASM6, asmApi);
-    }
-
-    private int setSystemPropertyAndGetValue(String value) {
+    private int setAsm7ExperimentalAndGetValue(String value) {
         String propName = "net.sf.cglib.experimental_asm7";
         System.setProperty(propName, value);
         try {
