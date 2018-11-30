@@ -22,19 +22,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
 import net.sf.cglib.core.Constants;
 import net.sf.cglib.core.Signature;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Uses bytecode reflection to figure out the targets of all bridge methods
- * that use invokespecial, so that we can later rewrite them to use invokevirtual.
- * 
+ * Uses bytecode reflection to figure out the targets of all bridge methods that use invokespecial
+ * and invokeinterface, so that we can later rewrite them to use invokevirtual.
+ *
+ * <p>For interface bridges, using invokesuper will fail since the method being bridged to is in a
+ * superinterface, not a superclass. Starting in Java 8, javac emits default bridge methods in
+ * interfaces, which use invokeinterface to bridge to the target method.
+ *
  * @author sberlin@gmail.com (Sam Berlin)
  */
 class BridgeMethodResolver {
@@ -96,9 +98,11 @@ class BridgeMethodResolver {
             if (eligibleMethods.remove(sig)) {
                 currentMethod = sig;
                 return new MethodVisitor(Constants.ASM_API) {
-                    public void visitMethodInsn(int opcode, String owner, String name,
-                                                String desc, boolean itf) {
-                        if (opcode == Opcodes.INVOKESPECIAL && currentMethod != null) {
+                    public void visitMethodInsn(
+                            int opcode, String owner, String name, String desc, boolean itf) {
+                        if ((opcode == Opcodes.INVOKESPECIAL
+                                        || (itf && opcode == Opcodes.INVOKEINTERFACE))
+                                && currentMethod != null) {
                             Signature target = new Signature(name, desc);
                             // If the target signature is the same as the current,
                             // we shouldn't change our bridge becaues invokespecial

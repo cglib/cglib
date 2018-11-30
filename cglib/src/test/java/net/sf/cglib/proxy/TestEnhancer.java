@@ -40,6 +40,7 @@ import net.sf.cglib.core.NamingPolicy;
 import net.sf.cglib.core.Predicate;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
+import org.junit.Assume;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -1417,6 +1418,161 @@ public class TestEnhancer extends CodeGenTestCase {
     assertEquals(Arrays.asList(Object.class, Number.class), retTypes);
     assertEquals(Arrays.asList(Object.class, String.class), paramTypes);
   }
+
+    public void testInterfaceBridge() throws Exception {
+        // recent versions of javac will generate a synthetic default bridge for f(Object) in B
+
+        // interface A<T> {
+        //     void f(T t);
+        // }
+        // interface B<T extends Number> extends A<T>{
+        //     void f(T t);
+        // }
+
+        // The test relies on Java 8 bytecode for default methods.
+        Assume.assumeTrue(getMajor() >= 8);
+
+        final Map<String, byte[]> classes = new HashMap<String, byte[]>();
+        {
+            ClassWriter classWriter = new ClassWriter(0);
+            classWriter.visit(
+                    Opcodes.V1_8,
+                    Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE | Opcodes.ACC_PUBLIC,
+                    "A",
+                    "<T:Ljava/lang/Object;>Ljava/lang/Object;",
+                    "java/lang/Object",
+                    null);
+            MethodVisitor methodVisitor =
+                    classWriter.visitMethod(
+                            Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+                            "f",
+                            "(Ljava/lang/Object;)V",
+                            "(TT;)V",
+                            null);
+            methodVisitor.visitEnd();
+            classWriter.visitEnd();
+
+            classes.put("A.class", classWriter.toByteArray());
+        }
+
+        {
+            ClassWriter classWriter = new ClassWriter(0);
+            classWriter.visit(
+                    Opcodes.V1_8,
+                    Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE | Opcodes.ACC_PUBLIC,
+                    "B",
+                    "<T:Ljava/lang/Number;>Ljava/lang/Object;LA<TT;>;",
+                    "java/lang/Object",
+                    new String[] {"A"});
+            {
+                MethodVisitor methodVisitor =
+                        classWriter.visitMethod(
+                                Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+                                "f",
+                                "(Ljava/lang/Number;)V",
+                                "(TT;)V",
+                                null);
+                methodVisitor.visitEnd();
+            }
+            {
+                MethodVisitor methodVisitor =
+                        classWriter.visitMethod(
+                                Opcodes.ACC_PUBLIC | Opcodes.ACC_BRIDGE | Opcodes.ACC_SYNTHETIC,
+                                "f",
+                                "(Ljava/lang/Object;)V",
+                                null,
+                                null);
+                methodVisitor.visitCode();
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Number");
+                methodVisitor.visitMethodInsn(
+                        Opcodes.INVOKEINTERFACE, "B", "f", "(Ljava/lang/Number;)V", true);
+                methodVisitor.visitInsn(Opcodes.RETURN);
+                methodVisitor.visitMaxs(2, 2);
+                methodVisitor.visitEnd();
+            }
+            classWriter.visitEnd();
+
+            classes.put("B.class", classWriter.toByteArray());
+        }
+
+        ClassLoader classLoader =
+                new ClassLoader(getClass().getClassLoader()) {
+                    @Override
+                    public InputStream getResourceAsStream(String name) {
+                        InputStream is = super.getResourceAsStream(name);
+                        if (is != null) {
+                            return is;
+                        }
+                        if (classes.containsKey(name)) {
+                            return new ByteArrayInputStream(classes.get(name));
+                        }
+                        return null;
+                    }
+
+                    public Class findClass(String name) throws ClassNotFoundException {
+                        byte[] ba = classes.get(name.replace('.', '/') + ".class");
+                        if (ba != null) {
+                            return defineClass(name, ba, 0, ba.length);
+                        }
+                        throw new ClassNotFoundException(name);
+                    }
+                };
+
+        final List<Class> paramTypes = new ArrayList<Class>();
+
+        Enhancer e = new Enhancer();
+        e.setClassLoader(classLoader);
+        e.setInterfaces(new Class[] {classLoader.loadClass("B")});
+        e.setCallbackFilter(
+                new CallbackFilter() {
+                    public int accept(Method method) {
+                        return method.isBridge() ? 1 : 0;
+                    }
+                });
+        e.setCallbacks(
+                new Callback[] {
+                    new MethodInterceptor() {
+                        public Object intercept(
+                                Object obj, Method method, Object[] args, MethodProxy proxy) {
+                            if (method.getParameterTypes().length > 0) {
+                                paramTypes.add(method.getParameterTypes()[0]);
+                            }
+                            return null;
+                        }
+                    },
+                    NoOp.INSTANCE
+                });
+
+        Object c = e.create();
+
+        for (Method m : classLoader.loadClass("A").getDeclaredMethods()) {
+            if (m.getName().equals("f")) {
+                m.invoke(c, new Object[] {null});
+            }
+        }
+
+        // f(Object)void should bridge to f(Number)void
+        assertEquals(Arrays.asList(Number.class), paramTypes);
+    }
+
+    private static int getMajor() {
+        try {
+            Method versionMethod = Runtime.class.getMethod("version");
+            Object version = versionMethod.invoke(null);
+            return (Integer) version.getClass().getMethod("major").invoke(version);
+        } catch (Exception e) {
+            // continue below
+        }
+
+        int version = (int) Double.parseDouble(System.getProperty("java.class.version"));
+        if (49 <= version && version <= 52) {
+            return version - (49 - 5);
+        }
+        throw new IllegalStateException(
+                "Unknown Java version: " + System.getProperty("java.specification.version"));
+    }
 
     static class ErasedType {}
     static class RetType extends ErasedType {}
