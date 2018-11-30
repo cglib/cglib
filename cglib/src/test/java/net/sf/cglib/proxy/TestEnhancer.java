@@ -40,7 +40,6 @@ import net.sf.cglib.core.NamingPolicy;
 import net.sf.cglib.core.Predicate;
 import net.sf.cglib.core.ReflectUtils;
 import net.sf.cglib.reflect.FastClass;
-import org.junit.Assume;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -1429,8 +1428,10 @@ public class TestEnhancer extends CodeGenTestCase {
         //     void f(T t);
         // }
 
-        // The test relies on Java 8 bytecode for default methods.
-        Assume.assumeTrue(getMajor() >= 8);
+        if (getMajor() < 8) {
+            // The test relies on Java 8 bytecode for default methods.
+            return;
+        }
 
         final Map<String, byte[]> classes = new HashMap<String, byte[]>();
         {
