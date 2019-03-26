@@ -101,6 +101,19 @@ class BulkBeanEmitter extends ClassEmitter {
                     e.aaload(i);
                     e.unbox(setter.getSignature().getArgumentTypes()[0]);
                     e.invoke(setter);
+                    
+                    // fix by wangzx for setters which has returns, such as chained setter
+                    switch(setter.getSignature().getReturnType().getSort()){
+                        case Type.VOID:
+                            break;
+                        case Type.LONG:
+                        case Type.DOUBLE:
+                            e.pop2();
+                            break;
+                        default:
+                            e.pop();
+                            break;
+                    }
                 }
             }
             handler.end();
