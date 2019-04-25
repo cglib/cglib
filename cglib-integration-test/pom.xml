@@ -9,7 +9,7 @@
     <parent>
         <groupId>cglib</groupId>
         <artifactId>cglib-parent</artifactId>
-        <version>3.2.11</version>
+        <version>3.2.12-SNAPSHOT</version>
     </parent>
 
     <!-- ====================================================================== -->
