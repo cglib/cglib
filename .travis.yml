@@ -9,13 +9,13 @@ cache:
 install: true
 
 script:
-  - mvn -Xmx512m -Dgpg.skip=true test -B -V 
+  - mvn -Dgpg.skip=true -B -V  test 
 
 matrix:
   include:
-    - jdk: oraclejdk8
+    - jdk: openjdk8
       env: JDK8
-    - jdk: oraclejdk9
+    - jdk: openjdk9
       env: JDK=9
     - jdk: oraclejdk11
       env: JDK=11
