@@ -9,7 +9,7 @@ cache:
 install: true
 
 script:
-  - mvn test -B -V -Xmx512m -Dgpg.skip=true
+  - mvn -Xmx512m -Dgpg.skip=true test -B -V 
 
 matrix:
   include:
