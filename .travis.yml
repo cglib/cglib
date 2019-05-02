@@ -1,41 +1,29 @@
 sudo: false
 language: java
-before_script:
-  - echo "MAVEN_OPTS='-Xmx512m -Dgpg.skip=true'" > ~/.mavenrc
-  - if [[ "x$JDK" == *'x9'* ]]; then remove_dir_from_path $JAVA_HOME/bin; export JAVA_HOME=/usr/lib/jvm/java-9-oracle; export PATH=$JAVA_HOME/bin:$PATH; java -Xmx32m -version; fi
 
 cache:
   directories:
     - '$HOME/.m2/repository'
-
-before_cache:
-  # No sense in caching current build artifacts
-  rm -rf $HOME/.m2/repository/cglib
-
-before_script:
-  - wget https://archive.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.zip
-  - unzip -qq apache-maven-3.2.5-bin.zip
-  - export M2_HOME="$PWD/apache-maven-3.2.5"
-  - export PATH="$M2_HOME/bin:$PATH"
-  - echo "MAVEN_OPTS='-Xmx512m -Dgpg.skip=true'" > ~/.mavenrc
-  - if [[ "x$JDK" == *'x9'* ]]; then remove_dir_from_path $JAVA_HOME/bin; export JAVA_HOME=/usr/lib/jvm/java-9-oracle; export PATH=$JAVA_HOME/bin:$PATH; java -Xmx32m -version; fi
-
+ 
 # Skip default "mvn install" issued by Travis
 install: true
+
 script:
-  - mvn test -B -V
+  - mvn -Dgpg.skip=true -B -V  test 
 
 matrix:
+  include:
+    - jdk: openjdk8
+      env: JDK8
+    - jdk: openjdk9
+      env: JDK=9
+    - jdk: oraclejdk11
+      env: JDK=11
   fast_finish: true
   allow_failures:
     - env: JDK=9
-  include:
-    - jdk: oraclejdk8
-    - jdk: oraclejdk8
-      addons:
-        apt:
-          packages:
-            - oracle-java9-installer
-      env: JDK=9
-    - jdk: openjdk7
+    - env: JDK=11
 
+branches:
+  only:
+    - master
