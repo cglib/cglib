@@ -849,10 +849,10 @@ public class CodeEmitter extends LocalVariablesSorter {
         Signature sig = method.getSignature();
         if (sig.getName().equals(Constants.CONSTRUCTOR_NAME)) {
             invoke_constructor(type, sig);
-        } else if (TypeUtils.isInterface(classInfo.getModifiers())) {
-            invoke_interface(type, sig);
         } else if (TypeUtils.isStatic(method.getModifiers())) {
             invoke_static(type, sig);
+        } else if (TypeUtils.isInterface(classInfo.getModifiers())) {
+            invoke_interface(type, sig);
         } else {
             invoke_virtual(virtualType, sig);
         }
