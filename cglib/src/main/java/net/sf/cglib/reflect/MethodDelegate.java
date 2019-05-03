@@ -218,7 +218,7 @@ abstract public class MethodDelegate {
 
             ClassEmitter ce = new ClassEmitter(v);
             CodeEmitter e;
-            ce.begin_class(Constants.V1_2,
+            ce.begin_class(Constants.V1_8,
                            Constants.ACC_PUBLIC,
                            getClassName(),
                            METHOD_DELEGATE,

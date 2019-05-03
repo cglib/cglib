@@ -99,7 +99,7 @@ abstract public class BeanCopier
             Type sourceType = Type.getType(source);
             Type targetType = Type.getType(target);
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.V1_2,
+            ce.begin_class(Constants.V1_8,
                            Constants.ACC_PUBLIC,
                            getClassName(),
                            BEAN_COPIER,

@@ -102,7 +102,7 @@ abstract public class MulticastDelegate implements Cloneable {
             final MethodInfo method = ReflectUtils.getMethodInfo(ReflectUtils.findInterfaceMethod(iface));
 
             ClassEmitter ce = new ClassEmitter(cv);
-            ce.begin_class(Constants.V1_2,
+            ce.begin_class(Constants.V1_8,
                            Constants.ACC_PUBLIC,
                            getClassName(),
                            MULTICAST_DELEGATE,

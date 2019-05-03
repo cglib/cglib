@@ -73,7 +73,7 @@ public class ImmutableBean
         public void generateClass(ClassVisitor v) {
             Type targetType = Type.getType(target);
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.V1_2,
+            ce.begin_class(Constants.V1_8,
                            Constants.ACC_PUBLIC,
                            getClassName(),
                            targetType,
