@@ -100,8 +100,8 @@ public class InterfaceMaker extends AbstractClassGenerator
 
     public void generateClass(ClassVisitor v) throws Exception {
         ClassEmitter ce = new ClassEmitter(v);
-        ce.begin_class(Constants.V1_2,
-                       Constants.ACC_PUBLIC | Constants.ACC_INTERFACE,
+        ce.begin_class(Constants.V1_8,
+                       Constants.ACC_PUBLIC | Constants.ACC_INTERFACE | Constants.ACC_ABSTRACT,
                        getClassName(),
                        null,
                        null,

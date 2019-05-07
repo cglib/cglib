@@ -591,7 +591,7 @@ public class Enhancer extends AbstractClassGenerator
 
         ClassEmitter e = new ClassEmitter(v);
         if (currentData == null) {
-        e.begin_class(Constants.V1_2,
+        e.begin_class(Constants.V1_8,
                       Constants.ACC_PUBLIC,
                       getClassName(),
                       Type.getType(sc),
@@ -600,7 +600,7 @@ public class Enhancer extends AbstractClassGenerator
                        TypeUtils.getTypes(interfaces)),
                       Constants.SOURCE_FILE);
         } else {
-            e.begin_class(Constants.V1_2,
+            e.begin_class(Constants.V1_8,
                     Constants.ACC_PUBLIC,
                     getClassName(),
                     null,

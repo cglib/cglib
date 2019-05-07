@@ -37,7 +37,7 @@ class MixinEmitter extends ClassEmitter {
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         super(v);
 
-        begin_class(Constants.V1_2,
+        begin_class(Constants.V1_8,
                     Constants.ACC_PUBLIC,
                     className,
                     MIXIN,

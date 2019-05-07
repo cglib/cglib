@@ -92,7 +92,7 @@ abstract public class ConstructorDelegate {
             }
 
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.V1_2,
+            ce.begin_class(Constants.V1_8,
                            Constants.ACC_PUBLIC,
                            getClassName(),
                            CONSTRUCTOR_DELEGATE,
