@@ -240,10 +240,7 @@ public class ReflectUtils {
         while ((index = className.indexOf("[]", index) + 1) > 0) {
             dimensions++;
         }
-        StringBuffer brackets = new StringBuffer(className.length() - dimensions);
-        for (int i = 0; i < dimensions; i++) {
-            brackets.append('[');
-        }
+        String brackets = getBrackets(dimensions);
         className = className.substring(0, className.length() - 2 * dimensions);
             
         String prefix = (dimensions > 0) ? brackets + "L" : "";
@@ -271,8 +268,17 @@ public class ReflectUtils {
         }
         throw new ClassNotFoundException(save);
     }
-        
-        
+
+    private static String getBrackets(int dimensions) {
+        if (dimensions == 0) {
+            return "";
+        }
+        char[] brackets = new char[dimensions];
+        Arrays.fill(brackets, '[');
+        return new String(brackets);
+    }
+
+
     public static Object newInstance(Class type) {
         return newInstance(type, Constants.EMPTY_CLASS_ARRAY, null);
     }
