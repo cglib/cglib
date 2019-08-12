@@ -14,7 +14,7 @@
     <!-- ====================================================================== -->
     <groupId>cglib</groupId>
     <artifactId>cglib-parent</artifactId>
-    <version>3.3.0</version>
+    <version>3.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Code Generation Library</name>
