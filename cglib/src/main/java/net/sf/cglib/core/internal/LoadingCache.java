@@ -3,6 +3,8 @@ package net.sf.cglib.core.internal;
 import java.util.concurrent.*;
 
 public class LoadingCache<K, KK, V> {
+    private static final int LOADING_TIMEOUT = Integer.getInteger("cglib.loading_cache.timeout", 5);
+
     protected final ConcurrentMap<KK, Object> map;
     protected final Function<K, V> loader;
     protected final Function<K, KK> keyMapper;
@@ -68,15 +70,20 @@ public class LoadingCache<K, KK, V> {
 
         V result;
         try {
-            result = task.get();
+            // Cglib fully initializes class, and its <clinit> might call Cglib APIs thus causing deadlock
+            // See https://github.com/cglib/cglib/issues/120
+            // The workaround is to skip the cache when loading takes too long for some reason
+            result = task.get(LOADING_TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            throw new IllegalStateException("Interrupted while loading cache item", e);
+            throw new IllegalStateException("Interrupted while loading cache item " + cacheKey, e);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException) {
                 throw ((RuntimeException) cause);
             }
-            throw new IllegalStateException("Unable to load cache item", cause);
+            throw new IllegalStateException("Unable to load cache item " + cacheKey, cause);
+        } catch (TimeoutException e) {
+            return loader.apply(key);
         }
         if (creator) {
             map.put(cacheKey, result);
