@@ -46,7 +46,11 @@ public class DebuggingClassWriter extends ClassVisitor {
     }
     
     public DebuggingClassWriter(int flags) {
-	super(Constants.ASM_API, new ClassWriter(flags));
+	super(Constants.ASM_API, new ClassLoaderAwareClassWriter(flags));
+    }
+
+    public void setClassLoader(ClassLoader cl) {
+        ((ClassLoaderAwareClassWriter)this.cv).setClassLoader(cl);
     }
 
     public void visit(int version,
