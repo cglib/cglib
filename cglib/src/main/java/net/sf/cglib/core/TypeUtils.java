@@ -226,20 +226,23 @@ public class TypeUtils {
         if (type.equals("")) {
             return type;
         }
+
+        StringBuilder builder = new StringBuilder();
+        int index = 0;
+        while ((index = type.indexOf("[]", index) + 1) > 0) {
+            builder.append('[');
+        }
+
+        type = type.substring(0, type.length() - builder.length() * 2);
+
         String t = (String)transforms.get(type);
         if (t != null) {
-            return t;
-        } else if (type.indexOf('.') < 0) {
-            return map("java.lang." + type);
+            return builder.append(t).toString();
         } else {
-            StringBuffer sb = new StringBuffer();
-            int index = 0;
-            while ((index = type.indexOf("[]", index) + 1) > 0) {
-                sb.append('[');
+            if (type.indexOf('.') < 0) {
+                type = "java.lang." + type;
             }
-            type = type.substring(0, type.length() - sb.length() * 2);
-            sb.append('L').append(type.replace('.', '/')).append(';');
-            return sb.toString();
+            return builder.append('L').append(type.replace('.', '/')).append(';').toString();
         }
     }
 
