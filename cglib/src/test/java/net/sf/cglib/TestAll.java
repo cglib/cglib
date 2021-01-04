@@ -31,7 +31,7 @@ import net.sf.cglib.util.*;
  */
 public class TestAll extends TestCase {
     
-    public static String DEFAULT_DEBUG_LOACATION = System.getProperty("user.home") + 
+    public static String DEFAULT_DEBUG_LOCATION = System.getProperty("user.home") + 
           System.getProperty("file.separator") + "cglib-debug";
     
     public TestAll(String testName) {
@@ -93,7 +93,7 @@ public class TestAll extends TestCase {
         
        
         if(System.getProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY) ==  null){
-         System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,DEFAULT_DEBUG_LOACATION);
+         System.setProperty(DebuggingClassWriter.DEBUG_LOCATION_PROPERTY,DEFAULT_DEBUG_LOCATION);
         }
         String[] testCaseName = {TestAll.class.getName()};
         junit.textui.TestRunner.main(testCaseName);
