@@ -47,9 +47,25 @@ public class UndeclaredThrowableTransformer extends ClassEmitterTransformer {
         }
         return new CodeEmitter(e) {
             private Block handler;
+            private boolean isConstructor;
+            private boolean fixedConstructorHandler;
             /* init */ {
+                if (Constants.CONSTRUCTOR_NAME.equals(sig.getName())) {
+                    isConstructor = true;
+                }
                 handler = begin_block();
             }
+
+            @Override
+            public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                // fix try catch block start label in constructor. #189
+                if (isConstructor && !fixedConstructorHandler && Constants.CONSTRUCTOR_NAME.equals(name)) {
+                    handler = begin_block();
+                    fixedConstructorHandler = true;
+                }
+            }
+
             public void visitMaxs(int maxStack, int maxLocals) {
                 handler.end();
                 EmitUtils.wrap_undeclared_throwable(this, handler, exceptions, wrapper);
