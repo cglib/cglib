@@ -55,7 +55,7 @@
         <java.version.source>1.5</java.version.source>
         <java.version.target>1.5</java.version.target>
         <asm.version>7.1</asm.version>
-        <ant.version>1.10.3</ant.version>
+        <ant.version>1.10.11</ant.version>
         <jmh.version>1.21</jmh.version>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
