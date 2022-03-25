@@ -24,6 +24,10 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class EmitUtils {
+
+    public static final String CGLIB_PROP_PREFIX="cglib.propFieldPrefix";
+    public static final String CGLIB_PROP_PREFIX_DEFAULT="$cglib_prop_";
+
     private static final Signature CSTRUCT_NULL =
       TypeUtils.parseConstructor("");
     private static final Signature CSTRUCT_THROWABLE =
@@ -73,6 +77,10 @@ public class EmitUtils {
     public static final ArrayDelimiters DEFAULT_DELIMITERS = new ArrayDelimiters("{", ", ", "}");
 
     private EmitUtils() {
+    }
+
+    private static String getPropertyFieldPrefix(){
+        return System.getProperty(CGLIB_PROP_PREFIX, CGLIB_PROP_PREFIX_DEFAULT);
     }
 
     public static void factory_method(ClassEmitter ce, Signature sig) {
@@ -874,7 +882,7 @@ public class EmitUtils {
 
     public static void add_properties(ClassEmitter ce, String[] names, Type[] types) {
         for (int i = 0; i < names.length; i++) {
-            String fieldName = "$cglib_prop_" + names[i];
+            String fieldName =  getPropertyFieldPrefix() + names[i];
             ce.declare_field(Constants.ACC_PRIVATE, fieldName, types[i], null);
             EmitUtils.add_property(ce, names[i], types[i], fieldName);
         }
