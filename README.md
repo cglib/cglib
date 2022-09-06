@@ -14,7 +14,7 @@ Latest Release: https://github.com/cglib/cglib/releases/latest
 All Releases: https://github.com/cglib/cglib/releases
 
 cglib-#.#_#.jar             binary distribution, CGLIB classes only, 
-it must be used to extend cglib classes dependant on ASM API 
+it must be used to extend cglib classes dependent on ASM API 
 
 cglib-nodep-#.#_#.jar       binary distribution, CGLIB and renamed ASM classes, 
 not extendable 
