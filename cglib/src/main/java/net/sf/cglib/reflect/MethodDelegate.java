@@ -64,7 +64,7 @@ import org.objectweb.asm.Type;
  *       }
  *
  *       public int alternateMain( String[] args ) {
- *           for (int i = 0; i < args.length; i++) {
+ *           for (int i = 0; i &lt; args.length; i++) {
  *               System.out.println( args[i] );
  *           }
  *           return args.length;
