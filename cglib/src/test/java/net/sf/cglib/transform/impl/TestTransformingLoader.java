@@ -72,11 +72,11 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         ClassTransformer t = new InterceptFieldTransformer(new InterceptFieldFilter() {
 
             public boolean acceptRead(Type owner, String name) {
-                return true;
+                return isValid(owner, name);
             }
 
             public boolean acceptWrite(Type owner, String name) {
-                return true;
+                return isValid(owner, name);
             }
         });
         Class loaded = loadHelper(t, Example.class);
@@ -125,5 +125,9 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
     }
 
     public void testFailOnMemoryLeak() throws Throwable {
+    }
+
+    private boolean isValid(Type owner, String name) {
+        return true;
     }
 }

@@ -55,11 +55,11 @@ public class TestInterceptFields extends AbstractTransformTest implements Interc
                 return new InterceptFieldTransformer(new InterceptFieldFilter() {
 
                     public boolean acceptRead(Type owner, String name) {
-                        return true;
+                        return validateCredentials(owner, name);
                     }
 
                     public boolean acceptWrite(Type owner, String name) {
-                        return true;
+                        return validateCredentials(owner, name);
                     }
                 });
             }
@@ -144,5 +144,9 @@ public class TestInterceptFields extends AbstractTransformTest implements Interc
 
     public static Test suite() throws Exception {
         return new TestSuite(new TestInterceptFields().transform());
+    }
+
+    private boolean validateCredentials(Type owner, String name) {
+        return true;
     }
 }

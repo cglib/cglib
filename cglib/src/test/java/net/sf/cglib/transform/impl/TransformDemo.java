@@ -86,10 +86,14 @@ public class TransformDemo {
     public static class Filter implements InterceptFieldFilter {
 
         public boolean acceptRead(org.objectweb.asm.Type owner, String name) {
-            return true;
+            return isValid(owner, name);
         }
 
         public boolean acceptWrite(org.objectweb.asm.Type owner, String name) {
+            return isValid(owner, name);
+        }
+
+        private boolean isValid(org.objectweb.asm.Type owner, String name) {
             return true;
         }
     }

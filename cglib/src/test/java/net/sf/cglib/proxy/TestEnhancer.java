@@ -207,7 +207,7 @@ public class TestEnhancer extends CodeGenTestCase {
             enhancer.setCallbackFilter(new CallbackFilter() {
 
                 public int accept(Method method) {
-                    return 0;
+                    return zeroResult(method);
                 }
 
                 @Override
@@ -285,7 +285,7 @@ public class TestEnhancer extends CodeGenTestCase {
             Object advised = eaClassFromCustomClassloader.newInstance();
 
             public int accept(Method method) {
-                return 0;
+                return zeroResult(method);
             }
         };
         // Need to test both orders: "null classloader first" and "null last" just in case
@@ -843,7 +843,7 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setCallbackFilter(new CallbackFilter() {
 
             public int accept(Method method) {
-                return 0;
+                return zeroResult(method);
             }
         });
         e.createClass();
@@ -1058,7 +1058,7 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setCallbackFilter(new CallbackFilter() {
 
             public int accept(Method method) {
-                return method.getDeclaringClass() != Object.class ? 0 : 1;
+                return Get(method);
             }
         });
         e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
@@ -1129,7 +1129,7 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setCallbackFilter(new CallbackFilter() {
 
             public int accept(Method method) {
-                return method.getDeclaringClass() != Object.class ? 0 : 1;
+                return Get(method);
             }
         });
         e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
@@ -1156,7 +1156,7 @@ public class TestEnhancer extends CodeGenTestCase {
         e.setCallbackFilter(new CallbackFilter() {
 
             public int accept(Method method) {
-                return method.getDeclaringClass() != Object.class ? 0 : 1;
+                return Get(method);
             }
         });
         e.setCallbacks(new Callback[] { interceptor, NoOp.INSTANCE });
@@ -1241,22 +1241,11 @@ public class TestEnhancer extends CodeGenTestCase {
 
             @Override
             public InputStream getResourceAsStream(String name) {
-                InputStream is = super.getResourceAsStream(name);
-                if (is != null) {
-                    return is;
-                }
-                if (classes.containsKey(name)) {
-                    return new ByteArrayInputStream(classes.get(name));
-                }
-                return null;
+                return getResourceOrByteArrayInputStream(name);
             }
 
             public Class findClass(String name) throws ClassNotFoundException {
-                byte[] ba = classes.get(name.replace('.', '/') + ".class");
-                if (ba != null) {
-                    return defineClass(name, ba, 0, ba.length);
-                }
-                throw new ClassNotFoundException(name);
+                return getDefinedClassOrThrow(name);
             }
         };
         List<Class> retTypes = new ArrayList<Class>();
@@ -1323,22 +1312,11 @@ public class TestEnhancer extends CodeGenTestCase {
 
             @Override
             public InputStream getResourceAsStream(String name) {
-                InputStream is = super.getResourceAsStream(name);
-                if (is != null) {
-                    return is;
-                }
-                if (classes.containsKey(name)) {
-                    return new ByteArrayInputStream(classes.get(name));
-                }
-                return null;
+                return getResourceOrByteArrayInputStream(name);
             }
 
             public Class findClass(String name) throws ClassNotFoundException {
-                byte[] ba = classes.get(name.replace('.', '/') + ".class");
-                if (ba != null) {
-                    return defineClass(name, ba, 0, ba.length);
-                }
-                throw new ClassNotFoundException(name);
+                return getDefinedClassOrThrow(name);
             }
         };
         final List<Class> paramTypes = new ArrayList<Class>();
@@ -1398,7 +1376,7 @@ public class TestEnhancer extends CodeGenTestCase {
 
         // Check narrowing return value & parameters
         public T aMethod(T t) {
-            return null;
+            return getSomethingOrNull(t);
         }
 
         // Check void return value
@@ -1412,6 +1390,11 @@ public class TestEnhancer extends CodeGenTestCase {
 
         // Check widening return value
         public RetType widenReturn(T t) {
+            return getSomethingOrNull(t);
+        }
+
+        // Check narrowing return value & parameters
+        private T getSomethingOrNull(T t) {
             return null;
         }
     }
@@ -1505,5 +1488,32 @@ public class TestEnhancer extends CodeGenTestCase {
             }
             return proxy.invokeSuper(obj, args);
         }
+    }
+
+    private int zeroResult(Method method) {
+        return 0;
+    }
+
+    private int Get(Method method) {
+        return method.getDeclaringClass() != Object.class ? 0 : 1;
+    }
+
+    private InputStream getResourceOrByteArrayInputStream(String name) {
+        InputStream is = super.getResourceAsStream(name);
+        if (is != null) {
+            return is;
+        }
+        if (classes.containsKey(name)) {
+            return new ByteArrayInputStream(classes.get(name));
+        }
+        return null;
+    }
+
+    private Class getDefinedClassOrThrow(String name) throws ClassNotFoundException {
+        byte[] ba = classes.get(name.replace('.', '/') + ".class");
+        if (ba != null) {
+            return defineClass(name, ba, 0, ba.length);
+        }
+        throw new ClassNotFoundException(name);
     }
 }

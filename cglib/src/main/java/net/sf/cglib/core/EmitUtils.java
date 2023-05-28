@@ -197,7 +197,7 @@ public class EmitUtils {
             }
 
             public void processDefault() {
-                e.goTo(def);
+                navigateToTarget();
             }
         });
         e.mark(def);
@@ -230,7 +230,7 @@ public class EmitUtils {
             }
 
             public void processDefault() {
-                e.goTo(def);
+                navigateToTarget();
             }
         });
     }
@@ -729,7 +729,7 @@ public class EmitUtils {
                     }
 
                     public void processDefault() throws Exception {
-                        e.goTo(def);
+                        navigateToTarget();
                     }
                 });
             } else {
@@ -765,7 +765,7 @@ public class EmitUtils {
             }
 
             public void processDefault() throws Exception {
-                e.goTo(def);
+                navigateToTarget();
             }
         });
     }
@@ -823,7 +823,7 @@ public class EmitUtils {
                     }
 
                     public void processDefault() throws Exception {
-                        e.goTo(def);
+                        navigateToTarget();
                     }
                 });
             }
@@ -911,5 +911,9 @@ public class EmitUtils {
 
     public static CodeEmitter begin_method(ClassEmitter e, MethodInfo method, int access) {
         return e.begin_method(access, method.getSignature(), method.getExceptionTypes());
+    }
+
+    private void navigateToTarget() {
+        e.goTo(def);
     }
 }

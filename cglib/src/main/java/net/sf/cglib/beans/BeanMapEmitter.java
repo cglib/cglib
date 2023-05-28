@@ -109,8 +109,7 @@ class BeanMapEmitter extends ClassEmitter {
             }
 
             public void processDefault() {
-                e.aconst_null();
-                e.return_value();
+                NoneOfTheseMethods();
             }
         });
         e.end_method();
@@ -184,10 +183,14 @@ class BeanMapEmitter extends ClassEmitter {
             }
 
             public void processDefault() {
-                e.aconst_null();
-                e.return_value();
+                NoneOfTheseMethods();
             }
         });
         e.end_method();
+    }
+
+    private void NoneOfTheseMethods() {
+        e.aconst_null();
+        e.return_value();
     }
 }

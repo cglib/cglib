@@ -103,7 +103,7 @@ public class TestProxy extends CodeGenTestCase {
         InvocationHandler handler = new InvocationHandler() {
 
             public Object invoke(Object o, Method method, Object[] args) throws Exception {
-                throw new Exception("test!");
+                return nameMethodThrowException(o, method, args);
             }
         };
         Map proxyMap = (Map) Proxy.newProxyInstance(TestProxy.class.getClassLoader(), new Class[] { Map.class }, handler);
@@ -116,7 +116,7 @@ public class TestProxy extends CodeGenTestCase {
         InvocationHandler handler = new InvocationHandler() {
 
             public Object invoke(Object o, Method method, Object[] args) throws Exception {
-                throw new Exception("test!");
+                return nameMethodThrowException(o, method, args);
             }
         };
         Map proxyMap = (Map) Proxy.newProxyInstance(TestProxy.class.getClassLoader(), new Class[] { Map.class }, handler);
@@ -164,9 +164,13 @@ public class TestProxy extends CodeGenTestCase {
         InvocationHandler handler = new InvocationHandler() {
 
             public Object invoke(Object o, Method method, Object[] args) throws Exception {
-                throw new Exception("test!");
+                return nameMethodThrowException(o, method, args);
             }
         };
         Proxy.newProxyInstance(loader, new Class[] { Map.class }, handler);
+    }
+
+    private Object nameMethodThrowException(Object o, Method method, Object[] args) throws Exception {
+        throw new Exception("test!");
     }
 }

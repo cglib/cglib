@@ -51,16 +51,20 @@ public class FlightRecorderProfiler implements ExternalProfiler {
 
     @Override
     public boolean allowPrintOut() {
-        return true;
+        return isValid();
     }
 
     @Override
     public boolean allowPrintErr() {
-        return true;
+        return isValid();
     }
 
     @Override
     public String getDescription() {
         return "Collects Java Flight Recorder profile";
+    }
+
+    private boolean isValid() {
+        return true;
     }
 }

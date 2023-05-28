@@ -61,14 +61,14 @@ public class DumpFieldsTask extends AbstractProcessTask {
         }
 
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-            return av;
+            return getAverageValue(desc, visible);
         }
 
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
             return new FieldVisitor(Constants.ASM_API) {
 
                 public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                    return av;
+                    return getAverageValue(desc, visible);
                 }
             };
         }
@@ -82,13 +82,17 @@ public class DumpFieldsTask extends AbstractProcessTask {
                 }
 
                 public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-                    return av;
+                    return getAverageValue(desc, visible);
                 }
 
                 public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
                     return av;
                 }
             };
+        }
+
+        private AnnotationVisitor getAverageValue(String desc, boolean visible) {
+            return av;
         }
     }
 
