@@ -23,14 +23,12 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-
 import net.sf.cglib.core.KeyFactory;
 import net.sf.cglib.core.Signature;
 import net.sf.cglib.proxy.*;
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.reflect.FastClass;
-
 import junit.framework.*;
 
 /**
@@ -38,13 +36,10 @@ import junit.framework.*;
  * @version $Id: CodeGenTestCase.java,v 1.10 2012/07/27 16:02:49 baliuka Exp $
  */
 abstract public class CodeGenTestCase extends TestCase {
+
     public CodeGenTestCase(String testName) {
         super(testName);
     }
-    
-    public   abstract void perform(ClassLoader loader)throws Throwable;
-   
-    
-    
-}
 
+    public abstract void perform(ClassLoader loader) throws Throwable;
+}

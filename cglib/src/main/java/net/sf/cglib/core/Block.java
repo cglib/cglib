@@ -17,10 +17,12 @@ package net.sf.cglib.core;
 
 import org.objectweb.asm.Label;
 
-public class Block
-{
+public class Block {
+
     private CodeEmitter e;
+
     private Label start;
+
     private Label end;
 
     public Block(CodeEmitter e) {
@@ -38,7 +40,7 @@ public class Block
         }
         end = e.mark();
     }
-    
+
     public Label getStart() {
         return start;
     }

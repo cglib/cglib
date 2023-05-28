@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.zip.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import net.sf.cglib.core.*;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.BuildException;
@@ -29,6 +28,7 @@ import org.apache.tools.ant.ProjectComponent;
 import org.objectweb.asm.*;
 
 abstract public class AbstractTransformTask extends AbstractProcessTask {
+
     private static final int ZIP_MAGIC = 0x504B0304;
 
     private static final int CLASS_MAGIC = 0xCAFEBABE;
@@ -41,10 +41,10 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
 
     /**
      * returns transformation for source class
-     * 
+     *
      * @param classInfo
-     *            class information 
-     *            class name := classInfo[ 0 ] 
+     *            class information
+     *            class name := classInfo[ 0 ]
      *            super class  name := classInfo[ 1 ]
      *            interfaces := classInfo[ >1 ]
      */
@@ -55,19 +55,12 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     }
 
     protected void processFile(File file) throws Exception {
-
         if (isClassFile(file)) {
-
             processClassFile(file);
-
         } else if (isJarFile(file)) {
-
             processJarFile(file);
-
         } else {
-            
             log("ignoring " + file.toURI(), Project.MSG_WARN);
-            
         }
     }
 
@@ -78,31 +71,23 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
      * @throws IOException
      * @throws MalformedURLException
      */
-    private void processClassFile(File file) throws Exception,
-            FileNotFoundException, IOException, MalformedURLException {
-
+    private void processClassFile(File file) throws Exception, FileNotFoundException, IOException, MalformedURLException {
         ClassReader reader = getClassReader(file);
-        String name[] = ClassNameReader.getClassInfo(reader);
-        DebuggingClassWriter w =
-        	new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
+        String[] name = ClassNameReader.getClassInfo(reader);
+        DebuggingClassWriter w = new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
-
             if (verbose) {
                 log("processing " + file.toURI());
             }
-            new TransformingClassGenerator(new ClassReaderGenerator(
-                    getClassReader(file), attributes(), getFlags()), t)
-                    .generateClass(w);
+            new TransformingClassGenerator(new ClassReaderGenerator(getClassReader(file), attributes(), getFlags()), t).generateClass(w);
             FileOutputStream fos = new FileOutputStream(file);
             try {
                 fos.write(w.toByteArray());
             } finally {
                 fos.close();
             }
-
         }
-
     }
 
     protected int getFlags() {
@@ -117,99 +102,69 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         } finally {
             in.close();
         }
-
     }
 
     protected boolean isClassFile(File file) throws IOException {
-
         return checkMagic(file, CLASS_MAGIC);
-
     }
 
     protected void processJarFile(File file) throws Exception {
-
         if (verbose) {
             log("processing " + file.toURI());
         }
-        
-        File tempFile = File.createTempFile(file.getName(), null, new File(file
-                .getAbsoluteFile().getParent()));
-        try{
-            
+        File tempFile = File.createTempFile(file.getName(), null, new File(file.getAbsoluteFile().getParent()));
+        try {
             ZipInputStream zip = new ZipInputStream(new FileInputStream(file));
             try {
                 FileOutputStream fout = new FileOutputStream(tempFile);
-                try{
-                 ZipOutputStream out = new ZipOutputStream(fout);
-                                
+                try {
+                    ZipOutputStream out = new ZipOutputStream(fout);
                     ZipEntry entry;
                     while ((entry = zip.getNextEntry()) != null) {
-                        
-                        
-                        byte bytes[] = getBytes(zip);
-                        
+                        byte[] bytes = getBytes(zip);
                         if (!entry.isDirectory()) {
-                            
-                            DataInputStream din = new DataInputStream(
-                                              new ByteArrayInputStream(bytes)
-                                            );
-                            
+                            DataInputStream din = new DataInputStream(new ByteArrayInputStream(bytes));
                             if (din.readInt() == CLASS_MAGIC) {
-                                
                                 bytes = process(bytes);
-                                                        
                             } else {
                                 if (verbose) {
-                                 log("ignoring " + entry.toString());
+                                    log("ignoring " + entry.toString());
                                 }
                             }
                         }
-                       
                         ZipEntry outEntry = new ZipEntry(entry.getName());
                         outEntry.setMethod(entry.getMethod());
                         outEntry.setComment(entry.getComment());
                         outEntry.setSize(bytes.length);
-                        
-                        
-                        if(outEntry.getMethod() == ZipEntry.STORED){
+                        if (outEntry.getMethod() == ZipEntry.STORED) {
                             CRC32 crc = new CRC32();
                             crc.update(bytes);
-                            outEntry.setCrc( crc.getValue() );
+                            outEntry.setCrc(crc.getValue());
                             outEntry.setCompressedSize(bytes.length);
                         }
                         out.putNextEntry(outEntry);
                         out.write(bytes);
                         out.closeEntry();
                         zip.closeEntry();
-                        
                     }
-                    out.close(); 
-                }finally{
-                 fout.close();    
-                } 
+                    out.close();
+                } finally {
+                    fout.close();
+                }
             } finally {
                 zip.close();
             }
-            
-            
-            if(file.delete()){
-                
+            if (file.delete()) {
                 File newFile = new File(tempFile.getAbsolutePath());
-                
-                if(!newFile.renameTo(file)){
-                    throw new IOException("can not rename " + tempFile + " to " + file);   
+                if (!newFile.renameTo(file)) {
+                    throw new IOException("can not rename " + tempFile + " to " + file);
                 }
-                
-            }else{
+            } else {
                 throw new IOException("can not delete " + file);
             }
-            
-        }finally{
-            
+        } finally {
             tempFile.delete();
-            
         }
-        
     }
 
     /**
@@ -219,19 +174,15 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
      * @throws Exception
      */
     private byte[] process(byte[] bytes) throws Exception {
-
         ClassReader reader = new ClassReader(new ByteArrayInputStream(bytes));
-        String name[] = ClassNameReader.getClassInfo(reader);
-        DebuggingClassWriter w =
-        	new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
+        String[] name = ClassNameReader.getClassInfo(reader);
+        DebuggingClassWriter w = new DebuggingClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassTransformer t = getClassTransformer(name);
         if (t != null) {
             if (verbose) {
                 log("processing " + name[0]);
             }
-            new TransformingClassGenerator(new ClassReaderGenerator(
-                    new ClassReader(new ByteArrayInputStream(bytes)),
-                    attributes(), getFlags()), t).generateClass(w);
+            new TransformingClassGenerator(new ClassReaderGenerator(new ClassReader(new ByteArrayInputStream(bytes)), attributes(), getFlags()), t).generateClass(w);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             out.write(w.toByteArray());
             return out.toByteArray();
@@ -245,7 +196,6 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
      * @throws IOException
      */
     private byte[] getBytes(ZipInputStream zip) throws IOException {
-
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         InputStream in = new BufferedInputStream(zip);
         int b;
@@ -259,7 +209,7 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
         DataInputStream in = new DataInputStream(new FileInputStream(file));
         try {
             int m = in.readInt();
-            return magic == m; 
+            return magic == m;
         } finally {
             in.close();
         }
@@ -268,5 +218,4 @@ abstract public class AbstractTransformTask extends AbstractProcessTask {
     protected boolean isJarFile(File file) throws IOException {
         return checkMagic(file, ZIP_MAGIC);
     }
-
 }

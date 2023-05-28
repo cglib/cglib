@@ -23,36 +23,40 @@ import java.util.*;
  * @version $Id: TestBeanMapProxy.java,v 1.3 2004/06/24 21:15:17 herbyderby Exp $
  */
 public class TestBeanMapProxy extends net.sf.cglib.CodeGenTestCase {
+
     public void testBeanMap() throws Exception {
-        HashMap identity = new HashMap() {}; // use anonymous class for correct class loader
-        Person person = (Person)BeanMapProxy.newInstance(identity, new Class[]{ Person.class });
+        // use anonymous class for correct class loader
+        HashMap identity = new HashMap() {
+        };
+        Person person = (Person) BeanMapProxy.newInstance(identity, new Class[] { Person.class });
         person.setName("Chris");
         assertTrue("Chris".equals(person.getName()));
         assertTrue("Chris".equals(identity.get("Name")));
     }
 
-   public interface Person {
+    public interface Person {
+
         public String getName();
+
         public void setName(String name);
     }
 
     public TestBeanMapProxy(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestBeanMapProxy.class);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
-      //nothing to test at this time
+        //nothing to test at this time
     }
-    
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

@@ -46,9 +46,11 @@ import org.objectweb.asm.ClassVisitor;
  * @author Chris Nokleberg
  */
 abstract public class ParallelSorter extends SorterTemplate {
+
     protected Object[] a;
+
     private Comparer comparer;
-    
+
     protected ParallelSorter() {
     }
 
@@ -69,7 +71,7 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     private int len() {
-        return ((Object[])a[0]).length;
+        return ((Object[]) a[0]).length;
     }
 
     /**
@@ -149,27 +151,27 @@ abstract public class ParallelSorter extends SorterTemplate {
         chooseComparer(index, cmp);
         super.mergeSort(lo, hi - 1);
     }
-    
+
     private void chooseComparer(int index, Comparator cmp) {
         Object array = a[index];
         Class type = array.getClass().getComponentType();
         if (type.equals(Integer.TYPE)) {
-            comparer = new IntComparer((int[])array);
+            comparer = new IntComparer((int[]) array);
         } else if (type.equals(Long.TYPE)) {
-            comparer = new LongComparer((long[])array);
+            comparer = new LongComparer((long[]) array);
         } else if (type.equals(Double.TYPE)) {
-            comparer = new DoubleComparer((double[])array);
+            comparer = new DoubleComparer((double[]) array);
         } else if (type.equals(Float.TYPE)) {
-            comparer = new FloatComparer((float[])array);
+            comparer = new FloatComparer((float[]) array);
         } else if (type.equals(Short.TYPE)) {
-            comparer = new ShortComparer((short[])array);
+            comparer = new ShortComparer((short[]) array);
         } else if (type.equals(Byte.TYPE)) {
-            comparer = new ByteComparer((byte[])array);
+            comparer = new ByteComparer((byte[]) array);
         } else if (cmp != null) {
-            comparer = new ComparatorComparer((Object[])array, cmp);
+            comparer = new ComparatorComparer((Object[]) array, cmp);
         } else {
-            comparer = new ObjectComparer((Object[])array);
-        } 
+            comparer = new ObjectComparer((Object[]) array);
+        }
     }
 
     protected int compare(int i, int j) {
@@ -177,11 +179,14 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     interface Comparer {
+
         int compare(int i, int j);
     }
 
     static class ComparatorComparer implements Comparer {
+
         private Object[] a;
+
         private Comparator cmp;
 
         public ComparatorComparer(Object[] a, Comparator cmp) {
@@ -193,24 +198,41 @@ abstract public class ParallelSorter extends SorterTemplate {
             return cmp.compare(a[i], a[j]);
         }
     }
-    
+
     static class ObjectComparer implements Comparer {
+
         private Object[] a;
-        public ObjectComparer(Object[] a) { this.a = a; }
+
+        public ObjectComparer(Object[] a) {
+            this.a = a;
+        }
+
         public int compare(int i, int j) {
-            return ((Comparable)a[i]).compareTo(a[j]);
+            return ((Comparable) a[i]).compareTo(a[j]);
         }
     }
 
     static class IntComparer implements Comparer {
+
         private int[] a;
-        public IntComparer(int[] a) { this.a = a; }
-        public int compare(int i, int j) { return a[i] - a[j]; }
+
+        public IntComparer(int[] a) {
+            this.a = a;
+        }
+
+        public int compare(int i, int j) {
+            return a[i] - a[j];
+        }
     }
 
     static class LongComparer implements Comparer {
+
         private long[] a;
-        public LongComparer(long[] a) { this.a = a; }
+
+        public LongComparer(long[] a) {
+            this.a = a;
+        }
+
         public int compare(int i, int j) {
             long vi = a[i];
             long vj = a[j];
@@ -219,18 +241,28 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     static class FloatComparer implements Comparer {
+
         private float[] a;
-        public FloatComparer(float[] a) { this.a = a; }
+
+        public FloatComparer(float[] a) {
+            this.a = a;
+        }
+
         public int compare(int i, int j) {
             float vi = a[i];
             float vj = a[j];
             return (vi == vj) ? 0 : (vi > vj) ? 1 : -1;
         }
     }
-    
+
     static class DoubleComparer implements Comparer {
+
         private double[] a;
-        public DoubleComparer(double[] a) { this.a = a; }
+
+        public DoubleComparer(double[] a) {
+            this.a = a;
+        }
+
         public int compare(int i, int j) {
             double vi = a[i];
             double vj = a[j];
@@ -239,18 +271,33 @@ abstract public class ParallelSorter extends SorterTemplate {
     }
 
     static class ShortComparer implements Comparer {
+
         private short[] a;
-        public ShortComparer(short[] a) { this.a = a; }
-        public int compare(int i, int j) { return a[i] - a[j]; }
+
+        public ShortComparer(short[] a) {
+            this.a = a;
+        }
+
+        public int compare(int i, int j) {
+            return a[i] - a[j];
+        }
     }
 
     static class ByteComparer implements Comparer {
+
         private byte[] a;
-        public ByteComparer(byte[] a) { this.a = a; }
-        public int compare(int i, int j) { return a[i] - a[j]; }
+
+        public ByteComparer(byte[] a) {
+            this.a = a;
+        }
+
+        public int compare(int i, int j) {
+            return a[i] - a[j];
+        }
     }
 
     public static class Generator extends AbstractClassGenerator {
+
         private static final Source SOURCE = new Source(ParallelSorter.class.getName());
 
         private Object[] arrays;
@@ -260,7 +307,8 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
 
         protected ClassLoader getDefaultClassLoader() {
-            return null; // TODO
+            // TODO
+            return null;
         }
 
         public void setArrays(Object[] arrays) {
@@ -268,7 +316,7 @@ abstract public class ParallelSorter extends SorterTemplate {
         }
 
         public ParallelSorter create() {
-            return (ParallelSorter)super.create(ClassesKey.create(arrays));
+            return (ParallelSorter) super.create(ClassesKey.create(arrays));
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
@@ -282,13 +330,13 @@ abstract public class ParallelSorter extends SorterTemplate {
             }
             new ParallelSorterEmitter(v, getClassName(), arrays);
         }
-        
+
         protected Object firstInstance(Class type) {
-            return ((ParallelSorter)ReflectUtils.newInstance(type)).newInstance(arrays);
+            return ((ParallelSorter) ReflectUtils.newInstance(type)).newInstance(arrays);
         }
 
         protected Object nextInstance(Object instance) {
-            return ((ParallelSorter)instance).newInstance(arrays);
+            return ((ParallelSorter) instance).newInstance(arrays);
         }
     }
 }

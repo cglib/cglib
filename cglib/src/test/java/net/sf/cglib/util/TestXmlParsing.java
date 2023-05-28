@@ -19,105 +19,102 @@ import net.sf.cglib.CodeGenTestCase;
 import junit.framework.*;
 
 public class TestXmlParsing extends CodeGenTestCase {
+
     private static final String ATTRIBUTE_STR = "attribute";
+
     private static final String ATTRIBUTE_DIRECTIVE_STR = "directive.attribute";
+
     private static final String BODY_STR = "body";
+
     private static final String DECLARATION_STR = "declaration";
+
     private static final String DOBODY_STR = "doBody";
+
     private static final String ELEMENT_STR = "element";
+
     private static final String FALLBACK_STR = "fallback";
+
     private static final String FORWARD_STR = "forward";
+
     private static final String GET_PROPERTY_STR = "getProperty";
+
     private static final String INCLUDE_STR = "include";
+
     private static final String INCLUDE_DIRECTIVE_STR = "directive.include";
+
     private static final String INVOKE_STR = "invoke";
+
     private static final String OUTPUT_STR = "output";
+
     private static final String PAGE_DIRECTIVE_STR = "directive.page";
+
     private static final String PARAMS_STR = "params";
+
     private static final String PARAM_STR = "param";
+
     private static final String PLUGIN_STR = "plugin";
+
     private static final String ROOT_STR = "root";
+
     private static final String SET_PROPERTY_STR = "setProperty";
+
     private static final String TAG_DIRECTIVE_STR = "directive.tag";
+
     private static final String TEXT_STR = "text";
+
     private static final String USE_BEAN_STR = "useBean";
+
     private static final String VARIABLE_DIRECTIVE_STR = "variable";
 
     private static final int ATTRIBUTE_IDX = 0;
+
     private static final int ATTRIBUTE_DIRECTIVE_IDX = 1;
+
     private static final int BODY_IDX = 2;
+
     private static final int DECLARATION_IDX = 3;
+
     private static final int DOBODY_IDX = 4;
+
     private static final int ELEMENT_IDX = 5;
+
     private static final int FALLBACK_IDX = 6;
+
     private static final int FORWARD_IDX = 7;
+
     private static final int GET_PROPERTY_IDX = 8;
+
     private static final int INCLUDE_IDX = 9;
+
     private static final int INCLUDE_DIRECTIVE_IDX = 10;
+
     private static final int INVOKE_IDX = 11;
+
     private static final int OUTPUT_IDX = 12;
+
     private static final int PAGE_DIRECTIVE_IDX = 13;
+
     private static final int PARAMS_IDX = 14;
+
     private static final int PARAM_IDX = 15;
+
     private static final int PLUGIN_IDX = 16;
+
     private static final int ROOT_IDX = 17;
+
     private static final int SET_PROPERTY_IDX = 18;
+
     private static final int TAG_DIRECTIVE_IDX = 19;
+
     private static final int TEXT_IDX = 20;
+
     private static final int USE_BEAN_IDX = 21;
+
     private static final int VARIABLE_DIRECTIVE_IDX = 22;
 
-    private static final String[] M1 = {
-        ATTRIBUTE_STR,
-        ATTRIBUTE_DIRECTIVE_STR,
-        BODY_STR,
-        DECLARATION_STR,
-        DOBODY_STR,
-        ELEMENT_STR,
-        FALLBACK_STR,
-        FORWARD_STR,
-        GET_PROPERTY_STR,
-        INCLUDE_STR,
-        INCLUDE_DIRECTIVE_STR,
-        INVOKE_STR,
-        OUTPUT_STR,
-        PAGE_DIRECTIVE_STR,
-        PARAMS_STR,
-        PARAM_STR,
-        PLUGIN_STR,
-        ROOT_STR,
-        SET_PROPERTY_STR,
-        TAG_DIRECTIVE_STR,
-        TEXT_STR,
-        USE_BEAN_STR,
-        VARIABLE_DIRECTIVE_STR
-    };
+    private static final String[] M1 = { ATTRIBUTE_STR, ATTRIBUTE_DIRECTIVE_STR, BODY_STR, DECLARATION_STR, DOBODY_STR, ELEMENT_STR, FALLBACK_STR, FORWARD_STR, GET_PROPERTY_STR, INCLUDE_STR, INCLUDE_DIRECTIVE_STR, INVOKE_STR, OUTPUT_STR, PAGE_DIRECTIVE_STR, PARAMS_STR, PARAM_STR, PLUGIN_STR, ROOT_STR, SET_PROPERTY_STR, TAG_DIRECTIVE_STR, TEXT_STR, USE_BEAN_STR, VARIABLE_DIRECTIVE_STR };
 
-    private static final int[] M2 = {
-        ATTRIBUTE_IDX,
-        ATTRIBUTE_DIRECTIVE_IDX,
-        BODY_IDX,
-        DECLARATION_IDX,
-        DOBODY_IDX,
-        ELEMENT_IDX,
-        FALLBACK_IDX,
-        FORWARD_IDX,
-        GET_PROPERTY_IDX,
-        INCLUDE_IDX,
-        INCLUDE_DIRECTIVE_IDX,
-        INVOKE_IDX,
-        OUTPUT_IDX,
-        PAGE_DIRECTIVE_IDX,
-        PARAMS_IDX,
-        PARAM_IDX,
-        PLUGIN_IDX,
-        ROOT_IDX,
-        SET_PROPERTY_IDX,
-        TAG_DIRECTIVE_IDX,
-        TEXT_IDX,
-        USE_BEAN_IDX,
-        VARIABLE_DIRECTIVE_IDX
-    };
+    private static final int[] M2 = { ATTRIBUTE_IDX, ATTRIBUTE_DIRECTIVE_IDX, BODY_IDX, DECLARATION_IDX, DOBODY_IDX, ELEMENT_IDX, FALLBACK_IDX, FORWARD_IDX, GET_PROPERTY_IDX, INCLUDE_IDX, INCLUDE_DIRECTIVE_IDX, INVOKE_IDX, OUTPUT_IDX, PAGE_DIRECTIVE_IDX, PARAMS_IDX, PARAM_IDX, PLUGIN_IDX, ROOT_IDX, SET_PROPERTY_IDX, TAG_DIRECTIVE_IDX, TEXT_IDX, USE_BEAN_IDX, VARIABLE_DIRECTIVE_IDX };
 
     private static final StringSwitcher SWITCHER = StringSwitcher.create(M1, M2, true);
 
@@ -175,7 +172,7 @@ public class TestXmlParsing extends CodeGenTestCase {
         }
         return -1;
     }
-    
+
     public int elseIf(String s) {
         if (s.equals(ATTRIBUTE_STR)) {
             return ATTRIBUTE_IDX;
@@ -230,11 +227,10 @@ public class TestXmlParsing extends CodeGenTestCase {
     public void testStartElement() throws Throwable {
         int numWords = 10000;
         int reps = 1000;
-
         String[] words = new String[numWords];
         String[] interned = new String[numWords];
         for (int i = 0; i < words.length; i++) {
-            interned[i] = M1[(int)(Math.random() * M1.length)].intern();
+            interned[i] = M1[(int) (Math.random() * M1.length)].intern();
             words[i] = new String(interned[i]);
         }
         long total1 = 0;
@@ -251,7 +247,6 @@ public class TestXmlParsing extends CodeGenTestCase {
         if (total1 != total2 || total1 != total3) {
             fail("totals are not equal");
         }
-
         long t0 = System.currentTimeMillis();
         for (int i = 0; i < reps; i++) {
             for (int j = 0; j < numWords; j++) {
@@ -271,7 +266,6 @@ public class TestXmlParsing extends CodeGenTestCase {
             }
         }
         long t3 = System.currentTimeMillis();
-
         System.err.println("elseif: " + (t1 - t0) + "ms");
         System.err.println("intern: " + (t2 - t1) + "ms");
         System.err.println("switch: " + (t3 - t2) + "ms");
@@ -280,19 +274,18 @@ public class TestXmlParsing extends CodeGenTestCase {
     public TestXmlParsing(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestXmlParsing.class);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
     }
-    
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

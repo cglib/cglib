@@ -19,8 +19,8 @@ import java.lang.reflect.*;
 import junit.framework.*;
 import net.sf.cglib.CodeGenTestCase;
 
-public class TestInterfaceMaker extends CodeGenTestCase
-{
+public class TestInterfaceMaker extends CodeGenTestCase {
+
     public void testStandalone() throws Exception {
         InterfaceMaker im = new InterfaceMaker();
         im.add(D1.class);
@@ -30,8 +30,7 @@ public class TestInterfaceMaker extends CodeGenTestCase
         assertTrue(methods.length == 2);
         String name1 = methods[0].getName();
         String name2 = methods[1].getName();
-        assertTrue(("herby".equals(name1) && "derby".equals(name2)) ||
-                   ("herby".equals(name2) && "derby".equals(name1)));
+        assertTrue(("herby".equals(name1) && "derby".equals(name2)) || ("herby".equals(name2) && "derby".equals(name1)));
     }
 
     public void testEnhancer() throws Exception {
@@ -39,32 +38,32 @@ public class TestInterfaceMaker extends CodeGenTestCase
         im.add(D1.class);
         im.add(D2.class);
         Class iface = im.create();
-        Object obj = Enhancer.create(Object.class, new Class[]{ iface }, new MethodInterceptor() {
+        Object obj = Enhancer.create(Object.class, new Class[] { iface }, new MethodInterceptor() {
+
             public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) {
                 return "test";
             }
         });
-        Method method = obj.getClass().getMethod("herby", (Class[])null);
-        assertTrue("test".equals(method.invoke(obj, (Object[])null)));
+        Method method = obj.getClass().getMethod("herby", (Class[]) null);
+        assertTrue("test".equals(method.invoke(obj, (Object[]) null)));
     }
 
     public TestInterfaceMaker(String testName) {
         super(testName);
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestInterfaceMaker.class);
     }
-    
-    public static void main(String args[]) {
-        String[] testCaseName = {TestInterfaceMaker.class.getName()};
+
+    public static void main(String[] args) {
+        String[] testCaseName = { TestInterfaceMaker.class.getName() };
         junit.textui.TestRunner.main(testCaseName);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
     }
-    
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

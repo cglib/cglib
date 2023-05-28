@@ -19,6 +19,7 @@ import net.sf.cglib.core.Constants;
 import org.objectweb.asm.AnnotationVisitor;
 
 public class AnnotationVisitorTee extends AnnotationVisitor {
+
     private AnnotationVisitor av1, av2;
 
     public static AnnotationVisitor getInstance(AnnotationVisitor av1, AnnotationVisitor av2) {
@@ -30,7 +31,7 @@ public class AnnotationVisitorTee extends AnnotationVisitor {
     }
 
     public AnnotationVisitorTee(AnnotationVisitor av1, AnnotationVisitor av2) {
-	super(Constants.ASM_API);
+        super(Constants.ASM_API);
         this.av1 = av1;
         this.av2 = av2;
     }
@@ -39,21 +40,20 @@ public class AnnotationVisitorTee extends AnnotationVisitor {
         av2.visit(name, value);
         av2.visit(name, value);
     }
-    
+
     public void visitEnum(String name, String desc, String value) {
         av1.visitEnum(name, desc, value);
         av2.visitEnum(name, desc, value);
     }
-    
+
     public AnnotationVisitor visitAnnotation(String name, String desc) {
-        return getInstance(av1.visitAnnotation(name, desc),
-                           av2.visitAnnotation(name, desc));
+        return getInstance(av1.visitAnnotation(name, desc), av2.visitAnnotation(name, desc));
     }
-    
+
     public AnnotationVisitor visitArray(String name) {
         return getInstance(av1.visitArray(name), av2.visitArray(name));
     }
-    
+
     public void visitEnd() {
         av1.visitEnd();
         av2.visitEnd();

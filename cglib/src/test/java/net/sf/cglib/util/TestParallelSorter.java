@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import net.sf.cglib.CodeGenTestCase;
@@ -31,6 +30,7 @@ import net.sf.cglib.CodeGenTestCase;
  * @version $Id: TestParallelSorter.java,v 1.4 2004/06/24 21:15:13 herbyderby Exp $
  */
 public class TestParallelSorter extends CodeGenTestCase {
+
     public void testSorts() throws Throwable {
         Object[] data1 = getTestData();
         Object[] data2 = copy(data1);
@@ -38,8 +38,8 @@ public class TestParallelSorter extends CodeGenTestCase {
         int[] idx1 = getIndexes(data1.length);
         int[] idx2 = getIndexes(data1.length);
         int[] idx3 = getIndexes(data1.length);
-        ParallelSorter p1 = ParallelSorter.create(new Object[]{ data1, idx1 });
-        ParallelSorter p2 = ParallelSorter.create(new Object[]{ data2, idx2 });
+        ParallelSorter p1 = ParallelSorter.create(new Object[] { data1, idx1 });
+        ParallelSorter p2 = ParallelSorter.create(new Object[] { data2, idx2 });
         p1.quickSort(0);
         p2.mergeSort(0);
         compare(data1, data2);
@@ -62,7 +62,7 @@ public class TestParallelSorter extends CodeGenTestCase {
             assertTrue(data1[i] == data2[i]);
         }
     }
-    
+
     private int[] getIndexes(int len) {
         int[] idx = new int[len];
         for (int i = 0; i < len; i++) {
@@ -79,7 +79,8 @@ public class TestParallelSorter extends CodeGenTestCase {
         int c = 0;
         while ((line = r.readLine()) != null) {
             list.add(line);
-            if (c++ == 20) break;
+            if (c++ == 20)
+                break;
         }
         return list.toArray();
     }
@@ -93,19 +94,18 @@ public class TestParallelSorter extends CodeGenTestCase {
     public TestParallelSorter(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestParallelSorter.class);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
     }
-    
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

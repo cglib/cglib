@@ -16,12 +16,10 @@
 package net.sf.cglib.proxysample;
 
 import java.lang.reflect.Method;
-
 import net.sf.cglib.proxy.InvocationHandler;
 
 /**
  * @author neeme
- *
  */
 public class InvocationHandlerSample implements InvocationHandler {
 
@@ -34,8 +32,7 @@ public class InvocationHandlerSample implements InvocationHandler {
         this.o = o;
     }
 
-    public Object invoke(Object proxy, Method method, Object[] args)
-        throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         System.out.println("invoke() start");
         System.out.println("    method: " + method.getName());
         if (args != null) {
@@ -48,5 +45,4 @@ public class InvocationHandlerSample implements InvocationHandler {
         System.out.println("invoke() end");
         return r;
     }
-
 }

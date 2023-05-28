@@ -22,7 +22,9 @@ import org.objectweb.asm.Type;
  * return type, and parameter types.
  */
 public class Signature {
+
     private String name;
+
     private String desc;
 
     public Signature(String name, String desc) {
@@ -63,7 +65,7 @@ public class Signature {
             return false;
         if (!(o instanceof Signature))
             return false;
-        Signature other = (Signature)o;
+        Signature other = (Signature) o;
         return name.equals(other.name) && desc.equals(other.desc);
     }
 

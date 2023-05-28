@@ -19,20 +19,16 @@ import net.sf.cglib.core.Constants;
 import org.objectweb.asm.*;
 
 public class ClassVisitorTee extends ClassVisitor {
+
     private ClassVisitor cv1, cv2;
-    
+
     public ClassVisitorTee(ClassVisitor cv1, ClassVisitor cv2) {
-	super(Constants.ASM_API);
-	this.cv1 = cv1;
+        super(Constants.ASM_API);
+        this.cv1 = cv1;
         this.cv2 = cv2;
     }
 
-    public void visit(int version,
-                      int access,
-                      String name,
-                      String signature,
-                      String superName,
-                      String[] interfaces) {
+    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         cv1.visit(version, access, name, signature, superName, interfaces);
         cv2.visit(version, access, name, signature, superName, interfaces);
     }
@@ -48,11 +44,7 @@ public class ClassVisitorTee extends ClassVisitor {
         cv2.visitInnerClass(name, outerName, innerName, access);
     }
 
-    public FieldVisitor visitField(int access,
-                                   String name,
-                                   String desc,
-                                   String signature,
-                                   Object value) {
+    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
         FieldVisitor fv1 = cv1.visitField(access, name, desc, signature, value);
         FieldVisitor fv2 = cv2.visitField(access, name, desc, signature, value);
         if (fv1 == null)
@@ -62,12 +54,7 @@ public class ClassVisitorTee extends ClassVisitor {
         return new FieldVisitorTee(fv1, fv2);
     }
 
-
-    public MethodVisitor visitMethod(int access,
-                                     String name,
-                                     String desc,
-                                     String signature,
-                                     String[] exceptions) {
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         MethodVisitor mv1 = cv1.visitMethod(access, name, desc, signature, exceptions);
         MethodVisitor mv2 = cv2.visitMethod(access, name, desc, signature, exceptions);
         if (mv1 == null)
@@ -88,17 +75,15 @@ public class ClassVisitorTee extends ClassVisitor {
     }
 
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        return AnnotationVisitorTee.getInstance(cv1.visitAnnotation(desc, visible),
-                                                cv2.visitAnnotation(desc, visible));
+        return AnnotationVisitorTee.getInstance(cv1.visitAnnotation(desc, visible), cv2.visitAnnotation(desc, visible));
     }
-    
+
     public void visitAttribute(Attribute attrs) {
         cv1.visitAttribute(attrs);
         cv2.visitAttribute(attrs);
     }
 
     public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
-        return AnnotationVisitorTee.getInstance(cv1.visitTypeAnnotation(typeRef, typePath, desc, visible),
-                                                cv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
+        return AnnotationVisitorTee.getInstance(cv1.visitTypeAnnotation(typeRef, typePath, desc, visible), cv2.visitTypeAnnotation(typeRef, typePath, desc, visible));
     }
 }

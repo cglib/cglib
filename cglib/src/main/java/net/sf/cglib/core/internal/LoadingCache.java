@@ -3,11 +3,15 @@ package net.sf.cglib.core.internal;
 import java.util.concurrent.*;
 
 public class LoadingCache<K, KK, V> {
+
     protected final ConcurrentMap<KK, Object> map;
+
     protected final Function<K, V> loader;
+
     protected final Function<K, KK> keyMapper;
 
     public static final Function IDENTITY = new Function() {
+
         public Object apply(Object key) {
             return key;
         }
@@ -30,7 +34,6 @@ public class LoadingCache<K, KK, V> {
         if (v != null && !(v instanceof FutureTask)) {
             return (V) v;
         }
-
         return createEntry(key, cacheKey, v);
     }
 
@@ -50,6 +53,7 @@ public class LoadingCache<K, KK, V> {
             task = (FutureTask<V>) v;
         } else {
             task = new FutureTask<V>(new Callable<V>() {
+
                 public V call() throws Exception {
                     return loader.apply(key);
                 }
@@ -65,7 +69,6 @@ public class LoadingCache<K, KK, V> {
                 return (V) prevTask;
             }
         }
-
         V result;
         try {
             result = task.get();

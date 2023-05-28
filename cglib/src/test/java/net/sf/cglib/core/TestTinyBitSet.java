@@ -74,10 +74,13 @@ public class TestTinyBitSet extends TestCase {
         assertEquals(2, b.cardinality());
     }
 
-    /** Causes infinite loop */
+    /**
+     * Causes infinite loop
+     */
     public void set31InfiniteLoopCardinality() {
         b.set(31);
-        assertEquals(1, b.cardinality()); // infinite loop...
+        // infinite loop...
+        assertEquals(1, b.cardinality());
     }
 
     public TestTinyBitSet(String testName) {

@@ -23,8 +23,8 @@ import java.security.ProtectionDomain;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
-abstract public class FastClass
-{
+abstract public class FastClass {
+
     private Class type;
 
     protected FastClass() {
@@ -36,10 +36,9 @@ abstract public class FastClass
     }
 
     public static FastClass create(Class type) {
-    
-        return create(type.getClassLoader(),type);
-        
+        return create(type.getClassLoader(), type);
     }
+
     public static FastClass create(ClassLoader loader, Class type) {
         Generator gen = new Generator();
         gen.setType(type);
@@ -47,11 +46,12 @@ abstract public class FastClass
         return gen.create();
     }
 
-    public static class Generator extends AbstractClassGenerator
-    {
+    public static class Generator extends AbstractClassGenerator {
+
         private static final Source SOURCE = new Source(FastClass.class.getName());
+
         private Class type;
-        
+
         public Generator() {
             super(SOURCE);
         }
@@ -59,10 +59,10 @@ abstract public class FastClass
         public void setType(Class type) {
             this.type = type;
         }
-        
+
         public FastClass create() {
             setNamePrefix(type.getName());
-            return (FastClass)super.create(type.getName());
+            return (FastClass) super.create(type.getName());
         }
 
         protected ClassLoader getDefaultClassLoader() {
@@ -70,7 +70,7 @@ abstract public class FastClass
         }
 
         protected ProtectionDomain getProtectionDomain() {
-        	return ReflectUtils.getProtectionDomain(type);
+            return ReflectUtils.getProtectionDomain(type);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
@@ -78,16 +78,14 @@ abstract public class FastClass
         }
 
         protected Object firstInstance(Class type) {
-            return ReflectUtils.newInstance(type,
-                                            new Class[]{ Class.class },
-                                            new Object[]{ this.type });
+            return ReflectUtils.newInstance(type, new Class[] { Class.class }, new Object[] { this.type });
         }
 
         protected Object nextInstance(Object instance) {
             return instance;
         }
     }
-    
+
     public Object invoke(String name, Class[] parameterTypes, Object obj, Object[] args) throws InvocationTargetException {
         return invoke(getIndex(name, parameterTypes), obj, args);
     }
@@ -99,7 +97,7 @@ abstract public class FastClass
     public Object newInstance(Class[] parameterTypes, Object[] args) throws InvocationTargetException {
         return newInstance(getIndex(parameterTypes), args);
     }
-    
+
     public FastMethod getMethod(Method method) {
         return new FastMethod(this, method);
     }
@@ -144,7 +142,7 @@ abstract public class FastClass
         if (o == null || !(o instanceof FastClass)) {
             return false;
         }
-        return type.equals(((FastClass)o).type);
+        return type.equals(((FastClass) o).type);
     }
 
     /**

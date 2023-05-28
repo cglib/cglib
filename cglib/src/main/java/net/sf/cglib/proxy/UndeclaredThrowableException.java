@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.sf.cglib.proxy;
 
 import net.sf.cglib.core.CodeGenerationException;
@@ -23,13 +22,14 @@ import net.sf.cglib.core.CodeGenerationException;
  * @author Juozas Baliuka
  */
 public class UndeclaredThrowableException extends CodeGenerationException {
+
     /**
      * Creates a new instance of <code>UndeclaredThrowableException</code> without detail message.
      */
     public UndeclaredThrowableException(Throwable t) {
         super(t);
     }
-    
+
     public Throwable getUndeclaredThrowable() {
         return getCause();
     }

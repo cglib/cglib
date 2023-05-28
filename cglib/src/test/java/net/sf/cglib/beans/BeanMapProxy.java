@@ -25,12 +25,11 @@ import java.util.Map;
  * @version $Id: BeanMapProxy.java,v 1.2 2004/06/24 21:15:17 herbyderby Exp $
  */
 public class BeanMapProxy implements InvocationHandler {
+
     private Map map;
 
     public static Object newInstance(Map map, Class[] interfaces) {
-        return Proxy.newProxyInstance(map.getClass().getClassLoader(),
-                                      interfaces,
-                                      new BeanMapProxy(map));
+        return Proxy.newProxyInstance(map.getClass().getClassLoader(), interfaces, new BeanMapProxy(map));
     }
 
     public BeanMapProxy(Map map) {
@@ -48,4 +47,3 @@ public class BeanMapProxy implements InvocationHandler {
         return null;
     }
 }
-

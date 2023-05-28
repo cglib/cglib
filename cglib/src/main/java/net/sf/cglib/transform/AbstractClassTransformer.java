@@ -19,6 +19,7 @@ import net.sf.cglib.core.Constants;
 import org.objectweb.asm.ClassVisitor;
 
 abstract public class AbstractClassTransformer extends ClassTransformer {
+
     protected AbstractClassTransformer() {
         super(Constants.ASM_API);
     }

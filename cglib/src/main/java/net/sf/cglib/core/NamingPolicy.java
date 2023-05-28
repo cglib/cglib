@@ -21,6 +21,7 @@ import java.util.Set;
  * Customize the generated class name for {@link AbstractClassGenerator}-based utilities.
  */
 public interface NamingPolicy {
+
     /**
      * Choose a name for a generated class.
      * @param prefix a dotted-name chosen by the generating class (possibly to put the generated class in a particular package)

@@ -17,8 +17,11 @@ package net.sf.cglib.beans;
 
 import java.util.*;
 
-public /* need it for class loading  */ class FixedKeySet extends AbstractSet {
+public class /* need it for class loading  */
+FixedKeySet extends AbstractSet {
+
     private Set set;
+
     private int size;
 
     public FixedKeySet(String[] keys) {

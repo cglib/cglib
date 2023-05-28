@@ -18,10 +18,11 @@ package net.sf.cglib.transform;
 import org.objectweb.asm.*;
 
 public class ClassTransformerChain extends AbstractClassTransformer {
+
     private ClassTransformer[] chain;
-    
+
     public ClassTransformerChain(ClassTransformer[] chain) {
-        this.chain = (ClassTransformer[])chain.clone();
+        this.chain = (ClassTransformer[]) chain.clone();
     }
 
     public void setTarget(ClassVisitor v) {
@@ -33,11 +34,7 @@ public class ClassTransformerChain extends AbstractClassTransformer {
         }
     }
 
-    public MethodVisitor visitMethod(int access,
-                                     String name,
-                                     String desc,
-                                     String signature,
-                                     String[] exceptions) {
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         return cv.visitMethod(access, name, desc, signature, exceptions);
     }
 

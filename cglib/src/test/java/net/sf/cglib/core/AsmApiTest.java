@@ -2,7 +2,6 @@ package net.sf.cglib.core;
 
 import org.junit.Test;
 import org.objectweb.asm.Opcodes;
-
 import static org.junit.Assert.*;
 
 public class AsmApiTest {
@@ -22,10 +21,8 @@ public class AsmApiTest {
     public void testValueWithAsm7Experimental() {
         int asmApi = setAsm7ExperimentalAndGetValue("true");
         assertEquals(Opcodes.ASM7, asmApi);
-
         asmApi = setAsm7ExperimentalAndGetValue("");
         assertEquals(Opcodes.ASM7, asmApi);
-
         asmApi = setAsm7ExperimentalAndGetValue("false");
         assertEquals(Opcodes.ASM7, asmApi);
     }

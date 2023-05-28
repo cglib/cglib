@@ -30,6 +30,7 @@ import org.objectweb.asm.Type;
 public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
     private static final ClassFilter TEST_FILTER = new ClassFilter() {
+
         public boolean accept(String name) {
             System.err.println("Loading " + name);
             return name.startsWith("net.sf.cglib.");
@@ -37,20 +38,19 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
     };
 
     private ClassTransformer getExampleTransformer(String name, Type type) {
-        return new AddPropertyTransformer(new String[]{ name }, new Type[]{ type });
+        return new AddPropertyTransformer(new String[] { name }, new Type[] { type });
     }
 
     public void testExample() throws Exception {
         ClassTransformer t1 = getExampleTransformer("herby", Constants.TYPE_STRING);
         ClassTransformer t2 = getExampleTransformer("derby", Type.DOUBLE_TYPE);
-        ClassTransformer chain = new ClassTransformerChain(new ClassTransformer[]{ t1, t2 });
+        ClassTransformer chain = new ClassTransformerChain(new ClassTransformer[] { t1, t2 });
         Class loaded = loadHelper(chain, Example.class);
         Object obj = loaded.newInstance();
         String value = "HELLO";
-        loaded.getMethod("setHerby", new Class[]{ String.class }).invoke(obj, new Object[]{ value });
-        assertTrue(value.equals(loaded.getMethod("getHerby", (Class[])null).invoke(obj, (Object[])null)));
-
-        loaded.getMethod("setDerby", new Class[]{ Double.TYPE }).invoke(obj, new Object[]{ new Double(1.23456789d) });
+        loaded.getMethod("setHerby", new Class[] { String.class }).invoke(obj, new Object[] { value });
+        assertTrue(value.equals(loaded.getMethod("getHerby", (Class[]) null).invoke(obj, (Object[]) null)));
+        loaded.getMethod("setDerby", new Class[] { Double.TYPE }).invoke(obj, new Object[] { new Double(1.23456789d) });
     }
 
     private static Class inited;
@@ -70,9 +70,11 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
 
     public void testInterceptField() throws Exception {
         ClassTransformer t = new InterceptFieldTransformer(new InterceptFieldFilter() {
+
             public boolean acceptRead(Type owner, String name) {
                 return true;
             }
+
             public boolean acceptWrite(Type owner, String name) {
                 return true;
             }
@@ -85,47 +87,43 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
         ClassTransformer t = new FieldProviderTransformer();
         Class loaded = loadHelper(t, Example.class);
         // TODO
-//         FieldProvider fp = (FieldProvider)loaded.newInstance();
-//         assertTrue(((Integer)fp.getField("example")).intValue() == 42);
-//         fp.setField("example", new Integer(6));
-//         assertTrue(((Integer)fp.getField("example")).intValue() == 6);
-//         assertTrue(fp.getField("example") == null);
-//         try {
-//             fp.getField("dsfjkl");
-//             fail("expected exception");
-//         } catch (IllegalArgumentException ignore) { }
+        //         FieldProvider fp = (FieldProvider)loaded.newInstance();
+        //         assertTrue(((Integer)fp.getField("example")).intValue() == 42);
+        //         fp.setField("example", new Integer(6));
+        //         assertTrue(((Integer)fp.getField("example")).intValue() == 6);
+        //         assertTrue(fp.getField("example") == null);
+        //         try {
+        //             fp.getField("dsfjkl");
+        //             fail("expected exception");
+        //         } catch (IllegalArgumentException ignore) { }
     }
 
-    private static Class loadHelper( final ClassTransformer t, Class target) throws ClassNotFoundException {
+    private static Class loadHelper(final ClassTransformer t, Class target) throws ClassNotFoundException {
         ClassLoader parent = TestTransformingLoader.class.getClassLoader();
-        TransformingClassLoader loader = new TransformingClassLoader(parent, TEST_FILTER,
-        
-           new ClassTransformerFactory(){
-                  public ClassTransformer  newInstance(){
-                     return t;
-                  }
-        }
-        
-        );
+        TransformingClassLoader loader = new TransformingClassLoader(parent, TEST_FILTER, new ClassTransformerFactory() {
+
+            public ClassTransformer newInstance() {
+                return t;
+            }
+        });
         return loader.loadClass(target.getName());
     }
 
     public TestTransformingLoader(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestTransformingLoader.class);
     }
 
     public void perform(ClassLoader loader) throws Throwable {
-    }    
-    
+    }
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

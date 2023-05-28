@@ -6,6 +6,7 @@ import org.objectweb.asm.Type;
  * Customizes key types for {@link KeyFactory} right in constructor.
  */
 public interface FieldTypeCustomizer extends KeyFactoryCustomizer {
+
     /**
      * Customizes {@code this.FIELD_0 = ?} assignment in key constructor
      * @param e code emitter

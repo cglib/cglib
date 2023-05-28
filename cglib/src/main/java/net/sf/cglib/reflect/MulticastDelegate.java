@@ -24,6 +24,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 abstract public class MulticastDelegate implements Cloneable {
+
     protected Object[] targets = {};
 
     protected MulticastDelegate() {
@@ -65,15 +66,16 @@ abstract public class MulticastDelegate implements Cloneable {
     }
 
     public static class Generator extends AbstractClassGenerator {
+
         private static final Source SOURCE = new Source(MulticastDelegate.class.getName());
-        private static final Type MULTICAST_DELEGATE =
-          TypeUtils.parseType("net.sf.cglib.reflect.MulticastDelegate");
-        private static final Signature NEW_INSTANCE =
-          new Signature("newInstance", MULTICAST_DELEGATE, new Type[0]);
-        private static final Signature ADD_DELEGATE =
-          new Signature("add", MULTICAST_DELEGATE, new Type[]{ Constants.TYPE_OBJECT });
-        private static final Signature ADD_HELPER =
-          new Signature("addHelper", MULTICAST_DELEGATE, new Type[]{ Constants.TYPE_OBJECT });
+
+        private static final Type MULTICAST_DELEGATE = TypeUtils.parseType("net.sf.cglib.reflect.MulticastDelegate");
+
+        private static final Signature NEW_INSTANCE = new Signature("newInstance", MULTICAST_DELEGATE, new Type[0]);
+
+        private static final Signature ADD_DELEGATE = new Signature("add", MULTICAST_DELEGATE, new Type[] { Constants.TYPE_OBJECT });
+
+        private static final Signature ADD_HELPER = new Signature("addHelper", MULTICAST_DELEGATE, new Type[] { Constants.TYPE_OBJECT });
 
         private Class iface;
 
@@ -86,7 +88,7 @@ abstract public class MulticastDelegate implements Cloneable {
         }
 
         protected ProtectionDomain getProtectionDomain() {
-        	return ReflectUtils.getProtectionDomain(iface);
+            return ReflectUtils.getProtectionDomain(iface);
         }
 
         public void setInterface(Class iface) {
@@ -95,24 +97,16 @@ abstract public class MulticastDelegate implements Cloneable {
 
         public MulticastDelegate create() {
             setNamePrefix(MulticastDelegate.class.getName());
-            return (MulticastDelegate)super.create(iface.getName());
+            return (MulticastDelegate) super.create(iface.getName());
         }
 
         public void generateClass(ClassVisitor cv) {
             final MethodInfo method = ReflectUtils.getMethodInfo(ReflectUtils.findInterfaceMethod(iface));
-
             ClassEmitter ce = new ClassEmitter(cv);
-            ce.begin_class(Constants.V1_8,
-                           Constants.ACC_PUBLIC,
-                           getClassName(),
-                           MULTICAST_DELEGATE,
-                           new Type[]{ Type.getType(iface) },
-                           Constants.SOURCE_FILE);
+            ce.begin_class(Constants.V1_8, Constants.ACC_PUBLIC, getClassName(), MULTICAST_DELEGATE, new Type[] { Type.getType(iface) }, Constants.SOURCE_FILE);
             EmitUtils.null_constructor(ce);
-
             // generate proxied method
             emitProxy(ce, method);
-
             // newInstance
             CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, NEW_INSTANCE, null);
             e.new_instance_this();
@@ -120,7 +114,6 @@ abstract public class MulticastDelegate implements Cloneable {
             e.invoke_constructor_this();
             e.return_value();
             e.end_method();
-
             // add
             e = ce.begin_method(Constants.ACC_PUBLIC, ADD_DELEGATE, null);
             e.load_this();
@@ -129,7 +122,6 @@ abstract public class MulticastDelegate implements Cloneable {
             e.invoke_virtual_this(ADD_HELPER);
             e.return_value();
             e.end_method();
-
             ce.end_class();
         }
 
@@ -151,6 +143,7 @@ abstract public class MulticastDelegate implements Cloneable {
             e.super_getfield("targets", Constants.TYPE_OBJECT_ARRAY);
             final Local result2 = result;
             EmitUtils.process_array(e, Constants.TYPE_OBJECT_ARRAY, new ProcessArrayCallback() {
+
                 public void processElement(Type type) {
                     e.checkcast(Type.getType(iface));
                     e.load_args();
@@ -169,11 +162,11 @@ abstract public class MulticastDelegate implements Cloneable {
 
         protected Object firstInstance(Class type) {
             // make a new instance in case first object is used with a long list of targets
-            return ((MulticastDelegate)ReflectUtils.newInstance(type)).newInstance();
+            return ((MulticastDelegate) ReflectUtils.newInstance(type)).newInstance();
         }
 
         protected Object nextInstance(Object instance) {
-            return ((MulticastDelegate)instance).newInstance();
+            return ((MulticastDelegate) instance).newInstance();
         }
     }
 }

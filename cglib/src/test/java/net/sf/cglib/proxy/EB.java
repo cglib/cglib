@@ -1,15 +1,17 @@
 package net.sf.cglib.proxy;
 
-public class EB extends EA implements Comparable{
-	private int count;
+public class EB extends EA implements Comparable {
 
-	public int getCount() {
-		return count;
-	}
+    private int count;
 
-	public void setCount(int count) {
-		this.count = count;
-	}
-        public final  void finalTest(){} 
+    public int getCount() {
+        return count;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+
+    public final void finalTest() {
+    }
 }
-

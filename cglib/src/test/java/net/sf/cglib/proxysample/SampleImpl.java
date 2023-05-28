@@ -17,7 +17,6 @@ package net.sf.cglib.proxysample;
 
 /**
  * @author neeme
- *
  */
 public class SampleImpl implements ProxySampleInterface_ReturnsObject, ProxySampleInterface_ReturnsBasic {
 
@@ -28,5 +27,4 @@ public class SampleImpl implements ProxySampleInterface_ReturnsObject, ProxySamp
     public int getKala(float kalamees) {
         return (int) (100 + kalamees);
     }
-
 }

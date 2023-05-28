@@ -19,6 +19,7 @@ package net.sf.cglib.proxy;
  * Lazy-loading {@link Enhancer} callback.
  */
 public interface LazyLoader extends Callback {
+
     /**
      * Return the object which the original method invocation should be
      * dispatched. Called as soon as the first lazily-loaded method in

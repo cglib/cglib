@@ -19,7 +19,6 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- *
  * @author baliuka
  */
 public class TestImmutableBean extends TestCase {
@@ -29,22 +28,23 @@ public class TestImmutableBean extends TestCase {
         assertTrue(bean.getIntP() == 0);
         bean.setIntP(42);
         assertTrue(bean.getIntP() == 42);
-        bean = (MA)ImmutableBean.create(bean);
+        bean = (MA) ImmutableBean.create(bean);
         assertTrue(bean.getIntP() == 42);
         try {
             bean.setIntP(43);
             fail("expecting illegal state exception");
-        } catch (IllegalStateException ignore) { }
+        } catch (IllegalStateException ignore) {
+        }
     }
-    
+
     public TestImmutableBean(java.lang.String testName) {
         super(testName);
     }
-    
+
     public static void main(java.lang.String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestImmutableBean.class);
     }

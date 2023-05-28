@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.sf.cglib.proxy;
 
 import java.io.IOException;
@@ -41,7 +40,9 @@ import org.objectweb.asm.Opcodes;
  */
 class BridgeMethodResolver {
 
-    private final Map/* <Class, Set<Signature> */declToBridge;
+    private final Map /* <Class, Set<Signature> */
+    declToBridge;
+
     private final ClassLoader classLoader;
 
     public BridgeMethodResolver(Map declToBridge, ClassLoader classLoader) {
@@ -53,7 +54,8 @@ class BridgeMethodResolver {
      * Finds all bridge methods that are being called with invokespecial &
      * returns them.
      */
-    public Map/*<Signature, Signature>*/resolveAll() {
+    public Map /*<Signature, Signature>*/
+    resolveAll() {
         Map resolved = new HashMap();
         for (Iterator entryIter = declToBridge.entrySet().iterator(); entryIter.hasNext(); ) {
             Map.Entry entry = (Map.Entry) entryIter.next();
@@ -65,21 +67,24 @@ class BridgeMethodResolver {
                     return resolved;
                 }
                 try {
-                    new ClassReader(is)
-                            .accept(new BridgedFinder(bridges, resolved),
-                                    ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+                    new ClassReader(is).accept(new BridgedFinder(bridges, resolved), ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
                 } finally {
                     is.close();
                 }
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
         return resolved;
     }
 
     private static class BridgedFinder extends ClassVisitor {
-        private Map/*<Signature, Signature>*/ resolved;
-        private Set/*<Signature>*/ eligibleMethods;
-        
+
+        private Map /*<Signature, Signature>*/
+        resolved;
+
+        private Set /*<Signature>*/
+        eligibleMethods;
+
         private Signature currentMethod = null;
 
         BridgedFinder(Set eligibleMethods, Map resolved) {
@@ -88,21 +93,17 @@ class BridgeMethodResolver {
             this.eligibleMethods = eligibleMethods;
         }
 
-        public void visit(int version, int access, String name,
-                String signature, String superName, String[] interfaces) {
+        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         }
 
-        public MethodVisitor visitMethod(int access, String name, String desc,
-                String signature, String[] exceptions) {
+        public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             Signature sig = new Signature(name, desc);
             if (eligibleMethods.remove(sig)) {
                 currentMethod = sig;
                 return new MethodVisitor(Constants.ASM_API) {
-                    public void visitMethodInsn(
-                            int opcode, String owner, String name, String desc, boolean itf) {
-                        if ((opcode == Opcodes.INVOKESPECIAL
-                                        || (itf && opcode == Opcodes.INVOKEINTERFACE))
-                                && currentMethod != null) {
+
+                    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+                        if ((opcode == Opcodes.INVOKESPECIAL || (itf && opcode == Opcodes.INVOKEINTERFACE)) && currentMethod != null) {
                             Signature target = new Signature(name, desc);
                             // If the target signature is the same as the current,
                             // we shouldn't change our bridge becaues invokespecial
@@ -122,5 +123,4 @@ class BridgeMethodResolver {
             }
         }
     }
-
 }

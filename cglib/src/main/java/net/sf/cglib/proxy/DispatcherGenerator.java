@@ -20,19 +20,18 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.Type;
 
 class DispatcherGenerator implements CallbackGenerator {
-    public static final DispatcherGenerator INSTANCE =
-      new DispatcherGenerator(false);
-    public static final DispatcherGenerator PROXY_REF_INSTANCE =
-      new DispatcherGenerator(true);
 
-    private static final Type DISPATCHER =
-      TypeUtils.parseType("net.sf.cglib.proxy.Dispatcher");
-    private static final Type PROXY_REF_DISPATCHER =
-      TypeUtils.parseType("net.sf.cglib.proxy.ProxyRefDispatcher");
-    private static final Signature LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject()");
-    private static final Signature PROXY_REF_LOAD_OBJECT =
-      TypeUtils.parseSignature("Object loadObject(Object)");
+    public static final DispatcherGenerator INSTANCE = new DispatcherGenerator(false);
+
+    public static final DispatcherGenerator PROXY_REF_INSTANCE = new DispatcherGenerator(true);
+
+    private static final Type DISPATCHER = TypeUtils.parseType("net.sf.cglib.proxy.Dispatcher");
+
+    private static final Type PROXY_REF_DISPATCHER = TypeUtils.parseType("net.sf.cglib.proxy.ProxyRefDispatcher");
+
+    private static final Signature LOAD_OBJECT = TypeUtils.parseSignature("Object loadObject()");
+
+    private static final Signature PROXY_REF_LOAD_OBJECT = TypeUtils.parseSignature("Object loadObject(Object)");
 
     private boolean proxyRef;
 
@@ -41,8 +40,8 @@ class DispatcherGenerator implements CallbackGenerator {
     }
 
     public void generate(ClassEmitter ce, Context context, List methods) {
-        for (Iterator it = methods.iterator(); it.hasNext();) {
-            MethodInfo method = (MethodInfo)it.next();
+        for (Iterator it = methods.iterator(); it.hasNext(); ) {
+            MethodInfo method = (MethodInfo) it.next();
             if (!TypeUtils.isProtected(method.getModifiers())) {
                 CodeEmitter e = context.beginMethod(ce, method);
                 context.emitCallback(e, context.getIndex(method));
@@ -61,5 +60,6 @@ class DispatcherGenerator implements CallbackGenerator {
         }
     }
 
-    public void generateStatic(CodeEmitter e, Context context, List methods) { }
+    public void generateStatic(CodeEmitter e, Context context, List methods) {
+    }
 }

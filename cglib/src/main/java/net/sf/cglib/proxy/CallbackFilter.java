@@ -28,10 +28,11 @@ import java.lang.reflect.Method;
  * classes for implementation of {@link CallbackFilter}.</p>
  */
 public interface CallbackFilter {
+
     /**
      * Map a method to a callback.
      * @param method the intercepted method
-     * @return the index into the array of callbacks (as specified by {@link Enhancer#setCallbacks}) to use for the method, 
+     * @return the index into the array of callbacks (as specified by {@link Enhancer#setCallbacks}) to use for the method,
      */
     int accept(Method method);
 
@@ -41,6 +42,6 @@ public interface CallbackFilter {
      * you should correctly implement <code>equals</code> and
      * <code>hashCode</code> for custom <code>CallbackFilter</code>
      * implementations in order to improve performance.
-    */
+     */
     boolean equals(Object o);
 }

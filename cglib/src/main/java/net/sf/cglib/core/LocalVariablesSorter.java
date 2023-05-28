@@ -1,4 +1,4 @@
-/***
+/**
  * ASM: a very small and fast Java bytecode manipulation framework
  * Copyright (c) 2000-2005 INRIA, France Telecom
  * All rights reserved.
@@ -38,7 +38,7 @@ import org.objectweb.asm.Type;
  * A {@link MethodVisitor} that renumbers local variables in their order of
  * appearance. This adapter allows one to easily add new local variables to a
  * method.
- * 
+ *
  * @author Chris Nokleberg
  * @author Eric Bruneton
  */
@@ -49,20 +49,18 @@ public class LocalVariablesSorter extends MethodVisitor {
      * i of size 1 is remapped to 'mapping[2*i]', while a local variable at
      * index i of size 2 is remapped to 'mapping[2*i+1]'.
      */
-    private static class State
-    {
-        int[] mapping = new int[40];        
+    private static class State {
+
+        int[] mapping = new int[40];
+
         int nextLocal;
     }
 
     protected final int firstLocal;
+
     private final State state;
 
-    public LocalVariablesSorter(
-        final int access,
-        final String desc,
-        final MethodVisitor mv)
-    {
+    public LocalVariablesSorter(final int access, final String desc, final MethodVisitor mv) {
         super(Constants.ASM_API, mv);
         state = new State();
         Type[] args = Type.getArgumentTypes(desc);
@@ -81,7 +79,7 @@ public class LocalVariablesSorter extends MethodVisitor {
 
     public void visitVarInsn(final int opcode, final int var) {
         int size;
-        switch (opcode) {
+        switch(opcode) {
             case Opcodes.LLOAD:
             case Opcodes.LSTORE:
             case Opcodes.DLOAD:
@@ -102,19 +100,11 @@ public class LocalVariablesSorter extends MethodVisitor {
         mv.visitMaxs(maxStack, state.nextLocal);
     }
 
-    public void visitLocalVariable(
-        final String name,
-        final String desc,
-        final String signature,
-        final Label start,
-        final Label end,
-        final int index)
-    {
+    public void visitLocalVariable(final String name, final String desc, final String signature, final Label start, final Label end, final int index) {
         mv.visitLocalVariable(name, desc, signature, start, end, remap(index));
     }
 
     // -------------
-
     protected int newLocal(final int size) {
         int var = state.nextLocal;
         state.nextLocal += size;

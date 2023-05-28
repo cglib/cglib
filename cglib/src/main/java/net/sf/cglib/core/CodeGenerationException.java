@@ -19,6 +19,7 @@ package net.sf.cglib.core;
  * @version $Id: CodeGenerationException.java,v 1.3 2004/06/24 21:15:21 herbyderby Exp $
  */
 public class CodeGenerationException extends RuntimeException {
+
     private Throwable cause;
 
     public CodeGenerationException(Throwable cause) {

@@ -25,18 +25,21 @@ import org.objectweb.asm.Type;
 /**
  * @author Juozas Baliuka, Chris Nokleberg
  */
-public class BeanGenerator extends AbstractClassGenerator
-{
+public class BeanGenerator extends AbstractClassGenerator {
+
     private static final Source SOURCE = new Source(BeanGenerator.class.getName());
-    private static final BeanGeneratorKey KEY_FACTORY =
-      (BeanGeneratorKey)KeyFactory.create(BeanGeneratorKey.class);
-    
+
+    private static final BeanGeneratorKey KEY_FACTORY = (BeanGeneratorKey) KeyFactory.create(BeanGeneratorKey.class);
+
     interface BeanGeneratorKey {
+
         public Object newInstance(String superclass, Map props);
     }
 
     private Class superclass;
+
     private Map props = new HashMap();
+
     private boolean classOnly;
 
     public BeanGenerator() {
@@ -96,18 +99,13 @@ public class BeanGenerator extends AbstractClassGenerator
 
     public void generateClass(ClassVisitor v) throws Exception {
         int size = props.size();
-        String[] names = (String[])props.keySet().toArray(new String[size]);
+        String[] names = (String[]) props.keySet().toArray(new String[size]);
         Type[] types = new Type[size];
         for (int i = 0; i < size; i++) {
-            types[i] = (Type)props.get(names[i]);
+            types[i] = (Type) props.get(names[i]);
         }
         ClassEmitter ce = new ClassEmitter(v);
-        ce.begin_class(Constants.V1_8,
-                       Constants.ACC_PUBLIC,
-                       getClassName(),
-                       superclass != null ? Type.getType(superclass) : Constants.TYPE_OBJECT,
-                       null,
-                       null);
+        ce.begin_class(Constants.V1_8, Constants.ACC_PUBLIC, getClassName(), superclass != null ? Type.getType(superclass) : Constants.TYPE_OBJECT, null, null);
         EmitUtils.null_constructor(ce);
         EmitUtils.add_properties(ce, names, types);
         ce.end_class();
@@ -122,7 +120,7 @@ public class BeanGenerator extends AbstractClassGenerator
     }
 
     protected Object nextInstance(Object instance) {
-        Class protoclass = (instance instanceof Class) ? (Class)instance : instance.getClass();
+        Class protoclass = (instance instanceof Class) ? (Class) instance : instance.getClass();
         if (classOnly) {
             return protoclass;
         } else {
@@ -131,9 +129,9 @@ public class BeanGenerator extends AbstractClassGenerator
     }
 
     public static void addProperties(BeanGenerator gen, Map props) {
-        for (Iterator it = props.keySet().iterator(); it.hasNext();) {
-            String name = (String)it.next();
-            gen.addProperty(name, (Class)props.get(name));
+        for (Iterator it = props.keySet().iterator(); it.hasNext(); ) {
+            String name = (String) it.next();
+            gen.addProperty(name, (Class) props.get(name));
         }
     }
 

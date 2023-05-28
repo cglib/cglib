@@ -18,10 +18,13 @@ package net.sf.cglib.util;
 import java.util.*;
 
 abstract class SorterTemplate {
+
     private static final int MERGESORT_THRESHOLD = 12;
+
     private static final int QUICKSORT_THRESHOLD = 7;
 
     abstract protected void swap(int i, int j);
+
     abstract protected int compare(int i, int j);
 
     protected void quickSort(int lo, int hi) {
@@ -30,7 +33,7 @@ abstract class SorterTemplate {
     }
 
     private void quickSortHelper(int lo, int hi) {
-        for (;;) {
+        for (; ; ) {
             int diff = hi - lo;
             if (diff <= QUICKSORT_THRESHOLD) {
                 break;
@@ -49,12 +52,14 @@ abstract class SorterTemplate {
             swap(i, j);
             i = lo;
             int v = j;
-            for (;;) {
+            for (; ; ) {
                 while (compare(++i, v) < 0) {
-                    /* nothing */;
+                    /* nothing */
+                    ;
                 }
                 while (compare(--j, v) > 0) {
-                    /* nothing */;
+                    /* nothing */
+                    ;
                 }
                 if (j < i) {
                     break;
@@ -71,9 +76,9 @@ abstract class SorterTemplate {
             }
         }
     }
-    
+
     private void insertionSort(int lo, int hi) {
-        for (int i = lo + 1 ; i <= hi; i++) {
+        for (int i = lo + 1; i <= hi; i++) {
             for (int j = i; j > lo; j--) {
                 if (compare(j - 1, j) > 0) {
                     swap(j - 1, j);
@@ -131,11 +136,13 @@ abstract class SorterTemplate {
         while (lot < hit) {
             swap(lot++, hit--);
         }
-        lot = mid; hit = hi - 1;
+        lot = mid;
+        hit = hi - 1;
         while (lot < hit) {
             swap(lot++, hit--);
         }
-        lot = lo; hit = hi - 1;
+        lot = lo;
+        hit = hi - 1;
         while (lot < hit) {
             swap(lot++, hit--);
         }
@@ -145,10 +152,10 @@ abstract class SorterTemplate {
         int len = hi - lo;
         while (len > 0) {
             int half = len / 2;
-            int mid= lo + half;
+            int mid = lo + half;
             if (compare(mid, val) < 0) {
                 lo = mid + 1;
-                len = len - half -1;
+                len = len - half - 1;
             } else {
                 len = half;
             }
@@ -165,7 +172,7 @@ abstract class SorterTemplate {
                 len = half;
             } else {
                 lo = mid + 1;
-                len = len - half -1;
+                len = len - half - 1;
             }
         }
         return lo;

@@ -12,6 +12,7 @@ import java.lang.ref.WeakReference;
  * @param <T> type of the reference
  */
 public class WeakCacheKey<T> extends WeakReference<T> {
+
     private final int hash;
 
     public WeakCacheKey(T referent) {
