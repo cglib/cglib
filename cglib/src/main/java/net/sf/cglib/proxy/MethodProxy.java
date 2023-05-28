@@ -17,7 +17,6 @@ package net.sf.cglib.proxy;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
 import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.CodeGenerationException;
 import net.sf.cglib.core.GeneratorStrategy;
@@ -33,13 +32,17 @@ import net.sf.cglib.reflect.FastClass;
  * @version $Id: MethodProxy.java,v 1.16 2009/01/11 20:09:48 herbyderby Exp $
  */
 public class MethodProxy {
+
     private Signature sig1;
+
     private Signature sig2;
+
     private CreateInfo createInfo;
-    
+
     private final Object initLock = new Object();
+
     private volatile FastClassInfo fastClassInfo;
-    
+
     /**
      * For internal use by {@link Enhancer} only; see the {@link net.sf.cglib.reflect.FastMethod} class
      * for similar functionality.
@@ -52,8 +55,7 @@ public class MethodProxy {
         return proxy;
     }
 
-    private void init()
-    {
+    private void init() {
         /* 
          * Using a volatile invariant allows us to initialize the FastClass and
          * method index pairs atomically.
@@ -62,14 +64,10 @@ public class MethodProxy {
          * code could allow fastClassInfo to be instantiated more than once, which
          * appears to be benign.
          */
-        if (fastClassInfo == null)
-        {
-            synchronized (initLock)
-            {
-                if (fastClassInfo == null)
-                {
+        if (fastClassInfo == null) {
+            synchronized (initLock) {
+                if (fastClassInfo == null) {
                     CreateInfo ci = createInfo;
-
                     FastClassInfo fci = new FastClassInfo();
                     fci.f1 = helper(ci, ci.c1);
                     fci.f2 = helper(ci, ci.c2);
@@ -82,24 +80,30 @@ public class MethodProxy {
         }
     }
 
-    private static class FastClassInfo
-    {
+    private static class FastClassInfo {
+
         FastClass f1;
+
         FastClass f2;
+
         int i1;
+
         int i2;
     }
 
-    private static class CreateInfo
-    {
+    private static class CreateInfo {
+
         Class c1;
+
         Class c2;
+
         NamingPolicy namingPolicy;
+
         GeneratorStrategy strategy;
+
         boolean attemptLoad;
-        
-        public CreateInfo(Class c1, Class c2)
-        {
+
+        public CreateInfo(Class c1, Class c2) {
             this.c1 = c1;
             this.c2 = c2;
             AbstractClassGenerator fromEnhancer = AbstractClassGenerator.getCurrent();
@@ -155,14 +159,14 @@ public class MethodProxy {
 
     // For testing
     FastClass getFastClass() {
-      init();
-      return fastClassInfo.f1;
+        init();
+        return fastClassInfo.f1;
     }
 
     // For testing
     FastClass getSuperFastClass() {
-      init();
-      return fastClassInfo.f2;
+        init();
+        return fastClassInfo.f2;
     }
 
     /**
@@ -175,9 +179,8 @@ public class MethodProxy {
      */
     public static MethodProxy find(Class type, Signature sig) {
         try {
-            Method m = type.getDeclaredMethod(MethodInterceptorGenerator.FIND_PROXY_NAME,
-                                              MethodInterceptorGenerator.FIND_PROXY_TYPES);
-            return (MethodProxy)m.invoke(null, new Object[]{ sig });
+            Method m = type.getDeclaredMethod(MethodInterceptorGenerator.FIND_PROXY_NAME, MethodInterceptorGenerator.FIND_PROXY_TYPES);
+            return (MethodProxy) m.invoke(null, new Object[] { sig });
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException("Class " + type + " does not use a MethodInterceptor");
         } catch (IllegalAccessException e) {

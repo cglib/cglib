@@ -22,10 +22,13 @@ abstract public class MethodInfo {
 
     protected MethodInfo() {
     }
-    
+
     abstract public ClassInfo getClassInfo();
+
     abstract public int getModifiers();
+
     abstract public Signature getSignature();
+
     abstract public Type[] getExceptionTypes();
 
     public boolean equals(Object o) {
@@ -33,7 +36,7 @@ abstract public class MethodInfo {
             return false;
         if (!(o instanceof MethodInfo))
             return false;
-        return getSignature().equals(((MethodInfo)o).getSignature());
+        return getSignature().equals(((MethodInfo) o).getSignature());
     }
 
     public int hashCode() {

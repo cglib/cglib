@@ -24,6 +24,5 @@ package net.sf.cglib.proxy;
  * @see InvocationHandler
  * @see FixedValue
  */
-public interface Callback
-{
+public interface Callback {
 }

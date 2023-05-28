@@ -23,31 +23,30 @@ import net.sf.cglib.core.CodeGenerationException;
  * $Id: AbstractTransformTest.java,v 1.8 2004/06/24 21:15:16 herbyderby Exp $
  */
 abstract public class AbstractTransformTest extends TestCase {
-   
-    
-     /** Creates a new instance of AbstractTransformTest */
+
+    /**
+     * Creates a new instance of AbstractTransformTest
+     */
     public AbstractTransformTest() {
         super(null);
     }
-   
-    /** Creates a new instance of AbstractTransformTest */
+
+    /**
+     * Creates a new instance of AbstractTransformTest
+     */
     public AbstractTransformTest(String s) {
-       super(s);
+        super(s);
     }
-    
+
     protected abstract ClassTransformerFactory getTransformer() throws Exception;
-    
+
     public Class transform() throws Exception {
-        ClassLoader loader =
-            new TransformingClassLoader(AbstractTransformTest.class.getClassLoader(),
-                                        new ClassFilter(){
-                                            public boolean accept(String name){
-                                                return !(name.startsWith("java")
-                                                         || name.startsWith("junit")
-                                                         || name.endsWith("Exclude"));
-                                            } 
-                                        },
-                                        getTransformer());
+        ClassLoader loader = new TransformingClassLoader(AbstractTransformTest.class.getClassLoader(), new ClassFilter() {
+
+            public boolean accept(String name) {
+                return !(name.startsWith("java") || name.startsWith("junit") || name.endsWith("Exclude"));
+            }
+        }, getTransformer());
         try {
             return loader.loadClass(getClass().getName());
         } catch (Exception e) {

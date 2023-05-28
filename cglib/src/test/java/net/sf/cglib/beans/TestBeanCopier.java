@@ -20,7 +20,6 @@ import java.lang.reflect.Method;
 import junit.framework.*;
 
 /**
- *
  * @author baliuka
  */
 public class TestBeanCopier extends TestCase {
@@ -49,9 +48,10 @@ public class TestBeanCopier extends TestCase {
         bean1.setIntP(42);
         MA bean2 = new MA();
         copier.copy(bean1, bean2, new Converter() {
+
             public Object convert(Object value, Class target, Object context) {
                 if (target.equals(Integer.TYPE)) {
-                    return new Integer(((Number)value).intValue() + 1);
+                    return new Integer(((Number) value).intValue() + 1);
                 }
                 return value;
             }

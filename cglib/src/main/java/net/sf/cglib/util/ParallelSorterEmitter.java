@@ -22,14 +22,14 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Type;
 
 class ParallelSorterEmitter extends ClassEmitter {
-    private static final Type PARALLEL_SORTER =
-      TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
-    private static final Signature CSTRUCT_OBJECT_ARRAY =
-      TypeUtils.parseConstructor("Object[]");
-    private static final Signature NEW_INSTANCE =
-      new Signature("newInstance", PARALLEL_SORTER, new Type[]{ Constants.TYPE_OBJECT_ARRAY });
-    private static final Signature SWAP =
-      TypeUtils.parseSignature("void swap(int, int)");
+
+    private static final Type PARALLEL_SORTER = TypeUtils.parseType("net.sf.cglib.util.ParallelSorter");
+
+    private static final Signature CSTRUCT_OBJECT_ARRAY = TypeUtils.parseConstructor("Object[]");
+
+    private static final Signature NEW_INSTANCE = new Signature("newInstance", PARALLEL_SORTER, new Type[] { Constants.TYPE_OBJECT_ARRAY });
+
+    private static final Signature SWAP = TypeUtils.parseSignature("void swap(int, int)");
 
     public ParallelSorterEmitter(ClassVisitor v, String className, Object[] arrays) {
         super(v);
@@ -72,25 +72,19 @@ class ParallelSorterEmitter extends ClassEmitter {
             Type type = Type.getType(arrays[i].getClass());
             Type component = TypeUtils.getComponentType(type);
             Local T = e.make_local(type);
-
             e.load_this();
             e.getfield(getFieldName(i));
             e.store_local(T);
-
             e.load_local(T);
             e.load_arg(0);
-
             e.load_local(T);
             e.load_arg(1);
             e.array_load(component);
-                
             e.load_local(T);
             e.load_arg(1);
-
             e.load_local(T);
             e.load_arg(0);
             e.array_load(component);
-
             e.array_store(component);
             e.array_store(component);
         }

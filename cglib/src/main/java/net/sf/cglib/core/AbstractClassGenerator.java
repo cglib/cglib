@@ -18,7 +18,6 @@ package net.sf.cglib.core;
 import net.sf.cglib.core.internal.Function;
 import net.sf.cglib.core.internal.LoadingCache;
 import org.objectweb.asm.ClassReader;
-
 import java.lang.ref.WeakReference;
 import java.security.ProtectionDomain;
 import java.util.Map;
@@ -32,27 +31,34 @@ import java.util.WeakHashMap;
  * customizing the <code>ClassLoader</code>, name of the generated class, and transformations
  * applied before generation.
  */
-abstract public class AbstractClassGenerator<T>
-implements ClassGenerator
-{
+abstract public class AbstractClassGenerator<T> implements ClassGenerator {
+
     private static final ThreadLocal CURRENT = new ThreadLocal();
 
     private static volatile Map<ClassLoader, ClassLoaderData> CACHE = new WeakHashMap<ClassLoader, ClassLoaderData>();
 
-    private static final boolean DEFAULT_USE_CACHE =
-        Boolean.parseBoolean(System.getProperty("cglib.useCache", "true"));
+    private static final boolean DEFAULT_USE_CACHE = Boolean.parseBoolean(System.getProperty("cglib.useCache", "true"));
 
     private GeneratorStrategy strategy = DefaultGeneratorStrategy.INSTANCE;
+
     private NamingPolicy namingPolicy = DefaultNamingPolicy.INSTANCE;
+
     private Source source;
+
     private ClassLoader classLoader;
+
     private String namePrefix;
+
     private Object key;
+
     private boolean useCache = DEFAULT_USE_CACHE;
+
     private String className;
+
     private boolean attemptLoad;
 
     protected static class ClassLoaderData {
+
         private final Set<String> reservedClassNames = new HashSet<String>();
 
         /**
@@ -74,12 +80,14 @@ implements ClassGenerator
         private final WeakReference<ClassLoader> classLoader;
 
         private final Predicate uniqueNamePredicate = new Predicate() {
+
             public boolean evaluate(Object name) {
                 return reservedClassNames.contains(name);
             }
         };
 
         private static final Function<AbstractClassGenerator, Object> GET_KEY = new Function<AbstractClassGenerator, Object>() {
+
             public Object apply(AbstractClassGenerator gen) {
                 return gen.key;
             }
@@ -90,13 +98,13 @@ implements ClassGenerator
                 throw new IllegalArgumentException("classLoader == null is not yet supported");
             }
             this.classLoader = new WeakReference<ClassLoader>(classLoader);
-            Function<AbstractClassGenerator, Object> load =
-                    new Function<AbstractClassGenerator, Object>() {
-                        public Object apply(AbstractClassGenerator gen) {
-                            Class klass = gen.generate(ClassLoaderData.this);
-                            return gen.wrapCachedClass(klass);
-                        }
-                    };
+            Function<AbstractClassGenerator, Object> load = new Function<AbstractClassGenerator, Object>() {
+
+                public Object apply(AbstractClassGenerator gen) {
+                    Class klass = gen.generate(ClassLoaderData.this);
+                    return gen.wrapCachedClass(klass);
+                }
+            };
             generatedClasses = new LoadingCache<AbstractClassGenerator, Object, Object>(GET_KEY, load);
         }
 
@@ -114,10 +122,10 @@ implements ClassGenerator
 
         public Object get(AbstractClassGenerator gen, boolean useCache) {
             if (!useCache) {
-              return gen.generate(ClassLoaderData.this);
+                return gen.generate(ClassLoaderData.this);
             } else {
-              Object cachedValue = generatedClasses.get(gen);
-              return gen.unwrapCachedValue(cachedValue);
+                Object cachedValue = generatedClasses.get(gen);
+                return gen.unwrapCachedValue(cachedValue);
             }
         }
     }
@@ -131,7 +139,9 @@ implements ClassGenerator
     }
 
     protected static class Source {
+
         String name;
+
         public Source(String name) {
             this.name = name;
         }
@@ -215,7 +225,7 @@ implements ClassGenerator
     public boolean getAttemptLoad() {
         return attemptLoad;
     }
-    
+
     /**
      * Set the strategy to use to create the bytecode from this generator.
      * By default an instance of {@see DefaultGeneratorStrategy} is used.
@@ -238,7 +248,7 @@ implements ClassGenerator
      * that is being used to generate a class in the current thread.
      */
     public static AbstractClassGenerator getCurrent() {
-        return (AbstractClassGenerator)CURRENT.get();
+        return (AbstractClassGenerator) CURRENT.get();
     }
 
     public ClassLoader getClassLoader() {
@@ -270,7 +280,7 @@ implements ClassGenerator
      * @return the protection domain (<code>null</code> for using a default)
      */
     protected ProtectionDomain getProtectionDomain() {
-    	return null;
+        return null;
     }
 
     protected Object create(Object key) {
@@ -312,14 +322,12 @@ implements ClassGenerator
         try {
             ClassLoader classLoader = data.getClassLoader();
             if (classLoader == null) {
-                throw new IllegalStateException("ClassLoader is null while trying to define class " +
-                        getClassName() + ". It seems that the loader has been expired from a weak reference somehow. " +
-                        "Please file an issue at cglib's issue tracker.");
+                throw new IllegalStateException("ClassLoader is null while trying to define class " + getClassName() + ". It seems that the loader has been expired from a weak reference somehow. " + "Please file an issue at cglib's issue tracker.");
             }
             synchronized (classLoader) {
-              String name = generateClassName(data.getUniqueNamePredicate());              
-              data.reserveName(name);
-              this.setClassName(name);
+                String name = generateClassName(data.getUniqueNamePredicate());
+                data.reserveName(name);
+                this.setClassName(name);
             }
             if (attemptLoad) {
                 try {
@@ -332,7 +340,8 @@ implements ClassGenerator
             byte[] b = strategy.generate(this);
             String className = ClassNameReader.getClassName(new ClassReader(b));
             ProtectionDomain protectionDomain = getProtectionDomain();
-            synchronized (classLoader) { // just in case
+            synchronized (classLoader) {
+                // just in case
                 if (protectionDomain == null) {
                     gen = ReflectUtils.defineClass(className, b, classLoader);
                 } else {
@@ -352,5 +361,6 @@ implements ClassGenerator
     }
 
     abstract protected Object firstInstance(Class type) throws Exception;
+
     abstract protected Object nextInstance(Object instance) throws Exception;
 }

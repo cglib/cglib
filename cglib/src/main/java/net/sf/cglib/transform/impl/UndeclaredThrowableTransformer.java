@@ -23,6 +23,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.ClassVisitor;
 
 public class UndeclaredThrowableTransformer extends ClassEmitterTransformer {
+
     private Type wrapper;
 
     public UndeclaredThrowableTransformer(Class wrapper) {
@@ -46,10 +47,14 @@ public class UndeclaredThrowableTransformer extends ClassEmitterTransformer {
             return e;
         }
         return new CodeEmitter(e) {
+
             private Block handler;
-            /* init */ {
+
+            /* init */
+            {
                 handler = begin_block();
             }
+
             public void visitMaxs(int maxStack, int maxLocals) {
                 handler.end();
                 EmitUtils.wrap_undeclared_throwable(this, handler, exceptions, wrapper);

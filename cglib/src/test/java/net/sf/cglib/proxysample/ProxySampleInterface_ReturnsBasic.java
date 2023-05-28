@@ -17,6 +17,5 @@ package net.sf.cglib.proxysample;
 
 public interface ProxySampleInterface_ReturnsBasic {
 
-	int getKala(float kalamees);
-
+    int getKala(float kalamees);
 }

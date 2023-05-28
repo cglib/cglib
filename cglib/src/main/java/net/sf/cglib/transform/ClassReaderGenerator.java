@@ -21,10 +21,13 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 
 public class ClassReaderGenerator implements ClassGenerator {
+
     private final ClassReader r;
+
     private final Attribute[] attrs;
+
     private final int flags;
-    
+
     public ClassReaderGenerator(ClassReader r, int flags) {
         this(r, null, flags);
     }
@@ -34,7 +37,7 @@ public class ClassReaderGenerator implements ClassGenerator {
         this.attrs = (attrs != null) ? attrs : new Attribute[0];
         this.flags = flags;
     }
-    
+
     public void generateClass(ClassVisitor v) {
         r.accept(v, attrs, flags);
     }

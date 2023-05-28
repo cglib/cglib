@@ -7,7 +7,6 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
 import java.util.concurrent.TimeUnit;
 
 @Fork(value = 1, jvmArgsPrepend = "-Xmx128m")
@@ -17,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class BeansBenchmark {
+
     @Benchmark
     public Object newInstance() {
         return Beans.newInstance(Beans.class);
@@ -27,14 +27,8 @@ public class BeansBenchmark {
         return new Beans();
     }
 
-    public static void main(String[] args) throws RunnerException
-    {
-        Options opt = new OptionsBuilder()
-                .include(BeansBenchmark.class.getSimpleName())
-                .addProfiler(GCProfiler.class)
-                .detectJvmArgs()
-                .build();
-
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder().include(BeansBenchmark.class.getSimpleName()).addProfiler(GCProfiler.class).detectJvmArgs().build();
         new Runner(opt).run();
     }
 }

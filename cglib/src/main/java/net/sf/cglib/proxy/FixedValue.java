@@ -25,6 +25,7 @@ package net.sf.cglib.proxy;
  * to return a fixed value with little overhead.
  */
 public interface FixedValue extends Callback {
+
     /**
      * Return the object which the original method invocation should
      * return. This method is called for <b>every</b> method invocation.

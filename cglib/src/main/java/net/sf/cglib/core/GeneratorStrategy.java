@@ -26,6 +26,7 @@ package net.sf.cglib.core;
  * @see AbstractClassGenerator#setStrategy
  */
 public interface GeneratorStrategy {
+
     /**
      * Generate the class.
      * @param cg a class generator on which you can call {@link ClassGenerator#generateClass}

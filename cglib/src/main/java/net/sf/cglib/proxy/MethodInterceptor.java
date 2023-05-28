@@ -20,9 +20,8 @@ package net.sf.cglib.proxy;
  * @author Juozas Baliuka <a href="mailto:baliuka@mwm.lt">baliuka@mwm.lt</a>
  * @version $Id: MethodInterceptor.java,v 1.8 2004/06/24 21:15:20 herbyderby Exp $
  */
-public interface MethodInterceptor
-extends Callback
-{
+public interface MethodInterceptor extends Callback {
+
     /**
      * All generated proxied methods call this method instead of the original method.
      * The original method may either be invoked by normal reflection using the Method object,
@@ -35,8 +34,6 @@ extends Callback
      * @throws Throwable any exception may be thrown; if so, super method will not be invoked
      * @return any value compatible with the signature of the proxied method. Method returning void will ignore this value.
      * @see MethodProxy
-     */    
-    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args,
-                               MethodProxy proxy) throws Throwable;
-
+     */
+    public Object intercept(Object obj, java.lang.reflect.Method method, Object[] args, MethodProxy proxy) throws Throwable;
 }

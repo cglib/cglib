@@ -24,38 +24,33 @@ import org.objectweb.asm.Type;
  * @author Juozas Baliuka, Chris Nokleberg
  */
 public class InterceptFieldTransformer extends ClassEmitterTransformer {
+
     private static final String CALLBACK_FIELD = "$CGLIB_READ_WRITE_CALLBACK";
-    private static final Type CALLBACK =
-      TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldCallback");
-    private static final Type ENABLED =
-      TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldEnabled");
-    private static final Signature ENABLED_SET =
-      new Signature("setInterceptFieldCallback", Type.VOID_TYPE, new Type[]{ CALLBACK });
-    private static final Signature ENABLED_GET =
-      new Signature("getInterceptFieldCallback", CALLBACK, new Type[0]);
+
+    private static final Type CALLBACK = TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldCallback");
+
+    private static final Type ENABLED = TypeUtils.parseType("net.sf.cglib.transform.impl.InterceptFieldEnabled");
+
+    private static final Signature ENABLED_SET = new Signature("setInterceptFieldCallback", Type.VOID_TYPE, new Type[] { CALLBACK });
+
+    private static final Signature ENABLED_GET = new Signature("getInterceptFieldCallback", CALLBACK, new Type[0]);
 
     private InterceptFieldFilter filter;
-    
+
     public InterceptFieldTransformer(InterceptFieldFilter filter) {
         this.filter = filter;
     }
-    
+
     public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isInterface(access)) {
             super.begin_class(version, access, className, superType, TypeUtils.add(interfaces, ENABLED), sourceFile);
-                    
-            super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT,
-                                CALLBACK_FIELD,
-                                CALLBACK,
-                                null);
-
+            super.declare_field(Constants.ACC_PRIVATE | Constants.ACC_TRANSIENT, CALLBACK_FIELD, CALLBACK, null);
             CodeEmitter e;
             e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_GET, null);
             e.load_this();
             e.getfield(CALLBACK_FIELD);
             e.return_value();
             e.end_method();
-                
             e = super.begin_method(Constants.ACC_PUBLIC, ENABLED_SET, null);
             e.load_this();
             e.load_arg(0);
@@ -80,22 +75,19 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
     }
 
     private void addReadMethod(String name, Type type) {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
-                                           readMethodSig(name, type.getDescriptor()),
-                                           null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, readMethodSig(name, type.getDescriptor()), null);
         e.load_this();
         e.getfield(name);
         e.load_this();
-        e.invoke_interface(ENABLED,ENABLED_GET);
+        e.invoke_interface(ENABLED, ENABLED_GET);
         Label intercept = e.make_label();
         e.ifnonnull(intercept);
         e.return_value();
-
         e.mark(intercept);
         Local result = e.make_local(type);
         e.store_local(result);
         e.load_this();
-        e.invoke_interface(ENABLED,ENABLED_GET);
+        e.invoke_interface(ENABLED, ENABLED_GET);
         e.load_this();
         e.push(name);
         e.load_local(result);
@@ -108,17 +100,14 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
     }
 
     private void addWriteMethod(String name, Type type) {
-        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC,
-                                           writeMethodSig(name, type.getDescriptor()),
-                                           null);
+        CodeEmitter e = super.begin_method(Constants.ACC_PUBLIC, writeMethodSig(name, type.getDescriptor()), null);
         e.load_this();
         e.dup();
-        e.invoke_interface(ENABLED,ENABLED_GET);
+        e.invoke_interface(ENABLED, ENABLED_GET);
         Label skip = e.make_label();
         e.ifnull(skip);
-
         e.load_this();
-        e.invoke_interface(ENABLED,ENABLED_GET);
+        e.invoke_interface(ENABLED, ENABLED_GET);
         e.load_this();
         e.push(name);
         e.load_this();
@@ -137,24 +126,25 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
         e.return_value();
         e.end_method();
     }
-                
+
     public CodeEmitter begin_method(int access, Signature sig, Type[] exceptions) {
         return new CodeEmitter(super.begin_method(access, sig, exceptions)) {
+
             public void visitFieldInsn(int opcode, String owner, String name, String desc) {
                 Type towner = TypeUtils.fromInternalName(owner);
-                switch (opcode) {
-                case Constants.GETFIELD:
-                    if (filter.acceptRead(towner, name)) {
-                        helper(towner, readMethodSig(name, desc));
-                        return;
-                    }
-                    break;
-                case Constants.PUTFIELD:
-                    if (filter.acceptWrite(towner, name)) {
-                        helper(towner, writeMethodSig(name, desc));
-                        return;
-                    }
-                    break;
+                switch(opcode) {
+                    case Constants.GETFIELD:
+                        if (filter.acceptRead(towner, name)) {
+                            helper(towner, readMethodSig(name, desc));
+                            return;
+                        }
+                        break;
+                    case Constants.PUTFIELD:
+                        if (filter.acceptWrite(towner, name)) {
+                            helper(towner, writeMethodSig(name, desc));
+                            return;
+                        }
+                        break;
                 }
                 super.visitFieldInsn(opcode, owner, name, desc);
             }
@@ -175,36 +165,25 @@ public class InterceptFieldTransformer extends ClassEmitterTransformer {
 
     private static Signature readCallbackSig(Type type) {
         Type remap = remap(type);
-        return new Signature("read" + callbackName(remap),
-                             remap,
-                             new Type[]{ Constants.TYPE_OBJECT,
-                                         Constants.TYPE_STRING,
-                                         remap });
+        return new Signature("read" + callbackName(remap), remap, new Type[] { Constants.TYPE_OBJECT, Constants.TYPE_STRING, remap });
     }
 
     private static Signature writeCallbackSig(Type type) {
         Type remap = remap(type);
-        return new Signature("write" + callbackName(remap),
-                             remap,
-                             new Type[]{ Constants.TYPE_OBJECT,
-                                         Constants.TYPE_STRING,
-                                         remap,
-                                         remap });
+        return new Signature("write" + callbackName(remap), remap, new Type[] { Constants.TYPE_OBJECT, Constants.TYPE_STRING, remap, remap });
     }
 
     private static Type remap(Type type) {
-        switch (type.getSort()) {
-        case Type.OBJECT:
-        case Type.ARRAY:
-            return Constants.TYPE_OBJECT;
-        default:
-            return type;
+        switch(type.getSort()) {
+            case Type.OBJECT:
+            case Type.ARRAY:
+                return Constants.TYPE_OBJECT;
+            default:
+                return type;
         }
     }
 
     private static String callbackName(Type type) {
-        return (type == Constants.TYPE_OBJECT) ?
-            "Object" :
-            TypeUtils.upperFirst(TypeUtils.getClassName(type));
+        return (type == Constants.TYPE_OBJECT) ? "Object" : TypeUtils.upperFirst(TypeUtils.getClassName(type));
     }
 }

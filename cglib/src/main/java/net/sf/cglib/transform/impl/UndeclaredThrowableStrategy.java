@@ -30,11 +30,10 @@ import net.sf.cglib.transform.TransformingClassGenerator;
  * in an alternative exception of your choice.
  */
 public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
-    
 
     private Class wrapper;
 
-	/**
+    /**
      * Create a new instance of this strategy.
      * @param wrapper a class which extends either directly or
      * indirectly from <code>Throwable</code> and which has at least one
@@ -43,19 +42,19 @@ public class UndeclaredThrowableStrategy extends DefaultGeneratorStrategy {
      * <code>java.lang.reflect.UndeclaredThrowableException.class</code>
      */
     public UndeclaredThrowableStrategy(Class wrapper) {
-       this.wrapper = wrapper;
+        this.wrapper = wrapper;
     }
-    
+
     private static final MethodFilter TRANSFORM_FILTER = new MethodFilter() {
+
         public boolean accept(int access, String name, String desc, String signature, String[] exceptions) {
             return !TypeUtils.isPrivate(access) && name.indexOf('$') < 0;
         }
     };
 
     protected ClassGenerator transform(ClassGenerator cg) throws Exception {
-    	 ClassTransformer   tr = new UndeclaredThrowableTransformer(wrapper);
-         tr = new MethodFilterTransformer(TRANSFORM_FILTER, tr);
+        ClassTransformer tr = new UndeclaredThrowableTransformer(wrapper);
+        tr = new MethodFilterTransformer(TRANSFORM_FILTER, tr);
         return new TransformingClassGenerator(cg, tr);
     }
 }
-

@@ -23,30 +23,31 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
 public class FieldProviderTransformer extends ClassEmitterTransformer {
-    
+
     private static final String FIELD_NAMES = "CGLIB$FIELD_NAMES";
+
     private static final String FIELD_TYPES = "CGLIB$FIELD_TYPES";
-    
-    private static final Type FIELD_PROVIDER =
-      TypeUtils.parseType("net.sf.cglib.transform.impl.FieldProvider");
-    private static final Type ILLEGAL_ARGUMENT_EXCEPTION =
-      TypeUtils.parseType("IllegalArgumentException");
-    private static final Signature PROVIDER_GET =
-      TypeUtils.parseSignature("Object getField(String)");
-    private static final Signature PROVIDER_SET =
-      TypeUtils.parseSignature("void setField(String, Object)");
-    private static final Signature PROVIDER_SET_BY_INDEX =
-      TypeUtils.parseSignature("void setField(int, Object)");
-    private static final Signature PROVIDER_GET_BY_INDEX =
-      TypeUtils.parseSignature("Object getField(int)");
-    private static final Signature PROVIDER_GET_TYPES =
-      TypeUtils.parseSignature("Class[] getFieldTypes()");
-    private static final Signature PROVIDER_GET_NAMES =
-      TypeUtils.parseSignature("String[] getFieldNames()");
-    
+
+    private static final Type FIELD_PROVIDER = TypeUtils.parseType("net.sf.cglib.transform.impl.FieldProvider");
+
+    private static final Type ILLEGAL_ARGUMENT_EXCEPTION = TypeUtils.parseType("IllegalArgumentException");
+
+    private static final Signature PROVIDER_GET = TypeUtils.parseSignature("Object getField(String)");
+
+    private static final Signature PROVIDER_SET = TypeUtils.parseSignature("void setField(String, Object)");
+
+    private static final Signature PROVIDER_SET_BY_INDEX = TypeUtils.parseSignature("void setField(int, Object)");
+
+    private static final Signature PROVIDER_GET_BY_INDEX = TypeUtils.parseSignature("Object getField(int)");
+
+    private static final Signature PROVIDER_GET_TYPES = TypeUtils.parseSignature("Class[] getFieldTypes()");
+
+    private static final Signature PROVIDER_GET_NAMES = TypeUtils.parseSignature("String[] getFieldNames()");
+
     private int access;
+
     private Map fields;
-    
+
     public void begin_class(int version, int access, String className, Type superType, Type[] interfaces, String sourceFile) {
         if (!TypeUtils.isAbstract(access)) {
             interfaces = TypeUtils.add(interfaces, FIELD_PROVIDER);
@@ -58,14 +59,13 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
 
     public void declare_field(int access, String name, Type type, Object value) {
         super.declare_field(access, name, type, value);
-        
         if (!TypeUtils.isStatic(access)) {
             fields.put(name, type);
         }
     }
 
     public void end_class() {
-        if (!TypeUtils.isInterface(access)) {  
+        if (!TypeUtils.isInterface(access)) {
             try {
                 generate();
             } catch (RuntimeException e) {
@@ -78,16 +78,13 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
     }
 
     private void generate() throws Exception {
-        final String[] names = (String[])fields.keySet().toArray(new String[fields.size()]);
-
-        int indexes[] = new int[names.length];
+        final String[] names = (String[]) fields.keySet().toArray(new String[fields.size()]);
+        int[] indexes = new int[names.length];
         for (int i = 0; i < indexes.length; i++) {
             indexes[i] = i;
         }
-        
         super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_NAMES, Constants.TYPE_STRING_ARRAY, null);
         super.declare_field(Constants.PRIVATE_FINAL_STATIC, FIELD_TYPES, Constants.TYPE_CLASS_ARRAY, null);
-
         // use separate methods here because each process switch inner class needs a final CodeEmitter
         initFieldProvider(names);
         getNames();
@@ -102,14 +99,13 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         CodeEmitter e = getStaticHook();
         EmitUtils.push_object(e, names);
         e.putstatic(getClassType(), FIELD_NAMES, Constants.TYPE_STRING_ARRAY);
-        
         e.push(names.length);
         e.newarray(Constants.TYPE_CLASS);
         e.dup();
-        for(int i = 0; i < names.length; i++ ){ 
+        for (int i = 0; i < names.length; i++) {
             e.dup();
             e.push(i);
-            Type type = (Type)fields.get(names[i]);
+            Type type = (Type) fields.get(names[i]);
             EmitUtils.load_class(e, type);
             e.aastore();
         }
@@ -136,14 +132,16 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         e.load_arg(1);
         e.load_arg(0);
         e.process_switch(indexes, new ProcessSwitchCallback() {
+
             public void processCase(int key, Label end) throws Exception {
-                Type type = (Type)fields.get(names[key]);
+                Type type = (Type) fields.get(names[key]);
                 e.unbox(type);
                 e.putfield(names[key]);
                 e.return_value();
             }
+
             public void processDefault() throws Exception {
-                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+                throwUnknownFieldIndex();
             }
         });
         e.end_method();
@@ -154,14 +152,16 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         e.load_this();
         e.load_arg(0);
         e.process_switch(indexes, new ProcessSwitchCallback() {
+
             public void processCase(int key, Label end) throws Exception {
-                Type type = (Type)fields.get(names[key]);
+                Type type = (Type) fields.get(names[key]);
                 e.getfield(names[key]);
                 e.box(type);
                 e.return_value();
             }
+
             public void processDefault() throws Exception {
-                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");         
+                throwUnknownFieldIndex();
             }
         });
         e.end_method();
@@ -174,14 +174,16 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         e.load_this();
         e.load_arg(0);
         EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+
             public void processCase(Object key, Label end) {
-                Type type = (Type)fields.get(key);
-                e.getfield((String)key);
+                Type type = (Type) fields.get(key);
+                e.getfield((String) key);
                 e.box(type);
                 e.return_value();
             }
+
             public void processDefault() {
-                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
+                throwUnknownFieldName();
             }
         });
         e.end_method();
@@ -193,16 +195,26 @@ public class FieldProviderTransformer extends ClassEmitterTransformer {
         e.load_arg(1);
         e.load_arg(0);
         EmitUtils.string_switch(e, names, Constants.SWITCH_STYLE_HASH, new ObjectSwitchCallback() {
+
             public void processCase(Object key, Label end) {
-                Type type = (Type)fields.get(key);
+                Type type = (Type) fields.get(key);
                 e.unbox(type);
-                e.putfield((String)key);
+                e.putfield((String) key);
                 e.return_value();
             }
+
             public void processDefault() {
-                e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
+                throwUnknownFieldName();
             }
         });
         e.end_method();
+    }
+
+    private void throwUnknownFieldIndex() throws Exception {
+        e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field index");
+    }
+
+    private void throwUnknownFieldName() {
+        e.throw_exception(ILLEGAL_ARGUMENT_EXCEPTION, "Unknown field name");
     }
 }

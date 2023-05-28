@@ -3,19 +3,32 @@ package net.sf.cglib.beans;
 import java.io.ObjectStreamException;
 
 class MA {
+
     private Long id;
+
     private String name;
+
     private String privateName;
-    private int intP;        
-    private long longP;        
+
+    private int intP;
+
+    private long longP;
+
     private boolean booleanP;
+
     private char charP;
+
     private byte byteP;
+
     private short shortP;
+
     private float floatP;
+
     private double doubleP;
+
     private String stringP;
-    public  String publicField;
+
+    public String publicField;
 
     public Long getId() {
         return id;
@@ -37,11 +50,13 @@ class MA {
         return null;
     }
 
-    /* package */ String getPrivateName() {
+    /* package */
+    String getPrivateName() {
         return privateName;
     }
 
-    /* package */ void setPrivateName(String name) {
+    /* package */
+    void setPrivateName(String name) {
         this.privateName = name;
     }
 
@@ -117,4 +132,3 @@ class MA {
         this.stringP = stringP;
     }
 }
-

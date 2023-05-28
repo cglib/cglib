@@ -18,18 +18,18 @@ package net.sf.cglib.reflect;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class FastConstructor extends FastMember
-{
+public class FastConstructor extends FastMember {
+
     FastConstructor(FastClass fc, Constructor constructor) {
         super(fc, constructor, fc.getIndex(constructor.getParameterTypes()));
     }
 
     public Class[] getParameterTypes() {
-        return ((Constructor)member).getParameterTypes();
+        return ((Constructor) member).getParameterTypes();
     }
 
     public Class[] getExceptionTypes() {
-        return ((Constructor)member).getExceptionTypes();
+        return ((Constructor) member).getExceptionTypes();
     }
 
     public Object newInstance() throws InvocationTargetException {
@@ -41,6 +41,6 @@ public class FastConstructor extends FastMember
     }
 
     public Constructor getJavaConstructor() {
-        return (Constructor)member;
+        return (Constructor) member;
     }
 }

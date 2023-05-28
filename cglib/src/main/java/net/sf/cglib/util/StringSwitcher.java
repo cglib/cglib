@@ -25,14 +25,15 @@ import org.objectweb.asm.Type;
  * This class implements a simple String->int mapping for a fixed set of keys.
  */
 abstract public class StringSwitcher {
-    private static final Type STRING_SWITCHER =
-      TypeUtils.parseType("net.sf.cglib.util.StringSwitcher");
-    private static final Signature INT_VALUE =
-      TypeUtils.parseSignature("int intValue(String)");
-    private static final StringSwitcherKey KEY_FACTORY =
-      (StringSwitcherKey)KeyFactory.create(StringSwitcherKey.class);
+
+    private static final Type STRING_SWITCHER = TypeUtils.parseType("net.sf.cglib.util.StringSwitcher");
+
+    private static final Signature INT_VALUE = TypeUtils.parseSignature("int intValue(String)");
+
+    private static final StringSwitcherKey KEY_FACTORY = (StringSwitcherKey) KeyFactory.create(StringSwitcherKey.class);
 
     interface StringSwitcherKey {
+
         public Object newInstance(String[] strings, int[] ints, boolean fixedInput);
     }
 
@@ -66,12 +67,15 @@ abstract public class StringSwitcher {
     abstract public int intValue(String s);
 
     public static class Generator extends AbstractClassGenerator {
+
         private static final Source SOURCE = new Source(StringSwitcher.class.getName());
 
         private String[] strings;
+
         private int[] ints;
+
         private boolean fixedInput;
-        
+
         public Generator() {
             super(SOURCE);
         }
@@ -113,27 +117,24 @@ abstract public class StringSwitcher {
         public StringSwitcher create() {
             setNamePrefix(StringSwitcher.class.getName());
             Object key = KEY_FACTORY.newInstance(strings, ints, fixedInput);
-            return (StringSwitcher)super.create(key);
+            return (StringSwitcher) super.create(key);
         }
 
         public void generateClass(ClassVisitor v) throws Exception {
             ClassEmitter ce = new ClassEmitter(v);
-            ce.begin_class(Constants.V1_8,
-                           Constants.ACC_PUBLIC,
-                           getClassName(),
-                           STRING_SWITCHER,
-                           null,
-                           Constants.SOURCE_FILE);
+            ce.begin_class(Constants.V1_8, Constants.ACC_PUBLIC, getClassName(), STRING_SWITCHER, null, Constants.SOURCE_FILE);
             EmitUtils.null_constructor(ce);
             final CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, INT_VALUE, null);
             e.load_arg(0);
             final List stringList = Arrays.asList(strings);
             int style = fixedInput ? Constants.SWITCH_STYLE_HASHONLY : Constants.SWITCH_STYLE_HASH;
             EmitUtils.string_switch(e, strings, style, new ObjectSwitchCallback() {
+
                 public void processCase(Object key, Label end) {
                     e.push(ints[stringList.indexOf(key)]);
                     e.return_value();
                 }
+
                 public void processDefault() {
                     e.push(-1);
                     e.return_value();
@@ -144,7 +145,7 @@ abstract public class StringSwitcher {
         }
 
         protected Object firstInstance(Class type) {
-            return (StringSwitcher)ReflectUtils.newInstance(type);
+            return (StringSwitcher) ReflectUtils.newInstance(type);
         }
 
         protected Object nextInstance(Object instance) {

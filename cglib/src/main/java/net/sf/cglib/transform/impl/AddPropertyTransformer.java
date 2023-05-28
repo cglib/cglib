@@ -21,15 +21,17 @@ import net.sf.cglib.core.*;
 import org.objectweb.asm.Type;
 
 public class AddPropertyTransformer extends ClassEmitterTransformer {
+
     private final String[] names;
+
     private final Type[] types;
 
     public AddPropertyTransformer(Map props) {
         int size = props.size();
-        names = (String[])props.keySet().toArray(new String[size]);
+        names = (String[]) props.keySet().toArray(new String[size]);
         types = new Type[size];
         for (int i = 0; i < size; i++) {
-            types[i] = (Type)props.get(names[i]);
+            types[i] = (Type) props.get(names[i]);
         }
     }
 

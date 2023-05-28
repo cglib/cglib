@@ -24,8 +24,11 @@ abstract public class ClassInfo {
     }
 
     abstract public Type getType();
+
     abstract public Type getSuperType();
+
     abstract public Type[] getInterfaces();
+
     abstract public int getModifiers();
 
     public boolean equals(Object o) {
@@ -33,7 +36,7 @@ abstract public class ClassInfo {
             return false;
         if (!(o instanceof ClassInfo))
             return false;
-        return getType().equals(((ClassInfo)o).getType());
+        return getType().equals(((ClassInfo) o).getType());
     }
 
     public int hashCode() {

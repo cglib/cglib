@@ -26,28 +26,21 @@ import org.objectweb.asm.Type;
  * @version $Id: MixinEmitter.java,v 1.9 2006/08/27 21:04:37 herbyderby Exp $
  */
 class MixinEmitter extends ClassEmitter {
+
     private static final String FIELD_NAME = "CGLIB$DELEGATES";
-    private static final Signature CSTRUCT_OBJECT_ARRAY =
-      TypeUtils.parseConstructor("Object[]");
-    private static final Type MIXIN =
-      TypeUtils.parseType("net.sf.cglib.proxy.Mixin");
-    private static final Signature NEW_INSTANCE =
-      new Signature("newInstance", MIXIN, new Type[]{ Constants.TYPE_OBJECT_ARRAY });
+
+    private static final Signature CSTRUCT_OBJECT_ARRAY = TypeUtils.parseConstructor("Object[]");
+
+    private static final Type MIXIN = TypeUtils.parseType("net.sf.cglib.proxy.Mixin");
+
+    private static final Signature NEW_INSTANCE = new Signature("newInstance", MIXIN, new Type[] { Constants.TYPE_OBJECT_ARRAY });
 
     public MixinEmitter(ClassVisitor v, String className, Class[] classes, int[] route) {
         super(v);
-
-        begin_class(Constants.V1_8,
-                    Constants.ACC_PUBLIC,
-                    className,
-                    MIXIN,
-                    TypeUtils.getTypes(getInterfaces(classes)),
-                    Constants.SOURCE_FILE);
+        begin_class(Constants.V1_8, Constants.ACC_PUBLIC, className, MIXIN, TypeUtils.getTypes(getInterfaces(classes)), Constants.SOURCE_FILE);
         EmitUtils.null_constructor(this);
         EmitUtils.factory_method(this, NEW_INSTANCE);
-
         declare_field(Constants.ACC_PRIVATE, FIELD_NAME, Constants.TYPE_OBJECT_ARRAY, null);
-
         CodeEmitter e = begin_method(Constants.ACC_PUBLIC, CSTRUCT_OBJECT_ARRAY, null);
         e.load_this();
         e.super_invoke_constructor();
@@ -56,7 +49,6 @@ class MixinEmitter extends ClassEmitter {
         e.putfield(FIELD_NAME);
         e.return_value();
         e.end_method();
-
         Set unique = new HashSet();
         for (int i = 0; i < classes.length; i++) {
             Method[] methods = getMethods(classes[i]);
@@ -79,7 +71,6 @@ class MixinEmitter extends ClassEmitter {
                 }
             }
         }
-
         end_class();
     }
 

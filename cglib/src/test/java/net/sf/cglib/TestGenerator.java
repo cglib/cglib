@@ -19,8 +19,9 @@ import net.sf.cglib.core.AbstractClassGenerator;
 import net.sf.cglib.core.ReflectUtils;
 
 abstract public class TestGenerator extends AbstractClassGenerator {
+
     private static int counter;
-    
+
     public TestGenerator(Source source) {
         super(source);
     }

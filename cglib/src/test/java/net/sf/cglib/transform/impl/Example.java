@@ -1,7 +1,9 @@
 package net.sf.cglib.transform.impl;
 
 public class Example {
+
     private int answer = 42;
+
     private String word;
 
     public int getAnswer() {

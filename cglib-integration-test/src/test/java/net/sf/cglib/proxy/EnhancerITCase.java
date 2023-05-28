@@ -17,15 +17,13 @@ package net.sf.cglib.proxy;
 
 import net.sf.cglib.samples.Beans;
 import net.sf.cglib.samples.Trace;
-
 import org.junit.Test;
 
 public class EnhancerITCase {
 
     @Test
-    public void samples() throws Throwable{
-        Trace.main(new String[]{});
-        Beans.main(new String[]{});
+    public void samples() throws Throwable {
+        Trace.main(new String[] {});
+        Beans.main(new String[] {});
     }
-
 }

@@ -2,20 +2,33 @@ package net.sf.cglib.transform.impl;
 
 import java.io.ObjectStreamException;
 
-public class MA extends Base{
+public class MA extends Base {
+
     private Long id;
+
     private String name;
+
     private String privateName;
-    private int intP;        
-    private long longP;        
+
+    private int intP;
+
+    private long longP;
+
     private boolean booleanP;
+
     private char charP;
+
     private byte byteP;
+
     private short shortP;
+
     private float floatP;
+
     private double doubleP;
+
     private String stringP;
-    public  String publicField;
+
+    public String publicField;
 
     public Long getId() {
         return id;
@@ -37,11 +50,13 @@ public class MA extends Base{
         return null;
     }
 
-    /* package */ String getPrivateName() {
+    /* package */
+    String getPrivateName() {
         return privateName;
     }
 
-    /* package */ void setPrivateName(String name) {
+    /* package */
+    void setPrivateName(String name) {
         this.privateName = name;
     }
 
@@ -117,4 +132,3 @@ public class MA extends Base{
         this.stringP = stringP;
     }
 }
-

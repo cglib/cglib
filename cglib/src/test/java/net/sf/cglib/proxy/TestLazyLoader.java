@@ -20,14 +20,16 @@ import java.lang.reflect.*;
 import java.util.*;
 import junit.framework.*;
 
-public class TestLazyLoader extends CodeGenTestCase  {
+public class TestLazyLoader extends CodeGenTestCase {
+
     public void testLazyLoader() {
         LazyLoader loader = new LazyLoader() {
-                public Object loadObject() {
-                    System.err.println("loading object");
-                    return "foo";
-                }
-            };
+
+            public Object loadObject() {
+                System.err.println("loading object");
+                return "foo";
+            }
+        };
         Object obj = Enhancer.create(Object.class, loader);
         assertTrue("foo".equals(obj.toString()));
     }
@@ -35,19 +37,18 @@ public class TestLazyLoader extends CodeGenTestCase  {
     public TestLazyLoader(String testName) {
         super(testName);
     }
-    
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         return new TestSuite(TestLazyLoader.class);
     }
-    
+
     public void perform(ClassLoader loader) throws Throwable {
     }
-    
+
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
 }

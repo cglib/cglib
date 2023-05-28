@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.sf.cglib.core;
 
 import net.sf.cglib.core.internal.CustomizerRegistry;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
-
 import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.Collections;
@@ -29,7 +27,7 @@ import java.util.List;
 /**
  * Generates classes to handle multi-valued keys, for use in things such as Maps and Sets.
  * Code for <code>equals</code> and <code>hashCode</code> methods follow the
- * the rules laid out in <i>Effective Java</i> by Joshua Bloch. 
+ * the rules laid out in <i>Effective Java</i> by Joshua Bloch.
  * <p>
  * To generate a <code>KeyFactory</code>, you need to supply an interface which
  * describes the structure of the key. The interface should have a
@@ -56,41 +54,28 @@ import java.util.List;
  * @version $Id: KeyFactory.java,v 1.26 2006/03/05 02:43:19 herbyderby Exp $
  */
 abstract public class KeyFactory {
-    private static final Signature GET_NAME =
-      TypeUtils.parseSignature("String getName()");
-    private static final Signature GET_CLASS =
-      TypeUtils.parseSignature("Class getClass()");
-    private static final Signature HASH_CODE =
-      TypeUtils.parseSignature("int hashCode()");
-    private static final Signature EQUALS =
-      TypeUtils.parseSignature("boolean equals(Object)");
-    private static final Signature TO_STRING =
-      TypeUtils.parseSignature("String toString()");
-    private static final Signature APPEND_STRING =
-      TypeUtils.parseSignature("StringBuffer append(String)");
-    private static final Type KEY_FACTORY =
-      TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
-    private static final Signature GET_SORT =
-      TypeUtils.parseSignature("int getSort()");
 
-    //generated numbers: 
-    private final static int PRIMES[] = {
-               11,         73,        179,       331,
-              521,        787,       1213,      1823,
-             2609,       3691,       5189,      7247,
-            10037,      13931,      19289,     26627,
-            36683,      50441,      69403,     95401,
-           131129,     180179,     247501,    340057,
-           467063,     641371,     880603,   1209107,
-          1660097,    2279161,    3129011,   4295723,
-          5897291,    8095873,   11114263,  15257791,
-         20946017,   28754629,   39474179,  54189869,
-         74391461,  102123817,  140194277, 192456917,
-        264202273,  362693231,  497900099, 683510293,
-        938313161, 1288102441, 1768288259  };
-    
+    private static final Signature GET_NAME = TypeUtils.parseSignature("String getName()");
+
+    private static final Signature GET_CLASS = TypeUtils.parseSignature("Class getClass()");
+
+    private static final Signature HASH_CODE = TypeUtils.parseSignature("int hashCode()");
+
+    private static final Signature EQUALS = TypeUtils.parseSignature("boolean equals(Object)");
+
+    private static final Signature TO_STRING = TypeUtils.parseSignature("String toString()");
+
+    private static final Signature APPEND_STRING = TypeUtils.parseSignature("StringBuffer append(String)");
+
+    private static final Type KEY_FACTORY = TypeUtils.parseType("net.sf.cglib.core.KeyFactory");
+
+    private static final Signature GET_SORT = TypeUtils.parseSignature("int getSort()");
+
+    //generated numbers:
+    private final static int[] PRIMES = { 11, 73, 179, 331, 521, 787, 1213, 1823, 2609, 3691, 5189, 7247, 10037, 13931, 19289, 26627, 36683, 50441, 69403, 95401, 131129, 180179, 247501, 340057, 467063, 641371, 880603, 1209107, 1660097, 2279161, 3129011, 4295723, 5897291, 8095873, 11114263, 15257791, 20946017, 28754629, 39474179, 54189869, 74391461, 102123817, 140194277, 192456917, 264202273, 362693231, 497900099, 683510293, 938313161, 1288102441, 1768288259 };
 
     public static final Customizer CLASS_BY_NAME = new Customizer() {
+
         public void customize(CodeEmitter e, Type type) {
             if (type.equals(Constants.TYPE_CLASS)) {
                 e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
@@ -99,6 +84,7 @@ abstract public class KeyFactory {
     };
 
     public static final FieldTypeCustomizer STORE_CLASS_AS_STRING = new FieldTypeCustomizer() {
+
         public void customize(CodeEmitter e, int index, Type type) {
             if (type.equals(Constants.TYPE_CLASS)) {
                 e.invoke_virtual(Constants.TYPE_CLASS, GET_NAME);
@@ -118,6 +104,7 @@ abstract public class KeyFactory {
      * This customizer uses {@link Type#getSort()} as a hash code.
      */
     public static final HashCodeCustomizer HASH_ASM_TYPE = new HashCodeCustomizer() {
+
         public boolean customize(CodeEmitter e, Type type) {
             if (Constants.TYPE_TYPE.equals(type)) {
                 e.invoke_virtual(type, GET_SORT);
@@ -133,6 +120,7 @@ abstract public class KeyFactory {
      */
     @Deprecated
     public static final Customizer OBJECT_BY_CLASS = new Customizer() {
+
         public void customize(CodeEmitter e, Type type) {
             e.invoke_virtual(Constants.TYPE_OBJECT, GET_CLASS);
         }
@@ -146,7 +134,7 @@ abstract public class KeyFactory {
     }
 
     public static KeyFactory create(Class keyInterface, Customizer customizer) {
-        return create(keyInterface.getClassLoader(), keyInterface,  customizer);
+        return create(keyInterface.getClassLoader(), keyInterface, customizer);
     }
 
     public static KeyFactory create(Class keyInterface, KeyFactoryCustomizer first, List<KeyFactoryCustomizer> next) {
@@ -157,11 +145,9 @@ abstract public class KeyFactory {
         return create(loader, keyInterface, customizer, Collections.<KeyFactoryCustomizer>emptyList());
     }
 
-    public static KeyFactory create(ClassLoader loader, Class keyInterface, KeyFactoryCustomizer customizer,
-                                    List<KeyFactoryCustomizer> next) {
+    public static KeyFactory create(ClassLoader loader, Class keyInterface, KeyFactoryCustomizer customizer, List<KeyFactoryCustomizer> next) {
         Generator gen = new Generator();
         gen.setInterface(keyInterface);
-
         if (customizer != null) {
             gen.addCustomizer(customizer);
         }
@@ -175,13 +161,18 @@ abstract public class KeyFactory {
     }
 
     public static class Generator extends AbstractClassGenerator {
+
         private static final Source SOURCE = new Source(KeyFactory.class.getName());
-        private static final Class[] KNOWN_CUSTOMIZER_TYPES = new Class[]{Customizer.class, FieldTypeCustomizer.class};
+
+        private static final Class[] KNOWN_CUSTOMIZER_TYPES = new Class[] { Customizer.class, FieldTypeCustomizer.class };
 
         private Class keyInterface;
+
         // TODO: Make me final when deprecated methods are removed
         private CustomizerRegistry customizers = new CustomizerRegistry(KNOWN_CUSTOMIZER_TYPES);
+
         private int constant;
+
         private int multiplier;
 
         public Generator() {
@@ -193,7 +184,7 @@ abstract public class KeyFactory {
         }
 
         protected ProtectionDomain getProtectionDomain() {
-        	return ReflectUtils.getProtectionDomain(keyInterface);
+            return ReflectUtils.getProtectionDomain(keyInterface);
         }
 
         /**
@@ -203,7 +194,7 @@ abstract public class KeyFactory {
         public void setCustomizer(Customizer customizer) {
             customizers = CustomizerRegistry.singleton(customizer);
         }
-        
+
         public void addCustomizer(KeyFactoryCustomizer customizer) {
             customizers.add(customizer);
         }
@@ -218,7 +209,7 @@ abstract public class KeyFactory {
 
         public KeyFactory create() {
             setNamePrefix(keyInterface.getName());
-            return (KeyFactory)super.create(keyInterface.getName());
+            return (KeyFactory) super.create(keyInterface.getName());
         }
 
         public void setHashConstant(int constant) {
@@ -239,26 +230,16 @@ abstract public class KeyFactory {
 
         public void generateClass(ClassVisitor v) {
             ClassEmitter ce = new ClassEmitter(v);
-            
             Method newInstance = ReflectUtils.findNewInstance(keyInterface);
             if (!newInstance.getReturnType().equals(Object.class)) {
                 throw new IllegalArgumentException("newInstance method must return Object");
             }
-
             Type[] parameterTypes = TypeUtils.getTypes(newInstance.getParameterTypes());
-            ce.begin_class(Constants.V1_8,
-                           Constants.ACC_PUBLIC,
-                           getClassName(),
-                           KEY_FACTORY,
-                           new Type[]{ Type.getType(keyInterface) },
-                           Constants.SOURCE_FILE);
+            ce.begin_class(Constants.V1_8, Constants.ACC_PUBLIC, getClassName(), KEY_FACTORY, new Type[] { Type.getType(keyInterface) }, Constants.SOURCE_FILE);
             EmitUtils.null_constructor(ce);
             EmitUtils.factory_method(ce, ReflectUtils.getSignature(newInstance));
-
             int seed = 0;
-            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC,
-                                            TypeUtils.parseConstructor(parameterTypes),
-                                            null);
+            CodeEmitter e = ce.begin_method(Constants.ACC_PUBLIC, TypeUtils.parseConstructor(parameterTypes), null);
             e.load_this();
             e.super_invoke_constructor();
             e.load_this();
@@ -270,10 +251,7 @@ abstract public class KeyFactory {
                     fieldType = customizer.getOutType(i, fieldType);
                 }
                 seed += fieldType.hashCode();
-                ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL,
-                                 getFieldName(i),
-                                 fieldType,
-                                 null);
+                ce.declare_field(Constants.ACC_PRIVATE | Constants.ACC_FINAL, getFieldName(i), fieldType, null);
                 e.dup();
                 e.load_arg(i);
                 for (FieldTypeCustomizer customizer : fieldTypeCustomizers) {
@@ -283,11 +261,10 @@ abstract public class KeyFactory {
             }
             e.return_value();
             e.end_method();
-            
             // hash code
             e = ce.begin_method(Constants.ACC_PUBLIC, HASH_CODE, null);
-            int hc = (constant != 0) ? constant : PRIMES[(int)(Math.abs(seed) % PRIMES.length)];
-            int hm = (multiplier != 0) ? multiplier : PRIMES[(int)(Math.abs(seed * 13) % PRIMES.length)];
+            int hc = (constant != 0) ? constant : PRIMES[(int) (Math.abs(seed) % PRIMES.length)];
+            int hm = (multiplier != 0) ? multiplier : PRIMES[(int) (Math.abs(seed * 13) % PRIMES.length)];
             e.push(hc);
             for (int i = 0; i < parameterTypes.length; i++) {
                 e.load_this();
@@ -296,7 +273,6 @@ abstract public class KeyFactory {
             }
             e.return_value();
             e.end_method();
-
             // equals
             e = ce.begin_method(Constants.ACC_PUBLIC, EQUALS, null);
             Label fail = e.make_label();
@@ -317,7 +293,6 @@ abstract public class KeyFactory {
             e.push(0);
             e.return_value();
             e.end_method();
-
             // toString
             e = ce.begin_method(Constants.ACC_PUBLIC, TO_STRING, null);
             e.new_instance(Constants.TYPE_STRING_BUFFER);
@@ -335,7 +310,6 @@ abstract public class KeyFactory {
             e.invoke_virtual(Constants.TYPE_STRING_BUFFER, TO_STRING);
             e.return_value();
             e.end_method();
-
             ce.end_class();
         }
 

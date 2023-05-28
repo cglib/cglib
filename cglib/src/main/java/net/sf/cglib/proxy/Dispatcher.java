@@ -21,6 +21,7 @@ package net.sf.cglib.proxy;
  * knows which type of code to generate.
  */
 public interface Dispatcher extends Callback {
+
     /**
      * Return the object which the original method invocation should
      * be dispatched. This method is called for <b>every</b> method invocation.

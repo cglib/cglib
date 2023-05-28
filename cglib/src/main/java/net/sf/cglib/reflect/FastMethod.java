@@ -17,13 +17,11 @@ package net.sf.cglib.reflect;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-
 import net.sf.cglib.core.Signature;
-
 import org.objectweb.asm.Type;
 
-public class FastMethod extends FastMember
-{
+public class FastMethod extends FastMember {
+
     FastMethod(FastClass fc, Method method) {
         super(fc, method, helper(fc, method));
     }
@@ -42,15 +40,15 @@ public class FastMethod extends FastMember
     }
 
     public Class getReturnType() {
-        return ((Method)member).getReturnType();
+        return ((Method) member).getReturnType();
     }
 
     public Class[] getParameterTypes() {
-        return ((Method)member).getParameterTypes();
+        return ((Method) member).getParameterTypes();
     }
 
     public Class[] getExceptionTypes() {
-        return ((Method)member).getExceptionTypes();
+        return ((Method) member).getExceptionTypes();
     }
 
     public Object invoke(Object obj, Object[] args) throws InvocationTargetException {
@@ -58,6 +56,6 @@ public class FastMethod extends FastMember
     }
 
     public Method getJavaMethod() {
-        return (Method)member;
+        return (Method) member;
     }
 }

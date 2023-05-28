@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package net.sf.cglib.proxy;
 
 /**
@@ -25,20 +24,21 @@ package net.sf.cglib.proxy;
  * @version $Id: Factory.java,v 1.13 2004/06/24 21:15:20 herbyderby Exp $
  */
 public interface Factory {
+
     /**
      * Creates new instance of the same type, using the no-arg constructor.
      * The class of this object must have been created using a single Callback type.
      * If multiple callbacks are required an exception will be thrown.
      * @param callback the new interceptor to use
      * @return new instance of the same type
-     */     
+     */
     Object newInstance(Callback callback);
-    
+
     /**
      * Creates new instance of the same type, using the no-arg constructor.
      * @param callbacks the new callbacks(s) to use
      * @return new instance of the same type
-     */     
+     */
     Object newInstance(Callback[] callbacks);
 
     /**
@@ -74,6 +74,6 @@ public interface Factory {
     /**
      * Get the current set of callbacks for ths object.
      * @return a new array instance
-     */     
+     */
     Callback[] getCallbacks();
 }
