@@ -201,7 +201,7 @@ class FastClassEmitter extends ClassEmitter {
             this.e = e;
             int index = 0;
             for (Iterator it = methods.iterator(); it.hasNext();) {
-                indexes.put(it.next(), new Integer(index++));
+                indexes.put(it.next(), Integer.valueOf(index++));
             }
         }
             
