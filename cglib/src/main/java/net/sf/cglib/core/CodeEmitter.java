@@ -297,7 +297,7 @@ public class CodeEmitter extends LocalVariablesSorter {
 
     public void push(int i) {
         if (i < -1) {
-            mv.visitLdcInsn(new Integer(i));
+            mv.visitLdcInsn(Integer.valueOf(i));
         } else if (i <= 5) {
             mv.visitInsn(TypeUtils.ICONST(i));
         } else if (i <= Byte.MAX_VALUE) {
@@ -305,7 +305,7 @@ public class CodeEmitter extends LocalVariablesSorter {
         } else if (i <= Short.MAX_VALUE) {
             mv.visitIntInsn(Constants.SIPUSH, i);
         } else {
-            mv.visitLdcInsn(new Integer(i));
+            mv.visitLdcInsn(Integer.valueOf(i));
         }
     }
     
@@ -313,7 +313,7 @@ public class CodeEmitter extends LocalVariablesSorter {
         if (value == 0L || value == 1L) {
             mv.visitInsn(TypeUtils.LCONST(value));
         } else {
-            mv.visitLdcInsn(new Long(value));
+            mv.visitLdcInsn(Long.valueOf(value));
         }
     }
     
@@ -321,14 +321,14 @@ public class CodeEmitter extends LocalVariablesSorter {
         if (value == 0f || value == 1f || value == 2f) {
             mv.visitInsn(TypeUtils.FCONST(value));
         } else {
-            mv.visitLdcInsn(new Float(value));
+            mv.visitLdcInsn(Float.valueOf(value));
         }
     }
     public void push(double value) {
         if (value == 0d || value == 1d) {
             mv.visitInsn(TypeUtils.DCONST(value));
         } else {
-            mv.visitLdcInsn(new Double(value));
+            mv.visitLdcInsn(Double.valueOf(value));
         }
     }
     

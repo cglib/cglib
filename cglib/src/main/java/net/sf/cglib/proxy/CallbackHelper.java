@@ -45,7 +45,7 @@ implements CallbackFilter
                 throw new IllegalStateException("getCallback must return a Callback or a Class consistently for every Method");
             Integer index = (Integer)indexes.get(callback);
             if (index == null) {
-                index = new Integer(callbacks.size());
+                index = callbacks.size();
                 indexes.put(callback, index);
             }
             methodMap.put(method, index);

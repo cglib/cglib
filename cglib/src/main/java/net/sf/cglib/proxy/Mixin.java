@@ -224,7 +224,7 @@ abstract public class Mixin {
                 for (Iterator it = collect.iterator(); it.hasNext();) {
                     Class iface = (Class)it.next();
                     if (!map.containsKey(iface)) {
-                        map.put(iface, new Integer(i));
+                        map.put(iface, Integer.valueOf(i));
                     }
                 }
             }

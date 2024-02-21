@@ -1109,8 +1109,8 @@ public class Enhancer extends AbstractClassGenerator
             if (index >= callbackTypes.length) {
                 throw new IllegalArgumentException("Callback filter returned an index that is too large: " + index);
             }
-            originalModifiers.put(method, new Integer((actualMethod != null) ? actualMethod.getModifiers() : method.getModifiers()));
-            indexes.put(method, new Integer(index));
+            originalModifiers.put(method, Integer.valueOf((actualMethod != null) ? actualMethod.getModifiers() : method.getModifiers()));
+            indexes.put(method, Integer.valueOf(index));
             List group = (List)groups.get(generators[index]);
             if (group == null) {
                 groups.put(generators[index], group = new ArrayList(methods.size()));

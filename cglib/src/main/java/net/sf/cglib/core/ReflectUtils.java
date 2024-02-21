@@ -455,10 +455,10 @@ public class ReflectUtils {
     public static Class defineClass(String className, byte[] b, ClassLoader loader, ProtectionDomain protectionDomain) throws Exception {
         Class c;
         if (DEFINE_CLASS != null) {
-            Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length), protectionDomain };
+            Object[] args = new Object[]{className, b, 0, b.length, protectionDomain };
             c = (Class)DEFINE_CLASS.invoke(loader, args);
         } else if (DEFINE_CLASS_UNSAFE != null) {
-            Object[] args = new Object[]{className, b, new Integer(0), new Integer(b.length), loader, protectionDomain };
+            Object[] args = new Object[]{className, b, 0, b.length, loader, protectionDomain };
             c = (Class)DEFINE_CLASS_UNSAFE.invoke(UNSAFE, args);
         } else {
             throw new CodeGenerationException(THROWABLE);
