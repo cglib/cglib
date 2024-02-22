@@ -15,14 +15,20 @@
  */
 package net.sf.cglib.transform.impl;
 
-import net.sf.cglib.transform.*;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import net.sf.cglib.core.Constants;
+import net.sf.cglib.core.EmitUtils;
 import net.sf.cglib.core.ReflectUtils;
-import net.sf.cglib.beans.*;
-import java.util.*;
-import java.lang.reflect.Method;
-import junit.framework.*;
+import net.sf.cglib.transform.ClassFilter;
+import net.sf.cglib.transform.ClassTransformer;
+import net.sf.cglib.transform.ClassTransformerChain;
+import net.sf.cglib.transform.ClassTransformerFactory;
+import net.sf.cglib.transform.TransformingClassLoader;
 import org.objectweb.asm.Type;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @version $Id: TestTransformingLoader.java,v 1.6 2006/03/05 02:43:17 herbyderby Exp $
@@ -127,5 +133,102 @@ public class TestTransformingLoader extends net.sf.cglib.CodeGenTestCase {
     
     public void testFailOnMemoryLeak() throws Throwable {
     }
-    
+
+    /**
+     * Test that an empty setting will result in no prefix.
+     *
+     * @throws ClassNotFoundException If Example.class is not found
+     */
+    public void testWithEmptyPrefix() throws ClassNotFoundException {
+        System.setProperty(EmitUtils.CGLIB_PROP_PREFIX, "");
+        ClassTransformer t1 = getExampleTransformer("herby", Constants.TYPE_STRING);
+        ClassTransformer t2 = getExampleTransformer("derby", Type.DOUBLE_TYPE);
+        ClassTransformer chain = new ClassTransformerChain(new ClassTransformer[]{t1, t2});
+        Class loaded = loadHelper(chain, Example.class);
+
+        Field[] fields = loaded.getDeclaredFields();
+
+        int count=0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+            if(fieldName.endsWith("herby")){
+                count++;
+                assertEquals("herby", fieldName);
+            }
+            if(fieldName.endsWith("derby")){
+                count++;
+                assertEquals("derby", fieldName);
+            }
+            System.out.println("Name of the field: "
+                    + fieldName);
+        }
+        assertEquals(2, count);
+    }
+
+    /**
+     *
+     * @throws ClassNotFoundException
+     */
+    public void testWithTestPrefix() throws ClassNotFoundException {
+        System.setProperty(EmitUtils.CGLIB_PROP_PREFIX, "cglib_prop_test_");
+        ClassTransformer t1 = getExampleTransformer("herby", Constants.TYPE_STRING);
+        ClassTransformer t2 = getExampleTransformer("derby", Type.DOUBLE_TYPE);
+        ClassTransformer chain = new ClassTransformerChain(new ClassTransformer[]{t1, t2});
+        Class loaded = loadHelper(chain, Example.class);
+
+
+        Field[] fields = loaded.getDeclaredFields();
+        int count = 0;
+        for (Field field : fields) {
+            String fieldName = field.getName();
+
+            if(fieldName.endsWith("herby")){
+                count++;
+                assertEquals("cglib_prop_test_herby", fieldName);
+            }
+            if(fieldName.endsWith("derby")){
+                count++;
+                assertEquals("cglib_prop_test_derby", fieldName);
+            }
+            System.out.println("Name of the field: "
+                    + fieldName);
+        }
+        assertEquals(2, count);
+    }
+
+    /**
+     * Validate that the default cglib behavior is unchanged if the property if the EmitUtils.CGLIB_PROP_PREFIX
+     * System property is not set.
+     *
+     * @throws ClassNotFoundException if Example.class is not found
+     */
+    public void testWithNoPrefixConfig() throws ClassNotFoundException {
+        System.clearProperty(EmitUtils.CGLIB_PROP_PREFIX);
+
+        ClassTransformer t1 = getExampleTransformer("herby", Constants.TYPE_STRING);
+        ClassTransformer t2 = getExampleTransformer("derby", Type.DOUBLE_TYPE);
+        ClassTransformer chain = new ClassTransformerChain(new ClassTransformer[]{t1, t2});
+        Class loaded = loadHelper(chain, Example.class);
+
+
+        Field[] fields = loaded.getDeclaredFields();
+        int count = 0;
+        // get the name of every method present in the list
+        for (Field field : fields) {
+            String fieldName = field.getName();
+
+            if(fieldName.endsWith("herby")){
+                count++;
+                assertEquals(EmitUtils.CGLIB_PROP_PREFIX_DEFAULT + "herby", fieldName);
+            }
+            if(fieldName.endsWith("derby")){
+                count++;
+                assertEquals(EmitUtils.CGLIB_PROP_PREFIX_DEFAULT + "derby", fieldName);
+            }
+            System.out.println("Name of the field: "
+                    + fieldName);
+        }
+        assertEquals(2, count);
+    }
+
 }
