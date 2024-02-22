@@ -39,8 +39,6 @@ public class ReflectUtils {
     private static final Object UNSAFE;
     private static final Throwable THROWABLE;
 
-    private static final List<Method> OBJECT_METHODS = new ArrayList<Method>();
-    
     static {
         ProtectionDomain protectionDomain;
         Method defineClass, defineClassUnsafe;
@@ -85,19 +83,6 @@ public class ReflectUtils {
                                                      ClassLoader.class,
                                                      ProtectionDomain.class });
             }
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
-                    Method[] methods = Object.class.getDeclaredMethods();
-                    for (Method method : methods) {
-                        if ("finalize".equals(method.getName())
-                                || (method.getModifiers() & (Modifier.FINAL | Modifier.STATIC)) > 0) {
-                            continue;
-                        }
-                        OBJECT_METHODS.add(method);
-                    }
-                    return null;
-                }
-            });
         } catch (Throwable t) {
             if (throwable == null) {
                 throwable = t;
@@ -408,13 +393,9 @@ public class ReflectUtils {
     }
         
     public static List addAllMethods(final Class type, final List list) {
-            
-            
-        if (type == Object.class) {
-            list.addAll(OBJECT_METHODS);
-        } else
-            list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
 
+
+        list.addAll(java.util.Arrays.asList(type.getDeclaredMethods()));
         Class superclass = type.getSuperclass();
         if (superclass != null) {
             addAllMethods(superclass, list);

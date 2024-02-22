@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.apache.tools.ant.types.Assertions;
 
 public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
     public static class Simple {
@@ -666,5 +667,14 @@ public class TestFastClass extends net.sf.cglib.CodeGenTestCase {
             fail();
         } catch (IllegalArgumentException iae) {}
     }
-    
+
+    public void test_getMethod() throws IllegalArgumentException {
+        Class<?> clazz = Object.class;
+        FastClass fc = FastClass.create(clazz);
+        Method[] methods = clazz.getMethods();
+        for (Method m : methods) {
+            // throws "java.lang.IllegalArgumentException: Cannot find method public final void java.lang.Object.wait(long,int) throws java.lang.InterruptedException"
+            fc.getMethod(m);
+        }
+    }
 }
