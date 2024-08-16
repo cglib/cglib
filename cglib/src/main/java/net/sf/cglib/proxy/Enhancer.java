@@ -983,7 +983,9 @@ public class Enhancer extends AbstractClassGenerator
         e.load_this();
         e.load_arg(0);
         for (int i = 0; i < callbackTypes.length; i++) {
-            e.dup2();
+            if (i != callbackTypes.length - 1) {
+                e.dup2();
+            }
             e.aaload(i);
             e.checkcast(callbackTypes[i]);
             e.putfield(getCallbackField(i));
